@@ -1,0 +1,10 @@
+resolver: lts-10.10
+
+allow-newer: true
+
+extra-deps:
+- gio-0.13.5.0@sha256:1e02962f498f62ba68cff88e7f7379e2f8c192f311d867b22f4815518b2f9a86
+- gtk-0.15.0@sha256:a76d280dbeefbe08cf021c31bcd51c09cda97ebee7934debbfc14e1da4220b78
+- svgcairo-0.13.1.1@sha256:145b6acce7306e84652376efb3f00e9194ccd8787a62d3f93fb539c4a3382a2e
+- lucid-svg-0.7.0.0@sha256:2a2d0fe51329e8b89f723a8e86e6ab8d150d7b205591fffe4c09d8d11e022f98
+
