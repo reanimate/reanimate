@@ -13,6 +13,9 @@ import Reanimate.Examples
 fps :: Int
 fps = 60
 
+fps_gif :: Int
+fps_gif = 25
+
 nameTemplate :: String
 nameTemplate = "render-%05d.svg"
 
@@ -36,6 +39,26 @@ render ani target = do
          removeFile (tmp </> fileName))
   return ()
 
+
+renderGif :: Ani () -> FilePath -> IO ()
+renderGif ani target = do
+  putStrLn $ "Starting render of animation: " ++ show (round (getDuration ani)) ++ "s"
+  let frames :: Int
+      frames = round (getDuration ani * fromIntegral fps_gif)
+  ffmpeg <- requireExecutable "ffmpeg"
+  tmp <- getTemporaryDirectory
+  forM_ [0..frames] $ \frame -> do
+    let s = fromIntegral frame / fromIntegral fps_gif
+    let fileName = printf nameTemplate frame
+    renderToFile (tmp </> fileName) (frameAt s ani)
+  rawSystem ffmpeg ["-f", "image2", "-i", tmp </> "render-%05d.svg"
+                   ,"-r", show fps_gif
+                   , target]
+     `finally`
+       forM_ [0..frames] (\frame -> do
+         let fileName = printf nameTemplate frame
+         removeFile (tmp </> fileName))
+  return ()
 
 requireExecutable :: String -> IO FilePath
 requireExecutable exec = do
