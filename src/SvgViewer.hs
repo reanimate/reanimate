@@ -15,7 +15,7 @@ import Data.Time
 import Reanimate.Arrow
 import Reanimate.Examples
 
-animation = morph_wave_circle
+animation = progressMeters
 
 main :: IO ()
 main = do
