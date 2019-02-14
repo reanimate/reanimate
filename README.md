@@ -6,7 +6,7 @@
 
 ## Sine wave
 
-```
+```haskell
 sinewave :: Ani ()
 sinewave = proc () -> do
     duration 10 -< ()
@@ -35,7 +35,7 @@ sinewave = proc () -> do
 
 ## Morphing wave
 
-```
+```haskell
 morph_wave :: Ani ()
 morph_wave = proc () -> do
     duration 5 -< ()
@@ -58,7 +58,7 @@ morph_wave = proc () -> do
 
 ## Morph wave to circle
 
-```
+```haskell
 morph_wave_circle :: Ani ()
 morph_wave_circle = proc t -> do
   duration 5 -< ()
@@ -80,7 +80,7 @@ morph_wave_circle = proc t -> do
 
 ## Speed modification
 
-```
+```haskell
 progressMeters :: Ani ()
 progressMeters = proc () -> do
   emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
@@ -106,7 +106,7 @@ progressMeters = proc () -> do
 
 ## Clipping
 
-```
+```haskell
 clip_rect :: Ani ()
 clip_rect = proc () -> do
   emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
@@ -139,7 +139,7 @@ Animations can be reused, scaled and stretched in time. This example
 reuse four different animations of different lengths, scales their runtime
 so they're all in sync, and increases the playback speed.
 
-```
+```haskell
 scaling :: Ani ()
 scaling = adjustSpeed 2 $ syncAll
   [ defineAnimation $ proc () ->
