@@ -52,8 +52,17 @@ before :: Ani () -> Ani () -> Ani ()
 before (Animation d1 fn1) (Animation d2 fn2) =
   Animation (d1+d2) (\d t -> if t < d1 then fn1 d t else fn2 d (t-d1))
 
+andThen :: Ani () -> Ani () -> Ani ()
+andThen (Animation d1 fn1) (Animation d2 fn2) =
+  Animation (d1+d2) $ \d t -> if t < d1 then fn1 d t else do
+    fn1 d1 (d1-0.2)
+    fn2 d2 (t-d1)
+
 follow :: [Ani ()] -> Ani ()
 follow lst = foldr before (arr $ pure ()) lst
+
+followFreeze :: [Ani ()] -> Ani ()
+followFreeze = foldl andThen (arr $ pure ())
 
 sim :: [Ani ()] -> Ani ()
 sim = foldr par (arr $ pure ())
@@ -128,7 +137,7 @@ adjustSpeed factor (Animation d fn) =
 
 freeze :: Double -> Ani a -> Ani a
 freeze d (Animation d' fn) =
-  Animation (d+d') (\dur t -> if t > d' then fn dur d' else fn dur t)
+  Animation (d+d') (\dur t -> if t > d' then fn d' d' else fn d' t)
 
 loop :: Ani a -> Ani a
 loop (Animation d fn) =

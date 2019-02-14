@@ -180,3 +180,43 @@ highlight = proc () -> do
     h = 30
     commonAttrs c = [stroke_width_ "2", stroke_ c, fill_ c]
     highlightAttrs c = [stroke_width_ "2", stroke_ c, fill_opacity_ "0"]
+
+clip_rect :: Ani ()
+clip_rect = proc () -> do
+  emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
+  follow
+    [ proc () -> do
+      sim [ paintStatic prev | prev <- [max 0 (n-4) .. n-1] ] -< ()
+      sim [ runAni "black" i | i <- [n-4], i>=0 ] -< ()
+      runAni "white" n -< ()
+    | n <- [0..15]
+    ] -< ()
+  where
+    paintStatic nth = proc () ->
+      annotate' (obj "white" (20+nth*10) (20+nth*10))
+        -< g_ [transform_ $ translate 160 90]
+    runAni color nth = proc () ->
+      annotate' (defineAnimation $ circle_clip (obj color (20+nth*10) (20+nth*10)))
+        -< g_ [transform_ $ translate 160 90]
+    obj c width height = proc () -> do
+      duration 1 -< ()
+      emit -< rect_ [ width_ $ pack $ show width, height_ $ pack $ show height
+            , x_ $ pack $ show (-width/2), y_ $ pack $ show (-height/2)
+            , stroke_ c, fill_opacity_ "0", stroke_width_ "2" ]
+
+circle_clip :: Ani () -> Ani ()
+circle_clip sub = proc () -> do
+    arc <- signal (pi*2) 0 -< ()
+    let startX = pack$show$sin 0 * 1000
+        startY = pack$show$cos 0 * 1000
+        xPos = pack$show$sin arc * 1000
+        yPos = pack$show$cos arc * 1000
+        long = if arc < pi then "1" else "0"
+    emit -< defs_ $ clipPath_ [id_ $ uniqName] $
+      path_ [ stroke_ "white", fill_ "white"
+            , d_ $ "M "<>startX<>" "<>startY<>" A 1000 1000 0 "<>long<>" 1 "
+                  <>xPos<> " "<>yPos<>" L 0 0 Z"]
+    annotate' sub -<
+      g_ [clip_path_ $ "url(#"<>uniqName<>")"]
+  where
+    uniqName = "clip" -- XXX: Not very unique?

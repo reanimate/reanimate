@@ -11,3 +11,5 @@
 ![Speed modification](gifs/progress.gif)
 
 ![Highlight](gifs/highlight.gif)
+
+![Clipping](gifs/clip_rect.gif)

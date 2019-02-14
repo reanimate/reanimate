@@ -14,6 +14,9 @@ type Time = Double
 
 data Animation a b = Animation Duration (Duration -> Time -> a -> Svg b)
 
+instance Functor (Animation a) where
+  fmap f (Animation d g) = Animation d (\dur t a -> fmap f (g dur t a))
+
 instance C.Category Animation where
   id = Animation 0 (\_ _ -> pure)
   Animation a fn1 . Animation b fn2 = Animation (max a b) (\d t a -> fn2 d t a >>= fn1 d t)

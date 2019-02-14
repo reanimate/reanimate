@@ -15,7 +15,7 @@ import Data.Time
 import Reanimate.Arrow
 import Reanimate.Examples
 
-animation = highlight
+animation = clip_rect
 
 main :: IO ()
 main = do
