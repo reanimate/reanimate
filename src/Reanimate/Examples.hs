@@ -157,8 +157,8 @@ clip_rect = proc () -> do
     paintStatic nth = proc () ->
       annotate' (obj "white" (20+nth*10) (20+nth*10))
         -< g_ [transform_ $ translate 160 90]
-    runAni color nth = proc () ->
-      annotate' (defineAnimation $ circle_clip (obj color (20+nth*10) (20+nth*10)))
+    runAni color nth = defineAnimation $ proc () ->
+      annotate' (circle_clip (obj color (20+nth*10) (20+nth*10)))
         -< g_ [transform_ $ translate 160 90]
     obj c width height = proc () -> do
       duration 1 -< ()
