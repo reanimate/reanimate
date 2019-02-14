@@ -153,3 +153,6 @@ sync (Animation d1 fn1) (Animation d2 fn2) =
 
 syncAll :: [Ani ()] -> Ani ()
 syncAll = foldl sync (arr (pure ()))
+
+num_ :: (Show a, Num a) => (Text -> Attribute) -> (a -> Attribute)
+num_ attr n = attr (pack (show n))
