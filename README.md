@@ -10,4 +10,4 @@
 
 ![Speed modification](gifs/progress.gif)
 
-![Highlight](gifs/lighlight.gif)
+![Highlight](gifs/highlight.gif)
