@@ -23,13 +23,11 @@ so they're all in sync, and increases the playback speed.
 
 ```
 scaling :: Ani ()
-scaling = adjustSpeed 2 $ defineAnimation $ syncAll
-  [ proc () ->
-    annotate' (defineAnimation animation)
-      -< g_ [transform_ $ translate x y] . g_ [transform_ $ scale 0.5 0.5]
+scaling = adjustSpeed 2 $ syncAll
+  [ defineAnimation $ proc () ->
+    annotate' animation -< g_ [transform_ $ translate x y <> " " <> scale 0.5 0.5]
   | x <- [0,160]
   , y <- [0,90]
-  | animation <- [sinewave, morph_wave, highlight, progressMeters]
-  ]
+  | animation <- [sinewave, morph_wave, highlight, progressMeters]]
 ```
 ![Scaling](gifs/scaling.gif)
