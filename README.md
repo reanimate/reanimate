@@ -153,3 +153,7 @@ scaling = adjustSpeed 2 $ syncAll
   | animation <- [sinewave, morph_wave, highlight, progressMeters]]
 ```
 ![Scaling](gifs/scaling.gif)
+
+## Valentine's Day
+
+![Valentine's Day](gifs/valentine.webm)
