@@ -4,7 +4,7 @@ module Reanimate.Examples where
 import Lucid.Svg
 import Data.Text (Text, pack)
 import Data.Monoid ((<>))
-import Control.Arrow
+import Control.Arrow (returnA)
 
 import Reanimate.Arrow
 import Reanimate.Combinators
@@ -125,7 +125,7 @@ progressMeters = proc () -> do
           , fill_ "white"] "0.5x"
 
 progressMeter :: Ani ()
-progressMeter = defineAnimation $ proc () -> do
+progressMeter = loop $ defineAnimation $ proc () -> do
   duration 5 -< ()
   h <- signal 0 100 -< ()
   emit -< rect_ [ width_ "30", height_ "100", stroke_ "white", stroke_width_ "2", fill_opacity_ "0" ]
@@ -134,34 +134,49 @@ progressMeter = defineAnimation $ proc () -> do
 
 highlight :: Ani ()
 highlight = proc () -> do
-  duration 10 -< ()
-  annotate (g_ [transform_ $ scale 2 2 <> " " <> translate 25 0]) (proc t -> do
-    emit -<
-      g_ [transform_ $ translate 20 20] $
-      g_ [transform_ $ rotateAround 45 10 10] $
-      block "white"
-    emit -<
-      g_ [transform_ $ translate 60 20] $
-      g_ [transform_ $ rotateAround 0 10 10] $
-      block "white"
-    emit -<
-      g_ [transform_ $ translate 20 60] $
-      g_ [transform_ $ rotateAround 0 10 10] $
-      block "white"
-    emit -<
-      g_ [transform_ $ translate 20 60] $
-      g_ [transform_ $ rotateAround 45 10 10] $
-      block "white"
-    emit -<
-      g_ [transform_ $ translate 60 60] $
-      g_ [transform_ $ rotateAround 45 10 10] $
-      block "blue"
-    t <- getTime -< ()
-    emit -<
-      g_ [transform_ $ translate (15 + (55-15)*(t/10)) 15] $
-      rect_ [width_ "30", height_ "30", stroke_ "black", fill_opacity_ "0" ]
-    ) -< ()
-  returnA -< ()
+    emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
+    emit -< do
+      path_ (commonAttrs "white" ++ [d_ $ renderPathText rect1])
+      path_ (commonAttrs "white" ++ [d_ $ renderPathText rect2])
+
+      path_ (commonAttrs "white" ++ [d_ $ renderPathText rect3])
+      path_ (commonAttrs "lightblue" ++ [d_ $ renderPathText rect4])
+      path_ (commonAttrs "yellow" ++ [d_ $ renderPathText rect5])
+      path_ (commonAttrs "red" ++ [d_ $ renderPathText rect6])
+
+    follow
+      [ mkTransition highlight1 highlight2
+      , mkTransition highlight2 highlight3
+      , mkTransition highlight3 highlight4
+      , mkTransition highlight4 highlight5
+      , mkTransition highlight5 highlight6
+      , mkTransition highlight6 highlight1
+      ] -< ()
+
   where
-    block c =
-      rect_ [width_ "20", height_ "20", stroke_ "black", fill_ c ]
+    mkTransition from to = freeze 1 $ defineAnimation $ proc () -> do
+      duration 1 -< ()
+      s <- signalSCurve 2 0 1 -< ()
+      let trans = morphPath from to s
+      emit -<
+        path_ (highlightAttrs "green" ++ [d_ $ renderPathText trans <> "Z"])
+    mkRect x y width height =
+      [ (x,y), (x+width, y), (x+width, y+height), (x,y+height) ]
+    rect1 = mkRect margin margin w h
+    rect2 = mkRect (320-margin-w*2) margin (w*2) h
+    rect3 = mkRect margin (180-margin-h) w h
+    rect4 = mkRect (320/3) (180-margin-h) w h
+    rect5 = mkRect (320/3*2-w) (180-margin-h) w h
+    rect6 = mkRect (320-margin-w) (180-margin-h) w h
+    highlight1 = mkRect (margin-b) (margin-b) (w+2*b) (h+2*b)
+    highlight2 = mkRect (320-margin-w*2-b) (margin-b) (w*2+2*b) (h+2*b)
+    highlight3 = mkRect (320-margin-w-b) (180-margin-h-b) (w+2*b) (h+2*b)
+    highlight4 = mkRect (320/3*2-w-b) (180-margin-h-b) (320/3+2*b) (h+2*b)
+    highlight5 = mkRect (320/3-b) (180-margin-h-b) (320/3+2*b) (h+2*b)
+    highlight6 = mkRect (margin-b) (180-margin-h-b) (320/3+2*b) (h+2*b)
+    b = 7
+    margin = 30
+    w = 30
+    h = 30
+    commonAttrs c = [stroke_width_ "2", stroke_ c, fill_ c]
+    highlightAttrs c = [stroke_width_ "2", stroke_ c, fill_opacity_ "0"]

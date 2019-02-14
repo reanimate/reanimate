@@ -50,10 +50,10 @@ progress ani = proc () -> do
 
 before :: Ani () -> Ani () -> Ani ()
 before (Animation d1 fn1) (Animation d2 fn2) =
-  Animation (d1+d2) (\t -> if t < d1 then fn1 t else fn2 (t-d1))
+  Animation (d1+d2) (\d t -> if t < d1 then fn1 d t else fn2 d (t-d1))
 
 follow :: [Ani ()] -> Ani ()
-follow = foldr before (arr $ pure ())
+follow lst = foldr before (arr $ pure ()) lst
 
 sim :: [Ani ()] -> Ani ()
 sim = foldr par (arr $ pure ())
@@ -71,12 +71,15 @@ approxFnData steps fn =
   fn 0 : [ fn (fromIntegral n/fromIntegral steps) | n <- [0..steps] ]
 
 renderPath :: Path -> Svg ()
-renderPath ((startX, startY):rest) =
+renderPath dat =
     path_ [stroke_ "white", fill_ "translucent", d_ path]
   where
-    path = T.unlines $
-      ("M " <> pack (show startX) <> " " <> pack (show startY)):
-      [ "L " <> pack (show x) <> " " <> pack (show y) | (x, y) <- rest]
+    path = renderPathText dat
+
+renderPathText :: Path -> Text
+renderPathText ((startX,startY):rest) = T.unlines $
+    ("M " <> pack (show startX) <> " " <> pack (show startY)):
+    [ "L " <> pack (show x) <> " " <> pack (show y) | (x, y) <- rest]
 
 morphPath :: Path -> Path -> Double -> Path
 morphPath src dst idx = zipWith worker src dst
@@ -96,6 +99,21 @@ signal :: Double -> Double -> Ani Double
 signal from to =
   Animation 0 (\dur t () -> pure (from + (to-from)*(t/dur)))
 
+signalSigmoid :: Double -> Double -> Double -> Ani Double
+signalSigmoid steepness from to = proc () -> do
+  s <- signal 0 1 -< ()
+  let s' = (s-0.5)*steepness
+  let sigmoid = exp s' / (exp s'+1)
+      ret = (from + (to-from)*sigmoid)
+  returnA -< ret
+
+signalSCurve :: Double -> Double -> Double -> Ani Double
+signalSCurve steepness from to = proc () -> do
+  s <- signal 0 1 -< ()
+  returnA -< if s < 0.5
+              then 0.5 * (2*s)**steepness
+              else 1-0.5 * (2 - 2*s)**steepness
+
 signalOscillate :: Double -> Double -> Ani Double
 signalOscillate from to = proc () -> do
   s <- signal from (to+diff) -< ()
@@ -107,3 +125,11 @@ signalOscillate from to = proc () -> do
 adjustSpeed :: Double -> Ani a -> Ani a
 adjustSpeed factor (Animation d fn) =
   Animation (d/factor) (\dur t -> fn dur ((t*factor) `mod'` dur))
+
+freeze :: Double -> Ani a -> Ani a
+freeze d (Animation d' fn) =
+  Animation (d+d') (\dur t -> if t > d' then fn dur d' else fn dur t)
+
+loop :: Ani a -> Ani a
+loop (Animation d fn) =
+  Animation d (\dur t -> fn dur (mod' t d))
