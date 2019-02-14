@@ -1,6 +1,10 @@
 # reanimate
 
+Reanimate is a reactive framework for creating non-interactive animations from SVG images.
+This package consists of a set of arrow combinators, a renderer (using ffmpeg), and a Gtk-based
+previewer.
 
+The example gifs are rendered at 25 fps.
 
 # Examples
 
