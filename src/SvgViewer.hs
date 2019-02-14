@@ -15,7 +15,7 @@ import Data.Time
 import Reanimate.Arrow
 import Reanimate.Examples
 
-animation = scaling
+animation = progressMeters
 
 main :: IO ()
 main = do
