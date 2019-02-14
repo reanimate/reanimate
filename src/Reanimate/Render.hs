@@ -21,9 +21,9 @@ nameTemplate = "render-%05d.svg"
 
 render :: Ani () -> FilePath -> IO ()
 render ani target = do
-  putStrLn $ "Starting render of animation: " ++ show (round (getDuration ani)) ++ "s"
+  putStrLn $ "Starting render of animation: " ++ show (round (animationDuration ani)) ++ "s"
   let frames :: Int
-      frames = round (getDuration ani * fromIntegral fps)
+      frames = round (animationDuration ani * fromIntegral fps)
   ffmpeg <- requireExecutable "ffmpeg"
   tmp <- getTemporaryDirectory
   forM_ [0..frames] $ \frame -> do
@@ -42,9 +42,9 @@ render ani target = do
 
 renderGif :: Ani () -> FilePath -> IO ()
 renderGif ani target = do
-  putStrLn $ "Starting render of animation: " ++ show (round (getDuration ani)) ++ "s"
+  putStrLn $ "Starting render of animation: " ++ show (round (animationDuration ani)) ++ "s"
   let frames :: Int
-      frames = round (getDuration ani * fromIntegral fps_gif)
+      frames = round (animationDuration ani * fromIntegral fps_gif)
   ffmpeg <- requireExecutable "ffmpeg"
   tmp <- getTemporaryDirectory
   forM_ [0..frames] $ \frame -> do

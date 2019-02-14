@@ -12,31 +12,37 @@ import Reanimate.Arrow
 
 fadeIn :: Double -> Ani a -> Ani a
 fadeIn window (Animation d fn) =
-    Animation d $ \t ->
+    Animation d $ \dur t () ->
       let s = (t/window) in
       if s < 1
-        then g_ [opacity_ (pack $ show s)] (fn t)
-        else fn t
+        then g_ [opacity_ (pack $ show s)] (fn dur t ())
+        else fn dur t ()
 
 fadeOut :: Double -> Ani a -> Ani a
 fadeOut window (Animation d fn) =
-    Animation d $ \t ->
+    Animation d $ \dur t () ->
       let s = (d-t)/window in
       if s < 1
-        then g_ [opacity_ (pack $ show s)] (fn t)
-        else fn t
+        then g_ [opacity_ (pack $ show s)] (fn dur t ())
+        else fn dur t ()
 
 fade :: Double -> Ani a -> Ani a
 fade window = fadeIn window . fadeOut window
 
 annotate :: (Svg a -> Svg a) -> Ani a -> Ani a
 annotate fn1 (Animation d fn2) =
-  Animation d (fn1 . fn2)
+  Animation d (\dur t -> fn1 . fn2 dur t)
+
+-- data Animation a b = Animation Double (Double -> a -> Svg b)
+annotate' :: Ani a -> Animation (Svg a -> Svg a) a
+annotate' (Animation d f) =
+  Animation d (\dur t g -> g (f dur t ()))
 
 progress :: Ani () -> Ani ()
-progress ani = proc t -> do
-  ani -< t
-  let txt = show (round ((t / getDuration ani) * 100)) ++ "%"
+progress ani = proc () -> do
+  ani -< ()
+  t <- getTime -< ()
+  let txt = show (round ((t / animationDuration ani) * 100)) ++ "%"
   emit -< text_   [x_ "10", y_ "20", font_size_ "20"
                   , text_anchor_ "bottom"
                   , fill_ "white"] (toHtml txt)
@@ -82,3 +88,22 @@ morphPath src dst idx = zipWith worker src dst
 approxFn :: Int -> (Double -> (Double, Double)) -> Ani ()
 approxFn steps fn = proc t -> do
     emit -< renderPath $ approxFnData steps fn
+
+constantSvg :: Svg a -> Ani a
+constantSvg svg = Animation 0 (\dur t () -> svg)
+
+signal :: Double -> Double -> Ani Double
+signal from to =
+  Animation 0 (\dur t () -> pure (from + (to-from)*(t/dur)))
+
+signalOscillate :: Double -> Double -> Ani Double
+signalOscillate from to = proc () -> do
+  s <- signal from (to+diff) -< ()
+  returnA -< if s < to then s
+            else (to*2 - s)
+  where
+    diff = abs (to-from)
+
+adjustSpeed :: Double -> Ani a -> Ani a
+adjustSpeed factor (Animation d fn) =
+  Animation (d/factor) (\dur t -> fn dur ((t*factor) `mod'` dur))
