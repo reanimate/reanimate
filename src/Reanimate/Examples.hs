@@ -24,49 +24,54 @@ test2 = proc t -> do
   emit -< rect_ [width_ "100%", height_ "100%", fill_ "red", r_ (pack $ show t)]
 
 sinewave :: Ani ()
-sinewave = proc t -> do
-  duration 5 -< ()
+sinewave = proc () -> do
+  duration 10 -< ()
   emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
-  let clipWidth = pack $ show $ t/getDuration sinewave * 260
+  t <- getTime -< ()
+
+  idx <- signalOscillate 0 1 -< ()
+  let clipWidth = pack $ show $ idx * 260
   emit -< defs_ $ clipPath_ [id_ "clip"] $ rect_ [x_ "0", y_ "-90", width_ clipWidth, height_ "100%"]
   annotate (g_ [transform_ $ translate 30 90]) $
     annotate (g_ [clip_path_ "url(#clip)"]) $
       approxFn 1000 (\idx ->
-        let xPos = idx*260
-            xValue = idx*getDuration sinewave
-            yValue = sin (xValue*pi*2*freq) * 50
-        in (xPos, yValue)) -< t
+        let xValue = idx*260
+            yValue = sin (idx*pi*2*freq) * 50
+        in (xValue, yValue)) -< ()
   emit -< line_ [x1_ "30", x2_ "30", y1_ "10", y2_ "170", stroke_ "white"]
   emit -< line_ [x1_ "30", x2_ "290", y1_ "90", y2_ "90", stroke_ "white"]
 
-  let circX = pack $ show $ 30 + t/getDuration sinewave * (290-30)
-      circY = pack $ show $ 90 + sin (t*pi*2*freq) * 50
+  circX <- signalOscillate 30 290 -< ()
+  let circY = pack $ show $ 90 + sin (idx*pi*2*freq) * 50
 
-  emit -< circle_ [cx_ circX, cy_ circY, r_ "3", fill_ "red"]
+  emit -< circle_ [cx_ (pack (show circX)), cy_ circY, r_ "3", fill_ "red"]
   returnA -< ()
   where
-    freq = 1/2
+    freq = 3
 
 morph_wave :: Ani ()
-morph_wave = proc t -> do
+morph_wave = proc () -> do
   duration 5 -< ()
   emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
 
-  annotate (g_ [transform_ $ translate 30 50]) $
-    (proc t -> emit -< renderPath wave1) -< t
-  annotate (g_ [transform_ $ translate 30 130]) $
-    (proc t -> emit -< renderPath wave2) -< t
-  annotate (g_ [transform_ $ translate 30 90]) $
-    (proc t -> do
-      let idx = if t/myD*2 < 1 then t/myD*2
-                else (2 - t/myD*2)
-      emit -< renderPath $ morphPath wave1 wave2 idx) -< t
+  emit -<
+    g_ [transform_ $ translate 30 50] $
+    renderPath wave1
+  emit -<
+    g_ [transform_ $ translate 30 130] $
+    renderPath wave2
+
+  morph <- signalOscillate 0 1 -< ()
+  emit -<
+    g_ [transform_ $ translate 30 90] $
+    renderPath $ morphPath wave1 wave2 morph
+
   emit -< line_ [x1_ "30", x2_ "30", y1_ "10", y2_ "170", stroke_ "white"]
   emit -< line_ [x1_ "30", x2_ "290", y1_ "90", y2_ "90", stroke_ "white"]
 
   returnA -< ()
   where
-    myD = getDuration morph_wave
+    myD = animationDuration morph_wave
     freq = 1/2
     wave1 = approxFnData 1000 (\idx ->
                   let xPos = idx*260
@@ -84,22 +89,78 @@ morph_wave_circle = proc t -> do
   duration 5 -< ()
   emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
 
-  annotate (g_ [transform_ $ translate 30 90]) $
-    (proc t -> do
-      let idx = if t/myD*2 < 1 then t/myD*2
-                else (2 - t/myD*2)
-      emit -< renderPath $ morphPath wave1 circle idx) -< t
+  idx <- signalOscillate 0 1 -< ()
+  emit -<
+    g_ [transform_ $ translate 30 90] $
+    renderPath $ morphPath circle wave1 idx
   emit -< line_ [x1_ "30", x2_ "30", y1_ "10", y2_ "170", stroke_ "white"]
   emit -< line_ [x1_ "30", x2_ "290", y1_ "90", y2_ "90", stroke_ "white"]
 
   returnA -< ()
   where
-    myD = getDuration morph_wave
-    freq = 1/2
+    freq = 5
     wave1 = approxFnData 1000 (\idx ->
-                  let xPos = idx*260
-                      xValue = idx*myD
-                      yValue = sin (xValue*pi*2*freq) * 20
-                  in (xPos, yValue))
+                  let xValue = idx*260
+                      yValue = sin (idx*pi*2*freq) * 20
+                  in (xValue, yValue))
     circle = approxFnData 1000 $ \idx ->
       (cos (idx*pi*2+pi/2)*50 + 130, sin (idx*pi*2+pi/2)*50)
+
+progressMeters :: Ani ()
+progressMeters = proc () -> do
+  annotate' progressMeter -< g_ [transform_ $ translate 40 20]
+  annotate' (adjustSpeed 2 progressMeter) -< g_ [transform_ $ translate 140 20]
+  annotate' (adjustSpeed 0.5 progressMeter) -< g_ [transform_ $ translate 240 20]
+
+  emit -< do
+    text_ [x_ "55", y_ "150", font_size_ "20"
+          , text_anchor_ "middle"
+          , fill_ "black"] "1x"
+    text_ [x_ "155", y_ "150", font_size_ "20"
+          , text_anchor_ "middle"
+          , fill_ "black"] "2x"
+    text_ [x_ "255", y_ "150", font_size_ "20"
+          , text_anchor_ "middle"
+          , fill_ "black"] "0.5x"
+
+progressMeter :: Ani ()
+progressMeter = defineAnimation $ proc () -> do
+  duration 5 -< ()
+  h <- signal 0 100 -< ()
+  emit -< rect_ [ width_ "30", height_ "100", stroke_ "black", fill_opacity_ "0" ]
+  emit -< rect_ [ width_ "30", height_ (pack $ show h), stroke_ "black", fill_ "grey" ]
+  returnA -< ()
+
+highlight :: Ani ()
+highlight = proc () -> do
+  duration 10 -< ()
+  annotate (g_ [transform_ $ scale 2 2 <> " " <> translate 25 0]) (proc t -> do
+    emit -<
+      g_ [transform_ $ translate 20 20] $
+      g_ [transform_ $ rotateAround 45 10 10] $
+      block "white"
+    emit -<
+      g_ [transform_ $ translate 60 20] $
+      g_ [transform_ $ rotateAround 0 10 10] $
+      block "white"
+    emit -<
+      g_ [transform_ $ translate 20 60] $
+      g_ [transform_ $ rotateAround 0 10 10] $
+      block "white"
+    emit -<
+      g_ [transform_ $ translate 20 60] $
+      g_ [transform_ $ rotateAround 45 10 10] $
+      block "white"
+    emit -<
+      g_ [transform_ $ translate 60 60] $
+      g_ [transform_ $ rotateAround 45 10 10] $
+      block "blue"
+    t <- getTime -< ()
+    emit -<
+      g_ [transform_ $ translate (15 + (55-15)*(t/10)) 15] $
+      rect_ [width_ "30", height_ "30", stroke_ "black", fill_opacity_ "0" ]
+    ) -< ()
+  returnA -< ()
+  where
+    block c =
+      rect_ [width_ "20", height_ "20", stroke_ "black", fill_ c ]
