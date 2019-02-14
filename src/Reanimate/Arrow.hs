@@ -31,7 +31,7 @@ duration :: Double -> Animation a ()
 duration duration = Animation duration (\_ _ _ -> pure ())
 
 defineAnimation :: Animation a b -> Animation a b
-defineAnimation (Animation d fn) = Animation d (\_ t -> fn d (t `mod'` d))
+defineAnimation (Animation d fn) = Animation d (\_ t -> fn d (min t d))
 
 animationDuration :: Animation a b -> Double
 animationDuration (Animation d _) = d

@@ -9,3 +9,5 @@
 ![Morphing wave to circle](gifs/morphwave_circle.gif)
 
 ![Speed modification](gifs/progress.gif)
+
+![Highlight](gifs/lighlight.gif)
