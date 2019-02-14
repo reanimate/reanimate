@@ -54,13 +54,21 @@ renderGif ani target = do
     let s = fromIntegral frame / fromIntegral fps_gif
     let fileName = printf nameTemplate frame
     renderToFile (tmp </> fileName) (frameAt s ani)
-  rawSystem ffmpeg ["-f", "image2", "-i", tmp </> "render-%05d.svg"
-                   ,"-r", show fps_gif
+  rawSystem ffmpeg ["-i", tmp </> "render-%05d.svg"
+                   ,"-vf", "fps="++show fps_gif++",scale=320:-1:flags=lanczos,palettegen"
+                   ,"-t", show (animationDuration ani)
+                   ,tmp </> "palette.png" ]
+  rawSystem ffmpeg ["-i", tmp </> "render-%05d.svg"
+                   ,"-i", tmp </> "palette.png"
+                   ,"-filter_complex"
+                   ,"fps="++show fps_gif++",scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse"
+                   ,"-t", show (animationDuration ani)
                    , target]
      `finally`
        forM_ [0..frames] (\frame -> do
          let fileName = printf nameTemplate frame
          removeFile (tmp </> fileName))
+  removeFile (tmp </> "palette.png")
   return ()
 
 renderWebm :: Ani () -> FilePath -> IO ()

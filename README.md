@@ -156,4 +156,4 @@ scaling = adjustSpeed 2 $ syncAll
 
 ## Valentine's Day
 
-![Valentine's Day](gifs/valentine.webm)
+![Valentine's Day](gifs/valentine.gif)
