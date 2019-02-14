@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, Arrows #-}
+{-# LANGUAGE OverloadedStrings, Arrows, ParallelListComp #-}
 module Reanimate.Examples where
 
 import Lucid.Svg
@@ -220,3 +220,14 @@ circle_clip sub = proc () -> do
       g_ [clip_path_ $ "url(#"<>uniqName<>")"]
   where
     uniqName = "clip" -- XXX: Not very unique?
+
+
+scaling :: Ani ()
+scaling = adjustSpeed 2 $ defineAnimation $ syncAll
+  [ proc () ->
+    annotate' (defineAnimation animation)
+      -< g_ [transform_ $ translate x y] . g_ [transform_ $ scale 0.5 0.5]
+  | x <- [0,160]
+  , y <- [0,90]
+  | animation <- [sinewave, morph_wave, highlight, progressMeters]
+  ]

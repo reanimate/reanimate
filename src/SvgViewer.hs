@@ -15,7 +15,7 @@ import Data.Time
 import Reanimate.Arrow
 import Reanimate.Examples
 
-animation = clip_rect
+animation = scaling
 
 main :: IO ()
 main = do

@@ -133,7 +133,7 @@ signalOscillate from to = proc () -> do
 
 adjustSpeed :: Double -> Ani a -> Ani a
 adjustSpeed factor (Animation d fn) =
-  Animation (d/factor) (\dur t -> fn dur ((t*factor) `mod'` dur))
+  Animation (d/factor) (\dur t -> fn dur (t*factor))
 
 freeze :: Double -> Ani a -> Ani a
 freeze d (Animation d' fn) =
@@ -142,3 +142,14 @@ freeze d (Animation d' fn) =
 loop :: Ani a -> Ani a
 loop (Animation d fn) =
   Animation d (\dur t -> fn dur (mod' t d))
+
+sync :: Ani () -> Ani () -> Ani ()
+sync (Animation d1 fn1) (Animation d2 fn2) =
+  Animation (max d1 d2) $ \dur t () -> do
+    fn1 dur (t*(d1/maxDuration)) ()
+    fn2 dur (t*(d2/maxDuration)) ()
+  where
+    maxDuration = max d1 d2
+
+syncAll :: [Ani ()] -> Ani ()
+syncAll = foldl sync (arr (pure ()))
