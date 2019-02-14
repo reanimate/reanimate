@@ -108,6 +108,7 @@ morph_wave_circle = proc t -> do
 
 progressMeters :: Ani ()
 progressMeters = proc () -> do
+  emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
   annotate' progressMeter -< g_ [transform_ $ translate 40 20]
   annotate' (adjustSpeed 2 progressMeter) -< g_ [transform_ $ translate 140 20]
   annotate' (adjustSpeed 0.5 progressMeter) -< g_ [transform_ $ translate 240 20]
@@ -115,20 +116,20 @@ progressMeters = proc () -> do
   emit -< do
     text_ [x_ "55", y_ "150", font_size_ "20"
           , text_anchor_ "middle"
-          , fill_ "black"] "1x"
+          , fill_ "white"] "1x"
     text_ [x_ "155", y_ "150", font_size_ "20"
           , text_anchor_ "middle"
-          , fill_ "black"] "2x"
+          , fill_ "white"] "2x"
     text_ [x_ "255", y_ "150", font_size_ "20"
           , text_anchor_ "middle"
-          , fill_ "black"] "0.5x"
+          , fill_ "white"] "0.5x"
 
 progressMeter :: Ani ()
 progressMeter = defineAnimation $ proc () -> do
   duration 5 -< ()
   h <- signal 0 100 -< ()
-  emit -< rect_ [ width_ "30", height_ "100", stroke_ "black", fill_opacity_ "0" ]
-  emit -< rect_ [ width_ "30", height_ (pack $ show h), stroke_ "black", fill_ "grey" ]
+  emit -< rect_ [ width_ "30", height_ "100", stroke_ "white", stroke_width_ "2", fill_opacity_ "0" ]
+  emit -< rect_ [ width_ "30", height_ (pack $ show h), stroke_ "white", fill_ "white" ]
   returnA -< ()
 
 highlight :: Ani ()
