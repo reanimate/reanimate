@@ -224,9 +224,9 @@ heart = proc () -> do
                                           ,delay 3.2 (fallingLove 0.14)
                                           ,delay 7.7 (fallingLove 0.99) ]]
            , follow [heart_ani, sim [heart_disappear]]
-           , follow [backgroundDelay, message "Happy", message "Valentine's"
-                    , message "Day!", message "", message "See"
-                    , message "you", message "soon!"]]
+           , follow [backgroundDelay, message "", message ""
+                    , message "", message "爱", message ""
+                    , message "", message ""]]
      ] -<()
   where
     all_read = defineAnimation $ proc () -> do
