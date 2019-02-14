@@ -46,6 +46,7 @@ frameAt n (Animation d fn) = svg $ fn d (n `mod'` d) ()
     svg content = do
       doctype_
       with (svg11_ content) [width_ "320" , height_ "180", viewBox_ "0 0 320 180"]
+      -- with (svg11_ content) [width_ "1280" , height_ "720", viewBox_ "0 0 320 180"]
 
 emit :: Animation (Svg ()) ()
 emit = Animation 0 (\d t svg -> svg)

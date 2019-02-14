@@ -52,17 +52,9 @@ before :: Ani () -> Ani () -> Ani ()
 before (Animation d1 fn1) (Animation d2 fn2) =
   Animation (d1+d2) (\d t -> if t < d1 then fn1 d t else fn2 d (t-d1))
 
-andThen :: Ani () -> Ani () -> Ani ()
-andThen (Animation d1 fn1) (Animation d2 fn2) =
-  Animation (d1+d2) $ \d t -> if t < d1 then fn1 d t else do
-    fn1 d1 (d1-0.2)
-    fn2 d2 (t-d1)
-
 follow :: [Ani ()] -> Ani ()
-follow lst = foldr before (arr $ pure ()) lst
-
-followFreeze :: [Ani ()] -> Ani ()
-followFreeze = foldl andThen (arr $ pure ())
+follow [] = arr $ pure ()
+follow (x:xs) = foldl before x xs
 
 sim :: [Ani ()] -> Ani ()
 sim = foldr par (arr $ pure ())
@@ -71,7 +63,6 @@ par :: Ani () -> Ani () -> Ani ()
 par a b = proc t -> do
   a -< t
   b -< t
-  returnA -< ()
 
 type Path = [(Double, Double)]
 
@@ -119,13 +110,22 @@ signalSigmoid steepness from to = proc () -> do
 signalSCurve :: Double -> Double -> Double -> Ani Double
 signalSCurve steepness from to = proc () -> do
   s <- signal 0 1 -< ()
-  returnA -< if s < 0.5
+  let s' = if s < 0.5
               then 0.5 * (2*s)**steepness
               else 1-0.5 * (2 - 2*s)**steepness
+  returnA -< from + (to-from)*s'
 
 signalOscillate :: Double -> Double -> Ani Double
 signalOscillate from to = proc () -> do
   s <- signal from (to+diff) -< ()
+  returnA -< if s < to then s
+            else (to*2 - s)
+  where
+    diff = abs (to-from)
+
+signalOscillateSCurve :: Double -> Double -> Double -> Ani Double
+signalOscillateSCurve steepness from to = proc () -> do
+  s <- signalSCurve steepness from (to+diff) -< ()
   returnA -< if s < to then s
             else (to*2 - s)
   where
@@ -143,6 +143,10 @@ loop :: Ani a -> Ani a
 loop (Animation d fn) =
   Animation d (\dur t -> fn dur (mod' t d))
 
+repeatAni :: Double -> Ani a -> Ani a
+repeatAni times (Animation d fn) =
+  Animation (d*times) $ \dur t -> fn dur (mod' t d)
+
 sync :: Ani () -> Ani () -> Ani ()
 sync (Animation d1 fn1) (Animation d2 fn2) =
   Animation (max d1 d2) $ \dur t () -> do
@@ -153,6 +157,13 @@ sync (Animation d1 fn1) (Animation d2 fn2) =
 
 syncAll :: [Ani ()] -> Ani ()
 syncAll = foldl sync (arr (pure ()))
+
+delay :: Double -> Ani () -> Ani ()
+delay pause (Animation d fn) =
+  Animation (d+pause) $ \dur t a ->
+    if t < pause
+      then return ()
+      else fn dur (t-pause) a
 
 num_ :: (Show a, Num a) => (Text -> Attribute) -> (a -> Attribute)
 num_ attr n = attr (pack (show n))

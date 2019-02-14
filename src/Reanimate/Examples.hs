@@ -4,7 +4,9 @@ module Reanimate.Examples where
 import Lucid.Svg
 import Data.Text (Text, pack)
 import Data.Monoid ((<>))
-import Control.Arrow (returnA)
+import Control.Arrow (returnA, (>>>))
+import Text.Printf
+import Numeric
 
 import Reanimate.Arrow
 import Reanimate.Combinators
@@ -191,3 +193,136 @@ scaling = adjustSpeed 2 $ syncAll
   | x <- [0,160]
   , y <- [0,90]
   | animation <- [sinewave, morph_wave, highlight, progressMeters]]
+
+
+label :: String -> Ani ()
+label str = proc () -> do
+  emit -< text_ [x_ "0", y_ "16", font_size_ "16"
+        , fill_ "white"] (toHtml str)
+
+heart :: Ani ()
+heart = proc () -> do
+    emit -< rect_ [width_ "100%", height_ "100%", fill_ "#FFFFFF"]
+    -- duration 1 -< ()
+    -- annotate' drawHeart -< g_ [transform_ $ scale 0.5 0.5 <> " " <> translate 200 200]
+    emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
+    follow
+     [ all_read
+     , sim [ follow [background]
+           , follow [backgroundDelay, sim [delay 6.4 (fallingLove 0.09)
+                                          ,delay 4.9 (fallingLove 0.12)
+                                          ,delay 4.5 (fallingLove 0.88)
+                                          ,delay 0.3 (fallingLove 0.43)
+                                          ,delay 5.3 (fallingLove 0.93)
+                                          ,delay 0.1 (fallingLove 0.80)
+                                          ,delay 1.1 (fallingLove 0.39)
+                                          ,delay 2.3 (fallingLove 0.21)
+                                          ,delay 2.9 (fallingLove 0.77)
+                                          ,delay 3.4 (fallingLove 0.46)
+                                          ,delay 6.2 (fallingLove 0.19)
+                                          ,delay 5.9 (fallingLove 0.53)
+                                          ,delay 3.2 (fallingLove 0.14)
+                                          ,delay 7.7 (fallingLove 0.99) ]]
+           , follow [heart_ani, sim [heart_disappear]]
+           , follow [backgroundDelay, message "Happy", message "Valentine's"
+                    , message "Day!", message "", message "See"
+                    , message "you", message "soon!"]]
+     ] -<()
+  where
+    all_read = defineAnimation $ proc () -> do
+      duration 1 -< ()
+      emit -< rect_ [width_ "100%", height_ "100%", fill_ "red"]
+    background = defineAnimation $ proc () -> do
+      duration 2 -< ()
+      n <- signal 0 0xFF -< ()
+      let color = "#FF" ++ hex n ++ hex n
+      emit -< rect_ [width_ "100%", height_ "100%", fill_ $ pack color]
+    rev_background = defineAnimation $ proc () -> do
+      duration 2 -< ()
+      n <- signal 0xFF 0 -< ()
+      let color = "#FF" ++ hex n ++ hex n
+      emit -< rect_ [width_ "100%", height_ "100%", fill_ $ pack color]
+    backgroundDelay = defineAnimation $ proc () -> do
+      duration (animationDuration background-1) -< ()
+      returnA -< ()
+    heart_ani = repeatAni 10 $ defineAnimation $ proc () -> do
+      duration 1 -< ()
+      n <- signalOscillateSCurve 2 0.9 1.1 -< ()
+      annotate' drawHeart -< g_ [transform_ $ translate 160 110] . g_ [transform_ $ scale n n <> " "]
+    heart_disappear = defineAnimation $ proc () -> do
+      duration 3 -< ()
+      n  <- signal 0.9 10 -< ()
+      annotate' drawHeart -< g_ [transform_ $ translate 160 110] . g_ [transform_ $ scale n n <> " "]
+    white = loop $ defineAnimation $ proc () -> do
+      duration 1 -< ()
+      emit -< rect_ [width_ "100%", height_ "100%", fill_ "#FFFFFF"]
+    fallingLove xPos = defineAnimation $ proc () -> do
+      duration 2 -< ()
+      n <- signal 0 1 -< ()
+      o <- signalOscillate (-1) 1 -< ()
+      emit -<
+        g_ [transform_ $ translate (xPos*360) (210*n)] $
+          g_ [transform_ $ rotate (45*o)] $
+            text_ [font_size_ "18"
+                  ,text_anchor_ "middle"
+                  ,fill_ "red"] "爱"
+    message txt = defineAnimation $ proc () -> do
+      duration 1 -< ()
+      o <- signalOscillate 0 1 -< ()
+      n <- signalOscillateSCurve 2 0.9 1.1 -< ()
+      emit -<
+        g_ [transform_ $ translate 160 110, num_ opacity_ o] $
+        g_ [transform_ $ scale n n ] $
+          text_ [x_ "0", y_ "-12", font_size_ "24"
+                    , text_anchor_ "middle"
+                    , fill_ "white"] txt
+
+    drawHeart = proc () -> do
+      emit -<
+        g_ [transform_ $ translate (-170) (-260)] $
+          g_ [transform_ $ rotateAround 225 150 121 <> " " <> scale 0.4 0.4] $
+            path_ ([stroke_ "red", fill_"red", d_ dat])
+    dat = "M0 200 v-200 h200      a100,100 90 0,1 0,200     a100,100 90 0,1 -200,0     z"
+    hex n = if n < 0x10 then "0" ++ showHex (round n) ""
+            else showHex (round n) ""
+
+frequencies :: Ani ()
+frequencies = proc () -> do
+    emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
+    follow
+      [ drawLine
+      , drawFirstWave
+      , drawSecondWave
+      ] -< ()
+  where
+    freqs = [3, 5, 11, 2]; margin = 30; width = 260; height = 90
+    drawLine = defineAnimation $ proc () -> do
+      label "drawLine" -< ()
+      duration 1 -< ()
+      n <- signal margin (width+margin) -< ()
+      emit -< do
+        line_ [ num_ x1_ margin, num_ y1_ height
+              , num_ x2_ n,      num_ y2_ height
+              , stroke_ "white"]
+        circle_ [num_ cx_ n, num_ cy_ height, r_ "3", fill_ "red"]
+    drawFirstWave = defineAnimation $ proc () -> do
+      label "drawFirstWave" -< ()
+      duration 3 -< ()
+      n <- signal 0 1 -< ()
+      move <- signal 0 1 -< ()
+      emit -< do
+        g_ [transform_ $ translate margin height] $ renderPath $ morphPath line1 (wave1 move) n
+        let circleY = sum [ sin ((1+n)*pi*2*freq) * 20 | freq <- freqs ]
+        circle_ [num_ cx_ (width+margin), num_ cy_ (height+circleY*n), num_ r_ 3, fill_ "red"]
+    drawSecondWave = defineAnimation $ proc () -> do
+      label "drawSecondWave" -< ()
+      duration 3 -< ()
+      move <- signal 0 1 -< ()
+      emit -< do
+        g_ [transform_ $ translate margin height] $ renderPath $ wave1 move
+        let circleY = sum [ sin ((1+move)*pi*2*freq) * 20 | freq <- freqs ]
+        circle_ [num_ cx_ (width+margin), num_ cy_ (height+circleY), num_ r_ 3, fill_ "red"]
+    line1 = approxFnData 1000 $ \idx ->
+      (idx*width, 0)
+    wave1 n = approxFnData 1000 $ \idx ->
+      (idx*width, sum [ sin ((idx+n)*pi*2*freq) * 20 | freq <- freqs ])
