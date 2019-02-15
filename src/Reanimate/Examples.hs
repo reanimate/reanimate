@@ -350,15 +350,15 @@ latex_basic = proc () -> do
     text = latex "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
 
 bezier :: Ani ()
-bezier = adjustSpeed 0.5 $ proc () -> do
+bezier = adjustSpeed 0.4 $ proc () -> do
   emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
   follow
-    [orderN [pointA, pointB]
-    ,morph [pointA, pointA, pointB] [pointA, pointC, pointB]
-    ,orderN [pointA, pointC, pointB]
-    ,morph [pointA, pointC, pointB, pointB] [pointA, pointC, pointD, pointB]
-    ,orderN [pointA, pointC, pointD, pointB]
-    ,morph [pointA, pointC, pointD, pointB] [pointA, pointA, pointB, pointB]] -< ()
+    [ orderN [pointA, pointB]
+    , morph [pointA, pointA, pointB] [pointA, pointC, pointB]
+    , orderN [pointA, pointC, pointB]
+    , morph [pointA, pointC, pointB, pointB] [pointA, pointC, pointD, pointB]
+    , orderN [pointA, pointC, pointD, pointB]
+    , morph [pointA, pointC, pointD, pointB] [pointA, pointA, pointB, pointB]] -< ()
   where
     pointA = (70,130); pointB = (270,120); pointC = (30,30); pointD = (250,50)
 
@@ -375,18 +375,16 @@ bezier = adjustSpeed 0.5 $ proc () -> do
     orderN lst = defineAnimation $ proc () -> do
       duration 2 -< ()
       s <- signalOscillate 0 1 -< ()
-      emit -< orderN' (map const lst) s
+      emit -< primaryCircleAt =<< orderN' (map const lst) s <* mapM_ secondaryCircleAt lst
     orderN' [a] s = do
       renderPath $ take (round $ 1000*s) $ approxFnData 1000 $ \idx -> a idx
-      primaryCircleAt (a s)
+      return (a s)
     orderN' lst s = do
       forM_ (zip lst (tail lst)) $ \(a,b) -> renderPath $
           approxFnData 1000 $ \idx ->
             between (a s) (b s) idx
       let middlePoints = map (\(a,b) -> \idx -> between (a idx) (b idx) idx) (zip lst (tail lst))
-      mapM_ secondaryCircleAt $ map ($s) middlePoints
-      mapM_ secondaryCircleAt $ map ($s) lst
-      orderN' middlePoints s
+      orderN' middlePoints s <* mapM_ secondaryCircleAt (map ($s) middlePoints)
 
     secondaryCircleAt (x,y) = circle_ [num_ cx_ x, num_ cy_ y, num_ r_ 3, fill_ "green"]
     primaryCircleAt (x,y) = circle_ [num_ cx_ x, num_ cy_ y, num_ r_ 3, fill_ "red"]
