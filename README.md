@@ -157,3 +157,17 @@ scaling = adjustSpeed 2 $ syncAll
 ## Valentine's Day
 
 ![Valentine's Day](gifs/valentine.gif)
+
+## Basic LaTeX
+
+```
+latex_basic :: Ani ()
+latex_basic = proc () -> do
+  duration 1 -< ()
+  emit -< do
+    rect_ [width_ "100%", height_ "100%", fill_ "black"]
+    g_ [transform_ $ translate 5 50] $
+      g_ [transform_ $ scale 4 4, fill_ "white"] $
+        latex "$\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}$"
+```
+![Basic LaTeX](gifs/latex_basic.gif)
