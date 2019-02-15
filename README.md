@@ -160,7 +160,7 @@ scaling = adjustSpeed 2 $ syncAll
 
 ## Basic LaTeX
 
-```
+```haskell
 latex_basic :: Ani ()
 latex_basic = proc () -> do
   duration 1 -< ()
