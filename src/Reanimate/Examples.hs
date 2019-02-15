@@ -288,14 +288,16 @@ heart = proc () -> do
 frequencies :: Ani ()
 frequencies = proc () -> do
     emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
-    follow
+    n <- signal 0 2 -< ()
+    follow -- [drawUpWave
       [ drawLine
       , drawFirstWave
       , drawSecondWave
-      ] -< ()
+      , drawUpWave
+      ] -< n
   where
-    freqs = [3, 5, 11, 2]; margin = 30; width = 260; height = 90
-    drawLine = defineAnimation $ proc () -> do
+    freqs = [11, 5, 17]; margin = 30; width = 260; height = 90
+    drawLine = defineAnimation $ proc _ -> do
       label "drawLine" -< ()
       duration 1 -< ()
       n <- signal margin (width+margin) -< ()
@@ -304,23 +306,30 @@ frequencies = proc () -> do
               , num_ x2_ n,      num_ y2_ height
               , stroke_ "white"]
         circle_ [num_ cx_ n, num_ cy_ height, r_ "3", fill_ "red"]
-    drawFirstWave = defineAnimation $ proc () -> do
+    drawFirstWave = defineAnimation $ proc move -> do
       label "drawFirstWave" -< ()
       duration 3 -< ()
       n <- signal 0 1 -< ()
-      move <- signal 0 1 -< ()
       emit -< do
         g_ [transform_ $ translate margin height] $ renderPath $ morphPath line1 (wave1 move) n
-        let circleY = sum [ sin ((1+n)*pi*2*freq) * 20 | freq <- freqs ]
+        let circleY = sum [ sin ((1+move)*pi*2*freq) * 20 | freq <- freqs ]
         circle_ [num_ cx_ (width+margin), num_ cy_ (height+circleY*n), num_ r_ 3, fill_ "red"]
-    drawSecondWave = defineAnimation $ proc () -> do
+    drawSecondWave = defineAnimation $ proc move -> do
       label "drawSecondWave" -< ()
       duration 3 -< ()
-      move <- signal 0 1 -< ()
       emit -< do
         g_ [transform_ $ translate margin height] $ renderPath $ wave1 move
         let circleY = sum [ sin ((1+move)*pi*2*freq) * 20 | freq <- freqs ]
         circle_ [num_ cx_ (width+margin), num_ cy_ (height+circleY), num_ r_ 3, fill_ "red"]
+    drawUpWave = defineAnimation $ proc move -> do
+      label "drawUpWave" -< ()
+      duration 2 -< ()
+      n <- signal 0 1 -< ()
+      emit -< do
+        g_ [transform_ $ scale 1 (1-0.5*n)] $ do
+          g_ [transform_ $ translate margin height] $ renderPath $ wave1 move
+          let circleY = sum [ sin ((1+move)*pi*2*freq) * 20 | freq <- freqs ]
+          circle_ [num_ cx_ (width+margin), num_ cy_ (height+circleY), num_ r_ 3, fill_ "red"]
     line1 = approxFnData 1000 $ \idx ->
       (idx*width, 0)
     wave1 n = approxFnData 1000 $ \idx ->
