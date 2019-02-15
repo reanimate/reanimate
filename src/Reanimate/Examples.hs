@@ -370,24 +370,26 @@ bezier = adjustSpeed 0.5 $ proc () -> do
         renderPath $
           approxFnData 1000 $ \idx ->
             between a b idx
-      emit -< mapM_ circleAt new'
+      emit -< mapM_ secondaryCircleAt new'
+      emit -< primaryCircleAt (head new')
     orderN lst = defineAnimation $ proc () -> do
       duration 2 -< ()
       s <- signalOscillate 0 1 -< ()
       emit -< orderN' (map const lst) s
-      emit -< mapM_ circleAt lst
     orderN' [a] s = do
       renderPath $ take (round $ 1000*s) $ approxFnData 1000 $ \idx -> a idx
-      circle_ [num_ cx_ (fst (a s)), num_ cy_ (snd (a s)), num_ r_ 3, fill_ "red"]
+      primaryCircleAt (a s)
     orderN' lst s = do
       forM_ (zip lst (tail lst)) $ \(a,b) -> renderPath $
           approxFnData 1000 $ \idx ->
             between (a s) (b s) idx
       let middlePoints = map (\(a,b) -> \idx -> between (a idx) (b idx) idx) (zip lst (tail lst))
-      mapM_ (\p -> circleAt (p s)) middlePoints
+      mapM_ secondaryCircleAt $ map ($s) middlePoints
+      mapM_ secondaryCircleAt $ map ($s) lst
       orderN' middlePoints s
 
-    circleAt (x,y) = circle_ [num_ cx_ x, num_ cy_ y, num_ r_ 3, fill_ "green"]
+    secondaryCircleAt (x,y) = circle_ [num_ cx_ x, num_ cy_ y, num_ r_ 3, fill_ "green"]
+    primaryCircleAt (x,y) = circle_ [num_ cx_ x, num_ cy_ y, num_ r_ 3, fill_ "red"]
     between a b _ | a==b = a
     between (x1, y1) (x2, y2) idx =
       ( x1 + idx * (x2 - x1)
