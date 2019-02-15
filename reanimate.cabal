@@ -32,8 +32,9 @@ executable reanimate-viewer
                       Reanimate.Render
                       Reanimate.Examples
                       Reanimate.Combinators
+                      Reanimate.LaTeX
   build-depends:       base >=4.12 && <4.13, cairo >=0.13 && <0.14, gtk,
                        svgcairo, lucid-svg, time, text, unix, lucid, reanimate,
-                       filepath, process, directory
+                       filepath, process, directory, containers
   hs-source-dirs:      src
   default-language:    Haskell2010

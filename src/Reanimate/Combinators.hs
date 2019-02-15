@@ -71,6 +71,7 @@ approxFnData steps fn =
   fn 0 : [ fn (fromIntegral n/fromIntegral steps) | n <- [0..steps] ]
 
 renderPath :: Path -> Svg ()
+renderPath [] = return ()
 renderPath dat =
     path_ [stroke_ "white", fill_ "translucent", d_ path]
   where

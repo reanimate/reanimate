@@ -5,6 +5,7 @@ import Lucid.Svg
 import Data.Text (Text, pack)
 import Data.Monoid ((<>))
 import Control.Arrow (returnA, (>>>))
+import Control.Monad
 import Text.Printf
 import Numeric
 
@@ -347,3 +348,47 @@ latex_basic = proc () -> do
       g_ [fill_ "white", num_ fill_opacity_ s]                     text
   where
     text = latex "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
+
+bezier :: Ani ()
+bezier = adjustSpeed 0.5 $ proc () -> do
+  emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
+  follow
+    [orderN [pointA, pointB]
+    ,morph [pointA, pointA, pointB] [pointA, pointC, pointB]
+    ,orderN [pointA, pointC, pointB]
+    ,morph [pointA, pointC, pointB, pointB] [pointA, pointC, pointD, pointB]
+    ,orderN [pointA, pointC, pointD, pointB]
+    ,morph [pointA, pointC, pointD, pointB] [pointA, pointA, pointB, pointB]] -< ()
+  where
+    pointA = (70,130); pointB = (270,120); pointC = (30,30); pointD = (250,50)
+
+    morph old new = defineAnimation $ proc () -> do
+      duration 0.5 -< ()
+      s <- signal 0 1 -< ()
+      let new' = map (\(a,b) -> between a b s) (zip old new)
+      emit -< forM_ (zip new' (tail new')) $ \(a,b) -> do
+        renderPath $
+          approxFnData 1000 $ \idx ->
+            between a b idx
+      emit -< mapM_ circleAt new'
+    orderN lst = defineAnimation $ proc () -> do
+      duration 2 -< ()
+      s <- signalOscillate 0 1 -< ()
+      emit -< orderN' (map const lst) s
+      emit -< mapM_ circleAt lst
+    orderN' [a] s = do
+      renderPath $ take (round $ 1000*s) $ approxFnData 1000 $ \idx -> a idx
+      circle_ [num_ cx_ (fst (a s)), num_ cy_ (snd (a s)), num_ r_ 3, fill_ "red"]
+    orderN' lst s = do
+      forM_ (zip lst (tail lst)) $ \(a,b) -> renderPath $
+          approxFnData 1000 $ \idx ->
+            between (a s) (b s) idx
+      let middlePoints = map (\(a,b) -> \idx -> between (a idx) (b idx) idx) (zip lst (tail lst))
+      mapM_ (\p -> circleAt (p s)) middlePoints
+      orderN' middlePoints s
+
+    circleAt (x,y) = circle_ [num_ cx_ x, num_ cy_ y, num_ r_ 3, fill_ "green"]
+    between a b _ | a==b = a
+    between (x1, y1) (x2, y2) idx =
+      ( x1 + idx * (x2 - x1)
+      , y1 + idx * (x2-x1) * (y2 - y1) / (x2 - x1))

@@ -8,6 +8,10 @@ The example gifs are rendered at 25 fps.
 
 # Examples
 
+## Bezier curves
+
+![Bezier curves](gifs/bezier.gif)
+
 ## Sine wave
 
 ```haskell
