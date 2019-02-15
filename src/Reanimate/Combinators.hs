@@ -48,11 +48,11 @@ progress ani = proc () -> do
                   , fill_ "white"] (toHtml txt)
 
 
-before :: Ani () -> Ani () -> Ani ()
+before :: Animation a () -> Animation a () -> Animation a ()
 before (Animation d1 fn1) (Animation d2 fn2) =
   Animation (d1+d2) (\d t -> if t < d1 then fn1 d t else fn2 d (t-d1))
 
-follow :: [Ani ()] -> Ani ()
+follow :: [Animation a ()] -> Animation a ()
 follow [] = arr $ pure ()
 follow (x:xs) = foldl before x xs
 
