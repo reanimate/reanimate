@@ -29,9 +29,9 @@ sinewave = proc () -> do
       line_ [num_ x1_ margin, num_ x2_ (margin+width), num_ y1_ height, num_ y2_ height
             , stroke_ "white"]
 
-    circX <- signalOscillate margin (width+margin) -< ()
-    let circY = height + sin (idx*pi*2*freq) * 50
-    emit -< circle_ [num_ cx_ circX, num_ cy_ circY, r_ "3", fill_ "red"]
+    let (circX, circY) = wave idx
+    emit -< g_ [transform_ $ translate margin height] $
+      circle_ [num_ cx_ circX, num_ cy_ circY, r_ "3", fill_ "red"]
   where
     freq = 3; margin = 30; width = 260; height = 90
     wave idx = (idx*width, sin (idx*pi*2*freq) * 50)
