@@ -93,6 +93,10 @@ tex_prologue =
   \\\DisableLigatures{encoding = *, family = * }\n\
   \%\\usepackage[UTF8]{ctex}\n\
   \\\linespread{1}\n\
-  \\\begin{document}\n"
+  \\\begin{document}\n\
+  \\\begin{align*}\n"
 
-tex_epilogue = "\n\\end{document}"
+tex_epilogue =
+  "\n\
+  \\\end{align*}\n\
+  \\\end{document}"
