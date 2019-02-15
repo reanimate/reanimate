@@ -165,14 +165,11 @@ latex_basic :: Ani ()
 latex_basic = proc () -> do
   duration 2 -< ()
   s <- signalOscillate 0 1 -< ()
-  emit -< do
-    rect_ [width_ "100%", height_ "100%", fill_ "black"]
-    g_ [transform_ $ translate 20 15] $
-      g_ [transform_ $ scale 4 4, stroke_ "white", fill_opacity_ "0", stroke_width_ "0.1"] $
-        text
-    g_ [transform_ $ translate 20 15] $
-      g_ [transform_ $ scale 4 4, fill_ "white", num_ fill_opacity_ s] $
-        text
+  emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
+  emit -<
+    g_ [transform_ $ translate 20 15 <> " " <> scale 4 4] $ do
+      g_ [stroke_ "white", fill_opacity_ "0", stroke_width_ "0.1"] text
+      g_ [fill_ "white", num_ fill_opacity_ s]                     text
   where
     text = latex "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
 ```
