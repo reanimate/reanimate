@@ -1,6 +1,9 @@
 {-# LANGUAGE ScopedTypeVariables, OverloadedStrings #-}
-module Reanimate.LaTeX where
+module Reanimate.LaTeX (latex) where
 
+import Data.IORef
+import qualified Data.Map as Map
+import Data.Map (Map)
 import System.Process
 import System.Exit
 import System.IO
@@ -10,13 +13,20 @@ import System.Directory
 import Control.Exception
 import Lucid (toHtmlRaw, toHtml)
 import Lucid.Svg (Svg, text_, font_size_, fill_)
---toHtmlRaw svgFile
 
---latex -interaction=batchmode -halt-on-error
---dvisvgm {file} -n -v 0 -o out
+{-# NOINLINE cache #-}
+cache :: IORef (Map String (Svg ()))
+cache = unsafePerformIO (newIORef Map.empty)
 
 latex :: String -> Svg ()
-latex = unsafePerformIO . latexToSVG
+latex tex = unsafePerformIO $ do
+  store <- readIORef cache
+  case Map.lookup tex store of
+    Just svg -> return svg
+    Nothing -> do
+      svg <- latexToSVG tex
+      atomicModifyIORef cache (\store -> (Map.insert tex svg store, svg))
+
 
 latexToSVG :: String -> IO (Svg ())
 latexToSVG tex = handle (\(e::SomeException) -> return (failedSvg tex)) $ do
