@@ -332,6 +332,6 @@ latex_basic = proc () -> do
   duration 1 -< ()
   emit -< do
     rect_ [width_ "100%", height_ "100%", fill_ "black"]
-    g_ [transform_ $ translate 5 50] $
+    g_ [transform_ $ translate 20 20] $
       g_ [transform_ $ scale 4 4, fill_ "white"] $
-        latex "$\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}$"
+        latex "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
