@@ -10,8 +10,7 @@ import Numeric
 
 import Reanimate.Arrow
 import Reanimate.Combinators
-
-import Debug.Trace
+import Reanimate.LaTeX
 
 sinewave :: Ani ()
 sinewave = proc () -> do
@@ -326,3 +325,13 @@ frequencies = proc () -> do
       (idx*width, 0)
     wave1 n = approxFnData 1000 $ \idx ->
       (idx*width, sum [ sin ((idx+n)*pi*2*freq) * 20 | freq <- freqs ])
+
+
+latex_basic :: Ani ()
+latex_basic = proc () -> do
+  duration 1 -< ()
+  emit -< do
+    rect_ [width_ "100%", height_ "100%", fill_ "black"]
+    g_ [transform_ $ translate 5 50] $
+      g_ [transform_ $ scale 4 4, fill_ "white"] $
+        latex "$\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}$"

@@ -20,6 +20,7 @@ library
                       Reanimate.Render
                       Reanimate.Examples
                       Reanimate.Combinators
+                      Reanimate.LaTeX
   build-depends:       base >=4.12 && <4.13,
                        lucid-svg, time, text, unix, lucid, filepath, process, directory
 
