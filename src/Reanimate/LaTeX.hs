@@ -28,7 +28,11 @@ latexToSVG tex = handle (\(e::SomeException) -> return (failedSvg tex)) $ do
     appendFile tex_file tex
     appendFile tex_file tex_epilogue
     runCmd latex ["-interaction=batchmode", "-halt-on-error", "-output-directory="++tmp_dir, tex_file]
-    runCmd dvisvgm [dvi_file, "-n","-v", "0", "-o",svg_file]
+    runCmd dvisvgm [ dvi_file
+                   , "--exact"    -- better bboxes.
+                   , "--bbox=1,1" -- increase bbox size.
+                   , "--no-fonts" -- use glyphs instead of fonts.
+                   ,"--verbosity=0", "-o",svg_file]
     svg_data <- readFile svg_file
     evaluate (length svg_data)
     return $ toHtmlRaw $ unlines $ drop 1 $ lines svg_data
