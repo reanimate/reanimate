@@ -2,16 +2,12 @@ module Reanimate.Render
   ( render
   ) where
 
-import           Control.Exception  (evaluate, finally, throwIO)
 import           Control.Monad      (forM_)
 import           Lucid.Svg          (renderToFile)
 import           Reanimate.Arrow    (Ani, animationDuration, frameAt)
 import           Reanimate.Examples
-import           System.Directory
-import           System.Exit
-import           System.FilePath
-import           System.IO
-import           System.Process
+import           Reanimate.Misc
+import           System.FilePath    (takeExtension, (</>))
 import           Text.Printf        (printf)
 
 
@@ -74,36 +70,3 @@ generateFrames ani rate action = withTempDir $ \tmp -> do
     frameCount = round (animationDuration ani * fromIntegral rate) :: Int
     nameTemplate :: String
     nameTemplate = "render-%05d.svg"
-
-requireExecutable :: String -> IO FilePath
-requireExecutable exec = do
-  mbPath <- findExecutable exec
-  case mbPath of
-    Nothing   -> error $ "Couldn't find executable: " ++ exec
-    Just path -> return path
-
-runCmd exec args = do
-  (ret, stdout, stderr) <- readProcessWithExitCode exec args ""
-  evaluate (length stdout + length stderr)
-  case ret of
-    ExitSuccess -> return ()
-    ExitFailure err -> do
-      putStrLn $
-        "Failed to run: " ++ showCommandForUser exec args ++ "\n" ++
-        "Error code: " ++ show err ++ "\n" ++
-        "stderr: " ++ show stderr
-      throwIO (ExitFailure err)
-
-withTempDir action = do
-  dir <- getTemporaryDirectory
-  (path, handle) <- openTempFile dir "reanimate-XXXXXX"
-  hClose handle
-  removeFile path
-  createDirectory (dir </> path)
-  action (dir </> path) `finally` removeDirectoryRecursive (dir </> path)
-
-withTempFile ext action = do
-  dir <- getTemporaryDirectory
-  (path, handle) <- openTempFile dir ("reanimate-XXXXXX" <.> ext)
-  hClose handle
-  action path `finally` removeFile path

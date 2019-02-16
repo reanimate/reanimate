@@ -21,6 +21,7 @@ library
                       Reanimate.Examples
                       Reanimate.Combinators
                       Reanimate.LaTeX
+  other-modules:      Reanimate.Misc
   build-depends:       base >=4.12 && <4.13,
                        lucid-svg, time, text, unix, lucid, filepath, process, directory,
                        containers, svg-tree, xml, bytestring
@@ -33,6 +34,7 @@ executable reanimate-viewer
                       Reanimate.Examples
                       Reanimate.Combinators
                       Reanimate.LaTeX
+                      Reanimate.Misc
   build-depends:       base >=4.12 && <4.13, cairo >=0.13 && <0.14, gtk,
                        svgcairo, lucid-svg, time, text, unix, lucid, reanimate,
                        filepath, process, directory, containers, svg-tree, xml,
