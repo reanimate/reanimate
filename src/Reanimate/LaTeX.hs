@@ -7,7 +7,7 @@ import qualified Data.ByteString       as B
 import           Data.IORef
 import           Data.Map              (Map)
 import qualified Data.Map              as Map
-import           Lucid                 (toHtml, toHtmlRaw)
+import           Lucid                 (ToHtml(..))
 import           Lucid.Svg             (Svg, fill_, font_size_, text_)
 import           System.Directory
 import           System.Exit

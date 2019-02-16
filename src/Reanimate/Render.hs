@@ -1,100 +1,109 @@
-module Reanimate.Render where
+module Reanimate.Render
+  ( render
+  ) where
 
-import Lucid.Svg
-import Control.Monad
-import Control.Exception
-import System.FilePath
-import System.Directory
-import System.Process
-import Text.Printf
-import Reanimate.Arrow
-import Reanimate.Examples
+import           Control.Exception  (evaluate, finally, throwIO)
+import           Control.Monad      (forM_)
+import           Lucid.Svg          (renderToFile)
+import           Reanimate.Arrow    (Ani, animationDuration, frameAt)
+import           Reanimate.Examples
+import           System.Directory
+import           System.Exit
+import           System.FilePath
+import           System.IO
+import           System.Process
+import           Text.Printf        (printf)
 
-fps :: Int
-fps = 60
 
-fps_webm :: Int
-fps_webm = 30
+data Format = RenderMp4 | RenderGif | RenderWebm
 
-fps_gif :: Int
-fps_gif = 25
-
-nameTemplate :: String
-nameTemplate = "render-%05d.svg"
+formatFPS :: Format -> Int
+formatFPS RenderMp4  = 60
+formatFPS RenderGif  = 25
+formatFPS RenderWebm = 30
 
 render :: Ani () -> FilePath -> IO ()
-render ani target = do
+render ani target =
+  case takeExtension target of
+    ".mp4"  -> renderFormat RenderMp4 ani target
+    ".gif"  -> renderFormat RenderGif ani target
+    ".webm" -> renderFormat RenderWebm ani target
+    ext     -> error $ "Unknown media format: " ++ show ext
+
+renderFormat :: Format -> Ani () -> FilePath -> IO ()
+renderFormat format ani target = do
   putStrLn $ "Starting render of animation: " ++ show (round (animationDuration ani)) ++ "s"
-  let frames :: Int
-      frames = round (animationDuration ani * fromIntegral fps)
   ffmpeg <- requireExecutable "ffmpeg"
-  tmp <- getTemporaryDirectory
-  forM_ [0..frames] $ \frame -> do
-    let s = fromIntegral frame / fromIntegral fps
-    let fileName = printf nameTemplate frame
-    renderToFile (tmp </> fileName) (frameAt s ani)
-  rawSystem ffmpeg ["-r", show fps, "-i", tmp </> "render-%05d.svg"
-                       , "-c:v", "libx264", "-vf", "fps="++show fps
-                       , "-pix_fmt", "yuv420p", target]
-     `finally`
-       forM_ [0..frames] (\frame -> do
-         let fileName = printf nameTemplate frame
-         removeFile (tmp </> fileName))
-  return ()
+  generateFrames ani fps $ \template ->
+    case format of
+      RenderMp4 ->
+        runCmd ffmpeg ["-r", show fps, "-i", template, "-y"
+                      , "-c:v", "libx264", "-vf", "fps="++show fps
+                      , "-pix_fmt", "yuv420p", target]
+      RenderGif -> withTempFile "png" $ \palette -> do
+        runCmd ffmpeg ["-i", template, "-y"
+                      ,"-vf", "fps="++show fps++",scale=320:-1:flags=lanczos,palettegen"
+                      ,"-t", show (animationDuration ani)
+                      , palette ]
+        runCmd ffmpeg ["-i", template, "-y"
+                      ,"-i", palette
+                      ,"-filter_complex"
+                      ,"fps="++show fps++",scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse"
+                      ,"-t", show (animationDuration ani)
+                      , target]
+      RenderWebm ->
+        runCmd ffmpeg ["-r", show fps, "-i", template, "-y"
+                      , "-c:v", "libvpx-vp9", "-vf", "fps="++show fps
+                      , target]
+  where
+    fps = formatFPS format
 
+---------------------------------------------------------------------------------
+-- Helpers
+-- XXX: Move to a different module and unify with helpers from LaTeX.
 
-renderGif :: Ani () -> FilePath -> IO ()
-renderGif ani target = do
-  putStrLn $ "Starting render of animation: " ++ show (round (animationDuration ani)) ++ "s"
-  let frames :: Int
-      frames = round (animationDuration ani * fromIntegral fps_gif)
-  ffmpeg <- requireExecutable "ffmpeg"
-  tmp <- getTemporaryDirectory
-  forM_ [0..frames] $ \frame -> do
-    let s = fromIntegral frame / fromIntegral fps_gif
-    let fileName = printf nameTemplate frame
-    renderToFile (tmp </> fileName) (frameAt s ani)
-  rawSystem ffmpeg ["-i", tmp </> "render-%05d.svg"
-                   ,"-vf", "fps="++show fps_gif++",scale=320:-1:flags=lanczos,palettegen"
-                   ,"-t", show (animationDuration ani)
-                   ,tmp </> "palette.png" ]
-  rawSystem ffmpeg ["-i", tmp </> "render-%05d.svg"
-                   ,"-i", tmp </> "palette.png"
-                   ,"-filter_complex"
-                   ,"fps="++show fps_gif++",scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse"
-                   ,"-t", show (animationDuration ani)
-                   , target]
-     `finally`
-       forM_ [0..frames] (\frame -> do
-         let fileName = printf nameTemplate frame
-         removeFile (tmp </> fileName))
-  removeFile (tmp </> "palette.png")
-  return ()
-
-renderWebm :: Ani () -> FilePath -> IO ()
-renderWebm ani target = do
-  putStrLn $ "Starting render of animation: " ++ show (round (animationDuration ani)) ++ "s"
-  let frames :: Int
-      frames = round (animationDuration ani * fromIntegral fps_webm)
-  ffmpeg <- requireExecutable "ffmpeg"
-  tmp <- getTemporaryDirectory
-  forM_ [0..frames] $ \frame -> do
-    let s = fromIntegral frame / fromIntegral fps_webm
-    let fileName = printf nameTemplate frame
-    renderToFile (tmp </> fileName) (frameAt s ani)
-  rawSystem ffmpeg ["-r", show fps_webm, "-i", tmp </> "render-%05d.svg"
-                   , "-c:v", "libvpx-vp9", "-vf", "fps="++show fps_webm
-                   , target]
-     `finally`
-       forM_ [0..frames] (\frame -> do
-         let fileName = printf nameTemplate frame
-         removeFile (tmp </> fileName))
-  return ()
-
+-- XXX: Use threads
+generateFrames ani rate action = withTempDir $ \tmp -> do
+    let frameName nth = tmp </> printf nameTemplate nth
+    forM_ frames $ \n ->
+      renderToFile (frameName n) (nthFrame n)
+    action (tmp </> nameTemplate)
+  where
+    frames = [0..frameCount-1]
+    nthFrame nth = frameAt (recip (fromIntegral rate) * fromIntegral nth) ani
+    frameCount = round (animationDuration ani * fromIntegral rate) :: Int
+    nameTemplate :: String
+    nameTemplate = "render-%05d.svg"
 
 requireExecutable :: String -> IO FilePath
 requireExecutable exec = do
   mbPath <- findExecutable exec
   case mbPath of
-    Nothing -> error $ "Couldn't find executable: " ++ exec
+    Nothing   -> error $ "Couldn't find executable: " ++ exec
     Just path -> return path
+
+runCmd exec args = do
+  (ret, stdout, stderr) <- readProcessWithExitCode exec args ""
+  evaluate (length stdout + length stderr)
+  case ret of
+    ExitSuccess -> return ()
+    ExitFailure err -> do
+      putStrLn $
+        "Failed to run: " ++ showCommandForUser exec args ++ "\n" ++
+        "Error code: " ++ show err ++ "\n" ++
+        "stderr: " ++ show stderr
+      throwIO (ExitFailure err)
+
+withTempDir action = do
+  dir <- getTemporaryDirectory
+  (path, handle) <- openTempFile dir "reanimate-XXXXXX"
+  hClose handle
+  removeFile path
+  createDirectory (dir </> path)
+  action (dir </> path) `finally` removeDirectoryRecursive (dir </> path)
+
+withTempFile ext action = do
+  dir <- getTemporaryDirectory
+  (path, handle) <- openTempFile dir ("reanimate-XXXXXX" <.> ext)
+  hClose handle
+  action path `finally` removeFile path
