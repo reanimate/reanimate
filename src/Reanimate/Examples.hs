@@ -1,17 +1,19 @@
-{-# LANGUAGE OverloadedStrings, Arrows, ParallelListComp #-}
+{-# LANGUAGE Arrows            #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ParallelListComp  #-}
 module Reanimate.Examples where
 
-import Lucid.Svg
-import Data.Text (Text, pack)
-import Data.Monoid ((<>))
-import Control.Arrow (returnA, (>>>))
-import Control.Monad
-import Text.Printf
-import Numeric
+import           Control.Arrow         (returnA, (>>>))
+import           Control.Monad
+import           Data.Monoid           ((<>))
+import           Data.Text             (Text, pack)
+import           Lucid.Svg
+import           Numeric
+import           Text.Printf
 
-import Reanimate.Arrow
-import Reanimate.Combinators
-import Reanimate.LaTeX
+import           Reanimate.Arrow
+import           Reanimate.Combinators
+import           Reanimate.LaTeX
 
 sinewave :: Ani ()
 sinewave = proc () -> do

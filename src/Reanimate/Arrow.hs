@@ -1,13 +1,13 @@
-{-# LANGUAGE OverloadedStrings, Arrows #-}
+{-# LANGUAGE Arrows            #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Reanimate.Arrow where
 
-import Control.Arrow
+import           Control.Arrow
 import qualified Control.Category as C
-import Data.Text (Text, pack)
-import Data.Monoid ((<>))
-import Data.Fixed
-import Lucid.Svg
-import Lucid ()
+import           Data.Fixed
+import           Data.Monoid      ((<>))
+import           Data.Text        (Text, pack)
+import           Lucid.Svg
 
 type Duration = Double
 type Time = Double
