@@ -2,19 +2,16 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Reanimate.LaTeX (latex) where
 
-import           Control.Exception
+import           Control.Exception     (SomeException, handle)
 import qualified Data.ByteString       as B
 import           Data.IORef
 import           Data.Map              (Map)
 import qualified Data.Map              as Map
-import           Lucid                 (ToHtml(..))
+import           Lucid                 (ToHtml (..))
 import           Lucid.Svg             (Svg, fill_, font_size_, text_)
-import           System.Directory
-import           System.Exit
-import           System.FilePath
-import           System.IO
-import           System.IO.Unsafe
-import           System.Process
+import           Reanimate.Misc
+import           System.FilePath       (replaceExtension, takeFileName, (</>))
+import           System.IO.Unsafe      (unsafePerformIO)
 
 import           Graphics.Svg          (loadSvgFile, parseSvgFile,
                                         xmlOfDocument)
@@ -58,40 +55,6 @@ failedSvg :: String -> Svg ()
 failedSvg tex =
   text_ [ font_size_ "20"
         , fill_ "white"] (toHtml $ "bad latex: "++tex)
-
-runCmd exec args = do
-  (ret, stdout, stderr) <- readProcessWithExitCode exec args ""
-  evaluate (length stdout + length stderr)
-  case ret of
-    ExitSuccess -> return ()
-    ExitFailure err -> do
-      putStrLn $
-        "Failed to run: " ++ showCommandForUser exec args ++ "\n" ++
-        "Error code: " ++ show err ++ "\n" ++
-        "stderr: " ++ show stderr
-      throwIO (ExitFailure err)
-
-withTempDir action = do
-  dir <- getTemporaryDirectory
-  (path, handle) <- openTempFile dir "reanimate-XXXXXX"
-  hClose handle
-  removeFile path
-  createDirectory (dir </> path)
-  action (dir </> path) `finally` removeDirectoryRecursive (dir </> path)
-
-withTempFile ext action = do
-  dir <- getTemporaryDirectory
-  (path, handle) <- openTempFile dir ("reanimate-XXXXXX" <.> ext)
-  hClose handle
-  action path `finally` removeFile path
-
-requireExecutable :: String -> IO FilePath
-requireExecutable exec = do
-  mbPath <- findExecutable exec
-  case mbPath of
-    Nothing   -> error $ "Couldn't find executable: " ++ exec
-    Just path -> return path
-
 
 tex_prologue =
   "\\documentclass[preview]{standalone}\n\
