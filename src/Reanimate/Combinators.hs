@@ -1,14 +1,15 @@
-{-# LANGUAGE OverloadedStrings, Arrows #-}
+{-# LANGUAGE Arrows            #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Reanimate.Combinators where
 
-import Control.Arrow
-import Data.Text (Text, pack)
-import qualified Data.Text as T
-import Data.Monoid ((<>))
-import Data.Fixed
-import Lucid.Svg
+import           Control.Arrow
+import           Data.Fixed      (mod')
+import           Data.Monoid     ((<>))
+import           Data.Text       (Text, pack)
+import qualified Data.Text       as T
+import           Lucid.Svg
 
-import Reanimate.Arrow
+import           Reanimate.Arrow
 
 fadeIn :: Double -> Ani a -> Ani a
 fadeIn window (Animation d fn) =
@@ -53,7 +54,7 @@ before (Animation d1 fn1) (Animation d2 fn2) =
   Animation (d1+d2) (\d t -> if t < d1 then fn1 d t else fn2 d (t-d1))
 
 follow :: [Animation a ()] -> Animation a ()
-follow [] = arr $ pure ()
+follow []     = arr $ pure ()
 follow (x:xs) = foldl before x xs
 
 sim :: [Ani ()] -> Ani ()
