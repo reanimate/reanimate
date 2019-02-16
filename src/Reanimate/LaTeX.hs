@@ -1,18 +1,24 @@
-{-# LANGUAGE ScopedTypeVariables, OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Reanimate.LaTeX (latex) where
 
-import Data.IORef
-import qualified Data.Map as Map
-import Data.Map (Map)
-import System.Process
-import System.Exit
-import System.IO
-import System.IO.Unsafe
-import System.FilePath
-import System.Directory
-import Control.Exception
-import Lucid (toHtmlRaw, toHtml)
-import Lucid.Svg (Svg, text_, font_size_, fill_)
+import           Control.Exception
+import qualified Data.ByteString       as B
+import           Data.IORef
+import           Data.Map              (Map)
+import qualified Data.Map              as Map
+import           Lucid                 (toHtml, toHtmlRaw)
+import           Lucid.Svg             (Svg, fill_, font_size_, text_)
+import           System.Directory
+import           System.Exit
+import           System.FilePath
+import           System.IO
+import           System.IO.Unsafe
+import           System.Process
+
+import           Graphics.Svg          (loadSvgFile, parseSvgFile,
+                                        xmlOfDocument)
+import           Text.XML.Light.Output (ppcElement, prettyConfigPP)
 
 {-# NOINLINE cache #-}
 cache :: IORef (Map String (Svg ()))
@@ -43,9 +49,10 @@ latexToSVG tex = handle (\(e::SomeException) -> return (failedSvg tex)) $ do
                    , "--bbox=1,1" -- increase bbox size.
                    , "--no-fonts" -- use glyphs instead of fonts.
                    ,"--verbosity=0", "-o",svg_file]
-    svg_data <- readFile svg_file
-    evaluate (length svg_data)
-    return $ toHtmlRaw $ unlines $ drop 1 $ lines svg_data
+    svg_data <- B.readFile svg_file
+    case parseSvgFile svg_file svg_data of
+      Nothing -> error "Malformed svg"
+      Just svg -> return $ toHtmlRaw $ ppcElement prettyConfigPP (xmlOfDocument svg)
 
 failedSvg :: String -> Svg ()
 failedSvg tex =
@@ -82,7 +89,7 @@ requireExecutable :: String -> IO FilePath
 requireExecutable exec = do
   mbPath <- findExecutable exec
   case mbPath of
-    Nothing -> error $ "Couldn't find executable: " ++ exec
+    Nothing   -> error $ "Couldn't find executable: " ++ exec
     Just path -> return path
 
 
