@@ -10,12 +10,25 @@ import qualified Data.Map              as Map
 import           Lucid                 (ToHtml (..))
 import           Lucid.Svg             (Svg, fill_, font_size_, text_)
 import           Reanimate.Misc
+import           Reanimate.Svg
 import           System.FilePath       (replaceExtension, takeFileName, (</>))
 import           System.IO.Unsafe      (unsafePerformIO)
 
 import           Graphics.Svg          (loadSvgFile, parseSvgFile,
-                                        xmlOfDocument)
-import           Text.XML.Light.Output (ppcElement, prettyConfigPP)
+                                        xmlOfDocument, Tree, elements, defaultSvg, Document)
+import           Text.XML.Light.Output (ppcElement, ppcContent, prettyConfigPP)
+import           Text.XML.Light (elContent)
+import Control.Lens (over, (^.),set, (.~), (&), (%~) )
+
+-- instance ToHtml Document where
+--   toHtml = toHtmlRaw
+--   toHtmlRaw = toHtmlRaw . ppcElement prettyConfigPP . xmlOfDocument
+
+instance ToHtml Document where
+  toHtml = toHtmlRaw
+  toHtmlRaw doc = toHtmlRaw $ unlines $ map (ppcContent prettyConfigPP) (elContent elt)
+    where
+      elt = xmlOfDocument doc
 
 {-# NOINLINE cache #-}
 cache :: IORef (Map String (Svg ()))
@@ -43,13 +56,13 @@ latexToSVG tex = handle (\(e::SomeException) -> return (failedSvg tex)) $ do
     runCmd latex ["-interaction=batchmode", "-halt-on-error", "-output-directory="++tmp_dir, tex_file]
     runCmd dvisvgm [ dvi_file
                    , "--exact"    -- better bboxes.
-                   , "--bbox=1,1" -- increase bbox size.
+                   -- , "--bbox=1,1" -- increase bbox size.
                    , "--no-fonts" -- use glyphs instead of fonts.
                    ,"--verbosity=0", "-o",svg_file]
     svg_data <- B.readFile svg_file
     case parseSvgFile svg_file svg_data of
       Nothing -> error "Malformed svg"
-      Just svg -> return $ toHtmlRaw $ ppcElement prettyConfigPP (xmlOfDocument svg)
+      Just svg -> return $ toHtmlRaw $ unbox $ replaceUses svg
 
 failedSvg :: String -> Svg ()
 failedSvg tex =
