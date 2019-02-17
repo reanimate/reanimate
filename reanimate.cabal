@@ -23,7 +23,7 @@ library
                       Reanimate.LaTeX
                       Reanimate.Svg
   other-modules:      Reanimate.Misc
-  build-depends:       base >=4.12 && <4.13,
+  build-depends:       base >=4.10 && <4.13,
                        lucid-svg, time, text, unix, lucid, filepath, process, directory,
                        containers, svg-tree, xml, bytestring, lens, linear, mtl
 
@@ -37,7 +37,7 @@ executable reanimate-viewer
                       Reanimate.LaTeX
                       Reanimate.Svg
                       Reanimate.Misc
-  build-depends:       base >=4.12 && <4.13, cairo >=0.13 && <0.14, gtk,
+  build-depends:       base >=4.10 && <4.13, cairo >=0.13 && <0.14, gtk,
                        svgcairo, lucid-svg, time, text, unix, lucid, reanimate,
                        filepath, process, directory, containers, svg-tree, xml,
                        bytestring, lens, linear, mtl
