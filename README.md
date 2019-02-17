@@ -8,6 +8,30 @@ The example gifs are rendered at 25 fps.
 
 # Examples
 
+## Drawing latex equations
+```haskell
+latex_draw :: Ani ()
+latex_draw = pauseAtEnd 1 $ defineAnimation $ proc () -> do
+  emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
+  drawText msg `andThen` fillText msg -< ()
+  where
+    msg = "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
+    placement = g_ [transform_ $ translate 20 15 <> " " <> scale 5 5]
+    fillText txt = defineAnimation $ proc () -> do
+      duration 1 -< ()
+      s <- signal 0 1 -< ()
+      emit -< placement $
+          g_ [fill_ "white", num_ fill_opacity_ s] $
+            toHtml $ latexAlign txt
+    drawText txt = defineAnimation $ proc () -> do
+      duration 2 -< ()
+      s <- signal 0 1 -< ()
+      emit -< placement $
+          g_ [stroke_ "white", fill_opacity_ "0", stroke_width_ "0.1"] $
+            toHtml $ partialSvg s $ latexAlign txt
+```
+![Drawing LaTeX equations](gifs/latex_draw.gif)
+
 ## Bezier curves
 
 ![Bezier curves](gifs/bezier.gif)
