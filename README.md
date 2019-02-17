@@ -4,7 +4,9 @@ Reanimate is a reactive framework for creating non-interactive animations from S
 This package consists of a set of arrow combinators, a renderer (using ffmpeg), and a Gtk-based
 previewer. Inline latex code is supported when 'latex' and 'dvisvgm' are installed.
 
-The example gifs are rendered at 25 fps.
+Nothing about the API is stable at this point.
+
+The example gifs are displayed at 25 fps.
 
 # Examples
 
