@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Reanimate.LaTeX (latex) where
+module Reanimate.LaTeX (latex,latexAlign) where
 
 import           Control.Exception     (SomeException, handle)
 import qualified Data.ByteString       as B
@@ -15,7 +15,7 @@ import           System.FilePath       (replaceExtension, takeFileName, (</>))
 import           System.IO.Unsafe      (unsafePerformIO)
 
 import           Graphics.Svg          (loadSvgFile, parseSvgFile,
-                                        xmlOfDocument, Tree, elements, defaultSvg, Document)
+                                        xmlOfDocument, Tree, elements, defaultSvg, Document(..))
 import           Text.XML.Light.Output (ppcElement, ppcContent, prettyConfigPP)
 import           Text.XML.Light (elContent)
 import Control.Lens (over, (^.),set, (.~), (&), (%~) )
@@ -30,11 +30,26 @@ instance ToHtml Document where
     where
       elt = xmlOfDocument doc
 
+instance ToHtml Tree where
+  toHtml = toHtmlRaw
+  toHtmlRaw tree = toHtmlRaw doc
+    where
+      doc = Document
+        { _viewBox = Nothing
+        , _width = Nothing
+        , _height = Nothing
+        , _elements = [tree]
+        , _definitions = Map.empty
+        , _description = ""
+        , _styleRules = []
+        , _documentLocation = ""
+        }
+
 {-# NOINLINE cache #-}
-cache :: IORef (Map String (Svg ()))
+cache :: IORef (Map String Tree)
 cache = unsafePerformIO (newIORef Map.empty)
 
-latex :: String -> Svg ()
+latex :: String -> Tree
 latex tex = unsafePerformIO $ do
   store <- readIORef cache
   case Map.lookup tex store of
@@ -43,8 +58,11 @@ latex tex = unsafePerformIO $ do
       svg <- latexToSVG tex
       atomicModifyIORef cache (\store -> (Map.insert tex svg store, svg))
 
+latexAlign :: String -> Tree
+latexAlign tex = latex $ unlines ["\\begin{align*}", tex, "\\end{align*}"]
 
-latexToSVG :: String -> IO (Svg ())
+
+latexToSVG :: String -> IO Tree
 latexToSVG tex = handle (\(e::SomeException) -> return (failedSvg tex)) $ do
   latex <- requireExecutable "latex"
   dvisvgm <- requireExecutable "dvisvgm"
@@ -62,12 +80,12 @@ latexToSVG tex = handle (\(e::SomeException) -> return (failedSvg tex)) $ do
     svg_data <- B.readFile svg_file
     case parseSvgFile svg_file svg_data of
       Nothing -> error "Malformed svg"
-      Just svg -> return $ toHtmlRaw $ unbox $ replaceUses svg
+      Just svg -> return $ unbox $ replaceUses svg
 
-failedSvg :: String -> Svg ()
-failedSvg tex =
-  text_ [ font_size_ "20"
-        , fill_ "white"] (toHtml $ "bad latex: "++tex)
+failedSvg :: String -> Tree
+failedSvg tex = defaultSvg
+  -- text_ [ font_size_ "20"
+  --       , fill_ "white"] (toHtml $ "bad latex: "++tex)
 
 tex_prologue =
   "\\documentclass[preview]{standalone}\n\
@@ -90,10 +108,8 @@ tex_prologue =
   \\\DisableLigatures{encoding = *, family = * }\n\
   \%\\usepackage[UTF8]{ctex}\n\
   \\\linespread{1}\n\
-  \\\begin{document}\n\
-  \\\begin{align*}\n"
+  \\\begin{document}\n"
 
 tex_epilogue =
   "\n\
-  \\\end{align*}\n\
   \\\end{document}"
