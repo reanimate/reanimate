@@ -4,9 +4,12 @@
 module Reanimate.Examples where
 
 import           Control.Arrow         (returnA, (>>>))
+import           Control.Lens
 import           Control.Monad
 import           Data.Monoid           ((<>))
 import           Data.Text             (Text, pack)
+import qualified Graphics.Svg          as S
+import           Linear.V2
 import           Lucid.Svg
 import           Numeric
 import           Text.Printf
@@ -14,6 +17,7 @@ import           Text.Printf
 import           Reanimate.Arrow
 import           Reanimate.Combinators
 import           Reanimate.LaTeX
+import           Reanimate.Svg
 
 sinewave :: Ani ()
 sinewave = proc () -> do
@@ -349,7 +353,7 @@ latex_basic = proc () -> do
       g_ [stroke_ "white", fill_opacity_ "0", stroke_width_ "0.1"] text
       g_ [fill_ "white", num_ fill_opacity_ s]                     text
   where
-    text = latex "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
+    text = toHtml $ latexAlign "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
 
 bezier :: Ani ()
 bezier = adjustSpeed 0.4 $ proc () -> do
@@ -394,3 +398,40 @@ bezier = adjustSpeed 0.4 $ proc () -> do
     between (x1, y1) (x2, y2) idx =
       ( x1 + idx * (x2 - x1)
       , y1 + idx * (x2-x1) * (y2 - y1) / (x2 - x1))
+
+pathSquare :: Ani ()
+pathSquare = proc () -> do
+    duration 2 -< ()
+    s <- signalOscillate 0 1 -< ()
+    emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
+    emit -< g_ [stroke_ "white"] $ toHtml (square s)
+  where
+    square s = S.PathTree (myPath s)
+    myPath s = S.defaultSvg
+      & S.pathDefinition .~ interpolatePathCommands s myPathCmds
+    myPathCmds =
+      [ S.MoveTo S.OriginAbsolute [V2 100 100]
+      , S.LineTo S.OriginAbsolute [V2 200 150]
+      , S.LineTo S.OriginRelative [V2 (-10) (-100)]
+      , S.EndPath
+      ]
+
+latex_draw :: Ani ()
+latex_draw = pauseAtEnd 1 $ defineAnimation $ proc () -> do
+  emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
+  drawText msg `andThen` fillText msg -< ()
+  where
+    msg = "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
+    placement = g_ [transform_ $ translate 20 15 <> " " <> scale 5 5]
+    fillText txt = defineAnimation $ proc () -> do
+      duration 1 -< ()
+      s <- signal 0 1 -< ()
+      emit -< placement $
+          g_ [fill_ "white", num_ fill_opacity_ s] $
+            toHtml $ latexAlign txt
+    drawText txt = defineAnimation $ proc () -> do
+      duration 2 -< ()
+      s <- signal 0 1 -< ()
+      emit -< placement $
+          g_ [stroke_ "white", fill_opacity_ "0", stroke_width_ "0.1"] $
+            toHtml $ partialSvg s $ latexAlign txt

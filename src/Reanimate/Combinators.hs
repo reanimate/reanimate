@@ -65,6 +65,10 @@ par a b = proc t -> do
   a -< t
   b -< t
 
+pauseAtEnd :: Double -> Animation a () -> Animation a ()
+pauseAtEnd d (Animation d' fn) = Animation (d+d') $ \d t a ->
+  fn d (min d' t) a
+
 type Path = [(Double, Double)]
 
 approxFnData :: Int -> (Double -> (Double, Double)) -> Path
@@ -140,6 +144,12 @@ adjustSpeed factor (Animation d fn) =
 freeze :: Double -> Ani a -> Ani a
 freeze d (Animation d' fn) =
   Animation (d+d') (\dur t -> if t > d' then fn d' d' else fn d' t)
+
+pause :: Double -> Ani ()
+pause d = Animation d (\d t _ -> pure ())
+
+andThen :: Ani () -> Ani () -> Ani ()
+andThen a b = sim [a, pause (animationDuration a) `before` b]
 
 loop :: Ani a -> Ani a
 loop (Animation d fn) =
