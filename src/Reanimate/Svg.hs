@@ -4,10 +4,14 @@ import           Codec.Picture             (PixelRGBA8 (..))
 import           Control.Lens              (over, set, (%~), (&), (.~), (^.))
 import           Control.Monad.Fix
 import           Control.Monad.State
+import           Control.Arrow
+import           Data.Attoparsec.Text      (parseOnly)
 import           Data.List
 import qualified Data.Map                  as Map
 import           Data.Maybe
+import qualified Data.Text                 as T
 import           Graphics.Svg
+import           Graphics.Svg.PathParser
 import           Linear.Metric
 import           Linear.V2
 import           Linear.Vector
@@ -15,6 +19,9 @@ import           Reanimate.Svg.NamedColors
 import qualified Reanimate.Transform       as Transform
 
 import           Debug.Trace
+
+defaultDPI :: Dpi
+defaultDPI = 96
 
 replaceUses :: Document -> Document
 replaceUses doc = doc & elements %~ map (mapTree replace)
@@ -33,7 +40,6 @@ replaceUses doc = doc & elements %~ map (mapTree replace)
       case (toUserUnit defaultDPI x, toUserUnit defaultDPI y) of
         (Num a, Num b) -> Translate a b
         _              -> TransformUnknown
-    defaultDPI = 96
     docTree = GroupTree $ set groupChildren (doc^.elements) defaultSvg
     idMap = foldTree updMap Map.empty docTree `Map.union`
             Map.mapMaybe elementToTree (doc^.definitions)
@@ -319,12 +325,20 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
       PolyLineTree{}  -> error "PolyLineTree"
       EllipseTree{}   -> error "EllipseTree"
       LineTree{}      -> error "LineTree"
-      RectangleTree{} -> error "RectangleTree"
+      RectangleTree rect ->
+      -- toUserUnit defaultDPI x
+        case mapTuple (toUserUnit defaultDPI) (rect^.rectUpperLeftCorner) of
+          (Num x, Num y) -> [V2 x y] ++
+            case mapTuple (toUserUnit defaultDPI) (rect^.rectWidth, rect^.rectHeight) of
+              (Num w, Num h) -> [V2 (x+w) (y+h)]
+              _ -> []
+          _ -> []
       TextTree{}      -> []
       ImageTree{}     -> []
       MeshGradientTree{} -> []
   where
     m = Transform.mkMatrix (t^.drawAttr.transform)
+    mapTuple f = f *** f
 
 withTransformations :: [Transformation] -> Tree -> Tree
 withTransformations transformations = withDrawAttributes (transform .~ Just transformations)
@@ -365,14 +379,41 @@ mkColor name =
 withStrokeColor :: String -> Tree -> Tree
 withStrokeColor color = withDrawAttributes (strokeColor .~ pure (mkColor color))
 
+withFillColor :: String -> Tree -> Tree
+withFillColor color = withDrawAttributes (fillColor .~ pure (mkColor color))
+
 withFillOpacity :: Double -> Tree -> Tree
 withFillOpacity opacity = withDrawAttributes (fillOpacity .~ Just (realToFrac opacity))
 
 withStrokeWidth :: Number -> Tree -> Tree
 withStrokeWidth width = withDrawAttributes (strokeWidth .~ pure width)
 
+withClipPathRef :: ElementRef -> Tree -> Tree
+withClipPathRef ref = withDrawAttributes (clipPathRef .~ pure ref)
+
 mkRect :: Point -> Number -> Number -> Tree
-mkRect corner width height = RectangleTree $
-  defaultSvg & rectUpperLeftCorner .~ corner
-             & rectWidth .~ width
-             & rectHeight .~ height
+mkRect corner width height = RectangleTree $ defaultSvg
+  & rectUpperLeftCorner .~ corner
+  & rectWidth .~ width
+  & rectHeight .~ height
+
+mkLine :: Point -> Point -> Tree
+mkLine point1 point2 = LineTree $ defaultSvg
+  & linePoint1 .~ point1
+  & linePoint2 .~ point2
+
+mkGroup :: [Tree] -> Tree
+mkGroup forest = GroupTree $ defaultSvg
+  & groupChildren .~ forest
+
+mkPathString :: String -> Tree
+mkPathString = mkPathText . T.pack
+
+mkPathText :: T.Text -> Tree
+mkPathText str =
+  case parseOnly pathParser str of
+    Left err   -> error err
+    Right cmds -> PathTree $ defaultSvg & pathDefinition .~ cmds
+
+mkBackground :: String -> Tree
+mkBackground color = withFillColor color $ mkRect (Num 0, Num 0) (Percent 100) (Percent 100)

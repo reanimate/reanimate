@@ -21,23 +21,23 @@ The example gifs are displayed at 25 fps.
 ```haskell
 latex_draw :: Ani ()
 latex_draw = pauseAtEnd 1 $ defineAnimation $ proc () -> do
-  emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
+  emit -< toHtml $ mkBackground "black"
   drawText msg `andThen` fillText msg -< ()
   where
     msg = "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
-    placement = g_ [transform_ $ translate 20 15 <> " " <> scale 5 5]
+    placement = translate (320/2) (180/2) . scale 5
     fillText txt = defineAnimation $ proc () -> do
       duration 1 -< ()
       s <- signal 0 1 -< ()
-      emit -< placement $
-          g_ [fill_ "white", num_ fill_opacity_ s] $
-            toHtml $ latexAlign txt
+      emit -< toHtml $ placement $
+          withFillColor "white" $ withFillOpacity s $
+            center $ latexAlign txt
     drawText txt = defineAnimation $ proc () -> do
       duration 2 -< ()
       s <- signal 0 1 -< ()
-      emit -< placement $
-          g_ [stroke_ "white", fill_opacity_ "0", stroke_width_ "0.1"] $
-            toHtml $ partialSvg s $ latexAlign txt
+      emit -< toHtml $ placement $
+        withStrokeColor "white" $ withFillOpacity 0 $ withStrokeWidth (Num 0.1) $
+          partialSvg s $ center $ latexAlign txt
 ```
 ![Drawing LaTeX equations](gifs/latex_draw.gif)
 
@@ -54,27 +54,19 @@ bbox1 :: Ani ()
 bbox1 = defineAnimation $ proc () -> do
   duration 5 -< ()
   s <- signal 0 1 -< ()
-  let rotated = rotate (360*s) svg
-      (x, y, w, h) = boundingBox rotated
   emit -< do
-    g_ [transform_ $ Lucid.translate x y] $
-      rect_ [num_ width_ w, num_ height_ h, stroke_ "red", fill_opacity_ "0"]
-    g_ [fill_ "white"] $ toHtml rotated
+    toHtml $ mkBoundingBox $ rotate (360*s) svg
+    toHtml $ withFillColor "white" $ rotate (360*s) svg
   where
-    msg = "\\sum_{k=1}^\\infty"
-    svg = scale 3 $ center $ latexAlign msg
+    svg = scale 3 $ center $ latexAlign "\\sum_{k=1}^\\infty"
 
 bbox2 :: Ani ()
 bbox2 = defineAnimation $ proc () -> do
   duration 5 -< ()
   s <- signalOscillate 0 1 -< ()
-  let rotated = partialSvg s heartShape
-      (x, y, w, h) = boundingBox rotated
   emit -< do
-    g_ [transform_ $ Lucid.translate x y] $
-      rect_ [num_ width_ w, num_ height_ h, stroke_ "red", fill_opacity_ "0"]
-    g_ [fill_ "white", fill_opacity_ "0", stroke_width_ "4", stroke_ "white"] $
-      toHtml rotated
+    toHtml $ mkBoundingBox $ partialSvg s heartShape
+    toHtml $ withStrokeColor "white" $ withFillOpacity 0 $ partialSvg s heartShape
 ```
 ![Bounding boxes](gifs/bbox.gif)
 
@@ -88,21 +80,19 @@ bbox2 = defineAnimation $ proc () -> do
 sinewave :: Ani ()
 sinewave = proc () -> do
     duration 10 -< ()
-    emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
-
+    emit -< toHtml $ mkBackground "black"
     idx <- signalOscillate 0 1 -< ()
     emit -< do
-      defs_ $ clipPath_ [id_ "clip"] $
-        rect_ [x_ "0", num_ y_ (-height), num_ width_ (idx * width), height_ "100%"]
-      g_ [transform_ $ translate margin height, clip_path_ "url(#clip)"] $
-        renderPath $ approxFnData 1000 wave
-      line_ [ num_ x1_ margin, num_ x2_ margin, y1_ "10", y2_ "170"
-            , stroke_ "white"]
-      line_ [num_ x1_ margin, num_ x2_ (margin+width), num_ y1_ height, num_ y2_ height
-            , stroke_ "white"]
-
+      defs_ $ clipPath_ [id_ "clip"] $ toHtml $
+        mkRect (Num 0, Num (-height)) (Num $ idx*width) (Percent 100)
+      toHtml $ translate margin height $ withStrokeColor "white" $
+        withClipPathRef (Ref "clip") $ mkPathText $ renderPathText $ approxFnData 1000 wave
+      toHtml $ withStrokeColor "white" $
+        mkLine (Num margin, Num 10) (Num margin, Num 170)
+      toHtml $ withStrokeColor "white" $
+        mkLine (Num margin, Num height) (Num (margin+width), Num height)
     let (circX, circY) = wave idx
-    emit -< g_ [transform_ $ translate margin height] $
+    emit -< g_ [transform_ $ Lucid.translate margin height] $
       circle_ [num_ cx_ circX, num_ cy_ circY, r_ "3", fill_ "red"]
   where
     freq = 3; margin = 30; width = 260; height = 90
@@ -114,22 +104,20 @@ sinewave = proc () -> do
 ## Morphing wave
 
 ```haskell
-morph_wave :: Ani ()
-morph_wave = proc () -> do
+morph_wave_circle :: Ani ()
+morph_wave_circle = proc t -> do
     duration 5 -< ()
-    emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
-
-    morph <- signalOscillate 0 1 -< ()
-    emit -< do
-      g_ [transform_ $ translate 30 50] $ renderPath wave1
-      g_ [transform_ $ translate 30 130] $ renderPath wave2
-      g_ [transform_ $ translate 30 90] $ renderPath $ morphPath wave1 wave2 morph
-      line_ [x1_ "30", x2_ "30", y1_ "10", y2_ "170", stroke_ "white"]
-      line_ [x1_ "30", x2_ "290", y1_ "90", y2_ "90", stroke_ "white"]
+    idx <- signalOscillate 0 1 -< ()
+    emit -< toHtml $ withStrokeColor "white" $ mkGroup
+      [ mkBackground "black"
+      , translate 30 90 $ mkPathText $ renderPathText $ morphPath circle wave1 idx
+      , mkLine (Num 30, Num 10) (Num 30, Num 170)
+      , mkLine (Num 30, Num 90) (Num 290, Num 90) ]
   where
-    freq = 3; width = 260
+    freq = 5; width = 260; radius = 50
     wave1 = approxFnData 1000 $ \idx -> (idx*width, sin (idx*pi*2*freq) * 20)
-    wave2 = approxFnData 1000 $ \idx -> (idx*width, sin (idx*pi*2*(freq*3)) * 20)
+    circle = approxFnData 1000 $ \idx ->
+      (cos (idx*pi*2+pi/2)*radius + width/2, sin (idx*pi*2+pi/2)*radius)
 ```
 ![Morphing wave](gifs/morphwave.gif)
 
@@ -239,12 +227,13 @@ latex_basic :: Ani ()
 latex_basic = proc () -> do
   duration 2 -< ()
   s <- signalOscillate 0 1 -< ()
-  emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
-  emit -<
-    g_ [transform_ $ translate 20 15 <> " " <> scale 4 4] $ do
-      g_ [stroke_ "white", fill_opacity_ "0", stroke_width_ "0.1"] text
-      g_ [fill_ "white", num_ fill_opacity_ s]                     text
+  emit -< toHtml $ mkGroup
+    [ mkBackground "black"
+    , translate (320/2) (180/2) $ mkGroup
+      [ withStrokeColor "white" $ withFillOpacity 0 $ withStrokeWidth (Num 0.1) text
+      , withFillColor "white" $ withFillOpacity s text] ]
   where
-    text = latex "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
+    text = scale 4 $ center $ latexAlign
+      "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
 ```
 ![Basic LaTeX](gifs/latex_basic.gif)
