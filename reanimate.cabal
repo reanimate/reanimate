@@ -22,13 +22,22 @@ library
                       Reanimate.Combinators
                       Reanimate.LaTeX
                       Reanimate.Svg
+                      Reanimate.Transform
   other-modules:      Reanimate.Misc
   build-depends:       base >=4.10 && <4.13,
                        lucid-svg, time, text, unix, lucid, filepath, process, directory,
-                       containers, svg-tree, xml, bytestring, lens, linear, mtl
+                       containers, svg-tree, xml, bytestring, lens, linear, mtl, matrix
+
+Flag gtk-viewer
+  Description: Enable gtk-based viewer
+  Default:     True
 
 executable reanimate-viewer
-  main-is:             SvgViewer.hs
+  if flag(gtk-viewer)
+    buildable:       True
+  else
+    buildable:       False
+  main-is:            SvgViewer.hs
   -- other-extensions:
   other-modules:      Reanimate.Arrow
                       Reanimate.Render
@@ -37,9 +46,10 @@ executable reanimate-viewer
                       Reanimate.LaTeX
                       Reanimate.Svg
                       Reanimate.Misc
+                      Reanimate.Transform
   build-depends:       base >=4.10 && <4.13, cairo >=0.13 && <0.14, gtk,
                        svgcairo, lucid-svg, time, text, unix, lucid, reanimate,
                        filepath, process, directory, containers, svg-tree, xml,
-                       bytestring, lens, linear, mtl
+                       bytestring, lens, linear, mtl, matrix
   hs-source-dirs:      src
   default-language:    Haskell2010

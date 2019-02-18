@@ -10,6 +10,7 @@ import           Graphics.Svg
 import           Linear.Metric
 import           Linear.V2
 import           Linear.Vector
+import qualified Reanimate.Transform as Transform
 
 import           Debug.Trace
 
@@ -101,10 +102,10 @@ adjustLineLength alpha from cmd =
 
 lineLength :: LineCommand -> CmdM Double
 lineLength cmd =
-      case cmd of
-        LineMove to       -> pure 0 <* put to
-        LineDraw to       -> gets (distance to) <* put to
-        LineBezier points -> gets (distance (last points)) <* put (last points)
+  case cmd of
+    LineMove to       -> pure 0 <* put to
+    LineDraw to       -> gets (distance to) <* put to
+    LineBezier points -> gets (distance (last points)) <* put (last points)
 
 toLineCommands :: [PathCommand] -> [LineCommand]
 toLineCommands ps = evalState (worker zero Nothing ps) zero
@@ -161,7 +162,10 @@ toLineCommand startPos mbPrevControlPt cmd = do
         from <- get <* adjustPosition o to
         let c1 = maybe from (mirrorPoint from) mbControl
         pure $ LineBezier [c1,makeAbsolute o from to]
-    EllipticalArc origin points -> undefined
+    EllipticalArc o points -> concat <$>
+      (forM points $ \(rotX, rotY, angle, largeArc, sweepFlag, to) -> do
+        from <- get <* adjustPosition o to
+        return $ convertSvgArc from rotX rotY angle largeArc sweepFlag (makeAbsolute o from to))
     EndPath -> put startPos *> pure [LineDraw startPos]
   where
     mirrorPoint c p = c*2-p
@@ -169,6 +173,82 @@ toLineCommand startPos mbPrevControlPt cmd = do
     adjustPosition OriginAbsolute p = put p
     makeAbsolute OriginAbsolute from p = p
     makeAbsolute OriginRelative from p = from+p
+
+
+calculateVectorAngle :: Double -> Double -> Double -> Double -> Double
+calculateVectorAngle ux uy vx vy
+    | tb >= ta
+        = tb - ta
+    | otherwise
+        = pi * 2 - (ta - tb)
+    where
+        ta = atan2 uy ux
+        tb = atan2 vy vx
+
+-- ported from: https://github.com/vvvv/SVG/blob/master/Source/Paths/SvgArcSegment.cs
+convertSvgArc :: RPoint -> Coord -> Coord -> Coord -> Bool -> Bool -> RPoint -> [LineCommand]
+convertSvgArc (V2 x0 y0) radiusX radiusY angle largeArcFlag sweepFlag (V2 x y)
+    | x0 == x && y0 == y
+        = []
+    | radiusX == 0.0 && radiusY == 0.0
+        = [LineDraw (V2 x y)]
+    | otherwise
+        = calcSegments x0 y0 theta1' segments'
+    where
+        sinPhi = sin (angle * pi/180)
+        cosPhi = cos (angle * pi/180)
+
+        x1dash = cosPhi * (x0 - x) / 2.0 + sinPhi * (y0 - y) / 2.0
+        y1dash = -sinPhi * (x0 - x) / 2.0 + cosPhi * (y0 - y) / 2.0
+
+        numerator = radiusX * radiusX * radiusY * radiusY - radiusX * radiusX * y1dash * y1dash - radiusY * radiusY * x1dash * x1dash
+
+        s = sqrt(1.0 - numerator / (radiusX * radiusX * radiusY * radiusY))
+        rx   = if (numerator < 0.0) then (radiusX * s) else radiusX
+        ry   = if (numerator < 0.0) then (radiusY * s) else radiusY
+        root = if (numerator < 0.0)
+                then (0.0)
+                else ((if ((largeArcFlag && sweepFlag) || (not largeArcFlag && not sweepFlag)) then (-1.0) else 1.0) *
+                        sqrt(numerator / (radiusX * radiusX * y1dash * y1dash + radiusY * radiusY * x1dash * x1dash)))
+
+        cxdash = root * rx * y1dash / ry
+        cydash = -root * ry * x1dash / rx
+
+        cx = cosPhi * cxdash - sinPhi * cydash + (x0 + x) / 2.0
+        cy = sinPhi * cxdash + cosPhi * cydash + (y0 + y) / 2.0
+
+        theta1'  = calculateVectorAngle 1.0 0.0 ((x1dash - cxdash) / rx) ((y1dash - cydash) / ry)
+        dtheta' = calculateVectorAngle ((x1dash - cxdash) / rx) ((y1dash - cydash) / ry) ((-x1dash - cxdash) / rx) ((-y1dash - cydash) / ry)
+        dtheta  = if (not sweepFlag && dtheta' > 0)
+                    then  (dtheta' - 2 * pi)
+                    else  (if (sweepFlag && dtheta' < 0) then (dtheta' + 2 * pi) else dtheta')
+
+        segments' = ceiling (abs (dtheta / (pi / 2.0)))
+        delta = dtheta / fromInteger segments'
+        t = 8.0 / 3.0 * sin(delta / 4.0) * sin(delta / 4.0) / sin(delta / 2.0)
+
+        calcSegments startX startY theta1 segments
+            | segments == 0
+                = []
+            | otherwise
+                = LineBezier [ V2 (startX + dx1) (startY + dy1)
+                             , V2 (endpointX + dxe) (endpointY + dye)
+                             , V2 endpointX endpointY ] : calcSegments endpointX endpointY theta2 (segments - 1)
+            where
+                cosTheta1 = cos theta1
+                sinTheta1 = sin theta1
+                theta2 = theta1 + delta
+                cosTheta2 = cos theta2
+                sinTheta2 = sin theta2
+
+                endpointX = cosPhi * rx * cosTheta2 - sinPhi * ry * sinTheta2 + cx
+                endpointY = sinPhi * rx * cosTheta2 + cosPhi * ry * sinTheta2 + cy
+
+                dx1 = t * (-cosPhi * rx * sinTheta1 - sinPhi * ry * cosTheta1)
+                dy1 = t * (-sinPhi * rx * sinTheta1 + cosPhi * ry * cosTheta1)
+
+                dxe = t * (cosPhi * rx * sinTheta2 + sinPhi * ry * cosTheta2)
+                dye = t * (sinPhi * rx * sinTheta2 - cosPhi * ry * cosTheta2)
 
 
 -- Algorithm taken from manim. It's magic.
@@ -179,6 +259,8 @@ bezier points t = sum
   where
     n = length points -1
     choose n k = product [n,n-1 .. n-k+1] `div` product [1..k]
+
+partial_bezier_points :: [RPoint] -> Double -> Double -> [RPoint]
 partial_bezier_points points a b
   | isNaN end_prop || isInfinite end_prop = replicate (length points) (last points)
   | otherwise = [ bezier (take (i+1) a_to_1) end_prop | i <- [0..length points-1] ]
@@ -190,78 +272,6 @@ partial_bezier_points points a b
 
 interpolatePathCommands :: Double -> [PathCommand] -> [PathCommand]
 interpolatePathCommands alpha = lineToPath . partialLine alpha . toLineCommands
---     evalState (worker 0 cmds) zero
---   where
---     worker d [] = pure []
---     worker d (x:xs) | d > minDistance = pure []
---     worker d (LineTo OriginAbsolute []:xs) = worker d xs
---     worker d (LineTo OriginAbsolute (to:tos):xs) = do
---       from <- get <* put to
---       let d' = distance from to
---           out = LineTo OriginAbsolute [lerp (min 1 ((minDistance-d)/d')) to from]
---           rest = LineTo OriginAbsolute tos
---       (out:) <$> worker (d+d') (rest:xs)
---     worker d (LineTo OriginRelative []:xs) = worker d xs
---     worker d (LineTo OriginRelative (to:tos):xs) = do
---       from <- get <* modify (+to)
---       let d' = distance zero to
---           out = LineTo OriginRelative [lerp (min 1 ((minDistance-d)/d')) to zero]
---           rest = LineTo OriginRelative tos
---       (out:) <$> worker (d+d') (rest:xs)
---     worker d (x:xs) = do
---       d' <- estimateCmdLength x
---       (x:) <$> worker (d+d') xs
---     minDistance = estimatePathLength cmds * alpha
---
--- splitPathCommands :: [PathCommand] -> [PathCommand]
--- splitPathCommands cmds = evalState (concat <$> mapM splitPathCommand cmds) zero
---
--- splitPathCommand :: PathCommand -> CmdM [PathCommand]
--- splitPathCommand cmd = do
---   case cmd of
---     MoveTo OriginAbsolute [] -> pure [cmd]
---     MoveTo OriginAbsolute lst -> put (last lst) *> pure [cmd]
---     MoveTo OriginRelative lst -> modify (+ sum lst) *> pure [cmd]
---     -- LineTo OriginAbsolute lst -> do
---     --   concat <$> forM lst (\to -> do
---     --     from <- get <* put (to :: RPoint)
---     --     let towardsTo = (to - from) / fromIntegral pieces :: RPoint
---     --     return $ replicate pieces (LineTo OriginRelative [towardsTo]))
---     -- LineTo OriginRelative lst -> do
---     --   concat <$> forM lst (\to -> do
---     --     from <- get <* modify (+to)
---     --     let towardsTo = to / fromIntegral pieces :: RPoint
---     --     return $ replicate pieces (LineTo OriginRelative [towardsTo]))
---     _ -> pure [cmd]
---   where
---     pieces = 100 :: Int
---
--- estimatePathLength :: [PathCommand] -> Double
--- estimatePathLength cmds = evalState (sum <$> mapM estimateCmdLength cmds) zero
---
--- estimateCmdLength :: PathCommand -> CmdM Double
--- estimateCmdLength cmd =
---   case cmd of
---     MoveTo OriginAbsolute []  -> pure 0
---     MoveTo OriginAbsolute lst -> put (last lst) *> pure 0
---     MoveTo OriginRelative lst -> modify (+ sum lst) *> pure 0
---     LineTo OriginAbsolute lst ->
---       sum <$> forM lst (\to -> gets (distance to) <* put to)
---     LineTo OriginRelative lst ->
---       sum <$> forM lst (\to -> modify (+to) *> pure (distance zero to))
---     HorizontalTo OriginAbsolute lst -> undefined
---     HorizontalTo OriginRelative lst -> undefined
---     VerticalTo OriginAbsolute lst -> undefined
---     VerticalTo OriginRelative lst -> undefined
---     CurveTo origin quads -> undefined
---     SmoothCurveTo origin lst -> undefined
---     QuadraticBezier origin pairs -> undefined
---     SmoothQuadraticBezierCurveTo origin points -> undefined
---     EllipticalArc origin points -> undefined
---     EndPath -> pure 0
-
--- lineToPath :: [LineCommand] -> [PathCommand]
--- partialLine :: Double -> [LineCommand] -> [LineCommand]
 
 partialSvg :: Double -> Tree -> Tree
 partialSvg alpha = mapTree worker
@@ -269,3 +279,74 @@ partialSvg alpha = mapTree worker
     worker (PathTree path) =
       PathTree $ path & pathDefinition %~ lineToPath . partialLine alpha . toLineCommands
     worker t = t
+
+-- (x,y,w,h)
+boundingBox :: Tree -> (Double, Double, Double, Double)
+boundingBox t =
+    case svgBoundingPoints t of
+      [] -> (0,0,0,0)
+      (V2 x y:rest) ->
+        let (minx, miny, maxx, maxy) = foldl' worker (x, y, x, y) rest
+        in (minx, miny, maxx-minx, maxy-miny)
+  where
+    worker (minx, miny, maxx, maxy) (V2 x y) =
+      (min minx x, min miny y, max maxx x, max maxy y)
+
+linePoints :: [LineCommand] -> [RPoint]
+linePoints = worker zero
+  where
+    worker from [] = []
+    worker from (x:xs) =
+      case x of
+        LineMove to     -> worker to xs
+        LineDraw to     -> from:to:worker to xs
+        LineBezier ctrl -> -- approximation
+          [ last (partial_bezier_points (from:ctrl) 0 (recip chunks*i)) | i <- [0..chunks]] ++
+          worker (last ctrl) xs
+    chunks = 10
+
+svgBoundingPoints :: Tree -> [RPoint]
+svgBoundingPoints t = map (Transform.transformPoint m) $
+    case t of
+      None            -> []
+      UseTree{}       -> []
+      GroupTree g     -> concatMap svgBoundingPoints (g^.groupChildren)
+      SymbolTree (Symbol g) -> concatMap svgBoundingPoints (g^.groupChildren)
+      PathTree p      -> linePoints $ toLineCommands (p^.pathDefinition)
+      CircleTree{}    -> error "CircleTree"
+      PolyLineTree{}  -> error "PolyLineTree"
+      EllipseTree{}   -> error "EllipseTree"
+      LineTree{}      -> error "LineTree"
+      RectangleTree{} -> error "RectangleTree"
+      TextTree{}      -> []
+      ImageTree{}     -> []
+      MeshGradientTree{} -> []
+  where
+    m = Transform.mkMatrix (t^.drawAttr.transform)
+
+withTransformations :: [Transformation] -> Tree -> Tree
+withTransformations transformations tree = GroupTree $ defaultSvg
+    & drawAttr .~ attr
+    & groupChildren .~ [tree]
+  where
+    attr = defaultSvg & transform .~ Just transformations
+
+translate :: Double -> Double -> Tree -> Tree
+translate x y = withTransformations [Translate x y]
+
+rotate :: Double -> Tree -> Tree
+rotate a = withTransformations [Rotate a Nothing]
+
+rotateAround :: Double -> RPoint -> Tree -> Tree
+rotateAround a (V2 x y) = withTransformations [Rotate a (Just (x,y))]
+
+scale :: Double -> Tree -> Tree
+scale a = withTransformations [Scale a Nothing]
+
+scaleXY :: Double -> Double -> Tree -> Tree
+scaleXY x y = withTransformations [Scale x (Just y)]
+
+center :: Tree -> Tree
+center t = translate (-x-w/2) (-y-h/2) t
+  where
+    (x, y, w, h) = boundingBox t
