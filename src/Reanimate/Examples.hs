@@ -6,6 +6,8 @@ module Reanimate.Examples where
 import           Control.Arrow         (returnA, (>>>))
 import           Control.Lens
 import           Control.Monad
+import           Codec.Picture.Types
+import           Data.Monoid
 import           Data.Monoid           ((<>))
 import           Data.Text             (Text, pack)
 import qualified Graphics.Svg          as S
@@ -459,7 +461,7 @@ bbox1 = defineAnimation $ proc () -> do
       (x, y, w, h) = boundingBox rotated
   emit -< do
     g_ [transform_ $ Lucid.translate x y] $
-      rect_ [num_ width_ w, num_ height_ h, stroke_ "red", fill_opacity_ "0", stroke_width_ "1"]
+      rect_ [num_ width_ w, num_ height_ h, stroke_ "red", fill_opacity_ "0"]
     g_ [fill_ "white"] $ toHtml rotated
   where
     msg = "\\sum_{k=1}^\\infty"
@@ -472,20 +474,20 @@ bbox2 = defineAnimation $ proc () -> do
   let rotated = partialSvg s heartShape
       (x, y, w, h) = boundingBox rotated
   emit -< do
-    g_ [transform_ $ Lucid.translate x y] $
-      rect_ [num_ width_ w, num_ height_ h, stroke_ "red", fill_opacity_ "0", stroke_width_ "1"]
-    g_ [fill_ "white", fill_opacity_ "0", stroke_width_ "4", stroke_ "white"] $
-      toHtml rotated
+    toHtml $ withStrokeColor "red" $ withFillOpacity 0 $
+      mkRect (S.Num x, S.Num y) (S.Num w) (S.Num h)
+    toHtml $ withStrokeColor "white" $ withFillOpacity 0 $
+      rotated
 
 heartShape =
-    scale 0.15 $ rotate 225 $ center $ p
+    rotate 225 $ center $ p
   where
     p = S.PathTree $ S.defaultSvg & S.pathDefinition .~ cmds
     abs = S.OriginAbsolute
     rel = S.OriginRelative
     cmds =
-      [S.MoveTo abs [V2 0 200]
-      ,S.VerticalTo rel [-200],S.HorizontalTo rel [200]
-      ,S.EllipticalArc rel [(100,100,90,False,True, V2 0 200)]
-      ,S.EllipticalArc rel [(100,100,90,False,True, V2 (-200) 0)]
+      [S.MoveTo abs [V2 0 40]
+      ,S.VerticalTo rel [-40],S.HorizontalTo rel [40]
+      ,S.EllipticalArc rel [(20,20,90,False,True, V2 0 40)]
+      ,S.EllipticalArc rel [(20,20,90,False,True, V2 (-40) 0)]
       ,S.EndPath]

@@ -58,7 +58,7 @@ bbox1 = defineAnimation $ proc () -> do
       (x, y, w, h) = boundingBox rotated
   emit -< do
     g_ [transform_ $ Lucid.translate x y] $
-      rect_ [num_ width_ w, num_ height_ h, stroke_ "red", fill_opacity_ "0", stroke_width_ "1"]
+      rect_ [num_ width_ w, num_ height_ h, stroke_ "red", fill_opacity_ "0"]
     g_ [fill_ "white"] $ toHtml rotated
   where
     msg = "\\sum_{k=1}^\\infty"
@@ -72,7 +72,7 @@ bbox2 = defineAnimation $ proc () -> do
       (x, y, w, h) = boundingBox rotated
   emit -< do
     g_ [transform_ $ Lucid.translate x y] $
-      rect_ [num_ width_ w, num_ height_ h, stroke_ "red", fill_opacity_ "0", stroke_width_ "1"]
+      rect_ [num_ width_ w, num_ height_ h, stroke_ "red", fill_opacity_ "0"]
     g_ [fill_ "white", fill_opacity_ "0", stroke_width_ "4", stroke_ "white"] $
       toHtml rotated
 ```
