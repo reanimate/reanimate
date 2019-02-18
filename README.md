@@ -8,6 +8,13 @@ Nothing about the API is stable at this point.
 
 The example gifs are displayed at 25 fps.
 
+# TODO
+
+* bounding boxes
+* alignment and positioning combinators
+* automatic code reloading in the Gtk viewer
+* website for live coding
+
 # Examples
 
 ## Drawing latex equations
