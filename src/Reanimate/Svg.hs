@@ -1,16 +1,18 @@
 module Reanimate.Svg where
 
-import           Control.Lens               (over, set, (%~), (&), (.~), (^.))
-import           Control.Monad.State
+import           Codec.Picture             (PixelRGBA8 (..))
+import           Control.Lens              (over, set, (%~), (&), (.~), (^.))
 import           Control.Monad.Fix
-import qualified Data.Map                   as Map
-import           Data.Maybe
+import           Control.Monad.State
 import           Data.List
+import qualified Data.Map                  as Map
+import           Data.Maybe
 import           Graphics.Svg
 import           Linear.Metric
 import           Linear.V2
 import           Linear.Vector
-import qualified Reanimate.Transform as Transform
+import           Reanimate.Svg.NamedColors
+import qualified Reanimate.Transform       as Transform
 
 import           Debug.Trace
 
@@ -74,10 +76,10 @@ data LineCommand
 lineToPath :: [LineCommand] -> [PathCommand]
 lineToPath = map worker
   where
-    worker (LineMove p) = MoveTo OriginAbsolute [p]
-    worker (LineDraw p) = LineTo OriginAbsolute [p]
+    worker (LineMove p)         = MoveTo OriginAbsolute [p]
+    worker (LineDraw p)         = LineTo OriginAbsolute [p]
     worker (LineBezier [a,b,c]) = CurveTo OriginAbsolute [(a,b,c)]
-    worker (LineBezier [a,b]) = QuadraticBezier OriginAbsolute [(a,b)]
+    worker (LineBezier [a,b])   = QuadraticBezier OriginAbsolute [(a,b)]
 
 partialLine :: Double -> [LineCommand] -> [LineCommand]
 partialLine alpha cmds = evalState (worker 0 cmds) zero
@@ -120,7 +122,7 @@ toLineCommands ps = evalState (worker zero Nothing ps) zero
       (lcmds++) <$> worker startPos' (cmdToControlPoint $ last lcmds) cmds
 
 cmdToControlPoint (LineBezier points) = Just (last (init points))
-cmdToControlPoint _ = Nothing
+cmdToControlPoint _                   = Nothing
 
 toLineCommand :: RPoint -> Maybe RPoint -> PathCommand -> CmdM [LineCommand]
 toLineCommand startPos mbPrevControlPt cmd = do
@@ -325,11 +327,14 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
     m = Transform.mkMatrix (t^.drawAttr.transform)
 
 withTransformations :: [Transformation] -> Tree -> Tree
-withTransformations transformations tree = GroupTree $ defaultSvg
+withTransformations transformations = withDrawAttributes (transform .~ Just transformations)
+
+withDrawAttributes :: (DrawAttributes -> DrawAttributes) -> Tree -> Tree
+withDrawAttributes lens tree = GroupTree $ defaultSvg
     & drawAttr .~ attr
     & groupChildren .~ [tree]
   where
-    attr = defaultSvg & transform .~ Just transformations
+    attr = defaultSvg & lens
 
 translate :: Double -> Double -> Tree -> Tree
 translate x y = withTransformations [Translate x y]
@@ -350,3 +355,24 @@ center :: Tree -> Tree
 center t = translate (-x-w/2) (-y-h/2) t
   where
     (x, y, w, h) = boundingBox t
+
+mkColor :: String -> Texture
+mkColor name =
+  case Map.lookup name svgNamedColors of
+    Nothing -> ColorRef (PixelRGBA8 240 248 255 255)
+    Just c  -> ColorRef c
+
+withStrokeColor :: String -> Tree -> Tree
+withStrokeColor color = withDrawAttributes (strokeColor .~ pure (mkColor color))
+
+withFillOpacity :: Double -> Tree -> Tree
+withFillOpacity opacity = withDrawAttributes (fillOpacity .~ Just (realToFrac opacity))
+
+withStrokeWidth :: Number -> Tree -> Tree
+withStrokeWidth width = withDrawAttributes (strokeWidth .~ pure width)
+
+mkRect :: Point -> Number -> Number -> Tree
+mkRect corner width height = RectangleTree $
+  defaultSvg & rectUpperLeftCorner .~ corner
+             & rectWidth .~ width
+             & rectHeight .~ height

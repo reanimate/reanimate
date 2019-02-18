@@ -24,9 +24,11 @@ library
                       Reanimate.Svg
                       Reanimate.Transform
   other-modules:      Reanimate.Misc
+                      Reanimate.Svg.NamedColors
   build-depends:       base >=4.10 && <4.13,
                        lucid-svg, time, text, unix, lucid, filepath, process, directory,
-                       containers, svg-tree, xml, bytestring, lens, linear, mtl, matrix
+                       containers, svg-tree, xml, bytestring, lens, linear, mtl, matrix,
+                       JuicyPixels
 
 Flag gtk-viewer
   Description: Enable gtk-based viewer
@@ -47,9 +49,10 @@ executable reanimate-viewer
                       Reanimate.Svg
                       Reanimate.Misc
                       Reanimate.Transform
+                      Reanimate.Svg.NamedColors
   build-depends:       base >=4.10 && <4.13, cairo >=0.13 && <0.14, gtk,
                        svgcairo, lucid-svg, time, text, unix, lucid, reanimate,
                        filepath, process, directory, containers, svg-tree, xml,
-                       bytestring, lens, linear, mtl, matrix
+                       bytestring, lens, linear, mtl, matrix,JuicyPixels
   hs-source-dirs:      src
   default-language:    Haskell2010
