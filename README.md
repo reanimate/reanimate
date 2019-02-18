@@ -41,6 +41,43 @@ latex_draw = pauseAtEnd 1 $ defineAnimation $ proc () -> do
 ```
 ![Drawing LaTeX equations](gifs/latex_draw.gif)
 
+## Bounding boxes
+
+```haskell
+bbox :: Ani ()
+bbox = proc () -> do
+  emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
+  annotate' bbox1 -< g_ [transform_ $ Lucid.translate (320/2-50) (180/2)]
+  annotate' bbox2 -< g_ [transform_ $ Lucid.translate (320/2+50) (180/2)]
+
+bbox1 :: Ani ()
+bbox1 = defineAnimation $ proc () -> do
+  duration 5 -< ()
+  s <- signal 0 1 -< ()
+  let rotated = rotate (360*s) svg
+      (x, y, w, h) = boundingBox rotated
+  emit -< do
+    g_ [transform_ $ Lucid.translate x y] $
+      rect_ [num_ width_ w, num_ height_ h, stroke_ "red", fill_opacity_ "0", stroke_width_ "1"]
+    g_ [fill_ "white"] $ toHtml rotated
+  where
+    msg = "\\sum_{k=1}^\\infty"
+    svg = scale 3 $ center $ latexAlign msg
+
+bbox2 :: Ani ()
+bbox2 = defineAnimation $ proc () -> do
+  duration 5 -< ()
+  s <- signalOscillate 0 1 -< ()
+  let rotated = partialSvg s heartShape
+      (x, y, w, h) = boundingBox rotated
+  emit -< do
+    g_ [transform_ $ Lucid.translate x y] $
+      rect_ [num_ width_ w, num_ height_ h, stroke_ "red", fill_opacity_ "0", stroke_width_ "1"]
+    g_ [fill_ "white", fill_opacity_ "0", stroke_width_ "4", stroke_ "white"] $
+      toHtml rotated
+```
+![Bounding boxes](gifs/bbox.gif)
+
 ## Bezier curves
 
 ![Bezier curves](gifs/bezier.gif)
