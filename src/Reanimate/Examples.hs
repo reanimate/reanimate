@@ -10,7 +10,7 @@ import           Codec.Picture.Types
 import           Data.Monoid
 import           Data.Monoid           ((<>))
 import           Data.Text             (Text, pack)
-import qualified Graphics.Svg          as S
+import           Graphics.Svg as S
 import           Linear.V2
 import           Lucid.Svg             (Svg, circle_, clip_path_, cx_, cy_, d_, id_, defs_, clipPath_,
                                         fill_, fill_opacity_, font_size_, g_,
@@ -32,19 +32,17 @@ import Debug.Trace
 sinewave :: Ani ()
 sinewave = proc () -> do
     duration 10 -< ()
-    emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
-
+    emit -< toHtml $ mkBackground "black"
     idx <- signalOscillate 0 1 -< ()
     emit -< do
-      defs_ $ clipPath_ [id_ "clip"] $
-        rect_ [x_ "0", num_ y_ (-height), num_ width_ (idx * width), height_ "100%"]
-      g_ [transform_ $ Lucid.translate margin height, clip_path_ "url(#clip)"] $
-        renderPath $ approxFnData 1000 wave
-      line_ [ num_ x1_ margin, num_ x2_ margin, y1_ "10", y2_ "170"
-            , stroke_ "white"]
-      line_ [num_ x1_ margin, num_ x2_ (margin+width), num_ y1_ height, num_ y2_ height
-            , stroke_ "white"]
-
+      defs_ $ clipPath_ [id_ "clip"] $ toHtml $
+        mkRect (Num 0, Num (-height)) (Num $ idx*width) (Percent 100)
+      toHtml $ translate margin height $ withStrokeColor "white" $
+        withClipPathRef (Ref "clip") $ mkPathText $ renderPathText $ approxFnData 1000 wave
+      toHtml $ withStrokeColor "white" $
+        mkLine (Num margin, Num 10) (Num margin, Num 170)
+      toHtml $ withStrokeColor "white" $
+        mkLine (Num margin, Num height) (Num (margin+width), Num height)
     let (circX, circY) = wave idx
     emit -< g_ [transform_ $ Lucid.translate margin height] $
       circle_ [num_ cx_ circX, num_ cy_ circY, r_ "3", fill_ "red"]
@@ -55,15 +53,14 @@ sinewave = proc () -> do
 morph_wave :: Ani ()
 morph_wave = proc () -> do
     duration 5 -< ()
-    emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
-
     morph <- signalOscillate 0 1 -< ()
-    emit -< do
-      g_ [transform_ $ Lucid.translate 30 50] $ renderPath wave1
-      g_ [transform_ $ Lucid.translate 30 130] $ renderPath wave2
-      g_ [transform_ $ Lucid.translate 30 90] $ renderPath $ morphPath wave1 wave2 morph
-      line_ [x1_ "30", x2_ "30", y1_ "10", y2_ "170", stroke_ "white"]
-      line_ [x1_ "30", x2_ "290", y1_ "90", y2_ "90", stroke_ "white"]
+    emit -< toHtml $ withStrokeColor "white" $ mkGroup
+      [ mkBackground "black"
+      , translate 30 50  $ mkPathText $ renderPathText wave1
+      , translate 30 130 $ mkPathText $ renderPathText wave2
+      , translate 30 90  $ mkPathText $ renderPathText $ morphPath wave1 wave2 morph
+      , mkLine (Num 30, Num 10) (Num 30, Num 170)
+      , mkLine (Num 30, Num 90) (Num 290, Num 90) ]
   where
     freq = 3; width = 260
     wave1 = approxFnData 1000 $ \idx -> (idx*width, sin (idx*pi*2*freq) * 20)
@@ -71,15 +68,13 @@ morph_wave = proc () -> do
 
 morph_wave_circle :: Ani ()
 morph_wave_circle = proc t -> do
-  duration 5 -< ()
-  emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
-
-  idx <- signalOscillate 0 1 -< ()
-  emit -< do
-    g_ [transform_ $ Lucid.translate 30 90] $
-      renderPath $ morphPath circle wave1 idx
-    line_ [x1_ "30", x2_ "30", y1_ "10", y2_ "170", stroke_ "white"]
-    line_ [x1_ "30", x2_ "290", y1_ "90", y2_ "90", stroke_ "white"]
+    duration 5 -< ()
+    idx <- signalOscillate 0 1 -< ()
+    emit -< toHtml $ withStrokeColor "white" $ mkGroup
+      [ mkBackground "black"
+      , translate 30 90 $ mkPathText $ renderPathText $ morphPath circle wave1 idx
+      , mkLine (Num 30, Num 10) (Num 30, Num 170)
+      , mkLine (Num 30, Num 90) (Num 290, Num 90) ]
   where
     freq = 5; width = 260; radius = 50
     wave1 = approxFnData 1000 $ \idx -> (idx*width, sin (idx*pi*2*freq) * 20)
@@ -357,13 +352,14 @@ latex_basic :: Ani ()
 latex_basic = proc () -> do
   duration 2 -< ()
   s <- signalOscillate 0 1 -< ()
-  emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
-  emit -<
-    g_ [transform_ $ Lucid.translate 20 15 <> " " <> Lucid.scale 4 4] $ do
-      g_ [stroke_ "white", fill_opacity_ "0", stroke_width_ "0.1"] text
-      g_ [fill_ "white", num_ fill_opacity_ s]                     text
+  emit -< toHtml $ mkGroup
+    [ mkBackground "black"
+    , translate (320/2) (180/2) $ mkGroup
+      [ withStrokeColor "white" $ withFillOpacity 0 $ withStrokeWidth (Num 0.1) text
+      , withFillColor "white" $ withFillOpacity s text] ]
   where
-    text = toHtml $ latexAlign "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
+    text = scale 4 $ center $ latexAlign
+      "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
 
 bezier :: Ani ()
 bezier = adjustSpeed 0.4 $ proc () -> do
@@ -428,28 +424,28 @@ pathSquare = proc () -> do
 
 latex_draw :: Ani ()
 latex_draw = pauseAtEnd 1 $ defineAnimation $ proc () -> do
-  emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
+  emit -< toHtml $ mkBackground "black"
   drawText msg `andThen` fillText msg -< ()
   where
     msg = "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
-    placement = g_ [transform_ $ Lucid.translate 20 15 <> " " <> Lucid.scale 5 5]
+    placement = translate (320/2) (180/2) . scale 5
     fillText txt = defineAnimation $ proc () -> do
       duration 1 -< ()
       s <- signal 0 1 -< ()
-      emit -< placement $
-          g_ [fill_ "white", num_ fill_opacity_ s] $
-            toHtml $ latexAlign txt
+      emit -< toHtml $ placement $
+          withFillColor "white" $ withFillOpacity s $
+            center $ latexAlign txt
     drawText txt = defineAnimation $ proc () -> do
       duration 2 -< ()
       s <- signal 0 1 -< ()
-      emit -< placement $
-          g_ [stroke_ "white", fill_opacity_ "0", stroke_width_ "0.1"] $
-            toHtml $ partialSvg s $ latexAlign txt
+      emit -< toHtml $ placement $
+        withStrokeColor "white" $ withFillOpacity 0 $ withStrokeWidth (Num 0.1) $
+          partialSvg s $ center $ latexAlign txt
 
 
 bbox :: Ani ()
 bbox = proc () -> do
-  emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
+  emit -< toHtml $ mkBackground "black"
   annotate' bbox1 -< g_ [transform_ $ Lucid.translate (320/2-50) (180/2)]
   annotate' bbox2 -< g_ [transform_ $ Lucid.translate (320/2+50) (180/2)]
 
@@ -457,37 +453,28 @@ bbox1 :: Ani ()
 bbox1 = defineAnimation $ proc () -> do
   duration 5 -< ()
   s <- signal 0 1 -< ()
-  let rotated = rotate (360*s) svg
-      (x, y, w, h) = boundingBox rotated
   emit -< do
-    g_ [transform_ $ Lucid.translate x y] $
-      rect_ [num_ width_ w, num_ height_ h, stroke_ "red", fill_opacity_ "0"]
-    g_ [fill_ "white"] $ toHtml rotated
+    toHtml $ mkBoundingBox $ rotate (360*s) svg
+    toHtml $ withFillColor "white" $ rotate (360*s) svg
   where
-    msg = "\\sum_{k=1}^\\infty"
-    svg = scale 3 $ center $ latexAlign msg
+    svg = scale 3 $ center $ latexAlign "\\sum_{k=1}^\\infty"
 
 bbox2 :: Ani ()
 bbox2 = defineAnimation $ proc () -> do
   duration 5 -< ()
   s <- signalOscillate 0 1 -< ()
-  let rotated = partialSvg s heartShape
-      (x, y, w, h) = boundingBox rotated
   emit -< do
-    toHtml $ withStrokeColor "red" $ withFillOpacity 0 $
-      mkRect (S.Num x, S.Num y) (S.Num w) (S.Num h)
-    toHtml $ withStrokeColor "white" $ withFillOpacity 0 $
-      rotated
+    toHtml $ mkBoundingBox $ partialSvg s heartShape
+    toHtml $ withStrokeColor "white" $ withFillOpacity 0 $ partialSvg s heartShape
+
+mkBoundingBox :: Tree -> Tree
+mkBoundingBox svg = withStrokeColor "red" $ withFillOpacity 0 $
+    mkRect (S.Num x, S.Num y) (S.Num w) (S.Num h)
+  where
+    (x, y, w, h) = boundingBox svg
 
 heartShape =
-    rotate 225 $ center $ p
-  where
-    p = S.PathTree $ S.defaultSvg & S.pathDefinition .~ cmds
-    abs = S.OriginAbsolute
-    rel = S.OriginRelative
-    cmds =
-      [S.MoveTo abs [V2 0 40]
-      ,S.VerticalTo rel [-40],S.HorizontalTo rel [40]
-      ,S.EllipticalArc rel [(20,20,90,False,True, V2 0 40)]
-      ,S.EllipticalArc rel [(20,20,90,False,True, V2 (-40) 0)]
-      ,S.EndPath]
+    rotate 225 $ center $  mkPathString
+      "M0.0,40.0 v-40.0 h40.0\
+      \a20.0 20.0 90.0 0 1 0.0,40.0\
+      \a20.0 20.0 90.0 0 1 -40.0,0.0 Z"
