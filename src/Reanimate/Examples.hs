@@ -474,7 +474,7 @@ mkBoundingBox svg = withStrokeColor "red" $ withFillOpacity 0 $
     (x, y, w, h) = boundingBox svg
 
 heartShape =
-    rotate 225 $ center $  mkPathString
+    center $ rotateAroundCenter 225 $ mkPathString
       "M0.0,40.0 v-40.0 h40.0\
       \a20.0 20.0 90.0 0 1 0.0,40.0\
       \a20.0 20.0 90.0 0 1 -40.0,0.0 Z"
