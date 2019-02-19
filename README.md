@@ -177,10 +177,10 @@ clip_rect :: Ani ()
 clip_rect = proc () -> do
   emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
   follow
-    [ proc () -> do
-      sim [ paintStatic prev | prev <- [max 0 (n-4) .. n-1] ] -< ()
-      sim [ runAni "black" i | i <- [n-4], i>=0 ] -< ()
-      runAni "white" n -< ()
+    [ sim
+      [ sim [ paintStatic prev | prev <- [max 0 (n-4) .. n-1] ]
+      , sim [ runAni "black" i | i <- [n-4], i>=0 ]
+      , runAni "white" n ]
     | n <- [0..15]
     ] -< ()
   where
