@@ -340,14 +340,8 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
     mapTuple f = f *** f
 
 withTransformations :: [Transformation] -> Tree -> Tree
-withTransformations transformations = withDrawAttributes (transform .~ Just transformations)
-
-withDrawAttributes :: (DrawAttributes -> DrawAttributes) -> Tree -> Tree
-withDrawAttributes lens tree = GroupTree $ defaultSvg
-    & drawAttr .~ attr
-    & groupChildren .~ [tree]
-  where
-    attr = defaultSvg & lens
+withTransformations transformations t =
+  mkGroup [t] & drawAttr %~ transform .~ Just transformations
 
 translate :: Double -> Double -> Tree -> Tree
 translate x y = withTransformations [Translate x y]
@@ -411,19 +405,19 @@ mkColor name =
     Just c  -> ColorRef c
 
 withStrokeColor :: String -> Tree -> Tree
-withStrokeColor color = withDrawAttributes (strokeColor .~ pure (mkColor color))
+withStrokeColor color = drawAttr %~ strokeColor .~ pure (mkColor color)
 
 withFillColor :: String -> Tree -> Tree
-withFillColor color = withDrawAttributes (fillColor .~ pure (mkColor color))
+withFillColor color = drawAttr %~ fillColor .~ pure (mkColor color)
 
 withFillOpacity :: Double -> Tree -> Tree
-withFillOpacity opacity = withDrawAttributes (fillOpacity .~ Just (realToFrac opacity))
+withFillOpacity opacity = drawAttr %~ fillOpacity .~ Just (realToFrac opacity)
 
 withStrokeWidth :: Number -> Tree -> Tree
-withStrokeWidth width = withDrawAttributes (strokeWidth .~ pure width)
+withStrokeWidth width = drawAttr %~ strokeWidth .~ pure width
 
 withClipPathRef :: ElementRef -> Tree -> Tree
-withClipPathRef ref = withDrawAttributes (clipPathRef .~ pure ref)
+withClipPathRef ref = drawAttr %~ clipPathRef .~ pure ref
 
 mkRect :: Point -> Number -> Number -> Tree
 mkRect corner width height = RectangleTree $ defaultSvg
@@ -451,3 +445,27 @@ mkPathText str =
 
 mkBackground :: String -> Tree
 mkBackground color = withFillColor color $ mkRect (Num 0, Num 0) (Percent 100) (Percent 100)
+
+withSubglyphs :: Int -> Int -> (Tree -> Tree) -> Tree -> Tree
+withSubglyphs from to fn t = evalState (worker t) 0
+  where
+    worker :: Tree -> State Int Tree
+    worker t =
+      case t of
+        GroupTree g -> do
+          cs <- mapM worker (g ^. groupChildren)
+          return $ GroupTree $ g & groupChildren .~ cs
+        PathTree{} -> handleGlyph t
+        CircleTree{} -> handleGlyph t
+        PolyLineTree{} -> handleGlyph t
+        PolygonTree{} -> handleGlyph t
+        EllipseTree{} -> handleGlyph t
+        LineTree{} -> handleGlyph t
+        RectangleTree{} -> handleGlyph t
+        _ -> return t
+    handleGlyph :: Tree -> State Int Tree
+    handleGlyph t = do
+      n <- get <* modify (+1)
+      if n >= from && n < to
+        then return $ fn t
+        else return t

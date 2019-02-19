@@ -70,6 +70,25 @@ bbox2 = defineAnimation $ proc () -> do
 ```
 ![Bounding boxes](gifs/bbox.gif)
 
+## Colorful LaTeX
+```haskell
+latex_color :: Ani ()
+latex_color = proc () -> do
+    duration 0.1 -< ()
+    emit -< toHtml $ mkBackground "black"
+    emit -< toHtml $ translate (320/2) (180/2) $ withStrokeWidth (Num 0.2) $
+      withStrokeColor "white" $
+      withSubglyphs 0 1 (withFillColor "blue") $
+      withSubglyphs 1 2 (withFillColor "yellow") $
+      withSubglyphs 2 3 (withFillColor "green") $
+      withSubglyphs 3 4 (withFillColor "red") $
+      withSubglyphs 4 5 (withFillColor "darkslategrey") $
+      svg
+  where
+    svg = scale 10 $ center $ latex "\\LaTeX"
+```
+![Colorful LaTeX](gifs/latex_color.gif)
+
 ## Bezier curves
 
 ![Bezier curves](gifs/bezier.gif)
