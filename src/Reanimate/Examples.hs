@@ -485,11 +485,11 @@ latex_color = proc () -> do
     emit -< toHtml $ mkBackground "black"
     emit -< toHtml $ translate (320/2) (180/2) $ withStrokeWidth (Num 0.2) $
       withStrokeColor "white" $
-      withSubglyphs 0 1 (withFillColor "blue") $
-      withSubglyphs 1 2 (withFillColor "yellow") $
-      withSubglyphs 2 3 (withFillColor "green") $
-      withSubglyphs 3 4 (withFillColor "red") $
-      withSubglyphs 4 5 (withFillColor "darkslategrey") $
+      withSubglyphs [0] (withFillColor "blue") $
+      withSubglyphs [1] (withFillColor "yellow") $
+      withSubglyphs [2] (withFillColor "green") $
+      withSubglyphs [3] (withFillColor "red") $
+      withSubglyphs [4] (withFillColor "darkslategrey") $
       svg
   where
     svg = scale 10 $ center $ latex "\\LaTeX"

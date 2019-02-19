@@ -446,8 +446,8 @@ mkPathText str =
 mkBackground :: String -> Tree
 mkBackground color = withFillColor color $ mkRect (Num 0, Num 0) (Percent 100) (Percent 100)
 
-withSubglyphs :: Int -> Int -> (Tree -> Tree) -> Tree -> Tree
-withSubglyphs from to fn t = evalState (worker t) 0
+withSubglyphs :: [Int] -> (Tree -> Tree) -> Tree -> Tree
+withSubglyphs target fn t = evalState (worker t) 0
   where
     worker :: Tree -> State Int Tree
     worker t =
@@ -466,6 +466,6 @@ withSubglyphs from to fn t = evalState (worker t) 0
     handleGlyph :: Tree -> State Int Tree
     handleGlyph t = do
       n <- get <* modify (+1)
-      if n >= from && n < to
+      if n `elem` target
         then return $ fn t
         else return t
