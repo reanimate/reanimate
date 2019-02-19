@@ -326,7 +326,6 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
       EllipseTree{}   -> error "EllipseTree"
       LineTree{}      -> error "LineTree"
       RectangleTree rect ->
-      -- toUserUnit defaultDPI x
         case mapTuple (toUserUnit defaultDPI) (rect^.rectUpperLeftCorner) of
           (Num x, Num y) -> [V2 x y] ++
             case mapTuple (toUserUnit defaultDPI) (rect^.rectWidth, rect^.rectHeight) of
@@ -359,11 +358,46 @@ rotate a = withTransformations [Rotate a Nothing]
 rotateAround :: Double -> RPoint -> Tree -> Tree
 rotateAround a (V2 x y) = withTransformations [Rotate a (Just (x,y))]
 
+rotateAroundCenter :: Double -> Tree -> Tree
+rotateAroundCenter a t =
+    rotateAround a (V2 (x+w/h) (y+h/2)) t
+  where
+    (x,y,w,h) = boundingBox t
+
 scale :: Double -> Tree -> Tree
 scale a = withTransformations [Scale a Nothing]
 
 scaleXY :: Double -> Double -> Tree -> Tree
 scaleXY x y = withTransformations [Scale x (Just y)]
+
+-- scalePoints :: Double -> Tree -> Tree
+-- scalePoints a = scalePointsXY a a
+--
+-- scalePointsXY :: Double -> Double -> Tree -> Tree
+-- scalePointsXY x y = mapTree worker
+--   where
+--     worker t =
+--       case t of
+--         None            -> t
+--         UseTree{}       -> t
+--         GroupTree{}     -> t
+--         SymbolTree{}    -> t
+--         PathTree p      -> PathTree $ p
+--           & pathDefinition %~ lineToPath . map scaleCmd . toLineCommands
+--         CircleTree{}    -> error "scalePointsXY CircleTree"
+--         PolyLineTree{}  -> error "scalePointsXY PolyLineTree"
+--         EllipseTree{}   -> error "scalePointsXY EllipseTree"
+--         LineTree{}      -> error "scalePointsXY LineTree"
+--         RectangleTree rect -> RectangleTree $ rect
+--           & rectUpperLeftCorner %~ (mapNumber (*x) *** mapNumber (*y))
+--           & rectWidth %~ mapNumber (*x)
+--           & rectHeight %~ mapNumber (*y)
+--         TextTree{}      -> t
+--         ImageTree{}     -> t
+--         MeshGradientTree{} -> t
+--     scaleCmd (LineMove to) = LineMove (to * V2 x y)
+--     scaleCmd (LineDraw to) = LineDraw (to * V2 x y)
+--     scaleCmd (LineBezier points) = LineBezier (map (*V2 x y) points)
 
 center :: Tree -> Tree
 center t = translate (-x-w/2) (-y-h/2) t
