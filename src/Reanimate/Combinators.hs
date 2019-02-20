@@ -51,7 +51,7 @@ progress ani = proc () -> do
 
 before :: Animation a () -> Animation a () -> Animation a ()
 before (Animation d1 fn1) (Animation d2 fn2) =
-  Animation (d1+d2) (\d t -> if t < d1 then fn1 d t else fn2 d (t-d1))
+  Animation (d1+d2) (\d t -> if t < d1 then fn1 d1 t else fn2 d2 (t-d1))
 
 follow :: [Animation a ()] -> Animation a ()
 follow []     = arr $ pure ()
@@ -64,10 +64,6 @@ par :: Ani () -> Ani () -> Ani ()
 par a b = proc t -> do
   a -< t
   b -< t
-
-pauseAtEnd :: Double -> Animation a () -> Animation a ()
-pauseAtEnd d (Animation d' fn) = Animation (d+d') $ \d t a ->
-  fn d (min d' t) a
 
 type Path = [(Double, Double)]
 
@@ -141,29 +137,29 @@ adjustSpeed :: Double -> Ani a -> Ani a
 adjustSpeed factor (Animation d fn) =
   Animation (d/factor) (\dur t -> fn dur (t*factor))
 
-freeze :: Double -> Ani a -> Ani a
-freeze d (Animation d' fn) =
-  Animation (d+d') (\dur t -> if t > d' then fn d' d' else fn d' t)
+pauseAtEnd :: Double -> Animation a () -> Animation a ()
+pauseAtEnd d (Animation d' fn) = Animation (d+d') $ \d t a ->
+  fn d' (min d' t) a
 
 pause :: Double -> Ani ()
 pause d = Animation d (\d t _ -> pure ())
 
 andThen :: Ani () -> Ani () -> Ani ()
-andThen a b = sim [a, pause (animationDuration a) `before` b]
+andThen a b = sim [freezeAtEnd a, pause (animationDuration a) `before` b]
 
 loop :: Ani a -> Ani a
 loop (Animation d fn) =
-  Animation d (\dur t -> fn dur (mod' t d))
+  Animation d (\_ t -> fn d (mod' t d))
 
 repeatAni :: Double -> Ani a -> Ani a
 repeatAni times (Animation d fn) =
-  Animation (d*times) $ \dur t -> fn dur (mod' t d)
+  Animation (d*times) $ \_ t -> fn d (mod' t d)
 
 sync :: Ani () -> Ani () -> Ani ()
 sync (Animation d1 fn1) (Animation d2 fn2) =
-  Animation (max d1 d2) $ \dur t () -> do
-    fn1 dur (t*(d1/maxDuration)) ()
-    fn2 dur (t*(d2/maxDuration)) ()
+  Animation (max d1 d2) $ \_ t () -> do
+    fn1 d1 (t*(d1/maxDuration)) ()
+    fn2 d2 (t*(d2/maxDuration)) ()
   where
     maxDuration = max d1 d2
 
@@ -175,7 +171,7 @@ delay pause (Animation d fn) =
   Animation (d+pause) $ \dur t a ->
     if t < pause
       then return ()
-      else fn dur (t-pause) a
+      else fn d (t-pause) a
 
 num_ :: (Show a, Num a) => (Text -> Attribute) -> (a -> Attribute)
 num_ attr n = attr (pack (show n))

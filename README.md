@@ -20,19 +20,19 @@ The example gifs are displayed at 25 fps.
 ## Drawing latex equations
 ```haskell
 latex_draw :: Ani ()
-latex_draw = pauseAtEnd 1 $ defineAnimation $ proc () -> do
+latex_draw = pauseAtEnd 1 $ proc () -> do
   emit -< toHtml $ mkBackground "black"
   drawText msg `andThen` fillText msg -< ()
   where
     msg = "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
     placement = translate (320/2) (180/2) . scale 5
-    fillText txt = defineAnimation $ proc () -> do
+    fillText txt = proc () -> do
       duration 1 -< ()
       s <- signal 0 1 -< ()
       emit -< toHtml $ placement $
           withFillColor "white" $ withFillOpacity s $
             center $ latexAlign txt
-    drawText txt = defineAnimation $ proc () -> do
+    drawText txt = proc () -> do
       duration 2 -< ()
       s <- signal 0 1 -< ()
       emit -< toHtml $ placement $
@@ -46,13 +46,13 @@ latex_draw = pauseAtEnd 1 $ defineAnimation $ proc () -> do
 ```haskell
 bbox :: Ani ()
 bbox = proc () -> do
-  emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
+  emit -< toHtml $ mkBackground "black"
+  duration 5 -< ()
   annotate' bbox1 -< g_ [transform_ $ Lucid.translate (320/2-50) (180/2)]
   annotate' bbox2 -< g_ [transform_ $ Lucid.translate (320/2+50) (180/2)]
 
 bbox1 :: Ani ()
-bbox1 = defineAnimation $ proc () -> do
-  duration 5 -< ()
+bbox1 = proc () -> do
   s <- signal 0 1 -< ()
   emit -< do
     toHtml $ mkBoundingBox $ rotate (360*s) svg
@@ -61,8 +61,7 @@ bbox1 = defineAnimation $ proc () -> do
     svg = scale 3 $ center $ latexAlign "\\sum_{k=1}^\\infty"
 
 bbox2 :: Ani ()
-bbox2 = defineAnimation $ proc () -> do
-  duration 5 -< ()
+bbox2 = proc () -> do
   s <- signalOscillate 0 1 -< ()
   emit -< do
     toHtml $ mkBoundingBox $ partialSvg s heartShape
@@ -194,7 +193,7 @@ progressMeters = proc () -> do
 ```haskell
 clip_rect :: Ani ()
 clip_rect = proc () -> do
-  emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
+  emit -< toHtml $ mkBackground "black"
   follow
     [ sim
       [ sim [ paintStatic prev | prev <- [max 0 (n-4) .. n-1] ]
@@ -205,10 +204,10 @@ clip_rect = proc () -> do
   where
     paintStatic nth = proc () ->
       annotate' (obj "white" (20+nth*10) (20+nth*10))
-        -< g_ [transform_ $ translate 160 90]
-    runAni color nth = defineAnimation $ proc () ->
+        -< g_ [transform_ $ Lucid.translate 160 90]
+    runAni color nth = proc () ->
       annotate' (circle_clip (obj color (20+nth*10) (20+nth*10)))
-        -< g_ [transform_ $ translate 160 90]
+        -< g_ [transform_ $ Lucid.translate 160 90]
     obj c width height = proc () -> do
       duration 1 -< ()
       emit -< rect_ [ num_ width_ width, num_ height_ height
@@ -227,8 +226,8 @@ so they're all in sync, and increases the playback speed.
 ```haskell
 scaling :: Ani ()
 scaling = adjustSpeed 2 $ syncAll
-  [ defineAnimation $ proc () ->
-    annotate' animation -< g_ [transform_ $ translate x y <> " " <> scale 0.5 0.5]
+  [ proc () ->
+    annotate' animation -< g_ [transform_ $ Lucid.translate x y <> " " <> Lucid.scale 0.5 0.5]
   | x <- [0,160]
   , y <- [0,90]
   | animation <- [sinewave, morph_wave, highlight, progressMeters]]

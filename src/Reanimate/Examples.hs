@@ -100,7 +100,7 @@ progressMeters = proc () -> do
           , fill_ "white"] "0.5x"
 
 progressMeter :: Ani ()
-progressMeter = loop $ defineAnimation $ proc () -> do
+progressMeter = loop $ proc () -> do
   duration 5 -< ()
   h <- signal 0 100 -< ()
   emit -< rect_ [ width_ "30", height_ "100", stroke_ "white", stroke_width_ "2", fill_opacity_ "0" ]
@@ -129,7 +129,7 @@ highlight = proc () -> do
       ] -< ()
 
   where
-    mkTransition from to = freeze 1 $ defineAnimation $ proc () -> do
+    mkTransition from to = pauseAtEnd 1 $ proc () -> do
       duration 1 -< ()
       s <- signalSCurve 2 0 1 -< ()
       let trans = morphPath from to s
@@ -158,7 +158,7 @@ highlight = proc () -> do
 
 clip_rect :: Ani ()
 clip_rect = proc () -> do
-  emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
+  emit -< toHtml $ mkBackground "black"
   follow
     [ sim
       [ sim [ paintStatic prev | prev <- [max 0 (n-4) .. n-1] ]
@@ -170,7 +170,7 @@ clip_rect = proc () -> do
     paintStatic nth = proc () ->
       annotate' (obj "white" (20+nth*10) (20+nth*10))
         -< g_ [transform_ $ Lucid.translate 160 90]
-    runAni color nth = defineAnimation $ proc () ->
+    runAni color nth = proc () ->
       annotate' (circle_clip (obj color (20+nth*10) (20+nth*10)))
         -< g_ [transform_ $ Lucid.translate 160 90]
     obj c width height = proc () -> do
@@ -199,7 +199,7 @@ circle_clip sub = proc () -> do
 
 scaling :: Ani ()
 scaling = adjustSpeed 2 $ syncAll
-  [ defineAnimation $ proc () ->
+  [ proc () ->
     annotate' animation -< g_ [transform_ $ Lucid.translate x y <> " " <> Lucid.scale 0.5 0.5]
   | x <- [0,160]
   , y <- [0,90]
@@ -211,15 +211,11 @@ label str = proc () -> do
   emit -< text_ [x_ "0", y_ "16", font_size_ "16"
         , fill_ "white"] (toHtml str)
 
-heart :: Ani ()
-heart = proc () -> do
-    emit -< rect_ [width_ "100%", height_ "100%", fill_ "#FFFFFF"]
-    -- duration 1 -< ()
-    -- annotate' drawHeart -< g_ [transform_ $ Lucid.scale 0.5 0.5 <> " " <> translate 200 200]
-    emit -< rect_ [width_ "100%", height_ "100%", fill_ "black"]
+valentine :: Ani ()
+valentine = proc () -> do
     follow
-     [ all_read
-     , sim [ follow [background]
+     [ all_red
+     , sim [ background
            , follow [backgroundDelay, sim [delay 6.4 (fallingLove 0.09)
                                           ,delay 4.9 (fallingLove 0.12)
                                           ,delay 4.5 (fallingLove 0.88)
@@ -234,40 +230,35 @@ heart = proc () -> do
                                           ,delay 5.9 (fallingLove 0.53)
                                           ,delay 3.2 (fallingLove 0.14)
                                           ,delay 7.7 (fallingLove 0.99) ]]
-           , follow [heart_ani, sim [heart_disappear]]
+           , follow [heart_ani, heart_disappear]
            , follow [backgroundDelay, message "", message ""
                     , message "", message "爱", message ""
                     , message "", message ""]]
      ] -<()
   where
-    all_read = defineAnimation $ proc () -> do
+    all_red = proc () -> do
       duration 1 -< ()
       emit -< rect_ [width_ "100%", height_ "100%", fill_ "red"]
-    background = defineAnimation $ proc () -> do
+    background = freezeAtEnd $ proc () -> do
       duration 2 -< ()
       n <- signal 0 0xFF -< ()
       let color = "#FF" ++ hex n ++ hex n
       emit -< rect_ [width_ "100%", height_ "100%", fill_ $ pack color]
-    rev_background = defineAnimation $ proc () -> do
-      duration 2 -< ()
-      n <- signal 0xFF 0 -< ()
-      let color = "#FF" ++ hex n ++ hex n
-      emit -< rect_ [width_ "100%", height_ "100%", fill_ $ pack color]
-    backgroundDelay = defineAnimation $ proc () -> do
+    backgroundDelay = freezeAtEnd $ proc () -> do
       duration (animationDuration background-1) -< ()
       returnA -< ()
-    heart_ani = repeatAni 10 $ defineAnimation $ proc () -> do
+    heart_ani = repeatAni 10 $ proc () -> do
       duration 1 -< ()
       n <- signalOscillateSCurve 2 0.9 1.1 -< ()
       annotate' drawHeart -< g_ [transform_ $ Lucid.translate 160 110] . g_ [transform_ $ Lucid.scale n n <> " "]
-    heart_disappear = defineAnimation $ proc () -> do
+    heart_disappear = proc () -> do
       duration 3 -< ()
       n  <- signal 0.9 10 -< ()
       annotate' drawHeart -< g_ [transform_ $ Lucid.translate 160 110] . g_ [transform_ $ Lucid.scale n n <> " "]
-    white = loop $ defineAnimation $ proc () -> do
+    white = loop $ proc () -> do
       duration 1 -< ()
       emit -< rect_ [width_ "100%", height_ "100%", fill_ "#FFFFFF"]
-    fallingLove xPos = defineAnimation $ proc () -> do
+    fallingLove xPos = proc () -> do
       duration 2 -< ()
       n <- signal 0 1 -< ()
       o <- signalOscillate (-1) 1 -< ()
@@ -277,7 +268,7 @@ heart = proc () -> do
             text_ [font_size_ "18"
                   ,text_anchor_ "middle"
                   ,fill_ "red"] "爱"
-    message txt = defineAnimation $ proc () -> do
+    message txt = proc () -> do
       duration 1 -< ()
       o <- signalOscillate 0 1 -< ()
       n <- signalOscillateSCurve 2 0.9 1.1 -< ()
@@ -309,7 +300,7 @@ frequencies = proc () -> do
       ] -< n
   where
     freqs = [11, 5, 17]; margin = 30; width = 260; height = 90
-    drawLine = defineAnimation $ proc _ -> do
+    drawLine = freezeAtEnd $ proc _ -> do
       label "drawLine" -< ()
       duration 1 -< ()
       n <- signal margin (width+margin) -< ()
@@ -318,7 +309,7 @@ frequencies = proc () -> do
               , num_ x2_ n,      num_ y2_ height
               , stroke_ "white"]
         circle_ [num_ cx_ n, num_ cy_ height, r_ "3", fill_ "red"]
-    drawFirstWave = defineAnimation $ proc move -> do
+    drawFirstWave = freezeAtEnd $ proc move -> do
       label "drawFirstWave" -< ()
       duration 3 -< ()
       n <- signal 0 1 -< ()
@@ -326,14 +317,14 @@ frequencies = proc () -> do
         g_ [transform_ $ Lucid.translate margin height] $ renderPath $ morphPath line1 (wave1 move) n
         let circleY = sum [ sin ((1+move)*pi*2*freq) * 20 | freq <- freqs ]
         circle_ [num_ cx_ (width+margin), num_ cy_ (height+circleY*n), num_ r_ 3, fill_ "red"]
-    drawSecondWave = defineAnimation $ proc move -> do
+    drawSecondWave = freezeAtEnd $ proc move -> do
       label "drawSecondWave" -< ()
       duration 3 -< ()
       emit -< do
         g_ [transform_ $ Lucid.translate margin height] $ renderPath $ wave1 move
         let circleY = sum [ sin ((1+move)*pi*2*freq) * 20 | freq <- freqs ]
         circle_ [num_ cx_ (width+margin), num_ cy_ (height+circleY), num_ r_ 3, fill_ "red"]
-    drawUpWave = defineAnimation $ proc move -> do
+    drawUpWave = freezeAtEnd $ proc move -> do
       label "drawUpWave" -< ()
       duration 2 -< ()
       n <- signal 0 1 -< ()
@@ -374,7 +365,7 @@ bezier = adjustSpeed 0.4 $ proc () -> do
   where
     pointA = (70,130); pointB = (270,120); pointC = (30,30); pointD = (250,50)
 
-    morph old new = defineAnimation $ proc () -> do
+    morph old new = proc () -> do
       duration 0.5 -< ()
       s <- signal 0 1 -< ()
       let new' = map (\(a,b) -> between a b s) (zip old new)
@@ -384,7 +375,7 @@ bezier = adjustSpeed 0.4 $ proc () -> do
             between a b idx
       emit -< mapM_ secondaryCircleAt new'
       emit -< primaryCircleAt (head new')
-    orderN lst = defineAnimation $ proc () -> do
+    orderN lst = proc () -> do
       duration 2 -< ()
       s <- signalOscillate 0 1 -< ()
       emit -< primaryCircleAt =<< orderN' (map const lst) s <* mapM_ secondaryCircleAt lst
@@ -423,19 +414,19 @@ pathSquare = proc () -> do
       ]
 
 latex_draw :: Ani ()
-latex_draw = pauseAtEnd 1 $ defineAnimation $ proc () -> do
+latex_draw = pauseAtEnd 1 $ proc () -> do
   emit -< toHtml $ mkBackground "black"
   drawText msg `andThen` fillText msg -< ()
   where
     msg = "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
     placement = translate (320/2) (180/2) . scale 5
-    fillText txt = defineAnimation $ proc () -> do
+    fillText txt = proc () -> do
       duration 1 -< ()
       s <- signal 0 1 -< ()
       emit -< toHtml $ placement $
           withFillColor "white" $ withFillOpacity s $
             center $ latexAlign txt
-    drawText txt = defineAnimation $ proc () -> do
+    drawText txt = proc () -> do
       duration 2 -< ()
       s <- signal 0 1 -< ()
       emit -< toHtml $ placement $
@@ -446,12 +437,12 @@ latex_draw = pauseAtEnd 1 $ defineAnimation $ proc () -> do
 bbox :: Ani ()
 bbox = proc () -> do
   emit -< toHtml $ mkBackground "black"
+  duration 5 -< ()
   annotate' bbox1 -< g_ [transform_ $ Lucid.translate (320/2-50) (180/2)]
   annotate' bbox2 -< g_ [transform_ $ Lucid.translate (320/2+50) (180/2)]
 
 bbox1 :: Ani ()
-bbox1 = defineAnimation $ proc () -> do
-  duration 5 -< ()
+bbox1 = proc () -> do
   s <- signal 0 1 -< ()
   emit -< do
     toHtml $ mkBoundingBox $ rotate (360*s) svg
@@ -460,8 +451,7 @@ bbox1 = defineAnimation $ proc () -> do
     svg = scale 3 $ center $ latexAlign "\\sum_{k=1}^\\infty"
 
 bbox2 :: Ani ()
-bbox2 = defineAnimation $ proc () -> do
-  duration 5 -< ()
+bbox2 = proc () -> do
   s <- signalOscillate 0 1 -< ()
   emit -< do
     toHtml $ mkBoundingBox $ partialSvg s heartShape
