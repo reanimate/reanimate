@@ -159,25 +159,23 @@ highlight = proc () -> do
 clip_rect :: Ani ()
 clip_rect = proc () -> do
   emit -< toHtml $ mkBackground "black"
-  follow
+  annotate' $ follow
     [ sim
       [ sim [ paintStatic prev | prev <- [max 0 (n-4) .. n-1] ]
       , sim [ runAni "black" i | i <- [n-4], i>=0 ]
       , runAni "white" n ]
     | n <- [0..15]
-    ] -< ()
+    ] -< g_ [transform_ $ Lucid.translate (320/2) (180/2)]
   where
     paintStatic nth = proc () ->
-      annotate' (obj "white" (20+nth*10) (20+nth*10))
-        -< g_ [transform_ $ Lucid.translate 160 90]
-    runAni color nth = proc () ->
-      annotate' (circle_clip (obj color (20+nth*10) (20+nth*10)))
-        -< g_ [transform_ $ Lucid.translate 160 90]
-    obj c width height = proc () -> do
+      emit -< toHtml $ withStrokeColor "white" $
+        square (20+nth*10)
+    runAni color nth = circle_clip $ proc () -> do
       duration 1 -< ()
-      emit -< rect_ [ num_ width_ width, num_ height_ height
-            , num_ x_ (-width/2), num_ y_ (-height/2)
-            , stroke_ c, fill_opacity_ "0", stroke_width_ "2" ]
+      emit -< toHtml $ withStrokeColor color $
+        square (20+nth*10)
+    square side = center $ withFillOpacity 0 $ withStrokeWidth (Num 2) $
+      mkRect (Num 0, Num 0) (Num side) (Num side)
 
 circle_clip :: Ani () -> Ani ()
 circle_clip sub = proc () -> do
