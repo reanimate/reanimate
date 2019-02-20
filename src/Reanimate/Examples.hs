@@ -185,9 +185,8 @@ circle_clip sub = proc () -> do
         xPos = pack$show$sin arc * 1000
         yPos = pack$show$cos arc * 1000
         long = if arc < pi then "1" else "0"
-    emit -< defs_ $ clipPath_ [id_ $ uniqName] $
-      path_ [ stroke_ "white", fill_ "white"
-            , d_ $ "M "<>startX<>" "<>startY<>" A 1000 1000 0 "<>long<>" 1 "
+    emit -< clipPath_ [id_ $ uniqName] $
+      path_ [ d_ $ "M "<>startX<>" "<>startY<>" A 1000 1000 0 "<>long<>" 1 "
                   <>xPos<> " "<>yPos<>" L 0 0 Z"]
     annotate' sub -<
       g_ [clip_path_ $ "url(#"<>uniqName<>")"]
