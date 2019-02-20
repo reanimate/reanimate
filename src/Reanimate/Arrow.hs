@@ -33,8 +33,8 @@ type Ani a = Animation () a
 duration :: Double -> Animation a ()
 duration duration = Animation duration (\_ _ _ -> pure ())
 
-defineAnimation :: Animation a b -> Animation a b
-defineAnimation (Animation d fn) = Animation d (\_ t -> fn d (min t d))
+freezeAtEnd :: Animation a b -> Animation a b
+freezeAtEnd (Animation d fn) = Animation d (\_ t -> fn d (min t d))
 
 animationDuration :: Animation a b -> Double
 animationDuration (Animation d _) = d
