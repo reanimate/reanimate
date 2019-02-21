@@ -8,8 +8,6 @@ import 'brace/theme/monokai';
 
 class App extends Component {
   render() {
-    // return (   <AceEditor     mode="java"     theme="monokai"     name="UNIQUE_ID_OF_DIV"
-    // editorProps={{       $blockScrolling: true     }}/> );
     return (
       <div className="App">
         <div>
