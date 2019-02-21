@@ -1,0 +1,29 @@
+.App {
+  /* text-align: center; */
+  /* min-height: 100vh; */
+  height: 100vh;
+  background-color: #282c34;
+  color: white;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: max-content auto;
+  grid-gap: 1em;
+  grid-auto-flow: column
+}
+
+div.messages {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  transition: height 1s ease;
+  height: 1em + 4px;
+}
+
+div.messages:hover {
+  height: 100px;
+  transition: height 1s ease;
+}
+
+#editor {
+
+}
