@@ -1,26 +1,21 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import Control.Concurrent.STM
 import Control.Concurrent
 import Control.Exception
 import Control.Monad
-import System.Clock
+import Data.Monoid
 import Network.WebSockets
 import Control.Monad.Fix
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import qualified Data.Cache as C
 import qualified Data.Map as Map
 
+import Cache
 import Reanimate.Misc
 
 main :: IO ()
 main = do
-  c <- C.newCache (Just day)
-  forkIO $ forever $ do
-    C.purgeExpired c
-    -- mergeValues c
-    threadDelay (10^6 * 60)
   runServer "127.0.0.1" 9161 $ \pending -> do
   conn <- acceptRequest pending
   thread <- newEmptyMVar
@@ -28,7 +23,7 @@ main = do
   forever $ do
     msg <- receiveData conn :: IO T.Text
     stopWorker thread
-    putMVar thread =<< forkIO (generateResponse c conn msg)
+    putMVar thread =<< forkIO (generateResponse conn msg)
 
 
 stopWorker mvar = do
@@ -37,8 +32,8 @@ stopWorker mvar = do
     Nothing -> return ()
     Just tid -> killThread tid
 
-generateResponse c conn msg = do
-  mbCached <- C.lookup c msg
+generateResponse conn msg = do
+  mbCached <- lookupCache msg
   case mbCached of
     Just svgs -> do
       putStrLn "Returning cached svg."
@@ -48,7 +43,7 @@ generateResponse c conn msg = do
       withTempFile ".exe" $ \tmpExecutable ->
       withTempFile ".hs" $ \tmpSource ->
       withTempDir $ \tmpDir -> do
-        writeFile tmpSource $ unlines
+        T.writeFile tmpSource $ T.unlines
           ["{-# LANGUAGE Arrows, OverloadedStrings, CPP #-}"
           ,"module Main where"
           ,"import Reanimate.Arrow"
@@ -67,9 +62,9 @@ generateResponse c conn msg = do
           ,"                                        text_anchor_, toHtml, transform_,"
           ,"                                        width_, x1_, x2_, x_, y1_, y2_, y_)"
           ,"import qualified Lucid.Svg             as Lucid"
-          ,"main = renderSvgs animation " ++ show tmpDir
+          ,"main = renderSvgs animation " <> T.pack (show tmpDir)
           ,"#line 1 \"animation.hs\""
-          ] ++ T.unpack msg
+          ] <> msg
         putStrLn $ "Compiling program:\n" ++ T.unpack msg
         ret <- runCmd_ "stack" ["ghc", "--", "-rtsopts", "--make", "-threaded", "-O2", tmpSource, "-o", tmpExecutable]
         case ret of
@@ -82,15 +77,12 @@ generateResponse c conn msg = do
               frame <- getFrame
               case frame of
                 Left "" -> do
-                  C.insert c msg (reverse acc)
+                  insertCache msg (reverse acc)
                   sendTextData conn (T.pack "Done")
                 Left err -> sendTextData conn $ T.pack $ "Error" ++ err
                 Right frame -> do
                   sendTextData conn (frame)
                   loop (frame : acc)
-
-day :: TimeSpec
-day = TimeSpec (60*60*24) 0
 
 withTimeout conn t action = do
   self <- myThreadId
@@ -100,21 +92,3 @@ withTimeout conn t action = do
     sendTextData conn $ T.pack $ "Error" ++ "Timeout"
   action
   killThread timer
-
--- mergeValues :: C.Cache String [T.Text] -> IO ()
--- mergeValues cache = do
---   keys <- C.keys cache
---   worker Map.empty keys
---   where
---     worker m [] = return ()
---     worker m (k:ks) = do
---       mbVal <- C.lookup cache k
---       case mbVal of
---         Nothing -> worker m ks
---         Just val ->
---           case Map.lookup val m of
---             Just val' -> do
---               C.insert cache k val'
---               worker m ks
---             Nothing ->
---               worker (Map.insert val val m) ks
