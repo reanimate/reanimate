@@ -1,14 +1,31 @@
 module Reanimate.Render
   ( render
+  , renderSvgs
   ) where
 
 import           Control.Monad      (forM_)
-import           Lucid.Svg          (renderToFile)
-import           Reanimate.Arrow    (Ani, animationDuration, frameAt)
+import           Lucid.Svg          (renderToFile, renderBS)
+import           Reanimate.Arrow    (Ani, animationDuration, frameAt, unboundedFrameAt)
 import           Reanimate.Examples
 import           Reanimate.Misc
-import           System.FilePath    (takeExtension, (</>))
+import           System.Directory   (renameFile)
+import           System.FilePath    (takeExtension, takeFileName, (</>))
 import           Text.Printf        (printf)
+import qualified Data.ByteString.Lazy.Char8 as BS
+import Control.Parallel.Strategies
+
+renderSvgs :: Ani () -> FilePath -> IO ()
+renderSvgs ani tmpDir = do
+      let frameName nth = tmpDir </> printf nameTemplate nth
+          renderedFrames = map (BS.concat . BS.lines . renderBS . nthFrame) frames
+      mapM_ BS.putStrLn (renderedFrames `using` parBuffer 16 rdeepseq)
+    where
+      frames = [0..frameCount-1]
+      rate = 60
+      nthFrame nth = unboundedFrameAt (recip (fromIntegral rate) * fromIntegral nth) ani
+      frameCount = round (animationDuration ani * fromIntegral rate) :: Int
+      nameTemplate :: String
+      nameTemplate = "render-%05d.svg"
 
 
 data Format = RenderMp4 | RenderGif | RenderWebm

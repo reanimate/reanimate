@@ -425,6 +425,12 @@ mkRect corner width height = RectangleTree $ defaultSvg
   & rectWidth .~ width
   & rectHeight .~ height
 
+mkBoundingRect :: Tree -> Double -> Tree
+mkBoundingRect src margin =
+    mkRect (Num $ x-margin, Num $ y-margin) (Num $ w+margin*2) (Num $ h+margin*2)
+  where
+    (x, y, w, h) = boundingBox src
+
 mkLine :: Point -> Point -> Tree
 mkLine point1 point2 = LineTree $ defaultSvg
   & linePoint1 .~ point1
