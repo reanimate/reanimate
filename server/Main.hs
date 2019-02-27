@@ -74,7 +74,7 @@ generateResponse c conn msg = do
         case ret of
           Left err -> do
             sendTextData conn $ T.pack $ "Error" ++ unlines (drop 3 (lines err))
-          Right{} -> withTimeout conn 10 $ do
+          Right{} -> withTimeout conn 30 $ do
             sendTextData conn (T.pack "Rendering")
             getFrame <- runCmdLazy tmpExecutable ["+RTS", "-N", "-M50M", "-RTS"]
             flip fix [] $ \loop acc -> do
@@ -97,7 +97,8 @@ withTimeout conn t action = do
     threadDelay (10^6 * t)
     killThread self
     sendTextData conn $ T.pack $ "Error" ++ "Timeout"
-  action `finally` killThread timer
+  action
+  killThread timer
 
 -- mergeValues :: C.Cache String [T.Text] -> IO ()
 -- mergeValues cache = do
