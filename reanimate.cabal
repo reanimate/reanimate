@@ -47,4 +47,4 @@ executable reanimate-server
   main-is:            Main.hs
   other-modules:      Reanimate.Misc
   build-depends:      base >=4.10 && <4.13, text, websockets, process, filepath, directory,
-                      cache, clock, stm, containers
+                      containers, hashable
