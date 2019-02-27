@@ -49,7 +49,7 @@ generateResponse c conn msg = do
       withTempFile ".hs" $ \tmpSource ->
       withTempDir $ \tmpDir -> do
         writeFile tmpSource $ unlines
-          ["{-# LANGUAGE Arrows, OverloadedStrings #-}"
+          ["{-# LANGUAGE Arrows, OverloadedStrings, CPP #-}"
           ,"module Main where"
           ,"import Reanimate.Arrow"
           ,"import           Reanimate.Combinators"
@@ -68,6 +68,7 @@ generateResponse c conn msg = do
           ,"                                        width_, x1_, x2_, x_, y1_, y2_, y_)"
           ,"import qualified Lucid.Svg             as Lucid"
           ,"main = renderSvgs animation " ++ show tmpDir
+          ,"#line 1 \"animation.hs\""
           ] ++ T.unpack msg
         putStrLn $ "Compiling program:\n" ++ T.unpack msg
         ret <- runCmd_ "stack" ["ghc", "--", "-rtsopts", "--make", "-threaded", "-O2", tmpSource, "-o", tmpExecutable]
