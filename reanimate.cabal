@@ -46,5 +46,6 @@ executable reanimate-server
   hs-source-dirs:     server, src
   main-is:            Main.hs
   other-modules:      Reanimate.Misc
+                      Cache
   build-depends:      base >=4.10 && <4.13, text, websockets, process, filepath, directory,
                       containers, hashable
