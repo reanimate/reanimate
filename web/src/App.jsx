@@ -36,7 +36,7 @@ class App extends Component {
         this.start = Date.now();
       } else if( event.data.startsWith("Error") ) {
         console.log("Error");
-        this.setState({message: event.data });
+        this.setState({message: event.data.substring(5) });
       } else {
         this.setState({message: `Rendering: ${this.nFrames_new}`});
         this.nFrames_new++;
