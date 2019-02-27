@@ -64,7 +64,7 @@ animation = proc () -> do
       defs_ $ clipPath_ [id_ "clip"] $ toHtml $
         mkRect (Num 0, Num (-height)) (Num $ idx*width) (Num 320)
       toHtml $ translate margin height $ withStrokeColor "white" $
-        withClipPathRef (Ref "clip") $ mkPathText $ renderPathText $ approxFnData 1000 wave
+        withClipPathRef (Ref "clip") $ mkPathText $ renderPathText $ approxFnData 100 wave
       toHtml $ withStrokeColor "white" $
         mkLine (Num margin, Num 10) (Num margin, Num 170)
       toHtml $ withStrokeColor "white" $
@@ -90,8 +90,8 @@ animation = proc () -> do
       , mkLine (Num 30, Num 90) (Num 290, Num 90) ]
   where
     freq = 3; width = 260
-    wave1 = approxFnData 1000 $ \\idx -> (idx*width, sin (idx*pi*2*freq) * 20)
-    wave2 = approxFnData 1000 $ \\idx -> (idx*width, sin (idx*pi*2*(freq*3)) * 20)`;
+    wave1 = approxFnData 100 $ \\idx -> (idx*width, sin (idx*pi*2*freq) * 20)
+    wave2 = approxFnData 100 $ \\idx -> (idx*width, sin (idx*pi*2*(freq*3)) * 20)`;
 
 const morph_wave_circle =
 `animation :: Ani ()
