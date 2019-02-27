@@ -10,9 +10,14 @@ Live coding playground: https://lemmih.github.io/reanimate/
 
 # TODO
 
-* bounding boxes
+* ~~website for live coding~~
+* ~~bounding boxes~~
+* Improve bounding box approximations
+* Select desired FPS in web previewer
+* Download rendered animations in web previewer
 * alignment and positioning combinators
-* website for live coding
+* Use svg-tree instead of lucid-svg
+
 
 # Examples
 
