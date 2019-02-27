@@ -6,7 +6,7 @@ previewer. Inline latex code is supported when 'latex' and 'dvisvgm' are install
 
 Nothing about the API is stable at this point.
 
-The example gifs are displayed at 25 fps.
+Live coding playground: https://lemmih.github.io/reanimate/
 
 # TODO
 
@@ -15,6 +15,8 @@ The example gifs are displayed at 25 fps.
 * website for live coding
 
 # Examples
+
+The example gifs are displayed at 25 fps.
 
 ## Drawing latex equations
 ```haskell
