@@ -9,7 +9,8 @@ import preset from './Presets';
 
 class App extends Component {
   connect = () => {
-    const ws = new WebSocket("ws://localhost:9160");
+    const ws = new WebSocket("ws://149.56.132.163:9160");
+    // const ws = new WebSocket("ws://localhost:9160");
 
     ws.onopen = event => {
       this.setState(state => ({...state, message: "Connected."}));
