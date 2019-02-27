@@ -21,7 +21,7 @@ main = do
     C.purgeExpired c
     -- mergeValues c
     threadDelay (10^6 * 60)
-  runServer "127.0.0.1" 9160 $ \pending -> do
+  runServer "127.0.0.1" 9161 $ \pending -> do
   conn <- acceptRequest pending
   thread <- newEmptyMVar
   forkPingThread conn 30
