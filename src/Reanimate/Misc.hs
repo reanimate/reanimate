@@ -1,19 +1,24 @@
 module Reanimate.Misc
   ( requireExecutable
   , runCmd
+  , runCmd_
+  , runCmdLazy
   , withTempDir
   , withTempFile
   ) where
 
 import           Control.Exception (evaluate, finally, throwIO)
+import qualified Data.Text         as T
+import qualified Data.Text.IO      as T
 import           System.Directory  (createDirectory, findExecutable,
                                     getTemporaryDirectory,
                                     removeDirectoryRecursive, removeFile)
 import           System.Exit       (ExitCode (..))
 import           System.FilePath   ((<.>), (</>))
-import           System.IO         (hClose, openTempFile)
-import           System.Process    (readProcessWithExitCode, showCommandForUser)
-
+import           System.IO         (hClose, openTempFile, hGetContents, hIsEOF)
+import           System.Process    (readProcessWithExitCode,
+                                    runInteractiveProcess, showCommandForUser,
+                                    waitForProcess)
 
 requireExecutable :: String -> IO FilePath
 requireExecutable exec = do
@@ -24,16 +29,42 @@ requireExecutable exec = do
 
 runCmd :: FilePath -> [String] -> IO ()
 runCmd exec args = do
+  _ <- runCmd_ exec args
+  return ()
+
+runCmd_ :: FilePath -> [String] -> IO (Either String String)
+runCmd_ exec args = do
   (ret, stdout, stderr) <- readProcessWithExitCode exec args ""
   evaluate (length stdout + length stderr)
   case ret of
-    ExitSuccess -> return ()
+    ExitSuccess -> return (Right stdout)
     ExitFailure err -> do
-      putStrLn $
+      return $ Left $
         "Failed to run: " ++ showCommandForUser exec args ++ "\n" ++
         "Error code: " ++ show err ++ "\n" ++
-        "stderr: " ++ show stderr
-      throwIO (ExitFailure err)
+        "stderr: " ++ stderr
+
+runCmdLazy :: FilePath -> [String] -> IO (IO (Either String T.Text))
+runCmdLazy exec args = do
+  (inp, out, err, pid) <- runInteractiveProcess exec args Nothing Nothing
+  hClose inp
+  return $ do
+    eof <- hIsEOF out
+    if eof
+      then do
+        stderr <- hGetContents err
+        evaluate (length stderr)
+        ret <- waitForProcess pid
+        case ret of
+          ExitSuccess -> return (Left "")
+          ExitFailure err -> do
+            return $ Left $
+              "Failed to run: " ++ showCommandForUser exec args ++ "\n" ++
+              "Error code: " ++ show err ++ "\n" ++
+              "stderr: " ++ stderr
+      else do
+        line <- T.hGetLine out
+        return (Right line)
 
 withTempDir :: (FilePath -> IO a) -> IO a
 withTempDir action = do

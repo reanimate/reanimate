@@ -36,7 +36,7 @@ sinewave = proc () -> do
     idx <- signalOscillate 0 1 -< ()
     emit -< do
       defs_ $ clipPath_ [id_ "clip"] $ toHtml $
-        mkRect (Num 0, Num (-height)) (Num $ idx*width) (Percent 100)
+        mkRect (Num 0, Num (-height)) (Num $ idx*width) (Num 320)
       toHtml $ translate margin height $ withStrokeColor "white" $
         withClipPathRef (Ref "clip") $ mkPathText $ renderPathText $ approxFnData 1000 wave
       toHtml $ withStrokeColor "white" $
@@ -54,9 +54,9 @@ morph_wave :: Ani ()
 morph_wave = proc () -> do
     duration 5 -< ()
     morph <- signalOscillate 0 1 -< ()
+    emit -< toHtml $ mkBackground "black"
     emit -< toHtml $ withStrokeColor "white" $ mkGroup
-      [ mkBackground "black"
-      , translate 30 50  $ mkPathText $ renderPathText wave1
+      [ translate 30 50  $ mkPathText $ renderPathText wave1
       , translate 30 130 $ mkPathText $ renderPathText wave2
       , translate 30 90  $ mkPathText $ renderPathText $ morphPath wave1 wave2 morph
       , mkLine (Num 30, Num 10) (Num 30, Num 170)
@@ -368,7 +368,7 @@ bezier = adjustSpeed 0.4 $ proc () -> do
       let new' = map (\(a,b) -> between a b s) (zip old new)
       emit -< forM_ (zip new' (tail new')) $ \(a,b) -> do
         renderPath $
-          approxFnData 1000 $ \idx ->
+          approxFnData 100 $ \idx ->
             between a b idx
       emit -< mapM_ secondaryCircleAt new'
       emit -< primaryCircleAt (head new')
@@ -377,11 +377,11 @@ bezier = adjustSpeed 0.4 $ proc () -> do
       s <- signalOscillate 0 1 -< ()
       emit -< primaryCircleAt =<< orderN' (map const lst) s <* mapM_ secondaryCircleAt lst
     orderN' [a] s = do
-      renderPath $ take (round $ 1000*s) $ approxFnData 1000 $ \idx -> a idx
+      renderPath $ take (round $ 100*s) $ approxFnData 100 $ \idx -> a idx
       return (a s)
     orderN' lst s = do
       forM_ (zip lst (tail lst)) $ \(a,b) -> renderPath $
-          approxFnData 1000 $ \idx ->
+          approxFnData 100 $ \idx ->
             between (a s) (b s) idx
       let middlePoints = map (\(a,b) -> \idx -> between (a idx) (b idx) idx) (zip lst (tail lst))
       orderN' middlePoints s <* mapM_ secondaryCircleAt (map ($s) middlePoints)

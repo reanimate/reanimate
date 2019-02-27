@@ -7,22 +7,32 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: max-content auto;
-  grid-gap: 1em;
+  /* grid-gap: 1em; */
   grid-auto-flow: column
 }
-
+.editor {
+  /* min-width: 35em; */
+}
+.controls {
+  text-align:center;
+}
+.controls svg {
+  padding-left: 5px;
+  padding-right: 5px;
+}
+.viewer {
+  position: static;
+}
 div.messages {
   position: fixed;
-  bottom: 0;
+  top: 0;
   width: 100%;
-  transition: height 1s ease;
-  height: 1em + 4px;
+  background: #282c34;
+}
+div.messages pre {
+  margin: 0;
 }
 
-div.messages:hover {
-  height: 100px;
-  transition: height 1s ease;
-}
 
 #editor {
 
