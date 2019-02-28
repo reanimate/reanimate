@@ -49,6 +49,7 @@ generateResponse conn msg = do
           ,"import Reanimate.Monad"
           ,"import           Reanimate.Combinators"
           ,"import           Reanimate.LaTeX"
+          ,"import           Codec.Picture.Types"
           ,"import           Reanimate.Svg"
           ,"import           Reanimate.Render"
           ,"import           Data.Monoid"
