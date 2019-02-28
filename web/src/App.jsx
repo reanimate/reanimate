@@ -10,24 +10,30 @@ import preset from './Presets';
 class App extends Component {
   connect = () => {
     const ws = new WebSocket("wss://reanimate.clozecards.com:9160");
-    // const ws = new WebSocket("wss://localhost:9160");
+    // const ws = new WebSocket("ws://localhost:9161");
 
     ws.onopen = event => {
-      this.setState(state => ({...state, message: "Connected."}));
+      this.setState(state => ({
+        ...state,
+        message: "Connected."
+      }));
       ws.send(this.state.program);
     }
     ws.onclose = event => {
-      this.setState(state => ({...state, message: "Disconnected."}));
+      this.setState(state => ({
+        ...state,
+        message: "Disconnected."
+      }));
       setTimeout(this.connect, 1000);
     }
     ws.onmessage = event => {
-      if( event.data === "Success!" ) {
+      if (event.data === "Success!") {
         console.log("Success");
-      } else if( event.data === "Rendering" ) {
+      } else if (event.data === "Rendering") {
         this.setState({message: "Rendering..."});
         this.nFrames_new = 0;
         this.svgs_new = [];
-      } else if( event.data === "Done" ) {
+      } else if (event.data === "Done") {
         this.setState({message: "Success!"});
         console.log("Done");
         this.nFrames = this.nFrames_new;
@@ -35,9 +41,9 @@ class App extends Component {
         this.nFrames_new = 0;
         this.svgs_new = [];
         this.start = Date.now();
-      } else if( event.data.startsWith("Error") ) {
+      } else if (event.data.startsWith("Error")) {
         console.log("Error");
-        this.setState({message: event.data.substring(5) });
+        this.setState({message: event.data.substring(5)});
       } else {
         this.setState({message: `Rendering: ${this.nFrames_new}`});
         this.nFrames_new++;
@@ -46,7 +52,11 @@ class App extends Component {
         this.svgs_new.push(div);
       }
     }
-    this.setState(state => ({...state, socket: ws, message: "Connecting..."}));
+    this.setState(state => ({
+      ...state,
+      socket: ws,
+      message: "Connecting..."
+    }));
   }
   constructor(props) {
     super(props);
@@ -54,7 +64,7 @@ class App extends Component {
     this.state = {
       program: preset[0].programs[0].code
     };
-    setTimeout(this.connect,0);
+    setTimeout(this.connect, 0);
     this.nFrames_new = 0;
     this.svgs_new = [];
     this.nFrames = 0;
@@ -64,12 +74,11 @@ class App extends Component {
     const animate = () => {
       const now = Date.now();
       const nFrames = self.nFrames;
-      const thisFrame = (Math.round((now-this.start)/1000*60))%nFrames
-      // const thisFrame = 0;
-      // console.log('Animation frame:', thisFrame, nFrames);
-      if(nFrames) {
+      const thisFrame = (Math.round((now - this.start) / 1000 * 60)) % nFrames
+      // const thisFrame = 0; console.log('Animation frame:', thisFrame, nFrames);
+      if (nFrames) {
         // self.svg.innerHTML = self.svgs[thisFrame];
-        while(self.svg.firstChild)
+        while (self.svg.firstChild)
           self.svg.removeChild(self.svg.firstChild);
         self.svg.appendChild(self.svgs[thisFrame]);
       } else {
@@ -93,7 +102,10 @@ class App extends Component {
 
     this.timeout = setTimeout(function() {
       console.log('change', text);
-      self.setState(state => ({...state, message: "Compiling..."}));
+      self.setState(state => ({
+        ...state,
+        message: "Compiling..."
+      }));
       socket.send(text);
     }, 500);
   };
@@ -106,14 +118,15 @@ class App extends Component {
       <div className="App">
         <div>
           <select onChange={this.selectPreset}>
-            { preset.map( (group, i) =>
-              <optgroup key={i} label={group.name}>
-                { group.programs.map( (elt, i) =>
-                    <option value={elt.code} key={i}>{elt.name}</option>
-                )}
-              </optgroup>
-            )}
+            {
+              preset.map(
+                (group, i) => <optgroup key={i} label={group.name}>
+                  {group.programs.map((elt, i) => <option value={elt.code} key={i}>{elt.name}</option>)}
+                </optgroup>
+              )
+            }
           </select>
+          <a className="home" href="https://github.com/Lemmih/reanimate">Return to GitHub page.</a>
         </div>
         <div className="editor">
           <AceEditor
@@ -131,9 +144,7 @@ class App extends Component {
               $blockScrolling: true
             }}/>
         </div>
-        <div className="controls">
-
-        </div>
+        <div className="controls"></div>
         <div className="viewer">
           <div ref={node => this.svg = node}/>
           <div className="messages">
