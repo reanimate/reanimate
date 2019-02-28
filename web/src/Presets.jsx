@@ -47,9 +47,7 @@ mkBoundingBox svg = withStrokeColor "red" $ withFillOpacity 0 $
 
 heartShape =
     center $ rotateAroundCenter 225 $ mkPathString
-      "M0.0,40.0 v-40.0 h40.0\\
-      \\a20.0 20.0 90.0 0 1 0.0,40.0\\
-      \\a20.0 20.0 90.0 0 1 -40.0,0.0 Z"`;
+      "M0.0,40.0 v-40.0 h40.0a20.0 20.0 90.0 0 1 0.0,40.0a20.0 20.0 90.0 0 1 -40.0,0.0 Z"`;
 
 const sinewave =
 `animation :: Ani ()
