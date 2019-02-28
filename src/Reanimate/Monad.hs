@@ -55,7 +55,7 @@ emit svg = Frame $ \_ _ -> modify (.(svg:))
 
 before :: Animation -> Animation -> Animation
 before (Animation d1 (Frame f1)) (Animation d2 (Frame f2)) =
-  Animation (d1+d2) (Frame $ \d t -> if t < d1 then f1 d1 t else f2 d2 (t-d1))
+  Animation (d1+d2) (Frame $ \_ t -> if t < d1 then f1 d1 t else f2 d2 (t-d1))
 
 -- Play two animation concurrently. Shortest animation freezes on last frame.
 sim :: Animation -> Animation -> Animation
@@ -87,6 +87,14 @@ andThen a b = a `sim` (pause (duration a) `before` b)
 signal :: Double -> Double -> Frame Double
 signal from to = Frame $ \d t -> pure $
   from + (to-from)*(t/d)
+
+signalSCurve :: Double -> Double -> Double -> Frame Double
+signalSCurve steepness from to = do
+  s <- signal 0 1
+  let s' = if s < 0.5
+              then 0.5 * (2*s)**steepness
+              else 1-0.5 * (2 - 2*s)**steepness
+  pure $ from + (to-from)*s'
 
 frameAt :: Double -> Animation -> Tree
 frameAt t (Animation d (Frame f)) = mkGroup $ execState (f d (min d t)) id []
@@ -131,3 +139,13 @@ reverseAnimation (Animation d fn) = Animation d $ Frame $ \_dur t ->
 
 autoReverse :: Animation -> Animation
 autoReverse a = a `before` reverseAnimation a
+
+oscillate :: Frame a -> Frame a
+oscillate f = Frame $ \d t -> do
+  if t < d/2
+    then unFrame f d (t*2)
+    else unFrame f d (d*2-t*2)
+
+repeatAnimation :: Double -> Animation -> Animation
+repeatAnimation n (Animation d f) = Animation (d*n) $ Frame $ \_ t ->
+  unFrame f d (t `mod'` d)

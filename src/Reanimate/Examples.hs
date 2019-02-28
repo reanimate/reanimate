@@ -605,3 +605,43 @@ latex_basic = autoReverse $ mkAnimation 2 $ do
   where
     text = scale 4 $ center $ latexAlign
       "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
+
+valentine :: Animation
+valentine =
+    all_red `before`
+    ( background `sim`
+      (backgroundDelay `before`
+       foldr1 sim [ pause p `before` fallingLove x | (p, x) <- falling ]
+      ) `sim`
+      (heart_ani `before` heart_disappear) `sim`
+      (pause 5 `before` message ai)
+    )
+  where
+    falling = [(6.4, 0.09), (4.9, 0.12), (4.5, 0.88), (0.3, 0.43), (5.3, 0.93)
+              ,(0.1, 0.80), (1.1, 0.39), (2.3, 0.21), (2.9, 0.77), (3.4, 0.46)
+              ,(6.2, 0.19), (5.9, 0.53), (3.2, 0.14), (7.7, 0.99) ]
+    ai = center $ xelatex "爱"
+    all_red = mkAnimation 1 $ emit $ mkBackground "red"
+    background = mkAnimation 2 $ do
+      n <- round <$> signal 0 0xFF
+      emit $ mkBackgroundPixel $ PixelRGBA8 0xFF n n 0xFF
+    backgroundDelay = pause (duration background-1)
+    heart_ani = repeatAnimation 10 $ mkAnimation 1 $ do
+      n <- oscillate $ signalSCurve 2 0.9 1.1
+      mapF (scale n) $ drawHeart
+    heart_disappear = mkAnimation 3 $ do
+      n  <- signal 0.9 10
+      mapF (scale n) drawHeart
+    fallingLove xPos = mkAnimation 2 $ do
+      n <- signal (-100) 100
+      o <- oscillate $ signal (-1) 1
+      emit $ scale 2 $ withFillColor "red" $
+        translate ((xPos*2-1)*60) n $ rotate (45*o) ai
+    message txt = mkAnimation 1 $ do
+      o <- oscillate $ signal 0 1
+      n <- oscillate $ signalSCurve 2 0.9 1.1
+      emit $ scale n $ scale 2 $ withFillColor "white" $ withFillOpacity o txt
+
+    drawHeart = emit $ withFillColor "red" $ heartShape
+    hex n = if n < 0x10 then "0" ++ showHex (round n) ""
+            else showHex (round n) ""

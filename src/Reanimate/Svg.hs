@@ -11,6 +11,7 @@ import qualified Data.Map                  as Map
 import           Data.Maybe
 import qualified Data.Text                 as T
 import           Graphics.Svg
+import Codec.Picture.Types
 import           Graphics.Svg.PathParser
 import           Linear.Metric
 import           Linear.V2
@@ -410,6 +411,9 @@ withStrokeColor color = drawAttr %~ strokeColor .~ pure (mkColor color)
 withFillColor :: String -> Tree -> Tree
 withFillColor color = drawAttr %~ fillColor .~ pure (mkColor color)
 
+withFillColorPixel :: PixelRGBA8 -> Tree -> Tree
+withFillColorPixel color = drawAttr %~ fillColor .~ pure (ColorRef color)
+
 withFillOpacity :: Double -> Tree -> Tree
 withFillOpacity opacity = drawAttr %~ fillOpacity .~ Just (realToFrac opacity)
 
@@ -459,6 +463,10 @@ mkLinePath ((startX, startY):rest) =
 
 mkBackground :: String -> Tree
 mkBackground color = withFillColor color $ mkRect (Num $ -320/2, Num $ -180/2) (Percent 1) (Percent 1)
+
+mkBackgroundPixel :: PixelRGBA8 -> Tree
+mkBackgroundPixel pixel =
+    withFillColorPixel pixel $ mkRect (Num $ -320/2, Num $ -180/2) (Percent 1) (Percent 1)
 
 withSubglyphs :: [Int] -> (Tree -> Tree) -> Tree -> Tree
 withSubglyphs target fn t = evalState (worker t) 0
