@@ -641,7 +641,4 @@ valentine =
       o <- oscillate $ signal 0 1
       n <- oscillate $ signalSCurve 2 0.9 1.1
       emit $ scale n $ scale 2 $ withFillColor "white" $ withFillOpacity o txt
-
     drawHeart = emit $ withFillColor "red" $ heartShape
-    hex n = if n < 0x10 then "0" ++ showHex (round n) ""
-            else showHex (round n) ""

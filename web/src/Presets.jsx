@@ -191,8 +191,10 @@ animation =
       emit $ scale n $ scale 2 $ withFillColor "white" $ withFillOpacity o txt
 
     drawHeart = emit $ withFillColor "red" $ heartShape
-    hex n = if n < 0x10 then "0" ++ showHex (round n) ""
-            else showHex (round n) ""`;
+
+heartShape =
+    center $ rotateAroundCenter 225 $ mkPathString
+      "M0.0,40.0 v-40.0 h40.0a20.0 20.0 90.0 0 1 0.0,40.0a20.0 20.0 90.0 0 1 -40.0,0.0 Z"`;
 
 export default [
   { name: "Examples"
