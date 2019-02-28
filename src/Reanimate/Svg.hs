@@ -449,8 +449,16 @@ mkPathText str =
     Left err   -> error err
     Right cmds -> PathTree $ defaultSvg & pathDefinition .~ cmds
 
+mkLinePath :: [(Double, Double)] -> Tree
+mkLinePath [] = mkGroup []
+mkLinePath ((startX, startY):rest) =
+    PathTree $ defaultSvg & pathDefinition .~ cmds
+  where
+    cmds = [ MoveTo OriginAbsolute [V2 startX startY]
+           , LineTo OriginAbsolute [ V2 x y | (x, y) <- rest ] ]
+
 mkBackground :: String -> Tree
-mkBackground color = withFillColor color $ mkRect (Num 0, Num 0) (Percent 100) (Percent 100)
+mkBackground color = withFillColor color $ mkRect (Num $ -320/2, Num $ -180/2) (Percent 1) (Percent 1)
 
 withSubglyphs :: [Int] -> (Tree -> Tree) -> Tree -> Tree
 withSubglyphs target fn t = evalState (worker t) 0

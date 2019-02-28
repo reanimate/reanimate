@@ -3,7 +3,6 @@
 {-# LANGUAGE ParallelListComp  #-}
 module Reanimate.Examples where
 
-import           Control.Arrow         (returnA, (>>>))
 import           Control.Lens
 import           Control.Monad
 import           Codec.Picture.Types
@@ -12,23 +11,17 @@ import           Data.Monoid           ((<>))
 import           Data.Text             (Text, pack)
 import           Graphics.Svg as S
 import           Linear.V2
-import           Lucid.Svg             (Svg, circle_, clip_path_, cx_, cy_, d_, id_, defs_, clipPath_,
-                                        fill_, fill_opacity_, font_size_, g_,
-                                        height_, line_, opacity_, path_, r_,
-                                        rect_, stroke_, stroke_width_, text_,
-                                        text_anchor_, toHtml, transform_,
-                                        width_, x1_, x2_, x_, y1_, y2_, y_)
-import qualified Lucid.Svg             as Lucid
 import           Numeric
 import           Text.Printf
 
-import           Reanimate.Arrow
+import           Reanimate.Monad
 import           Reanimate.Combinators
 import           Reanimate.LaTeX
 import           Reanimate.Svg
 
 import Debug.Trace
 
+{-
 sinewave :: Ani ()
 sinewave = proc () -> do
     duration 10 -< ()
@@ -413,22 +406,23 @@ pathSquare = proc () -> do
 latex_draw :: Ani ()
 latex_draw = pauseAtEnd 1 $ proc () -> do
   emit -< toHtml $ mkBackground "black"
-  drawText msg `andThen` fillText msg -< ()
+  drawText `andThen` fillText -< ()
   where
     msg = "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
+    glyphs = center $ latexAlign msg
     placement = translate (320/2) (180/2) . scale 5
-    fillText txt = proc () -> do
+    fillText = proc () -> do
       duration 1 -< ()
       s <- signal 0 1 -< ()
       emit -< toHtml $ placement $
           withFillColor "white" $ withFillOpacity s $
-            center $ latexAlign txt
-    drawText txt = proc () -> do
+            glyphs
+    drawText = proc () -> do
       duration 2 -< ()
       s <- signal 0 1 -< ()
       emit -< toHtml $ placement $
         withStrokeColor "white" $ withFillOpacity 0 $ withStrokeWidth (Num 0.1) $
-          partialSvg s $ center $ latexAlign txt
+          partialSvg s glyphs
 
 
 bbox :: Ani ()
@@ -480,3 +474,134 @@ latex_color = proc () -> do
       svg
   where
     svg = scale 10 $ center $ latex "\\LaTeX"
+-}
+
+
+latex_draw :: Animation
+latex_draw =
+    bg `sim` (autoReverse $ drawText `andThen` fillText)
+  where
+    bg = mkAnimation 0 $ emit (mkBackground "black")
+    msg = "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
+    glyphs = center $ latexAlign msg
+    fillText = mkAnimation 1 $ do
+      s <- signal 0 1
+      emit $ scale 5 $ withFillColor "white" $ withFillOpacity s glyphs
+    drawText = mkAnimation 2 $ do
+      s <- signal 0 1
+      emit $ scale 5 $
+        withStrokeColor "white" $ withFillOpacity 0 $ withStrokeWidth (Num 0.1) $
+          partialSvg s glyphs
+
+morph_wave :: Animation
+morph_wave = autoReverse $ mkAnimation 2.5 $ do
+    morph <- signal 0 1
+    emit $ mkBackground "black"
+    emit $ withStrokeColor "white" $ translate (-320/2) (-180/2) $ mkGroup
+      [ translate 30 50  $ mkLinePath wave1
+      , translate 30 130 $ mkLinePath wave2
+      , translate 30 90  $ mkLinePath $ morphPath wave1 wave2 morph
+      , mkLine (Num 30, Num 10) (Num 30, Num 170)
+      , mkLine (Num 30, Num 90) (Num 290, Num 90) ]
+  where
+    freq = 3; width = 260
+    wave1 = approxFnData 100 $ \idx -> (idx*width, sin (idx*pi*2*freq) * 20)
+    wave2 = approxFnData 100 $ \idx -> (idx*width, sin (idx*pi*2*(freq*3)) * 20)
+
+morph_wave_circle :: Animation
+morph_wave_circle = autoReverse $ mkAnimation 2.5 $ do
+    idx <- signal 0 1
+    emit $ mkBackground "black"
+    emit $ withStrokeColor "white" $ translate (-320/2) (-180/2) $ mkGroup
+      [ translate 30 90 $ mkLinePath $ morphPath circle wave1 idx
+      , mkLine (Num 30, Num 10) (Num 30, Num 170)
+      , mkLine (Num 30, Num 90) (Num 290, Num 90) ]
+  where
+    freq = 5; width = 260; radius = 50
+    wave1 = approxFnData 100 $ \idx -> (idx*width, sin (idx*pi*2*freq) * 20)
+    circle = approxFnData 100 $ \idx ->
+      (cos (idx*pi*2+pi/2)*radius + width/2, sin (idx*pi*2+pi/2)*radius)
+
+progressMeters :: Animation
+progressMeters =
+    bg `sim` labels `sim`
+    mapA (translate (-100) 0)  (adjustSpeed 1.0 progressMeter) `simLoop`
+    mapA (translate 0 0) (adjustSpeed 2.0 progressMeter) `simLoop`
+    mapA (translate 100 0) (adjustSpeed 0.5 progressMeter)
+  where
+    bg = mkAnimation 0 $ emit $ mkBackground "black"
+    labels = mkAnimation 0 $ emit $ translate 0 70 $ withFillColor "white" $ mkGroup
+      [ translate (-100) 0 $ scale 2 $ center $ latex "1x"
+      , translate 0 0      $ scale 2 $ center $ latex "2x"
+      , translate 100 0    $ scale 2 $ center $ latex "0.5x"
+      ]
+
+progressMeter :: Animation
+progressMeter = mkAnimation 3 $ do
+  h <- signal 0 100
+  emit $ center $ mkGroup
+    [ withStrokeColor "white" $ withStrokeWidth (Num 2) $ withFillOpacity 0 $
+        mkRect (Num 0, Num 0) (Num 30) (Num 100)
+    , withFillColor "white" $
+        mkRect (Num 0, Num 0) (Num 30) (Num h) ]
+
+
+bbox :: Animation
+bbox = bg `sim`
+    mapA (translate (-50) 0) bbox1 `sim`
+    mapA (translate 50 0) bbox2
+  where
+    bg = mkAnimation 0 $ emit $ mkBackground "black"
+
+bbox1 :: Animation
+bbox1 = mkAnimation 5 $ do
+    s <- signal 0 1
+    emit $ mkGroup
+      [ mkBoundingBox $ rotate (360*s) svg
+      , withFillColor "white" $ rotate (360*s) svg ]
+  where
+    svg = scale 3 $ center $ latexAlign "\\sum_{k=1}^\\infty"
+
+bbox2 :: Animation
+bbox2 = autoReverse $ mkAnimation 2.5 $ do
+  s <- signal 0 1
+  emit $ mkGroup
+    [ mkBoundingBox $ partialSvg s heartShape
+    , withStrokeColor "white" $ withFillOpacity 0 $ partialSvg s heartShape ]
+
+mkBoundingBox :: Tree -> Tree
+mkBoundingBox svg = withStrokeColor "red" $ withFillOpacity 0 $
+    mkRect (S.Num x, S.Num y) (S.Num w) (S.Num h)
+  where
+    (x, y, w, h) = boundingBox svg
+
+heartShape =
+    center $ rotateAroundCenter 225 $ mkPathString
+      "M0.0,40.0 v-40.0 h40.0\
+      \a20.0 20.0 90.0 0 1 0.0,40.0\
+      \a20.0 20.0 90.0 0 1 -40.0,0.0 Z"
+
+latex_color :: Animation
+latex_color = mkAnimation 1 $ do
+    emit $ mkBackground "black"
+    emit $ withStrokeWidth (Num 0.2) $
+      withStrokeColor "white" $
+      withSubglyphs [0] (withFillColor "blue") $
+      withSubglyphs [1] (withFillColor "yellow") $
+      withSubglyphs [2] (withFillColor "green") $
+      withSubglyphs [3] (withFillColor "red") $
+      withSubglyphs [4] (withFillColor "darkslategrey") $
+      svg
+  where
+    svg = scale 10 $ center $ latex "\\LaTeX"
+
+latex_basic :: Animation
+latex_basic = autoReverse $ mkAnimation 2 $ do
+    s <- signal 0 1
+    emit $ mkGroup
+      [ mkBackground "black"
+      , withStrokeColor "white" $ withFillOpacity 0 $ withStrokeWidth (Num 0.1) text
+      , withFillColor "white" $ withFillOpacity s text ]
+  where
+    text = scale 4 $ center $ latexAlign
+      "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"

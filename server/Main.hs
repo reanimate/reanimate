@@ -46,22 +46,13 @@ generateResponse conn msg = do
         T.writeFile tmpSource $ T.unlines
           ["{-# LANGUAGE Arrows, OverloadedStrings, CPP #-}"
           ,"module Main where"
-          ,"import Reanimate.Arrow"
+          ,"import Reanimate.Monad"
           ,"import           Reanimate.Combinators"
           ,"import           Reanimate.LaTeX"
           ,"import           Reanimate.Svg"
           ,"import           Reanimate.Render"
-          ,"import           Control.Arrow         (returnA, (>>>))"
           ,"import           Data.Monoid"
-          ,"import           Lucid.Svg (toHtml)"
           ,"import           Graphics.Svg as S"
-          ,"import           Lucid.Svg             (Svg, circle_, clip_path_, cx_, cy_, d_, id_, defs_, clipPath_,"
-          ,"                                        fill_, fill_opacity_, font_size_, g_,"
-          ,"                                        height_, line_, opacity_, path_, r_,"
-          ,"                                        rect_, stroke_, stroke_width_, text_,"
-          ,"                                        text_anchor_, toHtml, transform_,"
-          ,"                                        width_, x1_, x2_, x_, y1_, y2_, y_)"
-          ,"import qualified Lucid.Svg             as Lucid"
           ,"main = renderSvgs animation " <> T.pack (show tmpDir)
           ,"#line 1 \"animation.hs\""
           ] <> msg

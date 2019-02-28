@@ -32,6 +32,12 @@ div.messages {
 div.messages pre {
   margin: 0;
 }
+.home {
+  color: white;
+  text-align: center;
+  float:right;
+  margin-right: 2em;
+}
 
 
 #editor {

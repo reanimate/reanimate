@@ -104,6 +104,7 @@ tex_prologue =
   \\\usepackage{physics}\n\
   \\\usepackage{xcolor}\n\
   \\\usepackage{textcomp}\n\
+  \\\usepackage{xfrac}\n\
   \\\usepackage{microtype}\n\
   \\\DisableLigatures{encoding = *, family = * }\n\
   \%\\usepackage[UTF8]{ctex}\n\
