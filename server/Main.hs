@@ -5,6 +5,7 @@ import Control.Concurrent
 import Control.Exception
 import Control.Monad
 import Data.Monoid
+import Data.Time
 import Network.WebSockets
 import Control.Monad.Fix
 import qualified Data.Text as T
@@ -22,15 +23,18 @@ main = do
   forkPingThread conn 30
   forever $ do
     msg <- receiveData conn :: IO T.Text
-    stopWorker thread
+    stopWorker conn thread
     putMVar thread =<< forkIO (generateResponse conn msg)
 
 
-stopWorker mvar = do
+stopWorker conn mvar = do
   mbTid <- tryTakeMVar mvar
   case mbTid of
     Nothing -> return ()
-    Just tid -> killThread tid
+    Just tid -> do
+      putStrLn "Interrupt"
+      killThread tid
+      sendTextData conn $ T.pack $ "Error" ++ "Reset"
 
 generateResponse conn msg = do
   mbCached <- lookupCache msg
@@ -58,29 +62,53 @@ generateResponse conn msg = do
           ,"#line 1 \"animation.hs\""
           ] <> msg
         putStrLn $ "Compiling program:\n" ++ T.unpack msg
-        ret <- runCmd_ "stack" ["ghc", "--", "-rtsopts", "--make", "-threaded", "-O2", tmpSource, "-o", tmpExecutable]
+        sendTextData conn (T.pack "Compiling")
+        ret <- timeIt "compile" $
+                runCmd_ "stack" $ ["ghc", "--"] ++ ghcOptions ++ [tmpSource, "-o", tmpExecutable]
         case ret of
           Left err -> do
             sendTextData conn $ T.pack $ "Error" ++ unlines (drop 3 (lines err))
-          Right{} -> withTimeout conn 30 $ do
+          Right{} -> do
+            queue <- newChan
+            tid <- forkIO $ forever $ sendTextData conn =<< readChan queue
             sendTextData conn (T.pack "Rendering")
-            getFrame <- runCmdLazy tmpExecutable ["+RTS", "-N", "-M50M", "-RTS"]
-            flip fix [] $ \loop acc -> do
-              frame <- getFrame
-              case frame of
-                Left "" -> do
-                  insertCache msg (reverse acc)
-                  sendTextData conn (T.pack "Done")
-                Left err -> sendTextData conn $ T.pack $ "Error" ++ err
-                Right frame -> do
-                  sendTextData conn (frame)
-                  loop (frame : acc)
+            flip onException (killThread tid) $
+              timeIt "render" $ withTimeout queue conn 60 $ do
+              getFrame <- runCmdLazy tmpExecutable ["+RTS", "-N", "-M50M", "-RTS"]
+              flip fix [] $ \loop acc -> do
+                frame <- getFrame
+                case frame of
+                  Left "" -> do
+                    writeChan queue (T.pack "Done")
+                    insertCache msg (reverse acc)
+                  Left err -> do
+                    _ <- getChanContents queue
+                    writeChan queue $ T.pack $ "Error" ++ err
+                  Right frame -> do
+                    writeChan queue frame
+                    loop (frame : acc)
 
-withTimeout conn t action = do
-  self <- myThreadId
+ghcOptions :: [String]
+ghcOptions = ["-rtsopts", "--make", "-threaded", "-O2"]
+
+withTimeout queue conn t action = do
+  finished <- newEmptyMVar
+  worker <- forkIO (action >> putMVar finished ())
   timer <- forkIO $ do
     threadDelay (10^6 * t)
-    killThread self
-    sendTextData conn $ T.pack $ "Error" ++ "Timeout"
-  action
-  killThread timer
+    putStrLn "Timeout"
+    killThread worker
+    _ <- getChanContents queue
+    writeChan queue $ T.pack $ "Error" ++ "Timeout"
+    putMVar finished ()
+  takeMVar finished `onException` do
+    killThread worker
+    killThread timer
+
+timeIt :: String -> IO a -> IO a
+timeIt label fn = do
+  t1 <- getCurrentTime
+  a <- fn
+  t2 <- getCurrentTime
+  putStrLn $ label ++ ": " ++ show (diffUTCTime t2 t1)
+  return a

@@ -49,4 +49,4 @@ executable reanimate-server
   other-modules:      Reanimate.Misc
                       Cache
   build-depends:      base >=4.10 && <4.13, text, websockets, process, filepath, directory,
-                      containers, hashable
+                      containers, hashable, time

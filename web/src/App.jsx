@@ -29,6 +29,8 @@ class App extends Component {
     ws.onmessage = event => {
       if (event.data === "Success!") {
         console.log("Success");
+      } else if (event.data === "Compiling") {
+        this.setState({message: "Compiling..."});
       } else if (event.data === "Rendering") {
         this.setState({message: "Rendering..."});
         this.nFrames_new = 0;
