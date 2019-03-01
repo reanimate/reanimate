@@ -17,7 +17,7 @@ import Reanimate.Misc
 
 main :: IO ()
 main = do
-  runServer "127.0.0.1" 9161 $ \pending -> do
+  runServerWith "127.0.0.1" 9161 opts $ \pending -> do
   conn <- acceptRequest pending
   thread <- newEmptyMVar
   forkPingThread conn 30
@@ -25,7 +25,9 @@ main = do
     msg <- receiveData conn :: IO T.Text
     stopWorker conn thread
     putMVar thread =<< forkIO (generateResponse conn msg)
-
+  where
+    opts = defaultConnectionOptions
+      { connectionCompressionOptions = PermessageDeflateCompression defaultPermessageDeflate }
 
 stopWorker conn mvar = do
   mbTid <- tryTakeMVar mvar
