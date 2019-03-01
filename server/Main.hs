@@ -24,7 +24,7 @@ main = do
   forever $ do
     msg <- receiveData conn :: IO T.Text
     stopWorker conn thread
-    putMVar thread =<< forkIO (generateResponse conn msg)
+    putMVar thread =<< forkIO (generateResponse conn msg >> tryTakeMVar thread >> return ())
   where
     opts = defaultConnectionOptions
       { connectionCompressionOptions = PermessageDeflateCompression defaultPermessageDeflate }
