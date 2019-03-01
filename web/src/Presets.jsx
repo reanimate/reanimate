@@ -185,7 +185,7 @@ animation =
       mapF (scale (n*4)) $ emit $ withFillOpacity o $ withFillColor "white" ai
     fallingLove rand xPos = mkAnimation 2 $ do
       n <- signal (-100) 90
-      o <- oscillate $ signal (-1) 1
+      o <- signal 0 5
       emit $ withStrokeColor "black" $ withFillColor "red" $
         translate ((xPos*2-1)*(320/2)) n $ scale 0.3 $ rotate (60*(o+rand+xPos)) heartShape
     message txt = mkAnimation 1 $ do
