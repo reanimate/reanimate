@@ -98,11 +98,12 @@ withTimeout queue conn t action = do
   worker <- forkIO (action >> putMVar finished ())
   timer <- forkIO $ do
     threadDelay (10^6 * t)
+    putMVar finished ()
     putStrLn "Timeout"
     killThread worker
     _ <- getChanContents queue
     writeChan queue $ T.pack $ "Error" ++ "Timeout"
-    putMVar finished ()
+
   takeMVar finished `onException` do
     killThread worker
     killThread timer
