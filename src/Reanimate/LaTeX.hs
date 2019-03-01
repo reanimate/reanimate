@@ -133,7 +133,6 @@ tex_prologue =
   \\\usepackage{amssymb}\n\
   \\\usepackage{dsfont}\n\
   \\\usepackage{setspace}\n\
-  \\\usepackage{tipa}\n\
   \\\usepackage{relsize}\n\
   \\\usepackage{textcomp}\n\
   \\\usepackage{mathrsfs}\n\
