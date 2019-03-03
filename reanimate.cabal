@@ -29,7 +29,7 @@ library
                       Reanimate.Svg.NamedColors
   build-depends:       base >=4.10 && <4.13,
                        time, text, unix, lucid, filepath, process, directory,
-                       containers, svg-tree >= 0.6.2.3, xml, bytestring, lens, linear, mtl, matrix,
+                       containers, reanimate-svg >= 0.7.0.0, xml, bytestring, lens, linear, mtl, matrix,
                        JuicyPixels, attoparsec, parallel, diagrams, diagrams-svg,
                        diagrams-core, diagrams-lib, diagrams-contrib,
                        svg-builder, matrices, cubicbezier, palette

@@ -8,11 +8,11 @@ import           Control.Parallel.Strategies
 import qualified Data.ByteString.Lazy.Char8  as BS
 import qualified Data.Text                   as T
 import qualified Data.Text.IO                as T
-import "svg-tree" Graphics.Svg                (Number (..))
+import           Graphics.SvgTree            (Number (..))
+import           Reanimate.Diagrams
 import           Reanimate.Examples
 import           Reanimate.Misc
 import           Reanimate.Monad
-import           Reanimate.Diagrams
 import           System.Directory            (renameFile)
 import           System.FilePath             (takeExtension, takeFileName,
                                               (</>))

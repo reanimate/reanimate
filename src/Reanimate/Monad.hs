@@ -1,6 +1,6 @@
 module Reanimate.Monad where
 
-import           Control.Arrow ()
+import           Control.Arrow         ()
 import qualified Control.Category      as C
 import           Control.Monad.State
 import           Data.Fixed
@@ -8,8 +8,9 @@ import           Data.Fixed            (mod')
 import qualified Data.Map              as M
 import           Data.Monoid           ((<>))
 import           Data.Text             (Text, pack)
-import "svg-tree" Graphics.Svg          (Document (..), Number (..), Tree,
-                                        xmlOfDocument, Tree(..), Text(..), TextSpan(..), TextSpanContent(..))
+import           Graphics.SvgTree      (Document (..), Number (..), Text (..),
+                                        TextSpan (..), TextSpanContent (..),
+                                        Tree, Tree (..), xmlOfDocument)
 import           Reanimate.LaTeX
 import           Reanimate.Svg
 import           Text.XML.Light        (elContent)
