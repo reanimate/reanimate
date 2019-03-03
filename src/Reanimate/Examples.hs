@@ -1,35 +1,36 @@
-{-# LANGUAGE Arrows                    #-}
-{-# LANGUAGE PartialTypeSignatures                    #-}
-{-# LANGUAGE FlexibleContexts          #-}
-{-# LANGUAGE OverloadedStrings         #-}
-{-# LANGUAGE PackageImports            #-}
-{-# LANGUAGE ParallelListComp          #-}
-{-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE Arrows                #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PackageImports        #-}
+{-# LANGUAGE ParallelListComp      #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE TypeFamilies          #-}
 module Reanimate.Examples where
 
-import qualified Data.Map as M
 import           Codec.Picture.Types
-import           Control.Lens            ()
+import           Control.Lens                  ()
 import           Control.Monad
-import           Data.Text               (Text, pack)
-import           "svg-tree" Graphics.Svg as S
+import qualified Data.Map                      as M
+import           Data.Text                     (Text, pack)
+import           Graphics.SvgTree              as S
 import           Linear.V2
 import           Numeric
 import           Text.Printf
 
 import           Reanimate.Combinators
+import           Reanimate.Diagrams
 import           Reanimate.LaTeX
 import           Reanimate.Monad
 import           Reanimate.Svg
-import           Reanimate.Diagrams
 
-import qualified Diagrams.Backend.SVG    as D
-import           Diagrams.Prelude        hiding (Animation, boundingBox, center,
-                                          duration, fontSize, rotate, scale,
-                                          translate, circle)
-import qualified Diagrams.Prelude        as D
-import qualified Diagrams.TwoD.Path.LSystem as D
 import qualified Data.Colour.Palette.BrewerSet as D
+import qualified Diagrams.Backend.SVG          as D
+import           Diagrams.Prelude              hiding (Animation, boundingBox,
+                                                center, circle, duration,
+                                                fontSize, rotate, scale,
+                                                translate)
+import qualified Diagrams.Prelude              as D
+import qualified Diagrams.TwoD.Path.LSystem    as D
 
 import           Debug.Trace
 

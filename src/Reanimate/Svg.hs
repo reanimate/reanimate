@@ -1,24 +1,24 @@
 module Reanimate.Svg where
 
-import           Codec.Picture             (PixelRGBA8 (..))
+import           Codec.Picture               (PixelRGBA8 (..))
 import           Codec.Picture.Types
 import           Control.Arrow
-import           Control.Lens              (over, set, (%~), (&), (.~), (^.))
+import           Control.Lens                (over, set, (%~), (&), (.~), (^.))
 import           Control.Monad.Fix
 import           Control.Monad.State
-import           Data.Attoparsec.Text      (parseOnly)
+import           Data.Attoparsec.Text        (parseOnly)
 import           Data.List
-import qualified Data.Map                  as Map
+import qualified Data.Map                    as Map
 import           Data.Maybe
-import qualified Data.Text                 as T
-import qualified Geom2D.CubicBezier as Bezier
-import "svg-tree" Graphics.Svg
-import "svg-tree" Graphics.Svg.PathParser
+import qualified Data.Text                   as T
+import qualified Geom2D.CubicBezier          as Bezier
+import           Graphics.SvgTree
+import           Graphics.SvgTree.PathParser
 import           Linear.Metric
 import           Linear.V2
 import           Linear.Vector
 import           Reanimate.Svg.NamedColors
-import qualified Reanimate.Transform       as Transform
+import qualified Reanimate.Transform         as Transform
 
 import           Debug.Trace
 
@@ -44,7 +44,7 @@ replaceUses doc = doc & elements %~ map (mapTree replace)
         _              -> TransformUnknown
     docTree = GroupTree $ set groupChildren (doc^.elements) defaultSvg
     idMap = foldTree updMap Map.empty docTree `Map.union`
-            Map.mapMaybe elementToTree (doc^.definitions)
+            (doc^.definitions)
     updMap m tree =
       case tree^.drawAttr.attrId of
         Nothing  -> m
@@ -330,8 +330,8 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
       RectangleTree rect ->
         case mapTuple (toUserUnit defaultDPI) (rect^.rectUpperLeftCorner) of
           (Num x, Num y) -> [V2 x y] ++
-            case mapTuple (toUserUnit defaultDPI) (rect^.rectWidth, rect^.rectHeight) of
-              (Num w, Num h) -> [V2 (x+w) (y+h)]
+            case mapTuple (fmap $ toUserUnit defaultDPI) (rect^.rectWidth, rect^.rectHeight) of
+              (Just (Num w), Just (Num h)) -> [V2 (x+w) (y+h)]
               _              -> []
           _ -> []
       TextTree{}      -> []
@@ -427,8 +427,8 @@ withClipPathRef ref = drawAttr %~ clipPathRef .~ pure ref
 mkRect :: Point -> Number -> Number -> Tree
 mkRect corner width height = RectangleTree $ defaultSvg
   & rectUpperLeftCorner .~ corner
-  & rectWidth .~ width
-  & rectHeight .~ height
+  & rectWidth .~ Just width
+  & rectHeight .~ Just height
 
 mkBoundingRect :: Tree -> Double -> Tree
 mkBoundingRect src margin =

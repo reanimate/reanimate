@@ -13,7 +13,7 @@ import           System.FilePath       (replaceExtension, takeFileName, (</>))
 import           System.IO.Unsafe      (unsafePerformIO)
 
 import           Control.Lens          (over, set, (%~), (&), (.~), (^.))
-import "svg-tree" Graphics.Svg          (Document (..), Tree (..), defaultSvg,
+import           Graphics.SvgTree      (Document (..), Tree (..), defaultSvg,
                                         elements, loadSvgFile, parseSvgFile,
                                         xmlOfDocument)
 import           Text.XML.Light        (elContent)

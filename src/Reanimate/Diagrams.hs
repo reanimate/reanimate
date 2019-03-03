@@ -8,20 +8,20 @@ module Reanimate.Diagrams
   , SvgDiagram
   ) where
 
-import qualified Data.ByteString.Lazy    as BL
-import qualified Diagrams.Backend.SVG    as D
-import qualified Diagrams.Core.Compile   as D
-import qualified Diagrams.Core.Types     as D
-import qualified Diagrams.Size           as D
-import           "svg-tree" Graphics.Svg (Document (..), Tree (..), defaultSvg,
-                                          elements, loadSvgFile, parseSvgFile,
-                                          xmlOfDocument)
-import qualified Graphics.Svg.Core       as Svg
+import qualified Data.ByteString.Lazy  as BL
+import qualified Diagrams.Backend.SVG  as D
+import qualified Diagrams.Core.Compile as D
+import qualified Diagrams.Core.Types   as D
+import qualified Diagrams.Size         as D
+import           Graphics.SvgTree      (Document (..), Tree (..), defaultSvg,
+                                        elements, loadSvgFile, parseSvgFile,
+                                        xmlOfDocument)
+import qualified Graphics.Svg.Core as Svg
 import           Linear.V2
-import           Reanimate.Svg           (unbox)
+import           Reanimate.Svg         (unbox)
 
 import           Diagrams.Prelude
-import qualified Diagrams.Prelude        as D
+import qualified Diagrams.Prelude      as D
 
 renderDiagram :: SvgDiagram -> Tree
 renderDiagram d =
