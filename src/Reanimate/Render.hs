@@ -8,11 +8,11 @@ import           Control.Parallel.Strategies
 import qualified Data.ByteString.Lazy.Char8  as BS
 import qualified Data.Text                   as T
 import qualified Data.Text.IO                as T
-import           Graphics.Svg                (Number (..))
-import           Lucid.Svg                   (renderBS, renderToFile)
+import "svg-tree" Graphics.Svg                (Number (..))
 import           Reanimate.Examples
 import           Reanimate.Misc
 import           Reanimate.Monad
+import           Reanimate.Diagrams
 import           System.Directory            (renameFile)
 import           System.FilePath             (takeExtension, takeFileName,
                                               (</>))
@@ -85,12 +85,16 @@ renderFormat format ani target = do
 -- XXX: Use threads
 generateFrames ani rate action = withTempDir $ \tmp -> do
     let frameName nth = tmp </> printf nameTemplate nth
-    forM_ frames $ \n ->
-      writeFile (frameName n) (renderSizedTree width height $ nthFrame n)
+        rendered = [ renderSizedTree width height $ nthFrame n | n <- frames]
+                    `using` parBuffer 16 rdeepseq
+    forM_ (zip [0::Int ..] rendered) $ \(n, frame) -> do
+      writeFile (frameName n) frame
+      putStr $ "\r" ++ show (n+1) ++ "/" ++ show frameCount
+    putStrLn "\n"
     action (tmp </> nameTemplate)
   where
-    width = Just $ Num 320
-    height = Just $ Num 180
+    width = Just $ Num 1024
+    height = Just $ Num 768
     frames = [0..frameCount-1]
     nthFrame nth = frameAt (recip (fromIntegral rate) * fromIntegral nth) ani
     frameCount = round (duration ani * fromIntegral rate) :: Int
