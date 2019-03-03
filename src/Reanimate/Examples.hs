@@ -1,25 +1,37 @@
-{-# LANGUAGE Arrows            #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ParallelListComp  #-}
+{-# LANGUAGE Arrows                    #-}
+{-# LANGUAGE PartialTypeSignatures                    #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE OverloadedStrings         #-}
+{-# LANGUAGE PackageImports            #-}
+{-# LANGUAGE ParallelListComp          #-}
+{-# LANGUAGE TypeFamilies              #-}
 module Reanimate.Examples where
 
-import           Control.Lens
-import           Control.Monad
+import qualified Data.Map as M
 import           Codec.Picture.Types
-import           Data.Monoid
-import           Data.Monoid           ((<>))
-import           Data.Text             (Text, pack)
-import           Graphics.Svg as S
+import           Control.Lens            ()
+import           Control.Monad
+import           Data.Text               (Text, pack)
+import           "svg-tree" Graphics.Svg as S
 import           Linear.V2
 import           Numeric
 import           Text.Printf
 
-import           Reanimate.Monad
 import           Reanimate.Combinators
 import           Reanimate.LaTeX
+import           Reanimate.Monad
 import           Reanimate.Svg
+import           Reanimate.Diagrams
 
-import Debug.Trace
+import qualified Diagrams.Backend.SVG    as D
+import           Diagrams.Prelude        hiding (Animation, boundingBox, center,
+                                          duration, fontSize, rotate, scale,
+                                          translate, circle)
+import qualified Diagrams.Prelude        as D
+import qualified Diagrams.TwoD.Path.LSystem as D
+import qualified Data.Colour.Palette.BrewerSet as D
+
+import           Debug.Trace
 
 {-
 sinewave :: Ani ()
@@ -642,3 +654,99 @@ valentine =
       n <- oscillate $ signalSCurve 2 0.9 1.1
       emit $ scale n $ scale 2 $ withFillColor "white" $ withFillOpacity o txt
     drawHeart = emit $ withFillColor "red" $ heartShape
+
+
+diaSize :: Animation
+diaSize = mkAnimation 0.1 $ do
+    emit $ mkBackground "white"
+    emit $ translate (-320/2) (-180/2) dSvg
+  where
+    dSvg = renderDiagram $ withEnvelope (D.rect 320 180 :: SvgDiagram) $
+      D.scale 3 $
+      D.translate (V2 0 (-30)) $
+      D.rotate (90 @@ deg) $
+      D.lwO 0.1 $ D.strokePath (D.getTurtlePath (D.tree3 4))
+
+wavyTree :: Animation
+wavyTree = mkAnimation 1 $ do
+    s <- oscillate $ signal 1 2
+    emit $ mkBackground "white"
+    emit $ translate (-320/2) (-180/2) (dSvg s)
+  where
+    dSvg s = renderDiagram $ withEnvelope (D.rect 320 180 :: SvgDiagram) $
+      D.scale 3 $
+      D.translate (V2 0 (-30)) $
+      D.rotate (90 @@ deg) $
+      D.lwO 0.1 $ D.strokePath (D.getTurtlePath (tree s))
+    gens = 4
+    tree s =
+      D.lSystem gens (s/16 @@ turn) (D.symbols "F") rules
+    rules = M.fromList [D.rule 'F' "FF-[->F+F+>F]+[+>F->F->F]"]
+
+tangentAndNormal :: Animation
+tangentAndNormal = mkAnimation 5 $ do
+    s <- oscillate $ signalSCurve 2 0 1
+    emit $ mkBackground "white"
+    emit $ translate (-320/2) (-180/2) $ renderDiagram $
+      withEnvelope (D.rect 320 180 :: SvgDiagram) $
+      D.scale 50 $ D.translate (V2 (-2) (-0.75)) $ dia s
+  where
+    dia param =
+        frame 0.5 $
+        strokeLocTrail spline
+        <> mconcat
+          [ tangentLine
+          , baselineText "tangent" # D.translate tangentVector
+          , normalLine
+          , topLeftText "normal" # D.translate (-normalVector)
+          , rightAngleSquare
+          ] # moveTo pt # D.fontSize large
+      where
+        pts = map p2 [(0,0), (1,1), (2,1), (3,0), (3.5,0)]
+
+        spline :: Located (Trail V2 Double)
+        spline = cubicSpline False pts
+
+        pt = atParam spline param
+        tangentVector ::  V2 Double
+        tangentVector = D.normalize $ tangentAtParam spline param
+        normalVector = D.normalize $ normalAtParam spline param
+
+        symmetricLine :: V2 Double -> SvgDiagram
+        symmetricLine v = fromOffsets [2 *^ v] # D.center
+        tangentLine :: SvgDiagram
+        tangentLine = symmetricLine tangentVector
+        normalLine = symmetricLine normalVector
+
+        rightAngleSquare :: SvgDiagram
+        rightAngleSquare = square 0.1 # alignBL # D.rotate (signedAngleBetween tangentVector unitX)
+
+
+drawSunflower :: Animation
+drawSunflower = mkAnimation 10 $ do
+    n <- signal 1 500
+    rot <- signal 0 45
+    emit $ mkBackground "black"
+    emit $ rotate rot $ translate (-320/2) (-180/2)
+      (dSvg $ round n)
+  where
+    cached = [ dSvg n | n <- [0..]]
+    dSvg n = renderDiagram $ withEnvelope (D.rect 320 180 :: SvgDiagram) $
+      D.scale 5 $ sunflower n
+
+    mkCoords :: [P2 Double]
+    mkCoords =[coord (fromIntegral i) | i <- [1..]]
+      where
+        coord m = p2 $ fromPolar (sqrt m) (2.4 * m)
+        fromPolar r theta = (r * cos theta, r * sin theta)
+
+    floret :: Double -> SvgDiagram
+    floret r = D.circle 0.6 # lw none # fc (colors !! n)
+      where
+        n = floor (1.4 * sqrt r) `mod` 10
+        colors = black : (reverse $ D.brewerSet D.YlOrBr 9)
+
+    sunflower :: Int ->  SvgDiagram
+    sunflower n = frame 4 $ position $ take n $ zip mkCoords florets
+      where
+        florets = [ floret (sqrt (fromIntegral i)) | i <- [1 ..]]

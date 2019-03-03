@@ -7,9 +7,8 @@ import           Data.Fixed      (mod')
 import           Data.Monoid     ((<>))
 import           Data.Text       (Text, pack)
 import qualified Data.Text       as T
-import           Lucid.Svg
 
-import           Reanimate.Arrow
+-- import           Reanimate.Arrow
 
 type Path = [(Double, Double)]
 

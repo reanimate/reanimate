@@ -8,7 +8,7 @@ import           Data.Fixed            (mod')
 import qualified Data.Map              as M
 import           Data.Monoid           ((<>))
 import           Data.Text             (Text, pack)
-import           Graphics.Svg          (Document (..), Number (..), Tree,
+import "svg-tree" Graphics.Svg          (Document (..), Number (..), Tree,
                                         xmlOfDocument, Tree(..), Text(..), TextSpan(..), TextSpanContent(..))
 import           Reanimate.LaTeX
 import           Reanimate.Svg

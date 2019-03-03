@@ -1,18 +1,19 @@
 module Reanimate.Svg where
 
 import           Codec.Picture             (PixelRGBA8 (..))
+import           Codec.Picture.Types
+import           Control.Arrow
 import           Control.Lens              (over, set, (%~), (&), (.~), (^.))
 import           Control.Monad.Fix
 import           Control.Monad.State
-import           Control.Arrow
 import           Data.Attoparsec.Text      (parseOnly)
 import           Data.List
 import qualified Data.Map                  as Map
 import           Data.Maybe
 import qualified Data.Text                 as T
-import           Graphics.Svg
-import Codec.Picture.Types
-import           Graphics.Svg.PathParser
+import qualified Geom2D.CubicBezier as Bezier
+import "svg-tree" Graphics.Svg
+import "svg-tree" Graphics.Svg.PathParser
 import           Linear.Metric
 import           Linear.V2
 import           Linear.Vector
@@ -331,7 +332,7 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
           (Num x, Num y) -> [V2 x y] ++
             case mapTuple (toUserUnit defaultDPI) (rect^.rectWidth, rect^.rectHeight) of
               (Num w, Num h) -> [V2 (x+w) (y+h)]
-              _ -> []
+              _              -> []
           _ -> []
       TextTree{}      -> []
       ImageTree{}     -> []

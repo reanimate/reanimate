@@ -7,15 +7,13 @@ import qualified Data.ByteString       as B
 import           Data.IORef
 import           Data.Map              (Map)
 import qualified Data.Map              as Map
-import           Lucid                 (ToHtml (..))
-import           Lucid.Svg             (Svg, fill_, font_size_, text_)
 import           Reanimate.Misc
 import           Reanimate.Svg
 import           System.FilePath       (replaceExtension, takeFileName, (</>))
 import           System.IO.Unsafe      (unsafePerformIO)
 
 import           Control.Lens          (over, set, (%~), (&), (.~), (^.))
-import           Graphics.Svg          (Document (..), Tree (..), defaultSvg,
+import "svg-tree" Graphics.Svg          (Document (..), Tree (..), defaultSvg,
                                         elements, loadSvgFile, parseSvgFile,
                                         xmlOfDocument)
 import           Text.XML.Light        (elContent)
@@ -25,26 +23,26 @@ import           Text.XML.Light.Output (ppcContent, ppcElement, prettyConfigPP)
 --   toHtml = toHtmlRaw
 --   toHtmlRaw = toHtmlRaw . ppcElement prettyConfigPP . xmlOfDocument
 
-instance ToHtml Document where
-  toHtml = toHtmlRaw
-  toHtmlRaw doc = toHtmlRaw $ unlines $ map (ppcContent prettyConfigPP) (elContent elt)
-    where
-      elt = xmlOfDocument doc
-
-instance ToHtml Tree where
-  toHtml = toHtmlRaw
-  toHtmlRaw tree = toHtmlRaw doc
-    where
-      doc = Document
-        { _viewBox = Nothing
-        , _width = Nothing
-        , _height = Nothing
-        , _elements = [tree]
-        , _definitions = Map.empty
-        , _description = ""
-        , _styleRules = []
-        , _documentLocation = ""
-        }
+-- instance ToHtml Document where
+--   toHtml = toHtmlRaw
+--   toHtmlRaw doc = toHtmlRaw $ unlines $ map (ppcContent prettyConfigPP) (elContent elt)
+--     where
+--       elt = xmlOfDocument doc
+--
+-- instance ToHtml Tree where
+--   toHtml = toHtmlRaw
+--   toHtmlRaw tree = toHtmlRaw doc
+--     where
+--       doc = Document
+--         { _viewBox = Nothing
+--         , _width = Nothing
+--         , _height = Nothing
+--         , _elements = [tree]
+--         , _definitions = Map.empty
+--         , _description = ""
+--         , _styleRules = []
+--         , _documentLocation = ""
+--         }
 
 {-# NOINLINE cache #-}
 cache :: IORef (Map String Tree)

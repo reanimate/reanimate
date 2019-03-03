@@ -1,3 +1,4 @@
+{-# LANGUAGE PackageImports #-}
 module Reanimate.Transform
   ( identity
   , transformPoint
@@ -6,10 +7,10 @@ module Reanimate.Transform
 
 -- XXX: Use Linear.Matrix instead of Data.Matrix to drop the 'matrix' dependency.
 import           Data.List
-import           Data.Matrix  (Matrix)
-import qualified Data.Matrix  as M
+import "matrix"          Data.Matrix  (Matrix)
+import qualified "matrix" Data.Matrix  as M
 import           Data.Maybe
-import           Graphics.Svg
+import "svg-tree" Graphics.Svg
 import           Linear.V2
 
 type TMatrix = Matrix Coord
