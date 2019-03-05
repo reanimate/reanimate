@@ -24,6 +24,7 @@ Live coding playground: https://lemmih.github.io/reanimate/
 The example gifs are displayed at 25 fps. The source code for many of these examples are available
 on the live coding playground.
 
+![Goo](gifs/goo.gif)
 ![Drawing LaTeX equations](gifs/latex_draw.gif)
 ![Bounding boxes](gifs/bbox.gif)
 ![Colorful LaTeX](gifs/latex_color.gif)
