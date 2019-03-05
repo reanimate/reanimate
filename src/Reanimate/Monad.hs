@@ -115,7 +115,6 @@ renderSizedTree w h t = ppElement $ xmlOfDocument doc
       , _elements = [t]
       , _definitions = M.empty
       , _description = ""
-      , _styleRules = []
       , _documentLocation = ""
       }
 

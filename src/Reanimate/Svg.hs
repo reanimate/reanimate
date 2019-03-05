@@ -36,7 +36,7 @@ replaceUses doc = doc & elements %~ map (mapTree replace)
         Just tree ->
           GroupTree $
           defaultSvg & groupChildren .~ [tree]
-                     & drawAttr .~ (defaultSvg & transform .~ Just [baseToTransformation (use^.useBase)])
+                     & transform .~ Just [baseToTransformation (use^.useBase)]
     replace x = x
     baseToTransformation (x,y) =
       case (toUserUnit defaultDPI x, toUserUnit defaultDPI y) of
@@ -46,7 +46,7 @@ replaceUses doc = doc & elements %~ map (mapTree replace)
     idMap = foldTree updMap Map.empty docTree `Map.union`
             (doc^.definitions)
     updMap m tree =
-      case tree^.drawAttr.attrId of
+      case tree^.attrId of
         Nothing  -> m
         Just tid -> Map.insert tid tree m
     elementToTree (ElementGeometry t) = Just t
@@ -58,7 +58,7 @@ docIds doc = Map.keys idMap ++ Map.keys (doc^.definitions)
     docTree = GroupTree $ set groupChildren (doc^.elements) defaultSvg
     idMap = foldTree updMap Map.empty docTree
     updMap m tree =
-      case tree^.drawAttr.attrId of
+      case tree^.attrId of
         Nothing  -> m
         Just tid -> Map.insert tid tree m
 
@@ -68,7 +68,7 @@ unbox :: Document -> Tree
 unbox doc@Document{_viewBox = Just (minx, minw, _width, _height)} =
   GroupTree $ defaultSvg
           & groupChildren .~ doc^.elements
-          & drawAttr .~ (defaultSvg & transform .~ Just [Translate (-minx) (-minw)])
+          & transform .~ Just [Translate (-minx) (-minw)]
 unbox doc =
   GroupTree $ defaultSvg
     & groupChildren .~ doc^.elements
@@ -338,12 +338,12 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
       ImageTree{}     -> []
       MeshGradientTree{} -> []
   where
-    m = Transform.mkMatrix (t^.drawAttr.transform)
+    m = Transform.mkMatrix (t^.transform)
     mapTuple f = f *** f
 
 withTransformations :: [Transformation] -> Tree -> Tree
 withTransformations transformations t =
-  mkGroup [t] & drawAttr %~ transform .~ Just transformations
+  mkGroup [t] & transform .~ Just transformations
 
 translate :: Double -> Double -> Tree -> Tree
 translate x y = withTransformations [Translate x y]
@@ -407,22 +407,22 @@ mkColor name =
     Just c  -> ColorRef c
 
 withStrokeColor :: String -> Tree -> Tree
-withStrokeColor color = drawAttr %~ strokeColor .~ pure (mkColor color)
+withStrokeColor color = strokeColor .~ pure (mkColor color)
 
 withFillColor :: String -> Tree -> Tree
-withFillColor color = drawAttr %~ fillColor .~ pure (mkColor color)
+withFillColor color = fillColor .~ pure (mkColor color)
 
 withFillColorPixel :: PixelRGBA8 -> Tree -> Tree
-withFillColorPixel color = drawAttr %~ fillColor .~ pure (ColorRef color)
+withFillColorPixel color = fillColor .~ pure (ColorRef color)
 
 withFillOpacity :: Double -> Tree -> Tree
-withFillOpacity opacity = drawAttr %~ fillOpacity .~ Just (realToFrac opacity)
+withFillOpacity opacity = fillOpacity .~ Just (realToFrac opacity)
 
 withStrokeWidth :: Number -> Tree -> Tree
-withStrokeWidth width = drawAttr %~ strokeWidth .~ pure width
+withStrokeWidth width = strokeWidth .~ pure width
 
 withClipPathRef :: ElementRef -> Tree -> Tree
-withClipPathRef ref = drawAttr %~ clipPathRef .~ pure ref
+withClipPathRef ref = clipPathRef .~ pure ref
 
 mkRect :: Point -> Number -> Number -> Tree
 mkRect corner width height = RectangleTree $ defaultSvg
