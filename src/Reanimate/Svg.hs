@@ -322,6 +322,8 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
       UseTree{}       -> []
       GroupTree g     -> concatMap svgBoundingPoints (g^.groupChildren)
       SymbolTree (Symbol g) -> concatMap svgBoundingPoints (g^.groupChildren)
+      FilterTree{}    -> []
+      DefinitionTree{} -> []
       PathTree p      -> linePoints $ toLineCommands (p^.pathDefinition)
       CircleTree{}    -> error "CircleTree"
       PolyLineTree{}  -> error "PolyLineTree"
