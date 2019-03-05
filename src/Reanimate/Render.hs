@@ -53,7 +53,7 @@ renderFormat :: Format -> Animation -> FilePath -> IO ()
 renderFormat format ani target = do
   putStrLn $ "Starting render of animation: " ++ show (round (duration ani)) ++ "s"
   ffmpeg <- requireExecutable "ffmpeg"
-  generateFrames ani fps $ \template ->
+  generateFrames ani 320 fps $ \template ->
     case format of
       RenderMp4 ->
         runCmd ffmpeg ["-r", show fps, "-i", template, "-y"
@@ -83,7 +83,7 @@ renderFormat format ani target = do
 -- XXX: Move to a different module and unify with helpers from LaTeX.
 
 -- XXX: Use threads
-generateFrames ani rate action = withTempDir $ \tmp -> do
+generateFrames ani width_ rate action = withTempDir $ \tmp -> do
     let frameName nth = tmp </> printf nameTemplate nth
         rendered = [ renderSizedTree width height $ nthFrame n | n <- frames]
                     `using` parBuffer 16 rdeepseq
@@ -93,8 +93,8 @@ generateFrames ani rate action = withTempDir $ \tmp -> do
     putStrLn "\n"
     action (tmp </> nameTemplate)
   where
-    width = Just $ Num 1024
-    height = Just $ Num 768
+    width = Just $ Num width_
+    height = Just $ Num (width_*(9/16))
     frames = [0..frameCount-1]
     nthFrame nth = frameAt (recip (fromIntegral rate) * fromIntegral nth) ani
     frameCount = round (duration ani * fromIntegral rate) :: Int
