@@ -3,7 +3,7 @@ resolver: lts-11.22
 allow-newer: false
 
 extra-deps:
-- reanimate-svg-0.8.0.0
+- reanimate-svg-0.8.1.0
 - diagrams-1.4@sha256:3e36369e84115b900fd9dcb570672a188339a470eb19ca62170775cd835cf8ca
 - diagrams-contrib-1.4.3@sha256:bcfa6c85f8c33b8c48c3a61b7216afdebd51cd793c50da3a2dd358827d25fc76
 - diagrams-core-1.4.1.1@sha256:6ef6b17785d77997c481eb085570e21b6a00cc91d086fbf49490504130ebc7d1
