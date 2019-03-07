@@ -782,7 +782,9 @@ gooEffect = mkAnimation 5 $ do
       & compositeIn .~ pure SourceGraphic
       & compositeIn2 .~ pure (SourceRef "goo")
       & compositeOperator .~ CompositeAtop
-    ] & filterHeight .~ pure (Percent 3)
+    ] & filterWidth .~ pure (Percent 3)
+      & filterX .~ pure (Percent (-1))
+      & filterHeight .~ pure (Percent 3)
       & filterY .~ pure (Percent (-1))
   emit $ translate 0 (-radius*2) $ withFillColor "red" $ mkGroup
     [ translate (s*(-radius)) 0 circ
@@ -799,7 +801,7 @@ gooEffect = mkAnimation 5 $ do
   where
     sharpness = 60
     dev = 10
-    radius = 25
+    radius = 30
     circ = CircleTree $ defaultSvg
       & circleCenter .~ (Num 0, Num 0)
       & circleRadius .~ Num radius

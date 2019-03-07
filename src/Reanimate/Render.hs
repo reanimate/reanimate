@@ -53,11 +53,13 @@ renderFormat :: Format -> Animation -> FilePath -> IO ()
 renderFormat format ani target = do
   putStrLn $ "Starting render of animation: " ++ show (round (duration ani)) ++ "s"
   ffmpeg <- requireExecutable "ffmpeg"
-  generateFrames ani 320 fps $ \template ->
+  generateFrames ani 640 fps $ \template ->
+    withTempFile "txt" $ \progress -> writeFile progress "" >>
     case format of
       RenderMp4 ->
         runCmd ffmpeg ["-r", show fps, "-i", template, "-y"
                       , "-c:v", "libx264", "-vf", "fps="++show fps
+                      , "-progress", progress
                       , "-pix_fmt", "yuv420p", target]
       RenderGif -> withTempFile "png" $ \palette -> do
         runCmd ffmpeg ["-i", template, "-y"
@@ -66,12 +68,14 @@ renderFormat format ani target = do
                       , palette ]
         runCmd ffmpeg ["-i", template, "-y"
                       ,"-i", palette
+                      ,"-progress", progress
                       ,"-filter_complex"
                       ,"fps="++show fps++",scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse"
                       ,"-t", show (duration ani)
                       , target]
       RenderWebm ->
         runCmd ffmpeg ["-r", show fps, "-i", template, "-y"
+                      ,"-progress", progress
                       , "-c:v", "libvpx-vp9", "-vf", "fps="++show fps
                       , target]
       RenderBlank -> return ()
