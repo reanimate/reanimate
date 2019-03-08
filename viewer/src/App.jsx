@@ -1,11 +1,5 @@
 import React, {Component} from 'react';
 import './App.css';
-import AceEditor from 'react-ace';
-import 'brace/mode/haskell';
-import 'brace/theme/github';
-import 'brace/theme/monokai';
-
-import preset from './Presets';
 
 class App extends Component {
   connect = () => {
@@ -64,7 +58,6 @@ class App extends Component {
     super(props);
 
     this.state = {
-      program: preset[0].programs[0].code
     };
     setTimeout(this.connect, 0);
     this.nFrames_new = 0;
@@ -101,27 +94,8 @@ class App extends Component {
       ace.resize();
     }, 0);
   }
-  onChange = text => {
-    this.setState({program: text});
-    if (this.timeout)
-      clearTimeout(this.timeout);
-    const socket = this.state.socket
-    const self = this;
-
-    this.timeout = setTimeout(function() {
-      console.log('change', text);
-      self.setState(state => ({
-        ...state,
-        message: "Compiling..."
-      }));
-      socket.send(text);
-    }, 500);
-  };
-  selectPreset = evt => {
-    this.onChange(evt.target.value);
-  };
   render() {
-    const {message, program} = this.state;
+    const {message} = this.state;
     return (
       <div className="App">
         <div className="viewer">

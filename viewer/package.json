@@ -2,10 +2,9 @@
   "name": "viewer",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://lemmih.github.io/reanimate",
+  "homepage": ".",
   "dependencies": {
     "react": "^16.8.2",
-    "react-ace": "^6.4.0",
     "react-dom": "^16.8.2",
     "react-scripts": "2.1.5"
   },

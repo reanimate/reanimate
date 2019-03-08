@@ -13,6 +13,14 @@ build-type:          Simple
 extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
 
+data-files:           viewer/build/*.js
+                      viewer/build/*.html
+                      viewer/build/static/js/2.772a56e7.chunk.js
+                      viewer/build/static/js/main.db22f45d.chunk.js
+                      viewer/build/static/js/runtime~main.9eb600ee.js
+                      viewer/build/static/css/main.6efe09fd.chunk.css
+
+
 library
   hs-source-dirs:     src
   default-language:   Haskell2010
@@ -28,12 +36,15 @@ library
                       Reanimate.Driver
                       Reanimate.Misc
   other-modules:      Reanimate.Svg.NamedColors
+                      Reanimate.Cache
+                      Paths_reanimate
   build-depends:       base >=4.10 && <4.13,
                        time, text, unix, filepath, process, directory,
                        containers, reanimate-svg >= 0.7.0.0, xml, bytestring, lens, linear, mtl, matrix,
                        JuicyPixels, attoparsec, parallel, diagrams, diagrams-svg,
                        diagrams-core, diagrams-lib, diagrams-contrib,
-                       svg-builder, matrices, cubicbezier, palette, hinotify, websockets
+                       svg-builder, matrices, cubicbezier, palette, hinotify, websockets,
+                       hashable
 
 Flag gtk-viewer
   Description: Enable gtk-based viewer

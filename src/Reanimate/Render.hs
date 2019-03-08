@@ -25,7 +25,7 @@ renderSvgs ani = do
   where
     frames = [0..frameCount-1]
     rate = 60
-    nthFrame nth = renderTree $ frameAt (recip (fromIntegral rate) * fromIntegral nth) ani
+    nthFrame nth = renderSvg Nothing Nothing $ frameAt (recip (fromIntegral rate) * fromIntegral nth) ani
     frameCount = round (duration ani * fromIntegral rate) :: Int
     nameTemplate :: String
     nameTemplate = "render-%05d.svg"
@@ -88,7 +88,7 @@ renderFormat format ani target = do
 -- XXX: Use threads
 generateFrames ani width_ rate action = withTempDir $ \tmp -> do
     let frameName nth = tmp </> printf nameTemplate nth
-        rendered = [ renderSizedTree width height $ nthFrame n | n <- frames]
+        rendered = [ renderSvg width height $ nthFrame n | n <- frames]
                     `using` parBuffer 16 rdeepseq
     forM_ (zip [0::Int ..] rendered) $ \(n, frame) -> do
       writeFile (frameName n) frame

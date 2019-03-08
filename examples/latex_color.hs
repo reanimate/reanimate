@@ -1,5 +1,6 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-11.22 runghc --package reanimate
+{-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
 import           Control.Lens
