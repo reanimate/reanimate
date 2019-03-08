@@ -18,10 +18,9 @@ import           System.FilePath             (takeExtension, takeFileName,
                                               (</>))
 import           Text.Printf                 (printf)
 
-renderSvgs :: Animation -> FilePath -> IO ()
-renderSvgs ani tmpDir = do
-    let frameName nth = tmpDir </> printf nameTemplate nth
-        renderedFrames = map (T.concat . T.lines . T.pack . nthFrame) frames
+renderSvgs :: Animation ->  IO ()
+renderSvgs ani = do
+    let renderedFrames = map (T.concat . T.lines . T.pack . nthFrame) frames
     mapM_ T.putStrLn (renderedFrames `using` parBuffer 16 rdeepseq)
   where
     frames = [0..frameCount-1]

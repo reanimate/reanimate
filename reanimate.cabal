@@ -25,14 +25,15 @@ library
                       Reanimate.Svg
                       Reanimate.Diagrams
                       Reanimate.Transform
-  other-modules:      Reanimate.Misc
-                      Reanimate.Svg.NamedColors
+                      Reanimate.Driver
+                      Reanimate.Misc
+  other-modules:      Reanimate.Svg.NamedColors
   build-depends:       base >=4.10 && <4.13,
-                       time, text, unix, lucid, filepath, process, directory,
+                       time, text, unix, filepath, process, directory,
                        containers, reanimate-svg >= 0.7.0.0, xml, bytestring, lens, linear, mtl, matrix,
                        JuicyPixels, attoparsec, parallel, diagrams, diagrams-svg,
                        diagrams-core, diagrams-lib, diagrams-contrib,
-                       svg-builder, matrices, cubicbezier, palette
+                       svg-builder, matrices, cubicbezier, palette, hinotify, websockets
 
 Flag gtk-viewer
   Description: Enable gtk-based viewer

@@ -91,7 +91,7 @@ generateResponse conn msg = do
                     loop (frame : acc)
 
 ghcOptions :: [String]
-ghcOptions = ["-rtsopts", "--make", "-threaded", "-O2"]
+ghcOptions = ["-rtsopts", "--make", "-threaded", "-O"]
 
 withTimeout queue conn t action = do
   finished <- newEmptyMVar
