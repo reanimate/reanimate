@@ -9,9 +9,17 @@ license:             PublicDomain
 author:              David Himmelstrup
 maintainer:          lemmih@gmail.com
 category:            Graphics
+synopsis:            Animation library based on SVGs.
+homepage:            https://github.com/Lemmih/reanimate
 build-type:          Simple
 extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
+
+description:
+  Animation library based on SVGs. Can import (and manipulate) SVGs from
+  LaTeX and diagrams. Exports gifs, mp4s, and more. Ships with a webbased
+  viewer and auto-reloader.
+
 
 data-files:           viewer/build/*.js
                       viewer/build/*.html
@@ -20,6 +28,9 @@ data-files:           viewer/build/*.js
                       viewer/build/static/js/runtime~main.9eb600ee.js
                       viewer/build/static/css/main.6efe09fd.chunk.css
 
+Source-Repository head
+    Type:      git
+    Location:  git://github.com/lemmih/reanimate.git
 
 library
   hs-source-dirs:     src
@@ -59,6 +70,7 @@ executable reanimate-server
     buildable:        True
   else
     buildable:        False
+  default-language:   Haskell2010
   hs-source-dirs:     server, src
   main-is:            Main.hs
   other-modules:      Reanimate.Misc
