@@ -10,8 +10,7 @@ import           Data.Monoid           ((<>))
 import           Data.Text             (Text, pack)
 import           Graphics.SvgTree      (Document (..), Number (..), Text (..),
                                         TextSpan (..), TextSpanContent (..),
-                                        Tree, Tree (..), xmlOfDocument)
-import           Reanimate.LaTeX
+                                        Tree, Tree (..), xmlOfDocument, xmlOfTree)
 import           Reanimate.Svg
 import           Text.XML.Light        (elContent)
 import           Text.XML.Light.Output
@@ -101,10 +100,10 @@ frameAt :: Double -> Animation -> Tree
 frameAt t (Animation d (Frame f)) = mkGroup $ execState (f d (min d t)) id []
 
 renderTree :: Tree -> String
-renderTree = renderSizedTree Nothing Nothing
+renderTree t = maybe "" ppElement $ xmlOfTree t
 
-renderSizedTree :: Maybe Number -> Maybe Number -> Tree -> String
-renderSizedTree w h t = ppElement $ xmlOfDocument doc
+renderSvg :: Maybe Number -> Maybe Number -> Tree -> String
+renderSvg w h t = ppElement $ xmlOfDocument doc
   where
     width = 320
     height = width / (16/9)
