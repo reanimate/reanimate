@@ -57,10 +57,6 @@ library
                        svg-builder, matrices, cubicbezier, palette, hinotify, websockets,
                        hashable
 
-Flag gtk-viewer
-  Description: Enable gtk-based viewer
-  Default:     False
-
 Flag server
   Description: Enable rendering server
   Default:     False
