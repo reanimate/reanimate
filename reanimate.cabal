@@ -2,7 +2,7 @@
 --  see http://haskell.org/cabal/users-guide/
 
 name:                reanimate
-version:             0.1.2.0
+version:             0.1.3.0
 -- synopsis:
 -- description:
 license:             PublicDomain
@@ -60,7 +60,7 @@ library
                        diagrams-core, diagrams-lib, diagrams-contrib,
                        svg-builder, matrices, cubicbezier, palette, websockets,
                        hashable
-  if flag(inotify)
+  if os(linux) && flag(inotify)
     hs-source-dirs:    unix
     build-depends:     hinotify
   else
