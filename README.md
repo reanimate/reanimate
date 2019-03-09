@@ -12,11 +12,12 @@ Live coding playground: https://lemmih.github.io/reanimate/
 
 * ~~website for live coding~~
 * ~~bounding boxes~~
+* ~~Use svg-tree instead of lucid-svg~~
 * Improve bounding box approximations
 * Select desired FPS in web previewer
 * Download rendered animations in web previewer
 * alignment and positioning combinators
-* Use svg-tree instead of lucid-svg
+* Use FSEvents to watch for file changes on mac.
 
 
 # Examples
