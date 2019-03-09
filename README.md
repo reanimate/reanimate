@@ -1,12 +1,27 @@
 # reanimate
 
 Reanimate is a reactive framework for creating non-interactive animations from SVG images.
-This package consists of a set of arrow combinators, a renderer (using ffmpeg), and a web-based
+This package consists of a set of combinators, a renderer (using ffmpeg), and a web-based
 previewer. Inline latex code is supported when 'latex' and 'dvisvgm' are installed.
 
 Nothing about the API is stable at this point.
 
 Live coding playground: https://lemmih.github.io/reanimate/
+
+# Getting started
+
+Reanimate ships with a web-based viewer and automatic code reloading. To get a small demo
+up and running, clone the repository, run one of the examples (this will install the library),
+and wait for a browser window to open:
+
+```console
+# git clone https://github.com/Lemmih/reanimate.git
+# cd reanimate/examples/
+# ./latex_color.hs
+```
+
+This should render the `latex_color` example in a new browser window. If you then change the
+animation source code, the browser window will automatically reload and show the updated animation.
 
 # TODO
 
