@@ -7,7 +7,7 @@ import qualified Data.Text          as T
 import           Network.WebSockets
 import           System.Directory   (findFile, listDirectory)
 import           System.Environment (getArgs, getProgName)
-import           System.INotify     (EventVariety (..), addWatch, withINotify)
+import           Reanimate.FileWatch (watchFile)
 import           System.IO          (BufferMode (..), hPutStrLn, hSetBuffering,
                                      stderr, stdin)
 
@@ -38,7 +38,7 @@ reanimate animation = do
         case mbSelf of
           Nothing -> do
             hPutStrLn stderr "Failed to find own source code."
-          Just self -> withINotify $ \notify -> do
+          Just self -> do
             conn <- acceptRequest pending
             slave <- newEmptyMVar
             let handler = modifyMVar_ slave $ \tid -> do
@@ -66,7 +66,7 @@ reanimate animation = do
                               loop (frame : acc)
                   return tid
             putStrLn "Found self. Listening."
-            addWatch notify [Modify] self (const handler)
+            watchFile self handler
             putMVar slave =<< forkIO (return ())
             let loop = do
                   fps <- receiveData conn :: IO T.Text
