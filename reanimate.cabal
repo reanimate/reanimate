@@ -32,6 +32,10 @@ Source-Repository head
     Type:      git
     Location:  git://github.com/lemmih/reanimate.git
 
+Flag inotify
+  Description: Enable file watching using linux's inotify
+  Default:     True
+
 library
   hs-source-dirs:     src
   default-language:   Haskell2010
@@ -48,14 +52,21 @@ library
                       Reanimate.Misc
   other-modules:      Reanimate.Svg.NamedColors
                       Reanimate.Cache
+                      Reanimate.FileWatch
                       Paths_reanimate
   build-depends:       base >=4.10 && <4.13,
                        time, text, unix, filepath, process, directory,
                        containers, reanimate-svg >= 0.7.0.0, xml, bytestring, lens, linear, mtl, matrix,
                        JuicyPixels, attoparsec, parallel, diagrams, diagrams-svg,
                        diagrams-core, diagrams-lib, diagrams-contrib,
-                       svg-builder, matrices, cubicbezier, palette, hinotify, websockets,
+                       svg-builder, matrices, cubicbezier, palette, websockets,
                        hashable
+  if flag(inotify)
+    hs-source-dirs:    unix
+    build-depends:     hinotify
+  else
+    hs-source-dirs:    posix
+
 
 Flag server
   Description: Enable rendering server
