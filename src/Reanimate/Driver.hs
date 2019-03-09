@@ -1,21 +1,22 @@
 module Reanimate.Driver ( reanimate ) where
 
-import           Control.Concurrent (MVar, forkIO, killThread, modifyMVar_,
-                                     newEmptyMVar, putMVar)
-import           Control.Monad.Fix  (fix)
-import qualified Data.Text          as T
+import           Control.Concurrent  (MVar, forkIO, killThread, modifyMVar_,
+                                      newEmptyMVar, putMVar)
+import           Control.Monad.Fix   (fix)
+import qualified Data.Text           as T
 import           Network.WebSockets
-import           System.Directory   (findFile, listDirectory)
-import           System.Environment (getArgs, getProgName)
 import           Reanimate.FileWatch (watchFile)
-import           System.IO          (BufferMode (..), hPutStrLn, hSetBuffering,
-                                     stderr, stdin)
+import           System.Directory    (findFile, listDirectory, findExecutable)
+import           System.Environment  (getArgs, getProgName)
+import           System.IO           (BufferMode (..), hPutStrLn, hSetBuffering,
+                                      stderr, stdin)
 
-import           Reanimate.Misc     (runCmdLazy, runCmd, runCmd_, withTempDir, withTempFile)
-import           Reanimate.Monad    (Animation)
-import           Reanimate.Render   (renderSvgs)
-
-import Paths_reanimate
+import           Data.Maybe
+import           Paths_reanimate
+import           Reanimate.Misc      (runCmd, runCmdLazy, runCmd_, withTempDir,
+                                      withTempFile)
+import           Reanimate.Monad     (Animation)
+import           Reanimate.Render    (renderSvgs)
 
 opts = defaultConnectionOptions
   { connectionCompressionOptions = PermessageDeflateCompression defaultPermessageDeflate }
@@ -28,7 +29,7 @@ reanimate animation = do
     ["once"] -> renderSvgs animation
     _ -> withTempDir $ \tmpDir -> do
       url <- getDataFileName "viewer/build/index.html"
-      runCmd "xdg-open" [url]
+      openBrowser url
       runServerWith "127.0.0.1" 9161 opts $ \pending -> do
         putStrLn "Server pending."
         prog <- getProgName
@@ -78,3 +79,13 @@ ghcOptions :: FilePath -> [String]
 ghcOptions tmpDir =
     ["-rtsopts", "--make", "-threaded", "-O2"] ++
     ["-odir", tmpDir, "-hidir", tmpDir]
+
+openBrowser :: String -> IO ()
+openBrowser url = do
+  xdgOpen <- findExecutable "xdg-open"
+  open <- findExecutable "open"
+  case listToMaybe (catMaybes [xdgOpen, open]) of
+    Nothing ->
+      hPutStrLn stderr $ "Failed to open browser. Manually visit: " ++ url
+    Just prog ->
+      runCmd prog [url]
