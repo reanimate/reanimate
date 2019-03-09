@@ -2,7 +2,7 @@
 --  see http://haskell.org/cabal/users-guide/
 
 name:                reanimate
-version:             0.1.1.0
+version:             0.1.2.0
 -- synopsis:
 -- description:
 license:             PublicDomain
@@ -34,7 +34,6 @@ Source-Repository head
 
 Flag inotify
   Description: Enable file watching using linux's inotify
-  Default:     True
 
 library
   hs-source-dirs:     src
