@@ -28,11 +28,11 @@ animation source code, the browser window will automatically reload and show the
 * ~~website for live coding~~
 * ~~bounding boxes~~
 * ~~Use svg-tree instead of lucid-svg~~
+* ~~crossplatform file watching~~
 * Improve bounding box approximations
 * Select desired FPS in web previewer
 * Download rendered animations in web previewer
 * alignment and positioning combinators
-* Use FSEvents to watch for file changes on mac.
 
 
 # Examples
