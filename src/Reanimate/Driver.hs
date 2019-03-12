@@ -1,28 +1,31 @@
 module Reanimate.Driver ( reanimate ) where
 
-import           Control.Concurrent  (MVar, forkIO, killThread, modifyMVar_,
-                                      newEmptyMVar, putMVar)
-import           Control.Monad.Fix   (fix)
-import qualified Data.Text           as T
+import           Control.Concurrent (MVar, forkIO, killThread, modifyMVar_,
+                                     newEmptyMVar, putMVar)
+import           Control.Exception  (finally)
+import           Control.Monad.Fix  (fix)
+import qualified Data.Text          as T
 import           Network.WebSockets
-import           Reanimate.FileWatch (watchFile)
-import           System.Directory    (findFile, listDirectory, findExecutable)
-import           System.Environment  (getArgs, getProgName)
-import           System.IO           (BufferMode (..), hPutStrLn, hSetBuffering,
-                                      stderr, stdin)
+import           System.Directory   (findExecutable, findFile, listDirectory)
+import           System.Environment (getArgs, getProgName)
+import           System.FilePath
+import           System.FSNotify
+import           System.IO          (BufferMode (..), hPutStrLn, hSetBuffering,
+                                     stderr, stdin)
 
 import           Data.Maybe
 import           Paths_reanimate
-import           Reanimate.Misc      (runCmd, runCmdLazy, runCmd_, withTempDir,
-                                      withTempFile)
-import           Reanimate.Monad     (Animation)
-import           Reanimate.Render    (renderSvgs)
+import           Reanimate.Misc     (runCmd, runCmdLazy, runCmd_, withTempDir,
+                                     withTempFile)
+import           Reanimate.Monad    (Animation)
+import           Reanimate.Render   (renderSvgs)
 
 opts = defaultConnectionOptions
   { connectionCompressionOptions = PermessageDeflateCompression defaultPermessageDeflate }
 
 reanimate :: Animation -> IO ()
 reanimate animation = do
+  watch <- startManager
   args <- getArgs
   hSetBuffering stdin NoBuffering
   case args of
@@ -67,13 +70,17 @@ reanimate animation = do
                               loop (frame : acc)
                   return tid
             putStrLn "Found self. Listening."
-            watchFile self handler
+            stop <- watchFile watch self handler
             putMVar slave =<< forkIO (return ())
             let loop = do
                   fps <- receiveData conn :: IO T.Text
                   handler
                   loop
-            loop
+            loop `finally` stop
+
+watchFile watch file action = watchDir watch (takeDirectory file) check (const action)
+  where
+    check event = takeFileName (eventPath event) == takeFileName file
 
 ghcOptions :: FilePath -> [String]
 ghcOptions tmpDir =
