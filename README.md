@@ -40,6 +40,7 @@ animation source code, the browser window will automatically reload and show the
 The example gifs are displayed at 25 fps. The source code for many of these examples are available
 on the live coding playground.
 
+![Tangent](gifs/tangent.gif)
 ![Goo](gifs/goo.gif)
 ![Drawing LaTeX equations](gifs/latex_draw.gif)
 ![Bounding boxes](gifs/bbox.gif)
