@@ -52,7 +52,7 @@ renderFormat :: Format -> Animation -> FilePath -> IO ()
 renderFormat format ani target = do
   putStrLn $ "Starting render of animation: " ++ show (round (duration ani)) ++ "s"
   ffmpeg <- requireExecutable "ffmpeg"
-  generateFrames ani 640 fps $ \template ->
+  generateFrames ani 320 fps $ \template ->
     withTempFile "txt" $ \progress -> writeFile progress "" >>
     case format of
       RenderMp4 ->
