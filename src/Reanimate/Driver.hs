@@ -33,13 +33,13 @@ reanimate animation = do
     ["once"] -> renderSvgs animation
     _ -> withTempDir $ \tmpDir -> do
       url <- getDataFileName "viewer/build/index.html"
-      putStrLn "Opening browser."
+      putStrLn "Opening browser..."
       bSucc <- openBrowser url
       if bSucc
           then putStrLn "Browser opened."
           else hPutStrLn stderr $ "Failed to open browser. Manually visit: " ++ url
       runServerWith "127.0.0.1" 9161 opts $ \pending -> do
-        putStrLn "Server pending."
+        putStrLn "Server pending..."
         prog <- getProgName
         lst <- listDirectory "."
         mbSelf <- findFile ("." : lst) prog
@@ -52,7 +52,7 @@ reanimate animation = do
             slave <- newEmptyMVar
             let handler = modifyMVar_ slave $ \tid -> do
                   sendTextData conn (T.pack "Compiling")
-                  putStrLn "Kill and respawn."
+                  putStrLn "Killing and respawning..."
                   killThread tid
                   tid <- forkIO $ withTempFile ".exe" $ \tmpExecutable -> do
                     ret <- runCmd_ "stack" $ ["ghc", "--"] ++ ghcOptions tmpDir ++ [self, "-o", tmpExecutable]
@@ -74,7 +74,7 @@ reanimate animation = do
                               sendTextData conn frame
                               loop (frame : acc)
                   return tid
-            putStrLn "Found self. Listening."
+            putStrLn "Found self. Listening..."
             stop <- watchFile watch self handler
             putMVar slave =<< forkIO (return ())
             let loop = do
