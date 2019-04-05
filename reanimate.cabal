@@ -55,7 +55,7 @@ library
                        JuicyPixels, attoparsec, parallel, diagrams, diagrams-svg,
                        diagrams-core, diagrams-lib, diagrams-contrib,
                        svg-builder, matrices, cubicbezier, palette, websockets,
-                       hashable, fsnotify
+                       hashable, fsnotify, open-browser
 
 Flag server
   Description: Enable rendering server

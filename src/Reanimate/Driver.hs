@@ -6,7 +6,7 @@ import           Control.Exception  (finally)
 import           Control.Monad.Fix  (fix)
 import qualified Data.Text          as T
 import           Network.WebSockets
-import           System.Directory   (findExecutable, findFile, listDirectory)
+import           System.Directory   (findFile, listDirectory)
 import           System.Environment (getArgs, getProgName)
 import           System.FilePath
 import           System.FSNotify
@@ -15,10 +15,11 @@ import           System.IO          (BufferMode (..), hPutStrLn, hSetBuffering,
 
 import           Data.Maybe
 import           Paths_reanimate
-import           Reanimate.Misc     (runCmd, runCmdLazy, runCmd_, withTempDir,
+import           Reanimate.Misc     (runCmdLazy, runCmd_, withTempDir,
                                      withTempFile)
 import           Reanimate.Monad    (Animation)
 import           Reanimate.Render   (renderSvgs)
+import           Web.Browser        (openBrowser)
 
 opts = defaultConnectionOptions
   { connectionCompressionOptions = PermessageDeflateCompression defaultPermessageDeflate }
@@ -32,7 +33,11 @@ reanimate animation = do
     ["once"] -> renderSvgs animation
     _ -> withTempDir $ \tmpDir -> do
       url <- getDataFileName "viewer/build/index.html"
-      openBrowser url
+      putStrLn "Opening browser."
+      bSucc <- openBrowser url
+      if bSucc
+          then putStrLn "Browser opened."
+          else hPutStrLn stderr $ "Failed to open browser. Manually visit: " ++ url
       runServerWith "127.0.0.1" 9161 opts $ \pending -> do
         putStrLn "Server pending."
         prog <- getProgName
@@ -86,13 +91,3 @@ ghcOptions :: FilePath -> [String]
 ghcOptions tmpDir =
     ["-rtsopts", "--make", "-threaded", "-O2"] ++
     ["-odir", tmpDir, "-hidir", tmpDir]
-
-openBrowser :: String -> IO ()
-openBrowser url = do
-  xdgOpen <- findExecutable "xdg-open"
-  open <- findExecutable "open"
-  case listToMaybe (catMaybes [xdgOpen, open]) of
-    Nothing ->
-      hPutStrLn stderr $ "Failed to open browser. Manually visit: " ++ url
-    Just prog ->
-      runCmd prog [url]
