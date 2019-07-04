@@ -73,11 +73,11 @@ withTempDir action = do
   hClose handle
   removeFile path
   createDirectory (dir </> path)
-  action (dir </> path) `finally` removeDirectoryRecursive (dir </> path)
+  action (dir </> path) -- `finally` removeDirectoryRecursive (dir </> path)
 
 withTempFile :: String -> (FilePath -> IO a) -> IO a
 withTempFile ext action = do
   dir <- getTemporaryDirectory
   (path, handle) <- openTempFile dir ("reanimate-XXXXXX" <.> ext)
   hClose handle
-  action path `finally` removeFile path
+  action path -- `finally` removeFile path

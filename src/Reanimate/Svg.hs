@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module Reanimate.Svg where
 
 import           Codec.Picture               (PixelRGBA8 (..))
@@ -29,6 +30,10 @@ replaceUses :: Document -> Document
 replaceUses doc = doc & elements %~ map (mapTree replace)
                       & definitions .~ Map.empty
   where
+    replaceDefinition PathTree{} = None
+    replaceDefinition t = t
+
+    replace t@DefinitionTree{} = mapTree replaceDefinition t
     replace (UseTree _ Just{}) = error "replaceUses: subtree in use?"
     replace (UseTree use Nothing) =
       case Map.lookup (use^.useName) idMap of
@@ -42,15 +47,13 @@ replaceUses doc = doc & elements %~ map (mapTree replace)
       case (toUserUnit defaultDPI x, toUserUnit defaultDPI y) of
         (Num a, Num b) -> Translate a b
         _              -> TransformUnknown
-    docTree = GroupTree $ set groupChildren (doc^.elements) defaultSvg
+    docTree = mkGroup (doc^.elements)
     idMap = foldTree updMap Map.empty docTree `Map.union`
             (doc^.definitions)
     updMap m tree =
       case tree^.attrId of
         Nothing  -> m
         Just tid -> Map.insert tid tree m
-    elementToTree (ElementGeometry t) = Just t
-    elementToTree _                   = Nothing
 
 docIds :: Document -> [String]
 docIds doc = Map.keys idMap ++ Map.keys (doc^.definitions)
@@ -77,17 +80,20 @@ type CmdM a = State RPoint a
 
 data LineCommand
   = LineMove RPoint
-  | LineDraw RPoint
+  -- | LineDraw RPoint
   | LineBezier [RPoint]
+  | LineEnd
   deriving (Show)
 
 lineToPath :: [LineCommand] -> [PathCommand]
 lineToPath = map worker
   where
     worker (LineMove p)         = MoveTo OriginAbsolute [p]
-    worker (LineDraw p)         = LineTo OriginAbsolute [p]
+    -- worker (LineDraw p)         = LineTo OriginAbsolute [p]
     worker (LineBezier [a,b,c]) = CurveTo OriginAbsolute [(a,b,c)]
     worker (LineBezier [a,b])   = QuadraticBezier OriginAbsolute [(a,b)]
+    worker (LineBezier [a])     = LineTo OriginAbsolute [a]
+    worker LineEnd              = EndPath
 
 partialLine :: Double -> [LineCommand] -> [LineCommand]
 partialLine alpha cmds = evalState (worker 0 cmds) zero
@@ -108,14 +114,16 @@ adjustLineLength alpha from cmd =
   case cmd of
     LineBezier points -> LineBezier $ drop 1 $ partial_bezier_points (from:points) 0 alpha
     LineMove p -> LineMove p
-    LineDraw t -> LineDraw (lerp alpha t from)
+    -- LineDraw t -> LineDraw (lerp alpha t from)
+    LineEnd -> LineEnd
 
 lineLength :: LineCommand -> CmdM Double
 lineLength cmd =
   case cmd of
     LineMove to       -> pure 0 <* put to
-    LineDraw to       -> gets (distance to) <* put to
+    -- LineDraw to       -> gets (distance to) <* put to
     LineBezier points -> gets (distance (last points)) <* put (last points)
+    LineEnd           -> pure 0
 
 toLineCommands :: [PathCommand] -> [LineCommand]
 toLineCommands ps = evalState (worker zero Nothing ps) zero
@@ -132,22 +140,24 @@ toLineCommands ps = evalState (worker zero Nothing ps) zero
 cmdToControlPoint (LineBezier points) = Just (last (init points))
 cmdToControlPoint _                   = Nothing
 
+mkStraightLine p = LineBezier [p]
+
 toLineCommand :: RPoint -> Maybe RPoint -> PathCommand -> CmdM [LineCommand]
 toLineCommand startPos mbPrevControlPt cmd = do
   case cmd of
     MoveTo OriginAbsolute []  -> pure []
     MoveTo OriginAbsolute lst -> put (last lst) *> gets (pure.LineMove)
     MoveTo OriginRelative lst -> modify (+ sum lst) *> gets (pure.LineMove)
-    LineTo OriginAbsolute lst -> forM lst (\to -> put to *> pure (LineDraw to))
-    LineTo OriginRelative lst -> forM lst (\to -> modify (+to) *> gets LineDraw)
+    LineTo OriginAbsolute lst -> forM lst (\to -> put to *> pure (mkStraightLine to))
+    LineTo OriginRelative lst -> forM lst (\to -> modify (+to) *> gets mkStraightLine)
     HorizontalTo OriginAbsolute lst ->
-      forM lst $ \x -> modify (_x .~ x) *> gets LineDraw
+      forM lst $ \x -> modify (_x .~ x) *> gets mkStraightLine
     HorizontalTo OriginRelative lst ->
-      forM lst $ \x -> modify (_x %~ (+x)) *> gets LineDraw
+      forM lst $ \x -> modify (_x %~ (+x)) *> gets mkStraightLine
     VerticalTo OriginAbsolute lst ->
-      forM lst $ \y -> modify (_y .~ y) *> gets LineDraw
+      forM lst $ \y -> modify (_y .~ y) *> gets mkStraightLine
     VerticalTo OriginRelative lst ->
-      forM lst $ \y -> modify (_y %~ (+y)) *> gets LineDraw
+      forM lst $ \y -> modify (_y %~ (+y)) *> gets mkStraightLine
     CurveTo OriginAbsolute quads -> do
       forM quads $ \(a,b,c) -> put c *> pure (LineBezier [a,b,c])
     CurveTo OriginRelative quads -> do
@@ -176,7 +186,7 @@ toLineCommand startPos mbPrevControlPt cmd = do
       (forM points $ \(rotX, rotY, angle, largeArc, sweepFlag, to) -> do
         from <- get <* adjustPosition o to
         return $ convertSvgArc from rotX rotY angle largeArc sweepFlag (makeAbsolute o from to))
-    EndPath -> put startPos *> pure [LineDraw startPos]
+    EndPath -> put startPos *> pure [LineBezier [startPos], LineEnd]
   where
     mirrorPoint c p = c*2-p
     adjustPosition OriginRelative p = modify (+p)
@@ -201,7 +211,7 @@ convertSvgArc (V2 x0 y0) radiusX radiusY angle largeArcFlag sweepFlag (V2 x y)
     | x0 == x && y0 == y
         = []
     | radiusX == 0.0 && radiusY == 0.0
-        = [LineDraw (V2 x y)]
+        = [LineBezier [V2 x y]]
     | otherwise
         = calcSegments x0 y0 theta1' segments'
     where
@@ -309,10 +319,12 @@ linePoints = worker zero
     worker from (x:xs) =
       case x of
         LineMove to     -> worker to xs
-        LineDraw to     -> from:to:worker to xs
+        -- LineDraw to     -> from:to:worker to xs
+        -- FIXME: Use approximation from Geom2D.Bezier
         LineBezier ctrl -> -- approximation
           [ last (partial_bezier_points (from:ctrl) 0 (recip chunks*i)) | i <- [0..chunks]] ++
           worker (last ctrl) xs
+        LineEnd -> worker from xs
     chunks = 10
 
 svgBoundingPoints :: Tree -> [RPoint]
@@ -334,7 +346,7 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
           (Num x, Num y) -> [V2 x y] ++
             case mapTuple (fmap $ toUserUnit defaultDPI) (rect^.rectWidth, rect^.rectHeight) of
               (Just (Num w), Just (Num h)) -> [V2 (x+w) (y+h)]
-              _              -> []
+              _                            -> []
           _ -> []
       TextTree{}      -> []
       ImageTree{}     -> []
@@ -342,6 +354,57 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
   where
     m = Transform.mkMatrix (t^.transform)
     mapTuple f = f *** f
+
+lowerTransformations :: Tree -> Tree
+lowerTransformations = worker Transform.identity
+  where
+    updLineCmd m cmd =
+      case cmd of
+        LineMove p -> LineMove $ Transform.transformPoint m p
+        -- LineDraw p -> LineDraw $ Transform.transformPoint m p
+        LineBezier ps -> LineBezier $ map (Transform.transformPoint m) ps
+        LineEnd -> LineEnd
+    updPath m = lineToPath . map (updLineCmd m) . toLineCommands
+    worker m t =
+      let m' = m * Transform.mkMatrix (t^.transform) in
+      case t of
+        PathTree path -> PathTree $
+          path & pathDefinition %~ updPath m'
+               & transform .~ Nothing
+        GroupTree g -> GroupTree $
+          g & groupChildren %~ map (worker m')
+            & transform .~ Nothing
+        _ -> t
+
+lowerIds :: Tree -> Tree
+lowerIds = mapTree worker
+  where
+    worker t@GroupTree{} = t & attrId .~ Nothing
+    worker t@PathTree{} = t & attrId .~ Nothing
+    worker t = t
+
+simplify :: Tree -> Tree
+simplify root =
+  case worker root of
+    [] -> None
+    [x] -> x
+    xs -> mkGroup xs
+  where
+    worker None = []
+    worker (DefinitionTree d)
+      | null (d ^. groupChildren) = []
+      | otherwise = [DefinitionTree $ d & groupChildren %~ concatMap worker]
+    worker (GroupTree g)
+      | g ^. drawAttributes == defaultSvg = concatMap worker (g^.groupChildren)
+      | otherwise = [GroupTree $ g & groupChildren %~ concatMap worker]
+    worker t = [t]
+
+extractPath :: Tree -> [PathCommand]
+extractPath = worker . simplify . lowerTransformations . pathify
+  where
+    worker (GroupTree g) = concatMap worker (g^.groupChildren)
+    worker (PathTree p) = p^.pathDefinition
+    worker _ = []
 
 withTransformations :: [Transformation] -> Tree -> Tree
 withTransformations transformations t =
@@ -494,3 +557,79 @@ withSubglyphs target fn t = evalState (worker t) 0
       if n `elem` target
         then return $ fn t
         else return t
+
+splitGlyphs :: [Int] -> Tree -> (Tree, Tree)
+splitGlyphs target = \t ->
+    let (_, l, r) = execState (worker id t) (0, [], [])
+    in (mkGroup l, mkGroup r)
+  where
+    handleGlyph :: Tree -> State (Int, [Tree], [Tree]) ()
+    handleGlyph t = do
+      (n, l, r) <- get
+      if n `elem` target
+        then put (n+1, l, t:r)
+        else put (n+1, t:l, r)
+    worker :: (Tree -> Tree) -> Tree -> State (Int, [Tree], [Tree]) ()
+    worker acc t =
+      case t of
+        GroupTree g -> do
+          let acc' t = acc (GroupTree $ g & groupChildren .~ [t])
+          mapM_ (worker acc') (g ^. groupChildren)
+        PathTree{} -> handleGlyph $ acc t
+        CircleTree{} -> handleGlyph $ acc t
+        PolyLineTree{} -> handleGlyph $ acc t
+        PolygonTree{} -> handleGlyph $ acc t
+        EllipseTree{} -> handleGlyph $ acc t
+        LineTree{} -> handleGlyph $ acc t
+        RectangleTree{} -> handleGlyph $ acc t
+        DefinitionTree{} -> return ()
+        t ->
+          modify $ \(n, l, r) -> (n, acc t:l, r)
+
+
+pathify :: Tree -> Tree
+pathify = mapTree worker
+  where
+    worker =
+      \case
+        RectangleTree rect | Just (x,y,w,h) <- unpackRect rect ->
+          PathTree $ defaultSvg
+            & drawAttributes .~ rect ^. drawAttributes & strokeLineCap .~ pure CapSquare
+            & pathDefinition .~
+              [MoveTo OriginAbsolute [V2 x y]
+              ,HorizontalTo OriginRelative [w]
+              ,VerticalTo OriginRelative [h]
+              ,HorizontalTo OriginRelative [-w]
+              ,EndPath ]
+        LineTree line | Just (x1,y1, x2, y2) <- unpackLine line ->
+          PathTree $ defaultSvg
+            & drawAttributes .~ line ^. drawAttributes
+            & pathDefinition .~
+              [MoveTo OriginAbsolute [V2 x1 y1]
+              ,LineTo OriginAbsolute [V2 x2 y2] ]
+        CircleTree circ | Just (x, y, r) <- unpackCircle circ ->
+          PathTree $ defaultSvg
+            & drawAttributes .~ circ ^. drawAttributes
+            & pathDefinition .~
+              [MoveTo OriginAbsolute [V2 (x-r) y]
+              ,EllipticalArc OriginRelative [(r, r, 0,True,False,(V2 (r*2) 0))
+                                            ,(r, r, 0,True,False,(V2 (-r*2) 0))]]
+        t -> t
+    unpackCircle circ = do
+      let (x,y) = circ ^. circleCenter
+      liftM3 (,,) (unpackNumber x) (unpackNumber y) (unpackNumber $ circ ^. circleRadius)
+    unpackLine line = do
+      let (x1,y1) = line ^. linePoint1
+          (x2,y2) = line ^. linePoint2
+      liftM4 (,,,) (unpackNumber x1) (unpackNumber y1) (unpackNumber x2) (unpackNumber y2)
+    unpackRect rect = do
+      let (x', y') = rect ^. rectUpperLeftCorner
+      x <- unpackNumber x'
+      y <- unpackNumber y'
+      w <- unpackNumber =<< rect ^. rectWidth
+      h <- unpackNumber =<< rect ^. rectHeight
+      return (x,y,w,h)
+    unpackNumber n =
+      case toUserUnit defaultDPI n of
+        Num d -> Just d
+        _     -> Nothing

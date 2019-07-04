@@ -46,6 +46,7 @@ library
                       Reanimate.Transform
                       Reanimate.Driver
                       Reanimate.Misc
+                      Reanimate.Morph
   other-modules:      Reanimate.Svg.NamedColors
                       Reanimate.Cache
                       Paths_reanimate

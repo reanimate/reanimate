@@ -33,7 +33,9 @@ animation source code, the browser window will automatically reload and show the
 * Select desired FPS in web previewer
 * Download rendered animations in web previewer
 * alignment and positioning combinators
-
+* Driver:
+ * Command line options for rendering videos.
+ * Flags for selecting fps in web viewer
 
 # Examples
 

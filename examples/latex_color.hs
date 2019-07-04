@@ -1,5 +1,5 @@
 #!/usr/bin/env stack
--- stack --resolver lts-11.22 runghc --package reanimate
+-- stack --resolver lts-12.26 runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
