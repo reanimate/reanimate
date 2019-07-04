@@ -5,12 +5,14 @@ import qualified Control.Category      as C
 import           Control.Monad.State
 import           Data.Fixed
 import           Data.Fixed            (mod')
+import Text.Printf
 import qualified Data.Map              as M
 import           Data.Monoid           ((<>))
 import           Data.Text             (Text, pack)
 import           Graphics.SvgTree      (Document (..), Number (..), Text (..),
                                         TextSpan (..), TextSpanContent (..),
                                         Tree, Tree (..), xmlOfDocument, xmlOfTree)
+import           Graphics.SvgTree.Printer
 import           Reanimate.Svg
 import           Text.XML.Light        (elContent)
 import           Text.XML.Light.Output
@@ -103,7 +105,8 @@ renderTree :: Tree -> String
 renderTree t = maybe "" ppElement $ xmlOfTree t
 
 renderSvg :: Maybe Number -> Maybe Number -> Tree -> String
-renderSvg w h t = ppElement $ xmlOfDocument doc
+renderSvg w h t = ppDocument doc
+-- renderSvg w h t = ppFastElement (xmlOfDocument doc)
   where
     width = 320
     height = width / (16/9)
