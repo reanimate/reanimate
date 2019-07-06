@@ -6,17 +6,23 @@
 trigger:
 - master
 
-pool:
-  vmImage: 'ubuntu-latest'
-
-steps:
-- script: |
-    mkdir -p ~/.local/bin
-    export PATH=$HOME/.local/bin:$PATH
-    curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
-  displayName: 'Install stack'
-
-- script: |
-    export PATH=$HOME/.local/bin:$PATH
-    stack build
-  displayName: 'Build reanimate'
+jobs:
+ - job: macOS
+   pool:
+    vmImage: 'macOS-10.13'
+   steps:
+   - script:  |
+        mkdir -p ~/.local/bin
+        export PATH=$HOME/.local/bin:$PATH
+        curl --insecure -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
+        stack build
+ - job: linux
+   pool:
+    vmImage: 'ubuntu-latest'
+   steps:
+    - script: |
+        mkdir -p ~/.local/bin
+        export PATH=$HOME/.local/bin:$PATH
+        curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+        stack build
+      displayName: 'Build reanimate'
