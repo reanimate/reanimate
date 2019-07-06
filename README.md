@@ -1,3 +1,5 @@
+[![Build Status](https://dev.azure.com/lemmih0612/reanimate/_apis/build/status/Lemmih.reanimate?branchName=master)](https://dev.azure.com/lemmih0612/reanimate/_build/latest?definitionId=1&branchName=master)
+
 # reanimate
 
 Reanimate is a reactive framework for creating non-interactive animations from SVG images.
