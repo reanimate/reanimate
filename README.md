@@ -1,3 +1,4 @@
+[![Hackage](https://img.shields.io/hackage/v/reanimate.svg)](http://hackage.haskell.org/package/reanimate)
 [![Build Status](https://dev.azure.com/lemmih0612/reanimate/_apis/build/status/Lemmih.reanimate?branchName=master)](https://dev.azure.com/lemmih0612/reanimate/_build/latest?definitionId=1&branchName=master)
 
 # reanimate
