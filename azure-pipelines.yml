@@ -17,5 +17,6 @@ steps:
   displayName: 'Install stack'
 
 - script: |
+    export PATH=$HOME/.local/bin:$PATH
     stack build
   displayName: 'Build reanimate'
