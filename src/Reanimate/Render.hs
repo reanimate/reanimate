@@ -16,6 +16,7 @@ import           Reanimate.Monad
 import           System.Directory            (renameFile)
 import           System.FilePath             (takeExtension, takeFileName,
                                               (</>))
+import           System.IO
 import           Text.Printf                 (printf)
 
 renderSvgs :: Animation ->  IO ()
@@ -52,7 +53,7 @@ renderFormat :: Format -> Animation -> FilePath -> IO ()
 renderFormat format ani target = do
   putStrLn $ "Starting render of animation: " ++ show (round (duration ani)) ++ "s"
   ffmpeg <- requireExecutable "ffmpeg"
-  generateFrames ani 320 fps $ \template ->
+  generateFrames ani 2560 fps $ \template ->
     withTempFile "txt" $ \progress -> writeFile progress "" >>
     case format of
       RenderMp4 ->
@@ -93,6 +94,7 @@ generateFrames ani width_ rate action = withTempDir $ \tmp -> do
     forM_ (zip [0::Int ..] rendered) $ \(n, frame) -> do
       writeFile (frameName n) frame
       putStr $ "\r" ++ show (n+1) ++ "/" ++ show frameCount
+      hFlush stdout
     putStrLn "\n"
     action (tmp </> nameTemplate)
   where
