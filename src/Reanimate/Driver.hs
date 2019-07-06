@@ -18,7 +18,7 @@ import           Paths_reanimate
 import           Reanimate.Misc     (runCmdLazy, runCmd_, withTempDir,
                                      withTempFile)
 import           Reanimate.Monad    (Animation)
-import           Reanimate.Render   (renderSvgs)
+import           Reanimate.Render   (renderSvgs, render)
 import           Web.Browser        (openBrowser)
 
 opts = defaultConnectionOptions
@@ -31,6 +31,8 @@ reanimate animation = do
   hSetBuffering stdin NoBuffering
   case args of
     ["once"] -> renderSvgs animation
+    ["render", target] ->
+      render animation target
     _ -> withTempDir $ \tmpDir -> do
       url <- getDataFileName "viewer/build/index.html"
       putStrLn "Opening browser..."
