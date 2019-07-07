@@ -95,6 +95,16 @@ lineToPath = map worker
     worker (LineBezier [a])     = LineTo OriginAbsolute [a]
     worker LineEnd              = EndPath
 
+lineToPoints :: Int -> [LineCommand] -> [RPoint]
+lineToPoints nPoints cmds =
+    map lineEnd lineSegments
+  where
+    lineSegments = [ partialLine (fromIntegral n/ fromIntegral nPoints) cmds | n <- [0 .. nPoints-1] ]
+    totalLen = evalState (sum <$> mapM lineLength cmds) zero
+    lineEnd [LineBezier bezier] = last bezier
+    lineEnd (_:xs) = lineEnd xs
+    lineEnd _ = error "invalid line"
+
 partialLine :: Double -> [LineCommand] -> [LineCommand]
 partialLine alpha cmds = evalState (worker 0 cmds) zero
   where
@@ -473,6 +483,9 @@ mkColor name =
 
 withStrokeColor :: String -> Tree -> Tree
 withStrokeColor color = strokeColor .~ pure (mkColor color)
+
+withStrokeLineJoin :: LineJoin -> Tree -> Tree
+withStrokeLineJoin join = strokeLineJoin .~ pure join
 
 withFillColor :: String -> Tree -> Tree
 withFillColor color = fillColor .~ pure (mkColor color)
