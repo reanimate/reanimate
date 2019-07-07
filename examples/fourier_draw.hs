@@ -14,38 +14,47 @@ import           Reanimate.Driver (reanimate)
 import           Reanimate.LaTeX
 import           Reanimate.Monad
 import           Reanimate.Svg
+import           Reanimate.Combinators
 
 waveMultiplier :: Int
 -- waveMultiplier = 1 -- Sawtooth wave
 waveMultiplier = 2 -- Square wave
 
 main :: IO ()
-main = reanimate $
-  fourierAnimation 0 `before`
-  fourierAnimation 1 `before`
-  fourierAnimation 2 `before`
-  fourierAnimation 3 `before`
-  fourierAnimation 4 `before`
-  fourierAnimation 5 `before`
-  fourierAnimation 6 `before`
-  fourierAnimation 7 `before`
-  fourierAnimation 8 `before`
-  fourierAnimation 9 `before`
-  fourierAnimation 10 `before`
-  fourierAnimation 15 `before`
-  fourierAnimation 25 `before`
-  fourierAnimation 40
+main = reanimate $ pauseAtEnd 2 $
+  -- fourierAnimation 1 2
+  fourierAnimation 1 2 `before`
+  fourierAnimation 2 3 `before`
+  fourierAnimation 3 4 `before`
+  fourierAnimation 4 5 `before`
+  fourierAnimation 5 6 `before`
+  fourierAnimation 6 7 `before`
+  fourierAnimation 7 8 `before`
+  fourierAnimation 8 9 `before`
+  fourierAnimation 9 10 `before`
+  fourierAnimation 10 15 `before`
+  fourierAnimation 15 25 `before`
+  fourierAnimation 25 40 `before`
+  fourierAnimation 40 40
 
 sWidth = 0.5
 
-fourierAnimation :: Int -> Animation
-fourierAnimation nCircles = repeatAnimation 1 $ mkAnimation 10 $ do
+applyMorph :: Int -> [Complex Double] -> Complex Double -> [Complex Double]
+applyMorph n coeffs mult =
+  map (*mult) (take n coeffs) ++
+  take (length coeffs - n * 2) (drop n coeffs) ++
+  map (*mult) (reverse $ take n $ reverse coeffs)
+
+fourierAnimation :: Int -> Int -> Animation
+fourierAnimation nCircles nextCircles = repeatAnimation 1 $ mkAnimation 10 $ do
     emit $ mkBackground "black"
     phi <- signal 0 1
 
-    let circles = findCoefficients nCircles
+    let circles = applyMorph (nextCircles - nCircles) (findCoefficients nextCircles) circleAlpha
+        circleAlpha = realToFrac (max 0 (phi-0.80) / 0.20)
+
     emit $ withStrokeWidth (Num 1) $ withStrokeColor "green" $
-      mkCirclePath circles
+      mkLinePath $ mkCirclePath circles
     drawNCircles $ rearrangeCircles $ rotateCircles phi circles
 
     emit $ withStrokeWidth (Num sWidth) $
@@ -92,6 +101,7 @@ drawNCircles circles = do
     worker circles
     emit $ withStrokeWidth (Num sWidth) $
       withStrokeColor "white" $
+      withStrokeLineJoin JoinRound $
       withFillOpacity 0 $
       mkLinePath [ (x, y) | x :+ y <- scanl (+) 0 circles ]
   where
@@ -106,7 +116,7 @@ drawNCircles circles = do
           & circleRadius .~ Num radius
       mapF (translate x y) $ worker rest
 
-mkCirclePath circles = mkLinePath
+mkCirclePath circles =
     [ (x, y)
     | idx <- [0 .. granularity]
     , let t = idx/granularity
