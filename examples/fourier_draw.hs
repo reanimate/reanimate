@@ -1,10 +1,9 @@
 #!/usr/bin/env stack
--- stack --resolver lts-12.26 runghc --package reanimate
+-- stack --resolver lts-13.14 runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
 import           Control.Lens
-import           Control.Monad
 import           Data.Complex
 import qualified Data.Text        as T
 
@@ -14,11 +13,6 @@ import           Reanimate.Driver (reanimate)
 import           Reanimate.LaTeX
 import           Reanimate.Monad
 import           Reanimate.Svg
-import           Reanimate.Combinators
-
-waveMultiplier :: Int
--- waveMultiplier = 1 -- Sawtooth wave
-waveMultiplier = 2 -- Square wave
 
 main :: IO ()
 main = reanimate $ pauseAtEnd 2 $
@@ -37,6 +31,7 @@ main = reanimate $ pauseAtEnd 2 $
   fourierAnimation 25 40 `before`
   fourierAnimation 40 40
 
+sWidth :: Double
 sWidth = 0.5
 
 applyMorph :: Int -> [Complex Double] -> Complex Double -> [Complex Double]
@@ -69,7 +64,7 @@ piPoints = lineToPoints 500 $
 findCoefficient :: Int -> Complex Double
 findCoefficient n =
     sum [ toComplex point * exp (negate (fromIntegral n) * 2 *pi * i*t) * deltaT
-        | (idx, point) <- zip [0..] piPoints, let t = fromIntegral idx/nPoints ]
+        | (idx, point) <- zip [0::Int ..] piPoints, let t = fromIntegral idx/nPoints ]
   where
     i = 0 :+ 1
     toComplex (V2 x y) = x :+ y
@@ -116,6 +111,7 @@ drawNCircles circles = do
           & circleRadius .~ Num radius
       mapF (translate x y) $ worker rest
 
+mkCirclePath :: [Complex Double] -> [(Double, Double)]
 mkCirclePath circles =
     [ (x, y)
     | idx <- [0 .. granularity]
@@ -124,14 +120,3 @@ mkCirclePath circles =
     ]
   where
     granularity = 500
-
-fourierYValue n phi =
-  imagPart (sum [ nthCircle i phi | i <- [0..n-1]])
-
-nthCircle :: Int -> Double -> Complex Double
-nthCircle n phi = x :+ y
-  where
-    n' = fromIntegral (n*waveMultiplier+1)
-    x = cos (n'*phi) * radius
-    y = sin (n'*phi) * radius
-    radius = 40 * (2 / (n'*pi))
