@@ -5,6 +5,7 @@ module Main (main) where
 
 import           Control.Lens
 import           Data.Complex
+import           Data.Fixed
 import qualified Data.Text        as T
 
 import           Graphics.SvgTree
@@ -16,83 +17,90 @@ import           Reanimate.Svg
 
 main :: IO ()
 main = reanimate $ pauseAtEnd 2 $
-  -- fourierAnimation 1 2
-  fourierAnimation 1 2 `before`
-  fourierAnimation 2 3 `before`
-  fourierAnimation 3 4 `before`
-  fourierAnimation 4 5 `before`
-  fourierAnimation 5 6 `before`
-  fourierAnimation 6 7 `before`
-  fourierAnimation 7 8 `before`
-  fourierAnimation 8 9 `before`
-  fourierAnimation 9 10 `before`
-  fourierAnimation 10 15 `before`
-  fourierAnimation 15 25 `before`
-  fourierAnimation 25 40 `before`
-  fourierAnimation 40 40
+  fourierAnimation_
 
 sWidth :: Double
 sWidth = 0.5
 
-applyMorph :: Int -> [Complex Double] -> Complex Double -> [Complex Double]
-applyMorph n coeffs mult =
-  map (*mult) (take n coeffs) ++
-  take (length coeffs - n * 2) (drop n coeffs) ++
-  map (*mult) (reverse $ take n $ reverse coeffs)
-
-fourierAnimation :: Int -> Int -> Animation
-fourierAnimation nCircles nextCircles = repeatAnimation 1 $ mkAnimation 10 $ do
-    emit $ mkBackground "black"
-    phi <- signal 0 1
-
-    let circles = applyMorph (nextCircles - nCircles) (findCoefficients nextCircles) circleAlpha
-        circleAlpha = realToFrac (max 0 (phi-0.80) / 0.20)
-
-    emit $ withStrokeWidth (Num 1) $ withStrokeColor "green" $
-      mkLinePath $ mkCirclePath circles
-    drawNCircles $ rearrangeCircles $ rotateCircles phi circles
-
-    emit $ withStrokeWidth (Num sWidth) $
-      withFillColor "white" $
-      translate (-140) (-80) $
-      scale 2 $ latex $ T.pack $ "Circles: " ++ show (nCircles*2+1)
+piFourier :: Fourier
+piFourier = mkFourier piPoints
 
 piPoints :: [RPoint]
 piPoints = lineToPoints 500 $
   toLineCommands $ extractPath $ scale 30 $ center $ latexAlign "\\pi"
 
-findCoefficient :: Int -> Complex Double
-findCoefficient n =
-    sum [ toComplex point * exp (negate (fromIntegral n) * 2 *pi * i*t) * deltaT
-        | (idx, point) <- zip [0::Int ..] piPoints, let t = fromIntegral idx/nPoints ]
+
+fourierAnimation_ :: Animation
+fourierAnimation_ = mkAnimation 50 $ do
+    emit $ mkBackground "black"
+    phi <- signal 0 15
+    fLength <- signal 0 1
+
+    let circles = setFourierLength (fLength*maxLength) piFourier
+        maxLength = sum $ map magnitude $ take 499 $ drop 1 $ fourierCoefficients piFourier
+
+    emit $ withStrokeWidth (Num 1) $ withStrokeColor "green" $
+      mkLinePath $ mkFourierOutline circles
+    drawCircles $ fourierCoefficients $ rotateFourier phi circles
+
+    emit $ withStrokeWidth (Num sWidth) $
+      withFillColor "white" $
+      translate (-140) (-80) $
+      scale 2 $ latex $ T.pack $ "Circles: " ++ show (length $ fourierCoefficients circles)
+
+data Fourier = Fourier {fourierCoefficients :: [Complex Double]}
+
+pointAtFourier :: Fourier -> Complex Double
+pointAtFourier = sum . fourierCoefficients
+
+mkFourier :: [RPoint] -> Fourier
+mkFourier points = Fourier $ findCoefficient 0 :
+    concat [ [findCoefficient n, findCoefficient (-n)] | n <- [1..] ]
   where
+    findCoefficient :: Int -> Complex Double
+    findCoefficient n =
+        sum [ toComplex point * exp (negate (fromIntegral n) * 2 *pi * i*t) * deltaT
+            | (idx, point) <- zip [0::Int ..] points, let t = fromIntegral idx/nPoints ]
     i = 0 :+ 1
     toComplex (V2 x y) = x :+ y
     deltaT = recip nPoints
-    nPoints = fromIntegral (length piPoints)
+    nPoints = fromIntegral (length points)
 
-findCoefficients :: Int -> [Complex Double]
-findCoefficients n = [ findCoefficient idx | idx <- [-n .. n] ]
 
-rotateCircles :: Double -> [Complex Double] -> [Complex Double]
-rotateCircles phi coeffs =
-    [ coeff * exp (fromIntegral idx *2*pi*i*realToFrac phi)| (coeff, idx) <- zip coeffs [-n..] ]
+setFourierCircles :: Double -> Fourier -> Fourier
+setFourierCircles n _ | n < 1 = error "Invalid argument. Need at least one circle."
+setFourierCircles n (Fourier coeffs) =
+    Fourier $ take iCircles coeffs ++ [coeffs!!iCircles * realToFrac fCircle]
   where
+    (iCircles, fCircle) = divMod' n 1
+
+setFourierLength :: Double -> Fourier -> Fourier
+setFourierLength len (Fourier (first:lst)) = Fourier $ first : worker len lst
+  where
+    worker len [] = []
+    worker len (c:cs) =
+      if magnitude c < len
+        then c : worker (len - magnitude c) cs
+        else [c * (realToFrac (len / magnitude c))]
+
+rotateFourier :: Double -> Fourier -> Fourier
+rotateFourier phi (Fourier coeffs) =
+    Fourier $ worker (coeffs) 0
+  where
+    worker [] _ = []
+    worker (x:rest) 0 = x : worker rest 1
+    worker [left] n = worker [left,0] n
+    worker (left:right:rest) n =
+      let n' = fromIntegral n in
+      left * exp (negate n' * 2 * pi * i * phi') :
+      right * exp (n' * 2 * pi * i * phi') :
+      worker rest (n+1)
     i = 0 :+ 1
     n = length coeffs `div` 2
+    phi' = realToFrac phi
 
-rearrangeCircles :: [Complex Double] -> [Complex Double]
-rearrangeCircles [coeff] = [coeff]
-rearrangeCircles coeffs =
-    coeffs !! n : zipList (reverse (take n coeffs)) (drop (n+1) coeffs)
-  where
-    zipList (x:xs) (y:ys) = x : y : zipList xs ys
-    zipList lst [] = lst
-    zipList [] lst = lst
-    n = length coeffs `div` 2
-
-drawNCircles :: [Complex Double] -> Frame ()
-drawNCircles circles = do
+drawCircles :: [Complex Double] -> Frame ()
+drawCircles circles = do
     worker circles
     emit $ withStrokeWidth (Num sWidth) $
       withStrokeColor "white" $
@@ -111,12 +119,11 @@ drawNCircles circles = do
           & circleRadius .~ Num radius
       mapF (translate x y) $ worker rest
 
-mkCirclePath :: [Complex Double] -> [(Double, Double)]
-mkCirclePath circles =
+mkFourierOutline :: Fourier -> [(Double, Double)]
+mkFourierOutline fourier =
     [ (x, y)
     | idx <- [0 .. granularity]
-    , let t = idx/granularity
-          x :+ y = sum (rotateCircles t circles)
+    , let x :+ y = pointAtFourier $ rotateFourier (idx/granularity) fourier
     ]
   where
     granularity = 500
