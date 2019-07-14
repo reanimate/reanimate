@@ -350,20 +350,22 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
       CircleTree{}    -> error "CircleTree"
       PolyLineTree{}  -> error "PolyLineTree"
       EllipseTree{}   -> error "EllipseTree"
-      LineTree{}      -> error "LineTree"
+      LineTree line   -> map pointToRPoint [line^.linePoint1, line^.linePoint2]
       RectangleTree rect ->
-        case mapTuple (toUserUnit defaultDPI) (rect^.rectUpperLeftCorner) of
-          (Num x, Num y) -> [V2 x y] ++
+        case pointToRPoint (rect^.rectUpperLeftCorner) of
+          V2 x y -> [V2 x y] ++
             case mapTuple (fmap $ toUserUnit defaultDPI) (rect^.rectWidth, rect^.rectHeight) of
               (Just (Num w), Just (Num h)) -> [V2 (x+w) (y+h)]
               _                            -> []
-          _ -> []
       TextTree{}      -> []
       ImageTree{}     -> []
       MeshGradientTree{} -> []
   where
     m = Transform.mkMatrix (t^.transform)
     mapTuple f = f *** f
+    pointToRPoint p =
+      case mapTuple (toUserUnit defaultDPI) p of
+        (Num x, Num y) -> (V2 x y)
 
 lowerTransformations :: Tree -> Tree
 lowerTransformations = worker Transform.identity
