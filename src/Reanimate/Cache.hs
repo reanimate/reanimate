@@ -21,6 +21,7 @@ import Text.XML.Light ( Content(..), parseXML )
 import           System.Directory
 import           System.FilePath
 import           System.IO.Unsafe
+import           System.IO
 
 -- Memory cache and disk cache
 
@@ -34,19 +35,17 @@ cacheDisk parse render gen key = do
       then do
         inp <- T.readFile path
         case parse inp of
-          Nothing -> do
-            let tmp = path <.> "tmp"
-            new <- gen key
-            T.writeFile tmp (render new)
-            renameFile tmp path
-            return new
+          Nothing -> genCache root path
           Just val -> pure val
-      else do
-        let tmp = path <.> "tmp"
-        new <- gen key
-        T.writeFile tmp (render new)
-        renameFile tmp path
-        return new
+      else genCache root path
+  where
+    genCache root path = do
+      (tmpPath, tmpHandle) <- openTempFile root (show (hash key))
+      new <- gen key
+      T.hPutStr tmpHandle (render new)
+      hClose tmpHandle
+      renameFile tmpPath path
+      return new
 
 cacheDiskSvg :: (Text -> IO Tree) -> (Text -> IO Tree)
 cacheDiskSvg = cacheDisk parse render
