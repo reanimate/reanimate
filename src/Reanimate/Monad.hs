@@ -14,6 +14,7 @@ import           Graphics.SvgTree      (Document (..), Number (..), Text (..),
                                         Tree, Tree (..), xmlOfDocument, xmlOfTree)
 import           Graphics.SvgTree.Printer
 import           Reanimate.Svg
+import           Reanimate.Signal
 import           Text.XML.Light        (elContent)
 import           Text.XML.Light.Output
 
@@ -86,17 +87,8 @@ pause d = Animation d (pure ())
 andThen :: Animation -> Animation -> Animation
 andThen a b = a `sim` (pause (duration a) `before` b)
 
-signal :: Double -> Double -> Frame Double
-signal from to = Frame $ \d t -> pure $
-  from + (to-from)*(t/d)
-
-signalSCurve :: Double -> Double -> Double -> Frame Double
-signalSCurve steepness from to = do
-  s <- signal 0 1
-  let s' = if s < 0.5
-              then 0.5 * (2*s)**steepness
-              else 1-0.5 * (2 - 2*s)**steepness
-  pure $ from + (to-from)*s'
+getSignal :: Signal -> Frame Double
+getSignal s = Frame $ \d t -> pure $ s (t/d)
 
 frameAt :: Double -> Animation -> Tree
 frameAt t (Animation d (Frame f)) = mkGroup $ execState (f d (min d t)) id []

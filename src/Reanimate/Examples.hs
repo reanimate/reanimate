@@ -22,6 +22,7 @@ import           Reanimate.Diagrams
 import           Reanimate.LaTeX
 import           Reanimate.Monad
 import           Reanimate.Svg
+import           Reanimate.Signal
 
 import qualified Data.Colour.Palette.BrewerSet as D
 import qualified Diagrams.Backend.SVG          as D
@@ -498,17 +499,17 @@ latex_draw =
     msg = "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
     glyphs = center $ latexAlign msg
     fillText = mkAnimation 1 $ do
-      s <- signal 0 1
+      s <- getSignal signalLinear
       emit $ scale 5 $ withFillColor "white" $ withFillOpacity s glyphs
     drawText = mkAnimation 2 $ do
-      s <- signal 0 1
+      s <- getSignal signalLinear
       emit $ scale 5 $
         withStrokeColor "white" $ withFillOpacity 0 $ withStrokeWidth (Num 0.1) $
           partialSvg s glyphs
 
 morph_wave :: Animation
 morph_wave = autoReverse $ mkAnimation 2.5 $ do
-    morph <- signal 0 1
+    morph <- getSignal signalLinear
     emit $ mkBackground "black"
     emit $ withStrokeColor "white" $ translate (-320/2) (-180/2) $ mkGroup
       [ translate 30 50  $ mkLinePath wave1
@@ -523,7 +524,7 @@ morph_wave = autoReverse $ mkAnimation 2.5 $ do
 
 morph_wave_circle :: Animation
 morph_wave_circle = autoReverse $ mkAnimation 2.5 $ do
-    idx <- signal 0 1
+    idx <- getSignal signalLinear
     emit $ mkBackground "black"
     emit $ withStrokeColor "white" $ translate (-320/2) (-180/2) $ mkGroup
       [ translate 30 90 $ mkLinePath $ morphPath circle wave1 idx
@@ -551,7 +552,7 @@ progressMeters =
 
 progressMeter :: Animation
 progressMeter = mkAnimation 3 $ do
-  h <- signal 0 100
+  h <- getSignal $ signalFromTo 0 100 signalLinear
   emit $ center $ mkGroup
     [ withStrokeColor "white" $ withStrokeWidth (Num 2) $ withFillOpacity 0 $
         mkRect (Num 0, Num 0) (Num 30) (Num 100)
@@ -568,7 +569,7 @@ bbox = bg `sim`
 
 bbox1 :: Animation
 bbox1 = mkAnimation 5 $ do
-    s <- signal 0 1
+    s <- getSignal signalLinear
     emit $ mkGroup
       [ mkBoundingBox $ rotate (360*s) svg
       , withFillColor "white" $ rotate (360*s) svg ]
@@ -577,7 +578,7 @@ bbox1 = mkAnimation 5 $ do
 
 bbox2 :: Animation
 bbox2 = autoReverse $ mkAnimation 2.5 $ do
-  s <- signal 0 1
+  s <- getSignal signalLinear
   emit $ mkGroup
     [ mkBoundingBox $ partialSvg s heartShape
     , withStrokeColor "white" $ withFillOpacity 0 $ partialSvg s heartShape ]
@@ -610,7 +611,7 @@ latex_color = mkAnimation 1 $ do
 
 latex_basic :: Animation
 latex_basic = autoReverse $ mkAnimation 2 $ do
-    s <- signal 0 1
+    s <- getSignal signalLinear
     emit $ mkGroup
       [ mkBackground "black"
       , withStrokeColor "white" $ withFillOpacity 0 $ withStrokeWidth (Num 0.1) text
@@ -636,23 +637,23 @@ valentine =
     ai = center $ xelatex "爱"
     all_red = mkAnimation 1 $ emit $ mkBackground "red"
     background = mkAnimation 2 $ do
-      n <- round <$> signal 0 0xFF
+      n <- round <$> getSignal (signalFromTo 0 0xFF signalLinear)
       emit $ mkBackgroundPixel $ PixelRGBA8 0xFF n n 0xFF
     backgroundDelay = pause (duration background-1)
     heart_ani = repeatAnimation 10 $ mkAnimation 1 $ do
-      n <- oscillate $ signalSCurve 2 0.9 1.1
+      n <- oscillate $ getSignal $ signalFromTo 0.9 1.1 $ signalCurve 2
       mapF (scale n) $ drawHeart
     heart_disappear = mkAnimation 3 $ do
-      n  <- signal 0.9 10
+      n  <- getSignal $ signalFromTo 0.9 10 signalLinear
       mapF (scale n) drawHeart
     fallingLove xPos = mkAnimation 2 $ do
-      n <- signal (-100) 100
-      o <- oscillate $ signal (-1) 1
+      n <- getSignal $ signalFromTo (-100) 100 signalLinear
+      o <- oscillate $ getSignal $ signalFromTo (-1) 1 signalLinear
       emit $ scale 2 $ withFillColor "red" $
         translate ((xPos*2-1)*60) n $ rotate (45*o) ai
     message txt = mkAnimation 1 $ do
-      o <- oscillate $ signal 0 1
-      n <- oscillate $ signalSCurve 2 0.9 1.1
+      o <- oscillate $ getSignal signalLinear
+      n <- oscillate $ getSignal $ signalFromTo 0.9 1.1 $ signalCurve 2
       emit $ scale n $ scale 2 $ withFillColor "white" $ withFillOpacity o txt
     drawHeart = emit $ withFillColor "red" $ heartShape
 
@@ -670,7 +671,7 @@ diaSize = mkAnimation 0.1 $ do
 
 wavyTree :: Animation
 wavyTree = mkAnimation 1 $ do
-    s <- oscillate $ signal 1 2
+    s <- oscillate $ getSignal $ signalFromTo 1 2 signalLinear
     emit $ mkBackground "white"
     emit $ translate (-320/2) (-180/2) (dSvg s)
   where
@@ -686,7 +687,7 @@ wavyTree = mkAnimation 1 $ do
 
 tangentAndNormal :: Animation
 tangentAndNormal = mkAnimation 5 $ do
-    s <- oscillate $ signalSCurve 2 0 1
+    s <- oscillate $ getSignal $ signalCurve 2
     emit $ mkBackground "white"
     emit $ translate (-320/2) (-180/2) $ renderDiagram $
       withEnvelope (D.rect 320 180 :: SvgDiagram) $
@@ -725,8 +726,8 @@ tangentAndNormal = mkAnimation 5 $ do
 
 drawSunflower :: Animation
 drawSunflower = mkAnimation 10 $ do
-    n <- signal 1 500
-    rot <- signal 0 45
+    n <- getSignal $ signalFromTo 1 500 signalLinear
+    rot <- getSignal $ signalFromTo 0 45 signalLinear
     emit $ mkBackground "black"
     emit $ rotate rot $ translate (-320/2) (-180/2)
       (dSvg $ round n)
@@ -757,7 +758,7 @@ mkFilter ident fe = defaultSvg & filterChildren .~ fe & attrId .~ Just ident
 
 gooEffect :: Animation
 gooEffect = mkAnimation 5 $ do
-  s <- oscillate $ signal 0 3
+  s <- oscillate $ getSignal $ signalFromTo 0 3 signalLinear
   emit $ mkBackground "black"
   emit $ FilterTree $ mkFilter "blur"
     [FEGaussianBlur $ defaultSvg
