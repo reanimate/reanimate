@@ -35,10 +35,14 @@ animation source code, the browser window will automatically reload and show the
 * Improve bounding box approximations
 * Select desired FPS in web previewer
 * Download rendered animations in web previewer
-* alignment and positioning combinators
+* Alignment and positioning combinators
+* Consistent caching framework
+* Figure out why performance doesn't scale linearly with more cores
+* Test-suite: Compile and render all the example animations on the build servers. The SVG output should be stable.
 * Driver:
- * Command line options for rendering videos.
- * Flags for selecting fps in web viewer
+   - ~~Command line options for rendering videos.~~
+   - Flags for selecting fps in web viewer
+   - Command for validating tools: latex, dvisvgm, ffmpeg. Warn of old versions of ffmpeg that don't render SVGs correctly.
 
 # Examples
 
