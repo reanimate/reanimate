@@ -11,6 +11,12 @@ Nothing about the API is stable at this point.
 
 Live coding playground: https://lemmih.github.io/reanimate/
 
+# YouTube
+
+Completed animations are uploaded to the [Reanimated Science](https://www.youtube.com/channel/UCbZujyI7i6JbI-I0shPvDgg) channel.
+
+Animation snippets are uploaded to the [Reanimated Science Playground](https://www.youtube.com/channel/UCL7MwXLtQbhJeb6Ts3_HooA) channel.
+
 # Getting started
 
 Reanimate ships with a web-based viewer and automatic code reloading. To get a small demo
