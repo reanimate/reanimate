@@ -491,22 +491,6 @@ latex_color = proc () -> do
 -}
 
 
-latex_draw :: Animation
-latex_draw =
-    bg `sim` (autoReverse $ drawText `andThen` fillText)
-  where
-    bg = mkAnimation 0 $ emit (mkBackground "black")
-    msg = "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
-    glyphs = center $ latexAlign msg
-    fillText = mkAnimation 1 $ do
-      s <- getSignal signalLinear
-      emit $ scale 5 $ withFillColor "white" $ withFillOpacity s glyphs
-    drawText = mkAnimation 2 $ do
-      s <- getSignal signalLinear
-      emit $ scale 5 $
-        withStrokeColor "white" $ withFillOpacity 0 $ withStrokeWidth (Num 0.1) $
-          partialSvg s glyphs
-
 morph_wave :: Animation
 morph_wave = autoReverse $ mkAnimation 2.5 $ do
     morph <- getSignal signalLinear
@@ -560,66 +544,11 @@ progressMeter = mkAnimation 3 $ do
         mkRect (Num 0, Num 0) (Num 30) (Num h) ]
 
 
-bbox :: Animation
-bbox = bg `sim`
-    mapA (translate (-50) 0) bbox1 `sim`
-    mapA (translate 50 0) bbox2
-  where
-    bg = mkAnimation 0 $ emit $ mkBackground "black"
-
-bbox1 :: Animation
-bbox1 = mkAnimation 5 $ do
-    s <- getSignal signalLinear
-    emit $ mkGroup
-      [ mkBoundingBox $ rotate (360*s) svg
-      , withFillColor "white" $ rotate (360*s) svg ]
-  where
-    svg = scale 3 $ center $ latexAlign "\\sum_{k=1}^\\infty"
-
-bbox2 :: Animation
-bbox2 = autoReverse $ mkAnimation 2.5 $ do
-  s <- getSignal signalLinear
-  emit $ mkGroup
-    [ mkBoundingBox $ partialSvg s heartShape
-    , withStrokeColor "white" $ withFillOpacity 0 $ partialSvg s heartShape ]
-
-mkBoundingBox :: Tree -> Tree
-mkBoundingBox svg = withStrokeColor "red" $ withFillOpacity 0 $
-    mkRect (S.Num x, S.Num y) (S.Num w) (S.Num h)
-  where
-    (x, y, w, h) = boundingBox svg
-
 heartShape =
     center $ rotateAroundCenter 225 $ mkPathString
       "M0.0,40.0 v-40.0 h40.0\
       \a20.0 20.0 90.0 0 1 0.0,40.0\
       \a20.0 20.0 90.0 0 1 -40.0,0.0 Z"
-
-latex_color :: Animation
-latex_color = mkAnimation 1 $ do
-    emit $ mkBackground "black"
-    emit $ withStrokeWidth (Num 0.2) $
-      withStrokeColor "white" $
-      withSubglyphs [0] (withFillColor "blue") $
-      withSubglyphs [1] (withFillColor "yellow") $
-      withSubglyphs [2] (withFillColor "green") $
-      withSubglyphs [3] (withFillColor "red") $
-      withSubglyphs [4] (withFillColor "darkslategrey") $
-      svg
-  where
-    svg = scale 10 $ center $ latex "\\LaTeX"
-
-latex_basic :: Animation
-latex_basic = autoReverse $ mkAnimation 2 $ do
-    s <- getSignal signalLinear
-    emit $ mkGroup
-      [ mkBackground "black"
-      , withStrokeColor "white" $ withFillOpacity 0 $ withStrokeWidth (Num 0.1) text
-      , withFillColor "white" $ withFillOpacity s text ]
-  where
-    text = scale 4 $ center $ latexAlign
-      "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
-
 valentine :: Animation
 valentine =
     all_red `before`
@@ -684,45 +613,6 @@ wavyTree = mkAnimation 1 $ do
     tree s =
       D.lSystem gens (s/16 @@ turn) (D.symbols "F") rules
     rules = M.fromList [D.rule 'F' "FF-[->F+F+>F]+[+>F->F->F]"]
-
-tangentAndNormal :: Animation
-tangentAndNormal = mkAnimation 5 $ do
-    s <- oscillate $ getSignal $ signalCurve 2
-    emit $ mkBackground "white"
-    emit $ translate (-320/2) (-180/2) $ renderDiagram $
-      withEnvelope (D.rect 320 180 :: SvgDiagram) $
-      D.scale 50 $ D.translate (V2 (-2) (-0.75)) $ dia s
-  where
-    dia param =
-        frame 0.5 $
-        strokeLocTrail spline
-        <> mconcat
-          [ tangentLine
-          , baselineText "tangent" # D.translate tangentVector
-          , normalLine
-          , topLeftText "normal" # D.translate (-normalVector)
-          , rightAngleSquare
-          ] # moveTo pt # D.fontSize large
-      where
-        pts = map p2 [(0,0), (1,1), (2,1), (3,0), (3.5,0)]
-
-        spline :: Located (Trail V2 Double)
-        spline = cubicSpline False pts
-
-        pt = atParam spline param
-        tangentVector ::  V2 Double
-        tangentVector = D.normalize $ tangentAtParam spline param
-        normalVector = D.normalize $ normalAtParam spline param
-
-        symmetricLine :: V2 Double -> SvgDiagram
-        symmetricLine v = fromOffsets [2 *^ v] # D.center
-        tangentLine :: SvgDiagram
-        tangentLine = symmetricLine tangentVector
-        normalLine = symmetricLine normalVector
-
-        rightAngleSquare :: SvgDiagram
-        rightAngleSquare = square 0.1 # alignBL # D.rotate (signedAngleBetween tangentVector unitX)
-
 
 drawSunflower :: Animation
 drawSunflower = mkAnimation 10 $ do
