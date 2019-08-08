@@ -1,5 +1,5 @@
 #!/usr/bin/env stack
--- stack --resolver lts-11.14 runghc --package reanimate
+-- stack --resolver lts-13.14 runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
@@ -15,7 +15,7 @@ import           Reanimate.Raster
 import           Codec.Picture
 
 main :: IO ()
-main = reanimate $ mkAnimation 2 $ do
+main = reanimate $ repeatAnimation 6 $ mkAnimation 5 $ do
     s <- getSignal signalLinear
     emit $ mkGroup
       [ mkBackground "black"
@@ -23,4 +23,3 @@ main = reanimate $ mkAnimation 2 $ do
   where
     img = generateImage pixelRenderer 255 255
     pixelRenderer x y = PixelRGB8 (fromIntegral x) (fromIntegral y) 128
-
