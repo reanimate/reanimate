@@ -2,7 +2,7 @@
 module Reanimate.Svg where
 
 import           Codec.Picture               (PixelRGBA8 (..))
-import           Codec.Picture.Types
+import           Codec.Picture.Types         ()
 import           Control.Arrow
 import           Control.Lens                (over, set, (%~), (&), (.~), (^.))
 import           Control.Monad.Fix
@@ -358,7 +358,11 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
               (Just (Num w), Just (Num h)) -> [V2 (x+w) (y+h)]
               _                            -> []
       TextTree{}      -> []
-      ImageTree{}     -> []
+      ImageTree img   ->
+        case (img^.imageCornerUpperLeft, img^.imageWidth, img^.imageHeight) of
+          ((Num x, Num y), Num w, Num h) ->
+            [V2 x y, V2 (x+w) (y+h)]
+          _ -> []
       MeshGradientTree{} -> []
   where
     m = Transform.mkMatrix (t^.transform)
