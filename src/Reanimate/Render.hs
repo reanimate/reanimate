@@ -10,7 +10,6 @@ import qualified Data.Text                   as T
 import qualified Data.Text.IO                as T
 import           Graphics.SvgTree            (Number (..))
 import           Reanimate.Diagrams
-import           Reanimate.Examples
 import           Reanimate.Misc
 import           Reanimate.Monad
 import           System.Directory            (renameFile)
