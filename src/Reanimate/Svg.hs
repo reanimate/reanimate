@@ -444,6 +444,12 @@ rotateAroundCenter a t =
 scale :: Double -> Tree -> Tree
 scale a = withTransformations [Scale a Nothing]
 
+scaleToSize :: Double -> Double -> Tree -> Tree
+scaleToSize w h t =
+    scaleXY (w/w') (h/h') t
+  where
+    (_x, _y, w', h') = boundingBox t
+
 scaleXY :: Double -> Double -> Tree -> Tree
 scaleXY x y = withTransformations [Scale x (Just y)]
 
@@ -513,6 +519,11 @@ mkRect corner width height = RectangleTree $ defaultSvg
   & rectUpperLeftCorner .~ corner
   & rectWidth .~ Just width
   & rectHeight .~ Just height
+
+mkCircle :: Point -> Number -> Tree
+mkCircle center radius = CircleTree $ defaultSvg
+  & circleCenter .~ center
+  & circleRadius .~ radius
 
 mkBoundingRect :: Tree -> Double -> Tree
 mkBoundingRect src margin =
