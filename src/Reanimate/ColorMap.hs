@@ -9,6 +9,7 @@ module Reanimate.ColorMap
   , cividis
   , jet
   , hsv
+  , greyscale
   ) where
 
 import Data.Text (Text)
@@ -179,6 +180,11 @@ hsv :: Double -> PixelRGB8
 hsv t = PixelRGB8 (round $ r*255) (round $ g*255) (round $ b*255)
   where
     RGB r g b = HSV.hsv (t * 330) 1 1
+
+greyscale :: Double -> PixelRGB8
+greyscale t = PixelRGB8 v v v
+  where
+    v = round $ t * 255
 
 --------------------------------------------------------------------------------
 -- Helpers

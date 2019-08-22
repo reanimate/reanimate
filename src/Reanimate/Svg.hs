@@ -487,6 +487,16 @@ center t = translate (-x-w/2) (-y-h/2) t
   where
     (x, y, w, h) = boundingBox t
 
+centerX :: Tree -> Tree
+centerX t = translate (-x-w/2) 0 t
+  where
+    (x, y, w, h) = boundingBox t
+
+centerY :: Tree -> Tree
+centerY t = translate 0 (-y-h/2) t
+  where
+    (x, y, w, h) = boundingBox t
+
 mkColor :: String -> Texture
 mkColor name =
   case Map.lookup name svgNamedColors of
