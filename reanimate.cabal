@@ -49,6 +49,7 @@ library
                       Reanimate.Misc
                       Reanimate.Morph
                       Reanimate.Raster
+                      Reanimate.ColorMap
   other-modules:      Reanimate.Svg.NamedColors
                       Reanimate.Cache
                       Paths_reanimate
@@ -58,7 +59,8 @@ library
                        JuicyPixels, attoparsec, parallel, diagrams, diagrams-svg,
                        diagrams-core, diagrams-lib, diagrams-contrib,
                        svg-builder, matrices, cubicbezier, palette, websockets,
-                       hashable, fsnotify, open-browser, random-shuffle, base64-bytestring
+                       hashable, fsnotify, open-browser, random-shuffle, base64-bytestring,
+                       vector, colour
 
 Flag server
   Description: Enable rendering server
