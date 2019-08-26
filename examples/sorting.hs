@@ -1,31 +1,30 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-13.14 runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes        #-}
 module Main (main) where
 
-import           Control.Lens
+import           Control.Lens ()
 
-import           Graphics.SvgTree (Number(..))
-import           Reanimate.Driver (reanimate)
+import           Codec.Picture
+import           Data.Text                   (Text)
+import           Graphics.SvgTree            (Number (..))
+import           Reanimate.Driver            (reanimate)
 import           Reanimate.LaTeX
 import           Reanimate.Monad
-import           Reanimate.Svg
-import           Reanimate.Signal
 import           Reanimate.Raster
-import           Codec.Picture
-import           Data.Text (Text)
-import           Data.Colour.RGBSpace.HSV
-import           Data.Colour.RGBSpace
+import           Reanimate.Signal
+import           Reanimate.Svg
+import           Reanimate.ColorMap
 
-import Control.Monad.ST
-import Control.Monad.State.Strict
-import Data.Vector.Unboxed (Vector)
-import qualified Data.Vector.Unboxed as V
+import           Control.Monad.ST
+import           Control.Monad.State.Strict
 import qualified Data.Vector.Generic.Mutable as GV
-import System.Random.Shuffle
-import System.Random
-import Debug.Trace
+import           Data.Vector.Unboxed         (Vector)
+import qualified Data.Vector.Unboxed         as V
+import           Debug.Trace
+import           System.Random
+import           System.Random.Shuffle
 
 main :: IO ()
 main = reanimate $
@@ -37,14 +36,13 @@ main = reanimate $
   adjustSpeed (1/3) (demonstrateAlgorithm "Quicksort" quicksort)
 
 demonstrateAlgorithm :: Text -> (forall s. S s ()) -> Animation
-demonstrateAlgorithm name algo = mkAnimation 5 $ do
+demonstrateAlgorithm name algo = mkAnimation 10 $ do
     s <- getSignal signalLinear
     let img = generateImage pixelRenderer width height
         seed = round (s * 3000)
-        pixelRenderer x y = PixelRGB8 (round $ r*255) (round $ g*255) (round $ b*255)
+        pixelRenderer x y = turbo (fromIntegral num / fromIntegral width)
           where
             num = (sortedDat !! y) V.! x
-            RGB r g b = hsv (fromIntegral num / 255 * 360) 0.7 1
         sortedDat = runSort' seed algo width
         width = 1024
         height = length sortedDat
@@ -76,7 +74,7 @@ demonstrateAlgorithm name algo = mkAnimation 5 $ do
 
 data Env s = Env
   { envHistory :: [Vector Int]
-  , envState :: V.MVector s Int }
+  , envState   :: V.MVector s Int }
 
 type S s a = StateT (Env s) (ST s) a
 
@@ -91,8 +89,8 @@ runSort' seed sortFn len = reverse $ runST (do
   where
     lst = shuffle' [1 .. len] len (mkStdGen seed)
     skipDups (x:y:xs) | x == y = skipDups (x:xs)
-    skipDups (x:xs) = x : skipDups xs
-    skipDups [] = []
+    skipDups (x:xs)   = x : skipDups xs
+    skipDups []       = []
 
 readS :: Int -> S s Int
 readS idx = do
