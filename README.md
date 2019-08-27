@@ -44,11 +44,19 @@ animation source code, the browser window will automatically reload and show the
 * Alignment and positioning combinators
 * Consistent caching framework
 * Figure out why performance doesn't scale linearly with more cores
+   - diagrams are slow because they are rendered as a bytestring and then parsed as SVG. Find a way to shortcut.
 * Test-suite: Compile and render all the example animations on the build servers. The SVG output should be stable.
+* API for generating slides.
 * Driver:
    - ~~Command line options for rendering videos.~~
    - Flags for selecting fps in web viewer
    - Command for validating tools: latex, dvisvgm, ffmpeg. Warn of old versions of ffmpeg that don't render SVGs correctly.
+   - Use GHC.Environment to find own source code.
+   - Generate interleaved frames (1fps, 2fps, 4fps, etc)
+   - Flag for generating youtube videos (ffmpeg options preset).
+* Viewer:
+   - Keys for pausing, moving frame-by-frame, resetting.
+   - Fix race conditions.
 
 # Examples
 
