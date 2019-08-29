@@ -47,6 +47,7 @@ animation source code, the browser window will automatically reload and show the
    - diagrams are slow because they are rendered as a bytestring and then parsed as SVG. Find a way to shortcut.
 * Test-suite: Compile and render all the example animations on the build servers. The SVG output should be stable.
 * API for generating slides.
+* Warn if 'group' nodes are found in 'clippath's.
 * Driver:
    - ~~Command line options for rendering videos.~~
    - Flags for selecting fps in web viewer
