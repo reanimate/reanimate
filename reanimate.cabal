@@ -55,7 +55,7 @@ library
                       Paths_reanimate
   build-depends:       base >=4.10 && <4.13,
                        time, text, filepath, process, directory,
-                       containers, reanimate-svg >= 0.7.0.0, xml, bytestring, lens, linear, mtl, matrix,
+                       containers, reanimate-svg >= 0.9.0.2, xml, bytestring, lens, linear, mtl, matrix,
                        JuicyPixels, attoparsec, parallel, diagrams, diagrams-svg,
                        diagrams-core, diagrams-lib, diagrams-contrib,
                        svg-builder, matrices, cubicbezier, palette, websockets,
