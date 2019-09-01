@@ -3,19 +3,23 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import           Control.Lens ()
+import           Control.Lens               ()
 
-import           Graphics.SvgTree (Number(..),Tree)
-import           Reanimate.Driver (reanimate)
+import           Codec.Picture
+import qualified Data.Colour.CIE            as CIE
+import           Data.Colour.CIE.Illuminant
+import           Data.Colour.RGBSpace
+import qualified Data.Colour.RGBSpace.HSL   as HSL
+import           Data.Colour.SRGB
+import           Data.Word
+import           Graphics.SvgTree           (Number (..), Tree)
+import           Reanimate.ColorMap
+import           Reanimate.Driver           (reanimate)
 import           Reanimate.LaTeX
 import           Reanimate.Monad
-import           Reanimate.Svg
-import           Reanimate.Signal
 import           Reanimate.Raster
-import           Reanimate.ColorMap
-import           Codec.Picture
-import qualified Data.Colour.RGBSpace.HSL as HSL
-import           Data.Colour.RGBSpace
+import           Reanimate.Signal
+import           Reanimate.Svg
 
 main :: IO ()
 main = reanimate $ repeatAnimation 6 $ pauseAtEnd 2 $ autoReverse $ pauseAtEnd 2 $ mkAnimation 5 $ do
@@ -42,7 +46,7 @@ main = reanimate $ repeatAnimation 6 $ pauseAtEnd 2 $ autoReverse $ pauseAtEnd 2
       , translate (80) (-20) $ mkOutline "plasma" (dimmer s . plasma)
       , translate (80) (10) $ mkOutline "sinebow" (dimmer s . sinebow)
       , translate (80) (40) $ mkOutline "hsv" (dimmer s . hsv)
-      , translate (80) (70) $ mkOutline "greyscale" (dimmer s . greyscale)
+      , translate (80) (70) $ mkOutline "parula" (dimmer s . parula)
       ]
   where
     mkOutline label f =
@@ -63,8 +67,8 @@ mkColorMap f = center $ embedImage img
 
 dimmer :: Double -> PixelRGB8 -> PixelRGB8
 dimmer switch (PixelRGB8 r g b) =
-    PixelRGB8 (round $ r'*255) (round $ g'*255) (round $ b'*255)
+    PixelRGB8 r' g' b'
   where
-    (h, s, l) = HSL.hslView (RGB (fromIntegral r/255) (fromIntegral g/255) (fromIntegral b/255))
-    RGB r' g' b' = HSL.hsl h (s*c) l
+    (lStar, aStar, bStar) = CIE.cieLABView d65 (sRGBBounded r g b :: Colour Double)
+    RGB r' g' b' = toSRGBBounded $ CIE.cieLAB d65 lStar (aStar*c) (bStar*c) :: RGB Word8
     c = 1-switch
