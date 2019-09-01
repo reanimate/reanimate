@@ -27,6 +27,8 @@ data-files:           viewer/build/*.js
                       viewer/build/static/js/main.db22f45d.chunk.js
                       viewer/build/static/js/runtime~main.9eb600ee.js
                       viewer/build/static/css/main.6efe09fd.chunk.css
+                      data/CIExyz.csv
+                      data/cone_sensitivity_lms.csv
 
 Source-Repository head
     Type:      git
@@ -50,6 +52,7 @@ library
                       Reanimate.Morph
                       Reanimate.Raster
                       Reanimate.ColorMap
+                      Reanimate.ColorSpace
   other-modules:      Reanimate.Svg.NamedColors
                       Reanimate.Cache
                       Paths_reanimate
@@ -60,7 +63,7 @@ library
                        diagrams-core, diagrams-lib, diagrams-contrib,
                        svg-builder, matrices, cubicbezier, palette, websockets,
                        hashable, fsnotify, open-browser, random-shuffle, base64-bytestring,
-                       vector, colour
+                       vector, colour, cassava
 
 Flag server
   Description: Enable rendering server

@@ -175,9 +175,15 @@ jet t = PixelRGB8 red green blue
     trunc :: Double -> Pixel8
     trunc = fromIntegral . min 255 . max 0 . round . (*) 255
 
--- | Matlab hsv colormap. Goes from 0 degrees to 330 degrees.
+-- | hsv colormap. Goes from 0 degrees to 360 degrees.
 hsv :: Double -> PixelRGB8
 hsv t = PixelRGB8 (round $ r*255) (round $ g*255) (round $ b*255)
+  where
+    RGB r g b = HSV.hsv (t * 360) 1 1
+
+-- | Matlab hsv colormap. Goes from 0 degrees to 330 degrees.
+hsvMatlab :: Double -> PixelRGB8
+hsvMatlab t = PixelRGB8 (round $ r*255) (round $ g*255) (round $ b*255)
   where
     RGB r g b = HSV.hsv (t * 330) 1 1
 
