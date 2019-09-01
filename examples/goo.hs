@@ -15,7 +15,7 @@ import           Reanimate.Combinators
 
 main :: IO ()
 main = reanimate $ autoReverse $ mkAnimation 5 $ do
-  s <- getSignal $ signalFromTo 0 2 signalLinear
+  s <- getSignal $ signalFromTo 0 1.5 $ signalCurve 2
   emit $ mkBackground "black"
   emit $ FilterTree $ mkFilter "blur"
     [FEGaussianBlur $ defaultSvg
@@ -51,18 +51,16 @@ main = reanimate $ autoReverse $ mkAnimation 5 $ do
   emit $ withFillColor "red" $ mkGroup
     [ translate (s*(-radius)) 0 circ
     , translate (s*radius) 0 circ
-    ]
-    & filterRef .~ pure (Ref "goo")
-  emit $ translate 0 (radius*2) $ withFillColor "red" $ set filterRef (pure $ Ref "blur")
-    $ mkGroup [ translate (s*(-radius)) 0 circ
-              , translate (s*radius) 0 circ ]
+    ] & filterRef .~ pure (Ref "blur")
+  emit $ translate 0 (radius*2) $ withFillColor "red" $ mkGroup
+    [ translate (s*(-radius)) 0 circ
+    , translate (s*radius) 0 circ
+    ] & filterRef .~ pure (Ref "goo")
   where
-    sharpness = 60
+    sharpness = 10
     dev = 10
-    radius = 30
-    circ = CircleTree $ defaultSvg
-      & circleCenter .~ (Num 0, Num 0)
-      & circleRadius .~ Num radius
+    radius = 25
+    circ = mkCircle (Num 0, Num 0) (Num radius)
 
 mkFilter :: String -> [FilterElement] -> Filter
 mkFilter ident fe = defaultSvg & filterChildren .~ fe & attrId .~ Just ident
