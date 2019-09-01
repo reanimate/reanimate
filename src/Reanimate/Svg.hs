@@ -524,6 +524,9 @@ withStrokeWidth width = strokeWidth .~ pure width
 withClipPathRef :: ElementRef -> Tree -> Tree
 withClipPathRef ref = clipPathRef .~ pure ref
 
+withId :: String -> Tree -> Tree
+withId idTag = attrId .~ Just idTag
+
 mkRect :: Point -> Number -> Number -> Tree
 mkRect corner width height = RectangleTree $ defaultSvg
   & rectUpperLeftCorner .~ corner
@@ -549,6 +552,14 @@ mkLine point1 point2 = LineTree $ defaultSvg
 mkGroup :: [Tree] -> Tree
 mkGroup forest = GroupTree $ defaultSvg
   & groupChildren .~ forest
+
+mkDefinitions :: [Tree] -> Tree
+mkDefinitions forest = DefinitionTree $ defaultSvg
+  & groupChildren .~ forest
+
+mkClipPath :: String -> [Tree] -> Tree
+mkClipPath idTag forest = withId idTag $ ClipPathTree $ (defaultSvg
+  & clipPathContent .~ forest)
 
 mkPathString :: String -> Tree
 mkPathString = mkPathText . T.pack
