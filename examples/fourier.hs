@@ -1,5 +1,5 @@
 #!/usr/bin/env stack
--- stack --resolver lts-12.26 runghc --package reanimate
+-- stack --resolver lts-13.14 runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
@@ -12,6 +12,7 @@ import           Reanimate.Driver (reanimate)
 import           Reanimate.LaTeX  (latex)
 import           Reanimate.Monad
 import           Reanimate.Svg
+import           Reanimate.Signal
 
 waveMultiplier :: Int
 -- waveMultiplier = 1 -- Sawtooth wave
@@ -33,7 +34,7 @@ sWidth = 0.5
 fourierAnimation :: Int -> Animation
 fourierAnimation nCircles = repeatAnimation 2 $ mkAnimation 3 $ do
     emit $ mkBackground "black"
-    phi <- signal 0 (2*pi)
+    phi <- getSignal $ signalFromTo 0 (2*pi) signalLinear
     mapF (translate (-100) 0) $ do
       drawNCircles nCircles phi
       emit $ withStrokeColor "white" $
