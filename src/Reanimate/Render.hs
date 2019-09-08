@@ -5,6 +5,9 @@ module Reanimate.Render
 
 import           Control.Monad               (forM_)
 import           Control.Parallel.Strategies
+import           Control.Concurrent.QSemN
+import           Control.Concurrent
+import           Control.Exception
 import qualified Data.ByteString.Lazy.Char8  as BS
 import qualified Data.Text                   as T
 import qualified Data.Text.IO                as T
@@ -83,17 +86,18 @@ renderFormat format ani target = do
 
 ---------------------------------------------------------------------------------
 -- Helpers
--- XXX: Move to a different module and unify with helpers from LaTeX.
 
--- XXX: Use threads
 generateFrames ani width_ rate action = withTempDir $ \tmp -> do
+    done <- newMVar 0
     let frameName nth = tmp </> printf nameTemplate nth
         rendered = [ renderSvg width height $ nthFrame n | n <- frames]
                     `using` parBuffer 16 rdeepseq
-    forM_ (zip [0::Int ..] rendered) $ \(n, frame) -> do
-      writeFile (frameName n) frame
-      putStr $ "\r" ++ show (n+1) ++ "/" ++ show frameCount
-      hFlush stdout
+    concurrentForM_ frames $ \n -> do
+      writeFile (frameName n) $ renderSvg width height $ nthFrame n
+      modifyMVar_ done $ \nDone -> do
+        putStr $ "\r" ++ show (nDone+1) ++ "/" ++ show frameCount
+        hFlush stdout
+        return (nDone+1)
     putStrLn "\n"
     action (tmp </> nameTemplate)
   where
@@ -104,3 +108,12 @@ generateFrames ani width_ rate action = withTempDir $ \tmp -> do
     frameCount = round (duration ani * fromIntegral rate) :: Int
     nameTemplate :: String
     nameTemplate = "render-%05d.svg"
+
+concurrentForM_ :: [a] -> (a -> IO ()) -> IO ()
+concurrentForM_ lst action = do
+  n <- getNumCapabilities
+  sem <- newQSemN n
+  forM_ lst $ \elt -> do
+    waitQSemN sem 1
+    forkIO (action elt `finally` signalQSemN sem 1)
+  waitQSemN sem n
