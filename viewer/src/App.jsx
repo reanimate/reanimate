@@ -32,7 +32,7 @@ class App extends Component {
       } else if (event.data === "Done") {
         this.setState({message: ""});
         console.log("Done");
-        this.start = Date.now();
+        this.status = 'done';
       } else if (event.data.startsWith("Error")) {
         console.log("Error", event.data.substring(5));
         this.setState({message: event.data.substring(5)});
