@@ -24,7 +24,7 @@ description:
 data-files:           viewer/build/*.js
                       viewer/build/*.html
                       viewer/build/static/js/2.772a56e7.chunk.js
-                      viewer/build/static/js/main.2d848b69.chunk.js
+                      viewer/build/static/js/main.c36ecb4a.chunk.js
                       viewer/build/static/js/runtime~main.9eb600ee.js
                       viewer/build/static/css/main.f7ad3e9b.chunk.css
                       data/CIExyz.csv
