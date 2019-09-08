@@ -123,6 +123,13 @@ mapF fn frame = Frame $ \d t -> do
 pauseAtEnd :: Double -> Animation -> Animation
 pauseAtEnd p a = a `andThen` pause p
 
+pauseAtBeginning :: Double -> Animation -> Animation
+pauseAtBeginning d1 a =
+    Animation d1 (freezeFrame 0 a) `before` a
+
+freezeFrame :: Double -> Animation -> Frame ()
+freezeFrame t (Animation d f) = Frame $ \_ _ -> unFrame f d t
+
 adjustSpeed :: Double -> Animation -> Animation
 adjustSpeed factor (Animation d fn) =
   Animation (d/factor) $ Frame $ \_dur t -> unFrame fn d (t*factor)

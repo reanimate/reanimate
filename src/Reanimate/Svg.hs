@@ -518,6 +518,9 @@ withFillColorPixel color = fillColor .~ pure (ColorRef color)
 withFillOpacity :: Double -> Tree -> Tree
 withFillOpacity opacity = fillOpacity .~ Just (realToFrac opacity)
 
+withGroupOpacity :: Double -> Tree -> Tree
+withGroupOpacity opacity = groupOpacity .~ Just (realToFrac opacity)
+
 withStrokeWidth :: Number -> Tree -> Tree
 withStrokeWidth width = strokeWidth .~ pure width
 
@@ -556,6 +559,9 @@ mkGroup forest = GroupTree $ defaultSvg
 mkDefinitions :: [Tree] -> Tree
 mkDefinitions forest = DefinitionTree $ defaultSvg
   & groupChildren .~ forest
+
+mkUse :: String -> Tree
+mkUse name = UseTree (defaultSvg & useName .~ name) Nothing
 
 mkClipPath :: String -> [Tree] -> Tree
 mkClipPath idTag forest = withId idTag $ ClipPathTree $ (defaultSvg
