@@ -1,15 +1,17 @@
 module Reanimate.Driver ( reanimate ) where
 
 import           Control.Concurrent (MVar, forkIO, killThread, modifyMVar_,
-                                     newEmptyMVar, putMVar)
+                                     newEmptyMVar, putMVar, takeMVar)
 import           Control.Exception  (finally)
 import           Control.Monad.Fix  (fix)
 import qualified Data.Text          as T
+import qualified Data.Text.Read     as T
 import           Network.WebSockets
 import           System.Directory   (findFile, listDirectory)
 import           System.Environment (getArgs, getProgName)
 import           System.FilePath
 import           System.FSNotify
+import System.Exit
 import           System.IO          (BufferMode (..), hPutStrLn, hSetBuffering,
                                      stderr, stdin)
 
@@ -18,7 +20,7 @@ import           Paths_reanimate
 import           Reanimate.Misc     (runCmdLazy, runCmd_, withTempDir,
                                      withTempFile)
 import           Reanimate.Monad    (Animation)
-import           Reanimate.Render   (renderSvgs, render)
+import           Reanimate.Render   (render, renderSvgs)
 import           Web.Browser        (openBrowser)
 
 opts = defaultConnectionOptions
@@ -56,26 +58,11 @@ reanimate animation = do
                   sendTextData conn (T.pack "Compiling")
                   putStrLn "Killing and respawning..."
                   killThread tid
-                  tid <- forkIO $ withTempFile ".exe" $ \tmpExecutable -> do
-                    ret <- runCmd_ "stack" $ ["ghc", "--"] ++ ghcOptions tmpDir ++ [self, "-o", tmpExecutable]
-                    case ret of
-                      Left err ->
-                        sendTextData conn $ T.pack $ "Error" ++ unlines (drop 3 (lines err))
-                      Right{} -> do
-                        getFrame <- runCmdLazy tmpExecutable ["once", "+RTS", "-N", "-M200M", "-RTS"]
-                        flip fix [] $ \loop acc -> do
-                          frame <- getFrame
-                          case frame of
-                            Left "" -> do
-                              sendTextData conn (T.pack "Done")
-                              -- insertCache msg (reverse acc)
-                            Left err -> do
-                              -- _ <- getChanContents queue
-                              sendTextData conn $ T.pack $ "Error" ++ err
-                            Right frame -> do
-                              sendTextData conn frame
-                              loop (frame : acc)
+                  tid <- forkIO $ slaveHandler conn self tmpDir
                   return tid
+                killSlave = do
+                  tid <- takeMVar slave
+                  killThread tid
             putStrLn "Found self. Listening..."
             stop <- watchFile watch self handler
             putMVar slave =<< forkIO (return ())
@@ -83,7 +70,38 @@ reanimate animation = do
                   fps <- receiveData conn :: IO T.Text
                   handler
                   loop
-            loop `finally` stop
+            loop `finally` (killSlave >> stop)
+
+slaveHandler conn self tmpDir = withTempFile ".exe" $ \tmpExecutable -> do
+  ret <- runCmd_ "stack" $ ["ghc", "--"] ++ ghcOptions tmpDir ++ [self, "-o", tmpExecutable]
+  case ret of
+    Left err ->
+      sendTextData conn $ T.pack $ "Error" ++ unlines (drop 3 (lines err))
+    Right{} -> do
+      getFrame <- runCmdLazy tmpExecutable ["once", "+RTS", "-N", "-M1G", "-RTS"]
+      (frameCount,_) <- expectFrame =<< getFrame
+      -- sendTextData conn (T.pack "Compiled")
+      sendTextData conn (T.pack $ show frameCount)
+      fix $ \loop -> do
+        (frameIdx, frame) <- expectFrame =<< getFrame
+        sendTextData conn (T.pack $ show frameIdx)
+        sendTextData conn frame
+        loop
+  where
+    expectFrame (Left "") = do
+      sendTextData conn (T.pack "Done")
+      exitWith ExitSuccess
+    expectFrame (Left err) = do
+      sendTextData conn $ T.pack $ "Error" ++ err
+      exitWith (ExitFailure 1)
+    expectFrame (Right frame) =
+      case T.decimal frame of
+        Left err -> do
+          hPutStrLn stderr (T.unpack frame)
+          hPutStrLn stderr $ "expectFrame: " ++ err
+          sendTextData conn $ T.pack $ "Error" ++ err
+          exitWith (ExitFailure 1)
+        Right (frameNumber, rest) -> pure (frameNumber, rest)
 
 watchFile watch file action = watchDir watch (takeDirectory file) check (const action)
   where
