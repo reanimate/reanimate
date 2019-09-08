@@ -23,16 +23,38 @@ import           Text.Printf                 (printf)
 
 renderSvgs :: Animation ->  IO ()
 renderSvgs ani = do
-    let renderedFrames = map (T.concat . T.lines . T.pack . nthFrame) frames
-    mapM_ T.putStrLn (renderedFrames `using` parBuffer 16 rdeepseq)
+    print frameCount
+    lock <- newMVar ()
+    -- let renderedFrames = map (T.concat . T.lines . T.pack . nthFrame) frames
+    -- mapM_ T.putStrLn (renderedFrames `using` parBuffer 16 rdeepseq)
+
+    concurrentForM_ (frameOrder rate frameCount) $ \nth -> do
+      let -- frame = frameAt (recip (fromIntegral rate-1) * fromIntegral nth) ani
+          now = (duration ani / (fromIntegral frameCount-1)) * fromIntegral nth
+          frame = frameAt (if frameCount<=1 then 0 else now) ani
+          svg = renderSvg Nothing Nothing frame
+      evaluate (length svg)
+      withMVar lock $ \_ -> do
+        putStr (show nth)
+        T.putStrLn $ T.concat . T.lines . T.pack $ svg
+        hFlush stdout
   where
     frames = [0..frameCount-1]
     rate = 60
     nthFrame nth = renderSvg Nothing Nothing $ frameAt (recip (fromIntegral rate) * fromIntegral nth) ani
     frameCount = round (duration ani * fromIntegral rate) :: Int
-    nameTemplate :: String
-    nameTemplate = "render-%05d.svg"
 
+frameOrder :: Int -> Int -> [Int]
+frameOrder fps nFrames = worker [] fps
+  where
+    worker seen 0 = []
+    worker seen nthFrame =
+      filterFrameList seen nthFrame nFrames ++
+      worker (nthFrame : seen) (nthFrame `div` 2)
+filterFrameList seen nthFrame nFrames =
+    filter (not.isSeen) $ [0, nthFrame .. nFrames-1]
+  where
+    isSeen x = any (\y -> x `mod` y == 0) seen
 
 data Format = RenderMp4 | RenderGif | RenderWebm | RenderBlank
 
