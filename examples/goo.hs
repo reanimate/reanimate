@@ -58,7 +58,7 @@ main = reanimate $ autoReverse $ mkAnimation 5 $ do
     ] & filterRef .~ pure (Ref "goo")
   where
     sharpness = 10
-    dev = 10
+    dev = 5
     radius = 25
     circ = mkCircle (Num 0, Num 0) (Num radius)
 

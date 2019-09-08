@@ -14,6 +14,7 @@ import           Reanimate.Driver (reanimate)
 import           Reanimate.LaTeX
 import           Reanimate.Monad
 import           Reanimate.Svg
+import           Reanimate.Signal
 
 main :: IO ()
 main = reanimate $ pauseAtEnd 2 $
@@ -33,8 +34,8 @@ piPoints = lineToPoints 500 $
 fourierAnimation_ :: Animation
 fourierAnimation_ = mkAnimation 50 $ do
     emit $ mkBackground "black"
-    phi <- signal 0 15
-    fLength <- signal 0 1
+    phi <- getSignal $ signalFromTo 0 15 signalLinear
+    fLength <- getSignal signalLinear
 
     let circles = setFourierLength (fLength*maxLength) piFourier
         maxLength = sum $ map magnitude $ take 499 $ drop 1 $ fourierCoefficients piFourier
