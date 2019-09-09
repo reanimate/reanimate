@@ -29,7 +29,7 @@ latex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) latexToSVG)
   ("% plain latex\n" <> tex)
 
 xelatex :: Text -> Tree
-xelatex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) latexToSVG)
+xelatex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) xelatexToSVG)
   ("% xelatex\n" <> tex)
 
 latexAlign :: Text -> Tree
