@@ -9,8 +9,6 @@ previewer. Inline latex code is supported when 'latex' and 'dvisvgm' are install
 
 Nothing about the API is stable at this point.
 
-Live coding playground: https://lemmih.github.io/reanimate/
-
 # YouTube
 
 Completed animations are uploaded to the [Reanimated Science](https://www.youtube.com/channel/UCbZujyI7i6JbI-I0shPvDgg) channel.
@@ -61,8 +59,7 @@ animation source code, the browser window will automatically reload and show the
 
 # Examples
 
-The example gifs are displayed at 25 fps. The source code for many of these examples are available
-on the live coding playground.
+The example gifs are displayed at 25 fps.
 
 ![Sunflower](gifs/sunflower.gif)
 ![Tangent](gifs/tangent.gif)
