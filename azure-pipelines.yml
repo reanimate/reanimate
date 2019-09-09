@@ -23,12 +23,12 @@ jobs:
     - task: CacheBeta@0
       inputs:
         key: stack | $(Agent.OS)
-        path: ~/.local/bin
+        path: $(HOME)/.local/bin
       displayName: Cache stack
     - task: CacheBeta@0
       inputs:
         key: ghc | $(Agent.OS) | stack.yaml
-        path: ~/.stack
+        path: $(HOME)/.stack
       displayName: Cache ghc
     - script: |
         mkdir -p ~/.local/bin
