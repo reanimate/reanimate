@@ -54,6 +54,7 @@ library
                       Reanimate.ColorMap
                       Reanimate.ColorSpace
                       Reanimate.Interpolate
+                      Reanimate.Memo
   other-modules:      Reanimate.Svg.NamedColors
                       Reanimate.Cache
                       Paths_reanimate
