@@ -1,9 +1,10 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module Reanimate.Driver ( reanimate ) where
 
 import           Control.Concurrent           (MVar, forkIO, killThread,
                                                modifyMVar_, newEmptyMVar,
                                                putMVar, takeMVar)
-import           Control.Exception            (finally)
+import           Control.Exception            (finally, SomeException, handle)
 import           Control.Monad.Fix            (fix)
 import           Control.Monad
 import qualified Data.Text                    as T
@@ -176,7 +177,7 @@ hasDvisvgm :: IO (Either String String)
 hasDvisvgm = hasProgram "dvisvgm"
 
 hasTeXPackage :: FilePath -> String -> IO (Either String String)
-hasTeXPackage exec pkg =
+hasTeXPackage exec pkg = handle (\(e::SomeException) -> return $ Left "n/a") $
     withTempDir $ \tmp_dir -> withTempFile "tex" $ \tex_file -> do
       let tmp_dir = "."
           tex_file = "test.tex"
