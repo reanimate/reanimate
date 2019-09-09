@@ -1,27 +1,32 @@
 module Reanimate.Driver ( reanimate ) where
 
-import           Control.Concurrent (MVar, forkIO, killThread, modifyMVar_,
-                                     newEmptyMVar, putMVar, takeMVar)
-import           Control.Exception  (finally)
-import           Control.Monad.Fix  (fix)
-import qualified Data.Text          as T
-import qualified Data.Text.Read     as T
+import           Control.Concurrent           (MVar, forkIO, killThread,
+                                               modifyMVar_, newEmptyMVar,
+                                               putMVar, takeMVar)
+import           Control.Exception            (finally)
+import           Control.Monad.Fix            (fix)
+import           Control.Monad
+import qualified Data.Text                    as T
+import qualified Data.Text.Read               as T
 import           Network.WebSockets
-import           System.Directory   (findFile, listDirectory)
-import           System.Environment (getArgs, getProgName)
+import           System.Directory             (findFile, listDirectory, findExecutable)
+import           System.Environment           (getArgs, getProgName)
+import           System.Exit
+import Text.Printf
 import           System.FilePath
 import           System.FSNotify
-import System.Exit
-import           System.IO          (BufferMode (..), hPutStrLn, hSetBuffering,
-                                     stderr, stdin)
+import           System.IO                    (BufferMode (..), hPutStrLn,
+                                               hSetBuffering, stderr, stdin)
+import qualified Text.PrettyPrint.ANSI.Leijen as Doc
 
 import           Data.Maybe
 import           Paths_reanimate
-import           Reanimate.Misc     (runCmdLazy, runCmd_, withTempDir,
-                                     withTempFile)
-import           Reanimate.Monad    (Animation)
-import           Reanimate.Render   (render, renderSvgs, renderSnippets)
-import           Web.Browser        (openBrowser)
+import           Reanimate.Misc               (runCmdLazy, runCmd_, withTempDir,
+                                               withTempFile)
+import           Reanimate.Monad              (Animation)
+import           Reanimate.Render             (render, renderSnippets,
+                                               renderSvgs)
+import           Web.Browser                  (openBrowser)
 
 opts = defaultConnectionOptions
   { connectionCompressionOptions = PermessageDeflateCompression defaultPermessageDeflate }
@@ -34,6 +39,7 @@ reanimate animation = do
   case args of
     ["once"] -> renderSvgs animation
     ["snippets"] -> renderSnippets animation
+    ["check"] -> checkEnvironment
     ["render", target] ->
       render animation target
     _ -> withTempDir $ \tmpDir -> do
@@ -112,3 +118,109 @@ ghcOptions :: FilePath -> [String]
 ghcOptions tmpDir =
     ["-rtsopts", "--make", "-threaded", "-O2"] ++
     ["-odir", tmpDir, "-hidir", tmpDir]
+
+
+
+
+--------------------------------------------------------------------------
+-- Check environment
+
+checkEnvironment :: IO ()
+checkEnvironment = do
+    putStrLn "reanimate checks:"
+    runCheck "Has LaTeX" hasLaTeX
+    runCheck "Has XeLaTeX" hasXeLaTeX
+    runCheck "Has dvisvgm" hasDvisvgm
+    forM_ latexPackages $ \pkg ->
+      runCheck ("Has LaTeX package '"++ pkg ++ "'") $ hasTeXPackage "latex" $
+        "{"++pkg++"}"
+    forM_ xelatexPackages $ \pkg ->
+      runCheck ("Has XeLaTeX package '"++ pkg ++ "'") $ hasTeXPackage "xelatex" $
+        "{"++pkg++"}"
+  where
+    latexPackages =
+      ["babel"
+      ,"amsmath"
+      ,"amssymb"
+      ,"dsfont"
+      ,"setspace"
+      ,"relsize"
+      ,"textcomp"
+      ,"mathrsfs"
+      ,"calligra"
+      ,"wasysym"
+      ,"ragged2e"
+      ,"physics"
+      ,"xcolor"
+      ,"textcomp"
+      ,"xfrac"
+      ,"microtype"]
+    xelatexPackages =
+      ["ctex"]
+    runCheck msg fn = do
+      printf "  %-35s" (msg ++ ":")
+      val <- fn
+      case val of
+        Left err -> print $ Doc.red $ Doc.text err
+        Right ok -> print $ Doc.green $ Doc.text ok
+
+-- latex, dvisvgm, xelatex
+
+hasLaTeX :: IO (Either String String)
+hasLaTeX = hasProgram "latex"
+
+hasXeLaTeX :: IO (Either String String)
+hasXeLaTeX = hasProgram "xelatex"
+
+hasDvisvgm :: IO (Either String String)
+hasDvisvgm = hasProgram "dvisvgm"
+
+hasTeXPackage :: FilePath -> String -> IO (Either String String)
+hasTeXPackage exec pkg =
+    withTempDir $ \tmp_dir -> withTempFile "tex" $ \tex_file -> do
+      let tmp_dir = "."
+          tex_file = "test.tex"
+      writeFile tex_file tex_document
+      appendFile tex_file $ "\\usepackage" ++ pkg ++ "\n"
+      appendFile tex_file "\\begin{document}\n"
+      appendFile tex_file "blah\n"
+      appendFile tex_file tex_epilogue
+      ret <- runCmd_ exec ["-interaction=batchmode", "-halt-on-error", "-output-directory="++tmp_dir, tex_file]
+      return $ case ret of
+        Right{} -> Right "OK"
+        Left{}  -> Left "missing"
+  where
+    tex_document = "\\documentclass[preview]{standalone}\n"
+    tex_xelatex =
+      "\\usepackage[UTF8]{ctex}\n"
+
+    tex_prologue =
+      "\\usepackage[english]{babel}\n\
+      \\\usepackage{amsmath}\n\
+      \\\usepackage{amssymb}\n\
+      \\\usepackage{dsfont}\n\
+      \\\usepackage{setspace}\n\
+      \\\usepackage{relsize}\n\
+      \\\usepackage{textcomp}\n\
+      \\\usepackage{mathrsfs}\n\
+      \\\usepackage{calligra}\n\
+      \\\usepackage{wasysym}\n\
+      \\\usepackage{ragged2e}\n\
+      \\\usepackage{physics}\n\
+      \\\usepackage{xcolor}\n\
+      \\\usepackage{textcomp}\n\
+      \\\usepackage{xfrac}\n\
+      \\\usepackage{microtype}\n\
+      \\\linespread{1}\n\
+      \\\begin{document}\n"
+
+    tex_epilogue =
+      "\n\
+      \\\end{document}"
+
+hasProgram :: String -> IO (Either String String)
+hasProgram exec = do
+  mbPath <- findExecutable exec
+  return $ case mbPath of
+    Nothing   -> Left $ "'" ++ exec ++ "'' not found"
+    Just path -> Right path
