@@ -21,8 +21,13 @@ import           Reanimate.Raster
 import           Reanimate.Signal
 import           Reanimate.Svg
 
+-- Cycle the animation if we want to upload it to youtube.
+youtube :: Animation -> Animation
+-- youtube = repeatAnimation 6
+youtube = id
+
 main :: IO ()
-main = reanimate $ repeatAnimation 6 $ pauseAtEnd 2 $ autoReverse $ pauseAtEnd 2 $ mkAnimation 5 $ do
+main = reanimate $ youtube $ pauseAtEnd 2 $ autoReverse $ pauseAtEnd 2 $ mkAnimation 5 $ do
     s <- getSignal $ signalCurve 2
     let scaleWidth = 50
         nubWidth = 2

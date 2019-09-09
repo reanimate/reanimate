@@ -20,7 +20,7 @@ import           Paths_reanimate
 import           Reanimate.Misc     (runCmdLazy, runCmd_, withTempDir,
                                      withTempFile)
 import           Reanimate.Monad    (Animation)
-import           Reanimate.Render   (render, renderSvgs)
+import           Reanimate.Render   (render, renderSvgs, renderSnippets)
 import           Web.Browser        (openBrowser)
 
 opts = defaultConnectionOptions
@@ -33,6 +33,7 @@ reanimate animation = do
   hSetBuffering stdin NoBuffering
   case args of
     ["once"] -> renderSvgs animation
+    ["snippets"] -> renderSnippets animation
     ["render", target] ->
       render animation target
     _ -> withTempDir $ \tmpDir -> do

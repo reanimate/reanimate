@@ -1,6 +1,7 @@
 module Reanimate.Render
   ( render
   , renderSvgs
+  , renderSnippets
   ) where
 
 import           Control.Monad               (forM_)
@@ -25,8 +26,6 @@ renderSvgs :: Animation ->  IO ()
 renderSvgs ani = do
     print frameCount
     lock <- newMVar ()
-    -- let renderedFrames = map (T.concat . T.lines . T.pack . nthFrame) frames
-    -- mapM_ T.putStrLn (renderedFrames `using` parBuffer 16 rdeepseq)
 
     concurrentForM_ (frameOrder rate frameCount) $ \nth -> do
       let -- frame = frameAt (recip (fromIntegral rate-1) * fromIntegral nth) ani
@@ -39,10 +38,21 @@ renderSvgs ani = do
         T.putStrLn $ T.concat . T.lines . T.pack $ svg
         hFlush stdout
   where
-    frames = [0..frameCount-1]
     rate = 60
-    nthFrame nth = renderSvg Nothing Nothing $ frameAt (recip (fromIntegral rate) * fromIntegral nth) ani
     frameCount = round (duration ani * fromIntegral rate) :: Int
+
+-- XXX: Merge with 'renderSvgs'
+renderSnippets :: Animation ->  IO ()
+renderSnippets ani = do
+    print frameCount
+    forM_ [0..frameCount-1] $ \nth -> do
+      let now = (duration ani / (fromIntegral frameCount-1)) * fromIntegral nth
+          frame = frameAt (if frameCount<=1 then 0 else now) ani
+          svg = renderSvg Nothing Nothing frame
+      putStr (show nth)
+      T.putStrLn $ T.concat . T.lines . T.pack $ svg
+  where
+    frameCount = 50
 
 frameOrder :: Int -> Int -> [Int]
 frameOrder fps nFrames = worker [] fps
