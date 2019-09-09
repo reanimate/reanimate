@@ -9,13 +9,13 @@ trigger:
 steps:
 - task: CacheBeta@0
   inputs:
-    key: "stack" | $(Agent.OS)
-    path: ~/.local/bin
+    key: stack | $(Agent.OS)
+    path: .local/bin
   displayName: Cache stack
 - task: CacheBeta@0
   inputs:
-    key: "ghc" | $(Agent.OS) | stack.yaml
-    path: ~/.stack
+    key: ghc | $(Agent.OS) | stack.yaml
+    path: .stack
   displayName: Cache ghc
 
 jobs:
