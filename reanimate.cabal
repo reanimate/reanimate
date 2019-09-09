@@ -53,6 +53,7 @@ library
                       Reanimate.Raster
                       Reanimate.ColorMap
                       Reanimate.ColorSpace
+                      Reanimate.Interpolate
   other-modules:      Reanimate.Svg.NamedColors
                       Reanimate.Cache
                       Paths_reanimate
