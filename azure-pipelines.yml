@@ -16,7 +16,6 @@ jobs:
         export PATH=$HOME/.local/bin:$PATH
         curl --insecure -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
         stack build
-        stack test
  - job: linux
    pool:
     vmImage: 'ubuntu-latest'
@@ -26,5 +25,5 @@ jobs:
         export PATH=$HOME/.local/bin:$PATH
         curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
         stack build
-        stack test
+        ./examples/counter.hs check
       displayName: 'Build reanimate'
