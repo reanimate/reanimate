@@ -31,23 +31,25 @@ jobs:
     #  displayName: Cache stack
     - task: CacheBeta@0
       inputs:
-        key: stack-root | $(Agent.OS) | stack.yaml
+        key: stack-root | $(Agent.OS) | stack.yaml | version2
         path: $(STACK_ROOT)
       displayName: Cache stack root
     - task: CacheBeta@0
       inputs:
-        key: stack-work | $(Agent.OS) | stack.yaml | version2
+        key: stack-work | $(Agent.OS) | stack.yaml | version3
         path: $(Build.SourcesDirectory)/$(STACK_WORK)
       displayName: Cache stack work
     - script: |
         ghc --version
         ghc-pkg list
+        stack path
         pwd
         sudo apt-get update
         sudo apt-get install texlive-binaries texlive-latex-base texlive-latex-extra texlive-math-extra texlive-lang-chinese -y
         mkdir -p ~/.local/bin
         export PATH=$HOME/.local/bin:$PATH
         curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+        stack clean
         stack build --fast --no-system-ghc --install-ghc
         ./examples/counter.hs check
         stack path
