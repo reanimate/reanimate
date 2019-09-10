@@ -46,6 +46,7 @@ animation source code, the browser window will automatically reload and show the
 * Test-suite: Compile and render all the example animations on the build servers. The SVG output should be stable.
 * API for generating slides.
 * Warn if 'group' nodes are found in 'clippath's.
+* Optionally use gifski for high quality gifs: https://gif.ski/
 * Driver:
    - ~~Command line options for rendering videos.~~
    - ~~Generate interleaved frames (1fps, 2fps, 4fps, etc)~~
