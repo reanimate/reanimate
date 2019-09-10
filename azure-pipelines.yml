@@ -43,7 +43,7 @@ jobs:
         mkdir -p ~/.local/bin
         export PATH=$HOME/.local/bin:$PATH
         curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
-        stack build --fast
+        stack build --fast --no-system-ghc --install-ghc
         ./examples/counter.hs check
         stack path
       displayName: 'Build reanimate'
