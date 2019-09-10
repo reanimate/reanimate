@@ -37,8 +37,9 @@ jobs:
         ghc --version
         ghc-pkg list
         pwd
-        #sudo apt-get update
-        #sudo apt-get install latex dvisvgm texlive-latex-base texlive-latex-extra texlive-math-extra texlive-lang-chinese -y
+        sudo apt-get update
+        sudo apt-get install latex dvisvgm texlive-latex-base texlive-latex-extra texlive-math-extra texlive-lang-chinese -y
+        sudo apt-get install xelatex -y
         mkdir -p ~/.local/bin
         export PATH=$HOME/.local/bin:$PATH
         curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
