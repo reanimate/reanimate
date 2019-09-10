@@ -29,14 +29,14 @@ jobs:
     #    key: stack | $(Agent.OS)
     #    path: $(HOME)/.local/bin
     #  displayName: Cache stack
+    # - task: CacheBeta@0
+    #   inputs:
+    #     key: stack-root | $(Agent.OS) | stack.yaml | version2
+    #     path: $(STACK_ROOT)
+    #   displayName: Cache stack root
     - task: CacheBeta@0
       inputs:
-        key: stack-root | $(Agent.OS) | stack.yaml | version2
-        path: $(STACK_ROOT)
-      displayName: Cache stack root
-    - task: CacheBeta@0
-      inputs:
-        key: stack-work | $(Agent.OS) | stack.yaml | version3
+        key: stack-work | $(Agent.OS) | stack.yaml | version4
         path: $(Build.SourcesDirectory)/$(STACK_WORK)
       displayName: Cache stack work
     - script: |
