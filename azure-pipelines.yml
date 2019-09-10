@@ -6,6 +6,9 @@
 trigger:
 - master
 
+variables:
+  STACK_ROOT: $(Pipeline.Workspace)/.stack
+
 jobs:
  #- job: macOS
  #  pool:
@@ -27,8 +30,8 @@ jobs:
     #  displayName: Cache stack
     - task: CacheBeta@0
       inputs:
-        key: ghc | $(Agent.OS) | stack.yaml | version3
-        path: $(Pipeline.Workspace)/.stack
+        key: ghc | $(Agent.OS) | stack.yaml | version4
+        path: $(STACK_ROOT)
       displayName: Cache ghc
     - script: |
         ghc --version
