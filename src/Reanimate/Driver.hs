@@ -4,29 +4,31 @@ module Reanimate.Driver ( reanimate ) where
 import           Control.Concurrent           (MVar, forkIO, killThread,
                                                modifyMVar_, newEmptyMVar,
                                                putMVar, takeMVar)
-import           Control.Exception            (finally, SomeException, handle)
-import           Control.Monad.Fix            (fix)
+import           Control.Exception            (SomeException, finally, handle)
 import           Control.Monad
+import           Control.Monad.Fix            (fix)
+import           Data.Maybe
 import qualified Data.Text                    as T
 import qualified Data.Text.Read               as T
+import           Data.Version
 import           Network.WebSockets
-import           System.Directory             (findFile, listDirectory, findExecutable)
-import           System.Environment           (getArgs, getProgName)
-import           System.Exit
-import Text.Printf
-import           System.FilePath
-import           System.FSNotify
-import           System.IO                    (BufferMode (..), hPutStrLn,
-                                               hSetBuffering, stderr, stdin)
-import qualified Text.PrettyPrint.ANSI.Leijen as Doc
-
-import           Data.Maybe
 import           Paths_reanimate
 import           Reanimate.Misc               (runCmdLazy, runCmd_, withTempDir,
                                                withTempFile)
 import           Reanimate.Monad              (Animation)
 import           Reanimate.Render             (render, renderSnippets,
                                                renderSvgs)
+import           System.Directory             (findExecutable, findFile,
+                                               listDirectory)
+import           System.Environment           (getArgs, getProgName)
+import           System.Exit
+import           System.FilePath
+import           System.FSNotify
+import           System.IO                    (BufferMode (..), hPutStrLn,
+                                               hSetBuffering, stderr, stdin)
+import           Text.ParserCombinators.ReadP
+import qualified Text.PrettyPrint.ANSI.Leijen as Doc
+import           Text.Printf
 import           Web.Browser                  (openBrowser)
 
 opts = defaultConnectionOptions
@@ -129,6 +131,7 @@ ghcOptions tmpDir =
 checkEnvironment :: IO ()
 checkEnvironment = do
     putStrLn "reanimate checks:"
+    runCheck "Has ffmpeg" hasFFmpeg
     runCheck "Has LaTeX" hasLaTeX
     runCheck "Has XeLaTeX" hasXeLaTeX
     runCheck "Has dvisvgm" hasDvisvgm
@@ -175,6 +178,34 @@ hasXeLaTeX = hasProgram "xelatex"
 
 hasDvisvgm :: IO (Either String String)
 hasDvisvgm = hasProgram "dvisvgm"
+
+hasFFmpeg :: IO (Either String String)
+hasFFmpeg = do
+  mbVersion <- ffmpegVersion
+  return $ case mbVersion of
+    Nothing                   -> Left "no"
+    Just vs | vs < minVersion -> Left "too old"
+            | otherwise       -> Right (showVersion vs)
+  where
+    minVersion = Version [4,1,3] []
+ffmpegVersion :: IO (Maybe Version)
+ffmpegVersion = do
+  mbPath <- findExecutable "ffmpeg"
+  case mbPath of
+    Nothing   -> return Nothing
+    Just path -> do
+      ret <- runCmd_ path ["-version"]
+      case ret of
+        Left{} -> return Nothing
+        Right out ->
+          case map (take 3 . words) $ take 1 $ lines out of
+            [["ffmpeg", "version", vs]] ->
+              return $ parseVS vs
+            _ -> return Nothing
+  where
+    parseVS vs = listToMaybe
+      [ v | (v, "") <- readP_to_S parseVersion vs ]
+
 
 hasTeXPackage :: FilePath -> String -> IO (Either String String)
 hasTeXPackage exec pkg = handle (\(e::SomeException) -> return $ Left "n/a") $
