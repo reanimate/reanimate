@@ -48,14 +48,14 @@ animation source code, the browser window will automatically reload and show the
 * Warn if 'group' nodes are found in 'clippath's.
 * Driver:
    - ~~Command line options for rendering videos.~~
+   - ~~Generate interleaved frames (1fps, 2fps, 4fps, etc)~~
+   - ~~Command for validating tools: latex, dvisvgm, ffmpeg. Warn of old versions of ffmpeg that don't render SVGs correctly.~~
    - Flags for selecting fps in web viewer
-   - Command for validating tools: latex, dvisvgm, ffmpeg. Warn of old versions of ffmpeg that don't render SVGs correctly.
    - Use GHC.Environment to find own source code.
-   - Generate interleaved frames (1fps, 2fps, 4fps, etc)
    - Flag for generating youtube videos (ffmpeg options preset).
 * Viewer:
+   - ~~Fix race conditions.~~
    - Keys for pausing, moving frame-by-frame, resetting.
-   - Fix race conditions.
 
 # Examples
 
