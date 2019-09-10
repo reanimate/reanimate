@@ -7,34 +7,35 @@ trigger:
 - master
 
 jobs:
- - job: macOS
-   pool:
-    vmImage: 'macOS-10.13'
-   steps:
-   - script:  |
-        mkdir -p ~/.local/bin
-        export PATH=$HOME/.local/bin:$PATH
-        curl --insecure -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
-        stack build
+ #- job: macOS
+ #  pool:
+ #   vmImage: 'macOS-10.13'
+ #  steps:
+ #  - script:  |
+ #       mkdir -p ~/.local/bin
+ #       export PATH=$HOME/.local/bin:$PATH
+ #       curl --insecure -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
+ #       stack build
  - job: linux
    pool:
     vmImage: 'ubuntu-latest'
    steps:
+    #- task: CacheBeta@0
+    #  inputs:
+    #    key: stack | $(Agent.OS)
+    #    path: $(HOME)/.local/bin
+    #  displayName: Cache stack
     - task: CacheBeta@0
       inputs:
-        key: stack | $(Agent.OS)
-        path: $(HOME)/.local/bin
-      displayName: Cache stack
-    - task: CacheBeta@0
-      inputs:
-        key: ghc | $(Agent.OS) | stack.yaml
+        key: ghc | $(Agent.OS) | stack.yaml | version2
         path: $(HOME)/.stack
       displayName: Cache ghc
     - script: |
         ghc --version
         ghc-pkg list
-        sudo apt-get update
-        sudo apt-get install latex dvisvgm texlive-latex-base texlive-latex-extra texlive-math-extra texlive-lang-chinese -y
+        pwd
+        #sudo apt-get update
+        #sudo apt-get install latex dvisvgm texlive-latex-base texlive-latex-extra texlive-math-extra texlive-lang-chinese -y
         mkdir -p ~/.local/bin
         export PATH=$HOME/.local/bin:$PATH
         curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
