@@ -27,8 +27,8 @@ jobs:
     #  displayName: Cache stack
     - task: CacheBeta@0
       inputs:
-        key: ghc | $(Agent.OS) | stack.yaml | version2
-        path: $(HOME)/.stack
+        key: ghc | $(Agent.OS) | stack.yaml | version3
+        path: $(Pipeline.Workspace)/.stack
       displayName: Cache ghc
     - script: |
         ghc --version
@@ -41,4 +41,6 @@ jobs:
         curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
         stack build
         ./examples/counter.hs check
+        which ghc
+        ghc --version
       displayName: 'Build reanimate'
