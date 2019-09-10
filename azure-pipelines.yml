@@ -8,6 +8,7 @@ trigger:
 
 variables:
   STACK_ROOT: $(Pipeline.Workspace)/.stack
+  STACK_WORK: $(Pipeline.Workspace)/.stack-work
 
 jobs:
  #- job: macOS
@@ -30,9 +31,14 @@ jobs:
     #  displayName: Cache stack
     - task: CacheBeta@0
       inputs:
-        key: ghc | $(Agent.OS) | stack.yaml | version4
+        key: stack-root | $(Agent.OS) | stack.yaml
         path: $(STACK_ROOT)
-      displayName: Cache ghc
+      displayName: Cache stack root
+    - task: CacheBeta@0
+      inputs:
+        key: stack-work | $(Agent.OS) | stack.yaml
+        path: $(STACK_WORK)
+      displayName: Cache stack work
     - script: |
         ghc --version
         ghc-pkg list
