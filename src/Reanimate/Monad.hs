@@ -127,12 +127,19 @@ pauseAtBeginning :: Double -> Animation -> Animation
 pauseAtBeginning d1 a =
     Animation d1 (freezeFrame 0 a) `before` a
 
+pauseAround :: Double -> Double -> Animation -> Animation
+pauseAround start end = pauseAtEnd end . pauseAtBeginning start
+
 freezeFrame :: Double -> Animation -> Frame ()
 freezeFrame t (Animation d f) = Frame $ \_ _ -> unFrame f d t
 
 adjustSpeed :: Double -> Animation -> Animation
 adjustSpeed factor (Animation d fn) =
   Animation (d/factor) $ Frame $ \_dur t -> unFrame fn d (t*factor)
+
+setDuration :: Double -> Animation -> Animation
+setDuration newD (Animation d fn) =
+  Animation newD $ Frame $ \dur t -> unFrame fn dur t
 
 reverseAnimation :: Animation -> Animation
 reverseAnimation (Animation d fn) = Animation d $ Frame $ \_dur t ->
