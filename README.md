@@ -54,6 +54,7 @@ animation source code, the browser window will automatically reload and show the
    - Flags for selecting fps in web viewer
    - Use GHC.Environment to find own source code.
    - Flag for generating youtube videos (ffmpeg options preset).
+   - Detect if there's already an open browser window. If there is, don't open another one.
 * Viewer:
    - ~~Fix race conditions.~~
    - Keys for pausing, moving frame-by-frame, resetting.
