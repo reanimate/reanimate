@@ -40,7 +40,8 @@ bbox2 = autoReverse $ mkAnimation 2.5 $ do
 
 mkBoundingBox :: Tree -> Tree
 mkBoundingBox svg = withStrokeColor "red" $ withFillOpacity 0 $
-    mkRect (Num x, Num y) (Num w) (Num h)
+    translate (x+w/2) (y+h/2) $
+    mkRect (Num w) (Num h)
   where
     (x, y, w, h) = boundingBox svg
 

@@ -18,4 +18,4 @@ import           Reanimate.Signal
 main :: IO ()
 main = reanimate $ mkAnimation 2 $ do
   s <- getSignal $ signalFromTo 0 (2*60-1) signalLinear
-  emit $ mkCircle (Num 0, Num 0) (Num s)
+  emit $ mkCircle (Num s)
