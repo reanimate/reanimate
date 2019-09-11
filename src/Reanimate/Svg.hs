@@ -530,20 +530,21 @@ withClipPathRef ref = clipPathRef .~ pure ref
 withId :: String -> Tree -> Tree
 withId idTag = attrId .~ Just idTag
 
-mkRect :: Point -> Number -> Number -> Tree
-mkRect corner width height = RectangleTree $ defaultSvg
-  & rectUpperLeftCorner .~ corner
+mkRect :: Number -> Number -> Tree
+mkRect width height = center $ RectangleTree $ defaultSvg
+  & rectUpperLeftCorner .~ (Num 0, Num 0)
   & rectWidth .~ Just width
   & rectHeight .~ Just height
 
-mkCircle :: Point -> Number -> Tree
-mkCircle center radius = CircleTree $ defaultSvg
-  & circleCenter .~ center
+mkCircle :: Number -> Tree
+mkCircle radius = CircleTree $ defaultSvg
+  & circleCenter .~ (Num 0, Num 0)
   & circleRadius .~ radius
 
 mkBoundingRect :: Tree -> Double -> Tree
 mkBoundingRect src margin =
-    mkRect (Num $ x-margin, Num $ y-margin) (Num $ w+margin*2) (Num $ h+margin*2)
+    translate (x-margin) (y-margin) $
+    mkRect (Num $ w+margin*2) (Num $ h+margin*2)
   where
     (x, y, w, h) = boundingBox src
 
@@ -585,11 +586,11 @@ mkLinePath ((startX, startY):rest) =
            , LineTo OriginAbsolute [ V2 x y | (x, y) <- rest ] ]
 
 mkBackground :: String -> Tree
-mkBackground color = withFillColor color $ mkRect (Num $ -320/2, Num $ -180/2) (Percent 1) (Percent 1)
+mkBackground color = withFillColor color $ mkRect (Num 320) (Num 180)
 
 mkBackgroundPixel :: PixelRGBA8 -> Tree
 mkBackgroundPixel pixel =
-    withFillColorPixel pixel $ mkRect (Num $ -320/2, Num $ -180/2) (Percent 1) (Percent 1)
+    withFillColorPixel pixel $ mkRect (Num 320) (Num 180)
 
 withSubglyphs :: [Int] -> (Tree -> Tree) -> Tree -> Tree
 withSubglyphs target fn t = evalState (worker t) 0
