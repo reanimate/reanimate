@@ -51,7 +51,6 @@ povraySlow args = povrayRaw (["+H1440","+W2560", "+A"] ++ args)
 
 mkPovrayImage :: [String] -> Text -> IO Tree
 mkPovrayImage args script = cacheDiskKey key $ do
-  hPutStrLn stderr "gen image"
   povray <- requireExecutable "povray"
   withTempFile "pov" $ \pov_file -> do
     let out = replaceExtension pov_file "png"
