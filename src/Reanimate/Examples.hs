@@ -539,9 +539,9 @@ progressMeter = mkAnimation 3 $ do
   h <- getSignal $ signalFromTo 0 100 signalLinear
   emit $ center $ mkGroup
     [ withStrokeColor "white" $ withStrokeWidth (Num 2) $ withFillOpacity 0 $
-        mkRect (Num 0, Num 0) (Num 30) (Num 100)
+        mkRect (Num 30) (Num 100)
     , withFillColor "white" $
-        mkRect (Num 0, Num 0) (Num 30) (Num h) ]
+        mkRect (Num 30) (Num h) ]
 
 
 diaSize :: Animation
