@@ -55,7 +55,7 @@ demonstrateAlgorithm name algo = mkAnimation 10 $ do
       , withFillColor "white" $ translate (-85) 10 $ rotate 90 $ center $
         latex "$Time \\rightarrow$"
       , withFillColor "white" $ translate (90) 10 $
-        mkCircle (Num 0, Num 0) (Num $ (1-s)*10)
+        mkCircle (Num $ (1-s)*10)
       ]
   where
 

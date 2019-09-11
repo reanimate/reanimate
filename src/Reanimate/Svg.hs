@@ -541,6 +541,7 @@ mkCircle radius = CircleTree $ defaultSvg
   & circleCenter .~ (Num 0, Num 0)
   & circleRadius .~ radius
 
+-- XXX: This is broken.
 mkBoundingRect :: Tree -> Double -> Tree
 mkBoundingRect src margin =
     translate (x-margin) (y-margin) $

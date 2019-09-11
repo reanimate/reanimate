@@ -35,7 +35,7 @@ main = reanimate $ youtube $ pauseAtEnd 2 $ autoReverse $ pauseAtEnd 2 $ mkAnima
       [ mkBackground "black"
       , translate 0 (-80) $ withFillColor "white" $ mkGroup
         [ translate (scaleWidth*s - scaleWidth/2) 0 $
-          withFillColor "white" $ mkCircle (Num 0, Num 0) (Num nubWidth)
+          withFillColor "white" $ mkCircle (Num nubWidth)
         , withStrokeColor "white" $ withStrokeWidth (Num 0.5) $
           mkLine (Num $ -(scaleWidth-nubWidth)/2,Num 0) (Num $ (scaleWidth-nubWidth)/2, Num 0)
         , translate (-scaleWidth/2-20) (-5) $ centerX $ latex "Color"
@@ -56,7 +56,7 @@ main = reanimate $ youtube $ pauseAtEnd 2 $ autoReverse $ pauseAtEnd 2 $ mkAnima
   where
     mkOutline label f =
       mkGroup
-      [ center $ withFillColor "grey" $ mkRect (Num 0, Num 0) (Num 151) (Num 11)
+      [ center $ withFillColor "grey" $ mkRect (Num 151) (Num 11)
       , scaleToSize 150 10 $ mkColorMap f
       , translate (-75) (-10) $ centerY $ withFillColor "white" $
         latex label
