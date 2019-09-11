@@ -2,6 +2,7 @@ module Reanimate.Cache
   ( cacheMem
   , cacheDisk
   , cacheDiskSvg
+  , cacheDiskKey
   , cacheDiskLines
   ) where
 
@@ -46,6 +47,9 @@ cacheDisk parse render gen key = do
       hClose tmpHandle
       renameFile tmpPath path
       return new
+
+cacheDiskKey :: Text -> IO Tree -> IO Tree
+cacheDiskKey key gen = cacheDiskSvg (const gen) key
 
 cacheDiskSvg :: (Text -> IO Tree) -> (Text -> IO Tree)
 cacheDiskSvg = cacheDisk parse render
