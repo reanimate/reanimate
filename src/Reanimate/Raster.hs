@@ -1,5 +1,6 @@
 module Reanimate.Raster
   ( embedImage
+  , embedDynamicImage
   ) where
 
 import Control.Lens
@@ -21,3 +22,15 @@ embedImage img =
   where
     imgData = LBS.unpack $ Base64.encode (encodePng img)
 
+{-# INLINE embedDynamicImage #-}
+embedDynamicImage :: DynamicImage -> Tree
+embedDynamicImage img =
+  ImageTree $ defaultSvg
+    & Svg.imageWidth .~ Svg.Num (fromIntegral $ dynamicMap imageWidth img)
+    & Svg.imageHeight .~ Svg.Num (fromIntegral $ dynamicMap imageHeight img)
+    & Svg.imageHref .~ ("data:image/png;base64," ++ imgData)
+  where
+    imgData =
+      case encodeDynamicPng img of
+        Left err -> error err
+        Right dat -> LBS.unpack $ Base64.encode dat

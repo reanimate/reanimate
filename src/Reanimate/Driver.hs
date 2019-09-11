@@ -135,6 +135,7 @@ checkEnvironment = do
     runCheck "Has LaTeX" hasLaTeX
     runCheck "Has XeLaTeX" hasXeLaTeX
     runCheck "Has dvisvgm" hasDvisvgm
+    runCheck "Has povray" hasPovray
     forM_ latexPackages $ \pkg ->
       runCheck ("Has LaTeX package '"++ pkg ++ "'") $ hasTeXPackage "latex" $
         "{"++pkg++"}"
@@ -178,6 +179,9 @@ hasXeLaTeX = hasProgram "xelatex"
 
 hasDvisvgm :: IO (Either String String)
 hasDvisvgm = hasProgram "dvisvgm"
+
+hasPovray :: IO (Either String String)
+hasPovray = hasProgram "povray"
 
 hasFFmpeg :: IO (Either String String)
 hasFFmpeg = do

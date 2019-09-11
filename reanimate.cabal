@@ -56,6 +56,7 @@ library
                       Reanimate.Interpolate
                       Reanimate.Memo
                       Reanimate.Scene
+                      Reanimate.Povray
   other-modules:      Reanimate.Svg.NamedColors
                       Reanimate.Cache
                       Paths_reanimate
@@ -66,7 +67,7 @@ library
                        diagrams-core, diagrams-lib, diagrams-contrib,
                        svg-builder, matrices, cubicbezier, palette, websockets,
                        hashable, fsnotify, open-browser, random-shuffle, base64-bytestring,
-                       vector, colour, cassava, ansi-wl-pprint
+                       vector, colour, cassava, ansi-wl-pprint, here
 
 Flag server
   Description: Enable rendering server
