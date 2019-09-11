@@ -47,6 +47,7 @@ animation source code, the browser window will automatically reload and show the
 * API for generating slides.
 * Warn if 'group' nodes are found in 'clippath's.
 * Optionally use gifski for high quality gifs: https://gif.ski/
+* Support povray (together with here docs: https://github.com/tmhedberg/here)
 * Driver:
    - ~~Command line options for rendering videos.~~
    - ~~Generate interleaved frames (1fps, 2fps, 4fps, etc)~~
