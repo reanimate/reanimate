@@ -36,18 +36,16 @@ animation source code, the browser window will automatically reload and show the
 * ~~bounding boxes~~
 * ~~Use svg-tree instead of lucid-svg~~
 * ~~crossplatform file watching~~
+* ~~Consistent caching framework~~
+* ~~Support povray (together with here docs: https://github.com/tmhedberg/here)~~
 * Improve bounding box approximations
-* Select desired FPS in web previewer
-* Download rendered animations in web previewer
 * Alignment and positioning combinators
-* Consistent caching framework
 * Figure out why performance doesn't scale linearly with more cores
    - diagrams are slow because they are rendered as a bytestring and then parsed as SVG. Find a way to shortcut.
 * Test-suite: Compile and render all the example animations on the build servers. The SVG output should be stable.
 * API for generating slides.
 * Warn if 'group' nodes are found in 'clippath's.
 * Optionally use gifski for high quality gifs: https://gif.ski/
-* Support povray (together with here docs: https://github.com/tmhedberg/here)
 * Driver:
    - ~~Command line options for rendering videos.~~
    - ~~Generate interleaved frames (1fps, 2fps, 4fps, etc)~~
