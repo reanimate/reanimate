@@ -1,9 +1,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Reanimate.Driver ( reanimate ) where
 
-import           Control.Concurrent           (MVar, forkIO, killThread,
+import           Control.Concurrent           (MVar, forkIO, forkOS, killThread,
                                                modifyMVar_, newEmptyMVar,
-                                               putMVar, takeMVar, forkOS)
+                                               putMVar, takeMVar)
 import           Control.Exception            (SomeException, finally, handle)
 import           Control.Monad
 import           Control.Monad.Fix            (fix)
@@ -11,20 +11,21 @@ import           Data.Maybe
 import qualified Data.Text                    as T
 import qualified Data.Text.Read               as T
 import           Data.Version
+import           GHC.Environment              (getFullArgs)
 import           Network.WebSockets
 import           Paths_reanimate
 import           Reanimate.Misc               (runCmdLazy, runCmd_)
 import           Reanimate.Monad              (Animation)
 import           Reanimate.Render             (render, renderSnippets,
                                                renderSvgs)
-import           System.Directory             (findExecutable, findFile,
-                                               listDirectory)
+import           System.Directory             (doesFileExist, findExecutable,
+                                               findFile, listDirectory, withCurrentDirectory)
 import           System.Environment           (getArgs, getProgName)
 import           System.Exit
 import           System.FilePath
 import           System.FSNotify
-import           System.IO.Temp
 import           System.IO
+import           System.IO.Temp
 import           Text.ParserCombinators.ReadP
 import qualified Text.PrettyPrint.ANSI.Leijen as Doc
 import           Text.Printf
@@ -45,48 +46,42 @@ reanimate animation = do
     ["render", target] ->
       render animation target
     _ -> do
-      prog <- getProgName
-      lst <- listDirectory "."
-      mbSelf <- findFile ("." : lst) prog
-      case mbSelf of
-        Nothing -> do
-          hPutStrLn stderr "Failed to find own source code."
-          exitWith (ExitFailure 1)
-        Just self -> do
-          url <- getDataFileName "viewer/build/index.html"
-          putStrLn "Opening browser..."
-          bSucc <- openBrowser url
-          if bSucc
-              then putStrLn "Browser opened."
-              else hPutStrLn stderr $ "Failed to open browser. Manually visit: " ++ url
-          putStrLn "Listening..."
-          runServerWith "127.0.0.1" 9161 opts $ \pending -> do
-            putStrLn "New connection received."
-            conn <- acceptRequest pending
-            slave <- newEmptyMVar
-            let handler = modifyMVar_ slave $ \tid -> do
+      self <- findOwnSource
+      url <- getDataFileName "viewer/build/index.html"
+      putStrLn "Opening browser..."
+      bSucc <- openBrowser url
+      if bSucc
+          then putStrLn "Browser opened."
+          else hPutStrLn stderr $ "Failed to open browser. Manually visit: " ++ url
+      putStrLn "Listening..."
+      runServerWith "127.0.0.1" 9161 opts $ \pending -> do
+        putStrLn "New connection received."
+        conn <- acceptRequest pending
+        slave <- newEmptyMVar
+        let handler = modifyMVar_ slave $ \tid -> do
 
-                  putStrLn "Reloading code..."
-                  killThread tid
-                  tid <- forkOS $ slaveHandler conn self
-                  return tid
-                killSlave = do
-                  tid <- takeMVar slave
-                  killThread tid
-            stop <- watchFile watch self handler
-            putMVar slave =<< forkIO (return ())
-            let loop = do
-                  fps <- receiveData conn :: IO T.Text
-                  handler
-                  loop
-            loop `finally` (stop >> killSlave)
+              putStrLn "Reloading code..."
+              killThread tid
+              tid <- forkOS $ slaveHandler conn self
+              return tid
+            killSlave = do
+              tid <- takeMVar slave
+              killThread tid
+        stop <- watchFile watch self handler
+        putMVar slave =<< forkIO (return ())
+        let loop = do
+              fps <- receiveData conn :: IO T.Text
+              handler
+              loop
+        loop `finally` (stop >> killSlave)
 
 slaveHandler conn self =
+  withCurrentDirectory (takeDirectory self) $
   withSystemTempDirectory "reanimate" $ \tmpDir ->
   withTempFile tmpDir "reanimate.exe" $ \tmpExecutable handle -> do
     hClose handle
     sendTextData conn (T.pack "Compiling")
-    ret <- runCmd_ "stack" $ ["ghc", "--"] ++ ghcOptions tmpDir ++ [self, "-o", tmpExecutable]
+    ret <- runCmd_ "stack" $ ["ghc", "--"] ++ ghcOptions tmpDir ++ [takeFileName self, "-o", tmpExecutable]
     case ret of
       Left err ->
         sendTextData conn $ T.pack $ "Error" ++ unlines (drop 3 (lines err))
@@ -124,7 +119,23 @@ ghcOptions tmpDir =
     ["-rtsopts", "--make", "-threaded", "-O2"] ++
     ["-odir", tmpDir, "-hidir", tmpDir]
 
-
+-- FIXME: Gracefully disable code reloading if source is missing.
+findOwnSource :: IO FilePath
+findOwnSource = do
+  fullArgs <- getFullArgs
+  let stackSource = last fullArgs
+  exist <- doesFileExist stackSource
+  if exist
+    then return stackSource
+    else do
+      prog <- getProgName
+      lst <- listDirectory "."
+      mbSelf <- findFile ("." : lst) prog
+      case mbSelf of
+        Nothing -> do
+          hPutStrLn stderr "Failed to find own source code."
+          exitFailure
+        Just self -> pure self
 
 
 --------------------------------------------------------------------------
