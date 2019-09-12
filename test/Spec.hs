@@ -8,4 +8,5 @@ main :: IO ()
 main = do
   tests1 <- unitTestFolder "examples/"
   tests2 <- compileTestFolder "examples/"
-  defaultMain $ testGroup "tests" [tests1, tests2]
+  tests3 <- compileVideoFolder "videos/"
+  defaultMain $ testGroup "tests" [tests1, tests2, tests3]

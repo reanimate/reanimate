@@ -1,4 +1,8 @@
-module UnitTests (unitTestFolder,compileTestFolder) where
+module UnitTests
+  ( unitTestFolder
+  , compileTestFolder
+  , compileVideoFolder
+  ) where
 
 import           Control.Monad        (forM)
 import qualified Data.ByteString.Lazy as LBS
@@ -52,6 +56,22 @@ compileTestFolder path = do
     | file <- files
     , let fullPath = path </> file
     , takeExtension file == ".hs" || takeExtension file == ".lhs"
+    ]
+  where
+    ghcOpts = ["-fno-code", "-O0"]
+
+compileVideoFolder :: FilePath -> IO TestTree
+compileVideoFolder path = do
+  files <- getDirectoryContents path
+  return $ testGroup "videos"
+    [ testCase dir $ do
+        (ret, _stdout, _stderr) <- readProcessWithExitCode "stack" (["ghc","--", fullPath] ++ ghcOpts) ""
+        case ret of
+          ExitFailure{} -> assertFailure "Failed to compile"
+          ExitSuccess   -> return ()
+    | dir <- files
+    , let fullPath = path </> dir </> dir <.> "hs"
+    , dir /= "." && dir /= ".."
     ]
   where
     ghcOpts = ["-fno-code", "-O0"]
