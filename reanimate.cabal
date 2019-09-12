@@ -67,7 +67,7 @@ library
                        diagrams-core, diagrams-lib, diagrams-contrib,
                        svg-builder, matrices, cubicbezier, palette, websockets,
                        hashable, fsnotify, open-browser, random-shuffle, base64-bytestring,
-                       vector, colour, cassava, ansi-wl-pprint, here
+                       vector, colour, cassava, ansi-wl-pprint, here, temporary
 
 Flag server
   Description: Enable rendering server

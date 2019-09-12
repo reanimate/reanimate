@@ -69,7 +69,7 @@ runCmdLazy exec args = do
 withTempDir :: (FilePath -> IO a) -> IO a
 withTempDir action = do
   dir <- getTemporaryDirectory
-  (path, handle) <- openTempFile dir "reanimate-XXXXXX"
+  (path, handle) <- openTempFile dir "reanimate"
   hClose handle
   removeFile path
   createDirectory (dir </> path)
@@ -78,6 +78,6 @@ withTempDir action = do
 withTempFile :: String -> (FilePath -> IO a) -> IO a
 withTempFile ext action = do
   dir <- getTemporaryDirectory
-  (path, handle) <- openTempFile dir ("reanimate-XXXXXX" <.> ext)
+  (path, handle) <- openTempFile dir ("reanimate" <.> ext)
   hClose handle
   action path -- `finally` removeFile path
