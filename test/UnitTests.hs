@@ -1,21 +1,22 @@
-module UnitTests (unitTestFolder) where
+module UnitTests (unitTestFolder,compileTestFolder) where
 
 import           Control.Monad        (forM)
 import qualified Data.ByteString.Lazy as LBS
 import           Data.Maybe           (catMaybes)
+import           Reanimate.Misc       (withTempDir, withTempFile)
 import           System.Directory
+import           System.Exit
 import           System.FilePath
 import           System.IO
 import           System.Process
 import           Test.Tasty
 import           Test.Tasty.Golden
-import           Reanimate.Misc     (withTempDir,
-                                     withTempFile)
+import           Test.Tasty.HUnit
 
 unitTestFolder :: FilePath -> IO TestTree
 unitTestFolder path = do
   files <- getDirectoryContents path
-  return $ testGroup "examples"
+  return $ testGroup "animate"
     [ goldenVsStringDiff file (\ref new -> ["diff", "--brief", ref, new]) fullPath (genGolden hsPath)
     | file <- files
     , let fullPath = path </> file
@@ -38,6 +39,22 @@ genGolden path = withTempDir $ \tmpDir -> withTempFile ".exe" $ \tmpExecutable -
   hClose inh
   hClose errh
   LBS.hGetContents outh
+
+compileTestFolder :: FilePath -> IO TestTree
+compileTestFolder path = do
+  files <- getDirectoryContents path
+  return $ testGroup "compile"
+    [ testCase file $ do
+        (ret, _stdout, _stderr) <- readProcessWithExitCode "stack" (["ghc","--", fullPath] ++ ghcOpts) ""
+        case ret of
+          ExitFailure{} -> assertFailure "Failed to compile"
+          ExitSuccess   -> return ()
+    | file <- files
+    , let fullPath = path </> file
+    , takeExtension file == ".hs" || takeExtension file == ".lhs"
+    ]
+  where
+    ghcOpts = ["-fno-code", "-O0"]
 
 --------------------------------------------------------------------------------
 -- Helpers

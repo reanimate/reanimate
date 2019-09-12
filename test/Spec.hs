@@ -6,5 +6,6 @@ import           UnitTests
 
 main :: IO ()
 main = do
-  ts <- unitTestFolder "examples/"
-  defaultMain ts
+  tests1 <- unitTestFolder "examples/"
+  tests2 <- compileTestFolder "examples/"
+  defaultMain $ testGroup "tests" [tests1, tests2]
