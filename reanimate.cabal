@@ -83,5 +83,5 @@ test-suite spec
     bytestring, process,
     reanimate,
     QuickCheck >= 2.1.0,
-    tasty, tasty-golden,
+    tasty, tasty-golden, tasty-hunit,
     ansi-wl-pprint
