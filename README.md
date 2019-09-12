@@ -24,6 +24,7 @@ and wait for a browser window to open:
 ```console
 $ git clone https://github.com/Lemmih/reanimate.git
 $ cd reanimate/
+$ stack build
 $ stack runhaskell ./examples/latex_color.hs
 ```
 
