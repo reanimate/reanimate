@@ -18,7 +18,7 @@ main :: IO ()
 main = reanimate $ mkAnimation 5 $ do
     s <- getSignal signalLinear
     emit $ mkGroup
-      [ mkBackground "grey"
+      [ mkBackground "black"
       , rotate (s*360) $ center $ scale 0.5 $ embedImage img ]
   where
     img = generateImage pixelRenderer 255 255
