@@ -28,10 +28,11 @@ jobs:
    steps:
     - bash: |
         export STACK_ROOT="$(Build.SourcesDirectory)"/.stack-root;
-        curl -sSkL http://www.stackage.org/stack/windows-i386 -o /usr/bin/stack.zip
+        curl -sSkL http://www.stackage.org/stack/windows-x86_64 -o /usr/bin/stack.zip
         unzip -o /usr/bin/stack.zip -d /usr/bin/
-        stack --install-ghc --resolver lts-11 test --bench --only-dependencies
-        stack --resolver lts-11 test --bench --no-run-benchmarks --haddock --no-haddock-deps
+        stack --install-ghc test --bench --only-dependencies
+        stack ./examples/counter.hs check
+        stack test --bench --no-run-benchmarks --haddock --no-haddock-deps
  # - job: linux
  #   pool:
  #    vmImage: 'ubuntu-latest'
