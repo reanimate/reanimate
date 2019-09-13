@@ -26,10 +26,11 @@ jobs:
    steps:
     - powershell: |
         pwd
-        curl -o windows-x86_64-installer.exe https://get.haskellstack.org/stable/windows-x86_64-installer.exe
-        ls
-        ./windows-x86_64-installer.exe
-        stack path
+#curl -o windows-x86_64-installer.exe https://get.haskellstack.org/stable/windows-x86_64-installer.exe
+        curl -o windows-x86_64.zip https://get.haskellstack.org/stable/windows-x86_64.zip
+        Expand-Archive windows-x86_64.zip
+# ./windows-x86_64-installer.exe
+        ./stack path
  # - job: linux
  #   pool:
  #    vmImage: 'ubuntu-latest'
