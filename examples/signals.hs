@@ -6,7 +6,8 @@ module Main (main) where
 
 import           Control.Lens
 import           Data.Text (pack, Text)
-import Numeric
+import           Numeric
+import           Data.Monoid
 
 import           Graphics.SvgTree hiding (Text)
 import           Reanimate.Driver (reanimate)

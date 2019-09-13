@@ -9,6 +9,7 @@ import           Control.Monad
 import qualified Data.ByteString       as BS
 import qualified Data.Map              as Map
 import qualified Data.Text             as T
+import           Data.Monoid
 
 import           Codec.Picture
 import           Codec.Picture.Jpg
