@@ -32,9 +32,9 @@ jobs:
         unzip -o /usr/bin/stack.zip -d /usr/bin/
         stack --install-ghc $ARGS test --bench --only-dependencies
         stack $ARGS test --bench --no-run-benchmarks --haddock --no-haddock-deps
-   env:
-      OS_NAME: ${{ parameters.os }}
-   displayName: 'Installation ${{parameters.os}} & Test'
+      env:
+        OS_NAME: ${{ parameters.os }}
+      displayName: 'Installation ${{parameters.os}} & Test'
  # - job: linux
  #   pool:
  #    vmImage: 'ubuntu-latest'
