@@ -24,8 +24,8 @@ jobs:
    pool:
      vmImage: 'windows-latest'
    steps:
-    - script: |
-        wget https://get.haskellstack.org/stable/windows-x86_64-installer.exe
+    - powershell: |
+        curl -L -o windows-x86_64-installer.exe https://get.haskellstack.org/stable/windows-x86_64-installer.exe
         windows-x86_64-installer.exe
         stack path
  - job: linux
