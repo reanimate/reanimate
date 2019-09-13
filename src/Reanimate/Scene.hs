@@ -40,14 +40,14 @@ instance Applicative (Scene s) where
   f <*> g = M $ \t -> do
     (f', s1, p1, tl1) <- unM f t
     (g', s2, p2, tl2) <- unM g (t+s1)
-    return (f' g', s1+s2, max p1 p2, unionTimeline tl1 tl2)
+    return (f' g', s1+s2, max p1 (s1+p2), unionTimeline tl1 tl2)
 
 instance Monad (Scene s) where
   return = pure
   f >>= g = M $ \t -> do
     (a, s1, p1, tl1) <- unM f t
     (b, s2, p2, tl2) <- unM (g a) (t+s1)
-    return (b, s1+s2, max p1 p2, unionTimeline tl1 tl2)
+    return (b, s1+s2, max p1 (s1+p2), unionTimeline tl1 tl2)
 
 --data Frame a = Frame {unFrame :: Duration -> Time -> State ([Tree] -> [Tree]) a}
 sceneAnimation :: (forall s. Scene s a) -> Animation
