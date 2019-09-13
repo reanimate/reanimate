@@ -20,16 +20,16 @@ jobs:
  #       export PATH=$HOME/.local/bin:$PATH
  #       curl --insecure -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
  #       stack build
+#curl -o windows-x86_64-installer.exe https://get.haskellstack.org/stable/windows-x86_64-installer.exe
+# ./windows-x86_64-installer.exe
  - job: windows
    pool:
      vmImage: 'windows-latest'
    steps:
     - powershell: |
         pwd
-#curl -o windows-x86_64-installer.exe https://get.haskellstack.org/stable/windows-x86_64-installer.exe
         curl -o windows-x86_64.zip https://get.haskellstack.org/stable/windows-x86_64.zip
         Expand-Archive windows-x86_64.zip
-# ./windows-x86_64-installer.exe
         ./stack path
  # - job: linux
  #   pool:
