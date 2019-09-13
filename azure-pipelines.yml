@@ -20,6 +20,14 @@ jobs:
  #       export PATH=$HOME/.local/bin:$PATH
  #       curl --insecure -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
  #       stack build
+ - job: windows
+   pool:
+     vmImage: 'windows-latest'
+   steps:
+    - script: |
+        wget https://get.haskellstack.org/stable/windows-x86_64-installer.exe
+        windows-x86_64-installer.exe
+        stack path
  - job: linux
    pool:
     vmImage: 'ubuntu-latest'
