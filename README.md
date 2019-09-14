@@ -25,7 +25,7 @@ and wait for a browser window to open:
 $ git clone https://github.com/Lemmih/reanimate.git
 $ cd reanimate/
 $ stack build
-$ stack runhaskell ./examples/latex_color.hs
+$ stack ./examples/latex_color.hs
 ```
 
 This should render the `latex_color` example in a new browser window. If you then change the
