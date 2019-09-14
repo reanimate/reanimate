@@ -1,47 +1,30 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
-trigger:
-- master
-
-variables:
-  STACK_ROOT: $(Pipeline.Workspace)/.stack
-  STACK_WORK: .stack-work
-
+# This is the complex Azure configuration, which is intended for use
+# on open source libraries which need compatibility across multiple GHC
+# versions, must work with cabal-install, and should be
+# cross-platform. For more information and other options, see:
+#
+# https://docs.haskellstack.org/en/stable/azure_ci/
+#
+# Copy these contents into the root directory of your Github project in a file
+# named azure-pipelines.yml
+#
+# For better organization, you split various jobs into seprate parts
+# and each of them are controlled via individual file.
 jobs:
- #- job: macOS
- #  pool:
- #   vmImage: 'macOS-10.13'
- #  steps:
- #  - script:  |
- #       mkdir -p ~/.local/bin
- #       export PATH=$HOME/.local/bin:$PATH
- #       curl --insecure -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
- #       stack build
- - job: linux
-   pool:
-    vmImage: 'ubuntu-latest'
-   steps:
-    #- task: CacheBeta@0
-    #  inputs:
-    #    key: stack | $(Agent.OS)
-    #    path: $(HOME)/.local/bin
-    #  displayName: Cache stack
-    # - task: CacheBeta@0
-    #   inputs:
-    #     key: stack-root | $(Agent.OS) | stack.yaml | version2
-    #     path: $(STACK_ROOT)
-    #   displayName: Cache stack root
-    # - task: CacheBeta@0
-    #   inputs:
-    #     key: stack-work | $(Agent.OS) | stack.yaml | version4
-    #     path: $(Build.SourcesDirectory)/$(STACK_WORK)
-    #   displayName: Cache stack work
-    - script: |
-        mkdir -p ~/.local/bin
-        export PATH=$HOME/.local/bin:$PATH
-        curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
-        stack build
-      displayName: 'Build reanimate'
+- template: ./.azure/azure-linux-template.yml
+  parameters:
+    name: Linux
+    vmImage: ubuntu-latest
+    os: linux
+
+- template: ./.azure/azure-osx-template.yml
+  parameters:
+    name: macOS
+    vmImage: macOS-10.14
+    os: osx
+
+- template: ./.azure/azure-windows-template.yml
+  parameters:
+   name: Windows
+   vmImage: windows-latest
+   os: windows
