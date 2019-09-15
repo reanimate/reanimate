@@ -7,15 +7,14 @@ module Reanimate.Misc
   , withTempFile
   ) where
 
-import           Control.Exception (evaluate, finally)
+import           Control.Exception (evaluate)
 import qualified Data.Text         as T
 import qualified Data.Text.IO      as T
 import           System.Directory  (createDirectory, findExecutable,
-                                    getTemporaryDirectory,
-                                    removeDirectoryRecursive, removeFile)
+                                    getTemporaryDirectory, removeFile)
 import           System.Exit       (ExitCode (..))
 import           System.FilePath   ((<.>), (</>))
-import           System.IO         (hClose, openTempFile, hGetContents, hIsEOF)
+import           System.IO         (hClose, hGetContents, hIsEOF, openTempFile)
 import           System.Process    (readProcessWithExitCode,
                                     runInteractiveProcess, showCommandForUser,
                                     waitForProcess)
@@ -73,11 +72,11 @@ withTempDir action = do
   hClose handle
   removeFile path
   createDirectory (dir </> path)
-  action (dir </> path) `finally` removeDirectoryRecursive (dir </> path)
+  action (dir </> path) -- `finally` removeDirectoryRecursive (dir </> path)
 
 withTempFile :: String -> (FilePath -> IO a) -> IO a
 withTempFile ext action = do
   dir <- getTemporaryDirectory
   (path, handle) <- openTempFile dir ("reanimate" <.> ext)
   hClose handle
-  action path `finally` removeFile path
+  action path -- `finally` removeFile path
