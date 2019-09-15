@@ -3,35 +3,17 @@ module Reanimate.Driver.Check
   ( checkEnvironment
   ) where
 
-import           Control.Concurrent           (MVar, forkIO, forkOS, killThread,
-                                               modifyMVar_, newEmptyMVar,
-                                               putMVar, takeMVar)
-import           Control.Exception            (SomeException, finally, handle)
+import           Control.Exception            (SomeException, handle)
 import           Control.Monad
-import           Control.Monad.Fix            (fix)
 import           Data.Maybe
-import qualified Data.Text                    as T
-import qualified Data.Text.Read               as T
 import           Data.Version
-import           GHC.Environment              (getFullArgs)
-import           Network.WebSockets
-import           Paths_reanimate
-import           Reanimate.Misc               (runCmdLazy, runCmd_)
-import           Reanimate.Monad              (Animation)
-import           Reanimate.Render             (render, renderSnippets,
-                                               renderSvgs)
-import           System.Directory             (doesFileExist, findExecutable,
-                                               findFile, listDirectory, withCurrentDirectory)
-import           System.Environment           (getArgs, getProgName)
-import           System.Exit
-import           System.FilePath
-import           System.FSNotify
+import           Reanimate.Misc               (runCmd_)
+import           System.Directory             (findExecutable)
 import           System.IO
 import           System.IO.Temp
 import           Text.ParserCombinators.ReadP
 import qualified Text.PrettyPrint.ANSI.Leijen as Doc
 import           Text.Printf
-import           Web.Browser                  (openBrowser)
 
 --------------------------------------------------------------------------
 -- Check environment
@@ -120,7 +102,7 @@ ffmpegVersion = do
 
 
 hasTeXPackage :: FilePath -> String -> IO (Either String String)
-hasTeXPackage exec pkg = handle (\(e::SomeException) -> return $ Left "n/a") $
+hasTeXPackage exec pkg = handle (\(_::SomeException) -> return $ Left "n/a") $
     withSystemTempDirectory "reanimate" $ \tmp_dir -> withTempFile tmp_dir "test.tex" $ \tex_file tex_handle -> do
       hPutStr tex_handle tex_document
       hPutStr tex_handle $ "\\usepackage" ++ pkg ++ "\n"
@@ -134,29 +116,6 @@ hasTeXPackage exec pkg = handle (\(e::SomeException) -> return $ Left "n/a") $
         Left{}  -> Left "missing"
   where
     tex_document = "\\documentclass[preview]{standalone}\n"
-    tex_xelatex =
-      "\\usepackage[UTF8]{ctex}\n"
-
-    tex_prologue =
-      "\\usepackage[english]{babel}\n\
-      \\\usepackage{amsmath}\n\
-      \\\usepackage{amssymb}\n\
-      \\\usepackage{dsfont}\n\
-      \\\usepackage{setspace}\n\
-      \\\usepackage{relsize}\n\
-      \\\usepackage{textcomp}\n\
-      \\\usepackage{mathrsfs}\n\
-      \\\usepackage{calligra}\n\
-      \\\usepackage{wasysym}\n\
-      \\\usepackage{ragged2e}\n\
-      \\\usepackage{physics}\n\
-      \\\usepackage{xcolor}\n\
-      \\\usepackage{textcomp}\n\
-      \\\usepackage{xfrac}\n\
-      \\\usepackage{microtype}\n\
-      \\\linespread{1}\n\
-      \\\begin{document}\n"
-
     tex_epilogue =
       "\n\
       \\\end{document}"

@@ -3,19 +3,18 @@ module Reanimate.Morph where
 
 import           Control.Lens
 import           Control.Monad.State
+import           Data.List
+import           Data.Ord
+import qualified Geom2D.CubicBezier  as Bezier
+import           Graphics.SvgTree
 import           Linear.Metric
 import           Linear.V2
-import Data.List
-import Data.Ord
 import           Linear.Vector
-import qualified Geom2D.CubicBezier          as Bezier
-import           Graphics.SvgTree
+import           Reanimate.LaTeX
+import           Reanimate.Monad
+import           Reanimate.Svg
 
-import Reanimate.Svg
-import Reanimate.Monad
-import Reanimate.LaTeX
-
-import Debug.Trace
+import           Debug.Trace
 
 {-
 alignCommands :: [LineCommand] -> [LineCommand] -> ([LineCommand], [LineCommand])
@@ -73,10 +72,10 @@ interpolateLineCommands alpha x y = map worker (zip x y)
       LineBezier [lerp alpha x y | (x,y) <- merge ps1 ps2]
     worker (LineEnd, LineEnd) = LineEnd
     worker (x,y) = error (show (x,y))
-    merge [] [] = []
-    merge [x] [y] = [(x,y)]
-    merge (x:xs) [y] = (x,y) : merge xs [y]
-    merge [x] (y:ys) = (x,y) : merge [x] ys
+    merge [] []         = []
+    merge [x] [y]       = [(x,y)]
+    merge (x:xs) [y]    = (x,y) : merge xs [y]
+    merge [x] (y:ys)    = (x,y) : merge [x] ys
     merge (x:xs) (y:ys) = (x,y) : merge xs ys
 
 
@@ -119,7 +118,7 @@ shiftRight (Loop start (x:xs)) = Loop (last x) (xs ++ [x])
 reverseLoop :: Loop -> Loop
 reverseLoop (Loop start ps) = Loop start (drop 1 $ worker [] (reverse $ map reverse ps))
   where
-    worker rest [s:cs] = (rest++[s]) : [cs ++ [start]]
+    worker rest [s:cs]      = (rest++[s]) : [cs ++ [start]]
     worker rest ((s:cs):xs) = (rest ++ [s]) : worker cs xs
 
 loopToCommands :: Loop -> [LineCommand]
@@ -376,9 +375,9 @@ morph a b =
 annotatePath :: Tree -> Tree
 annotatePath = mkGroup . reverse . map worker . toLineCommands . extractPath
   where
-    mkCircle (V2 x y) = CircleTree $ defaultSvg
+    mkDot (V2 x y) = CircleTree $ defaultSvg
       & circleCenter .~ (Num x, Num y)
       & circleRadius .~ Num 1
-    worker (LineMove p) = withFillColor "green" $ mkCircle p
-    worker (LineBezier cs) = withFillColor "red" $ mkCircle (last cs)
-    worker LineEnd = mkGroup []
+    worker (LineMove p)    = withFillColor "green" $ mkDot p
+    worker (LineBezier cs) = withFillColor "red" $ mkDot (last cs)
+    worker LineEnd         = mkGroup []

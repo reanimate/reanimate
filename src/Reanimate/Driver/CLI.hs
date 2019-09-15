@@ -1,16 +1,16 @@
 {-# LANGUAGE RecordWildCards #-}
-module Reanimate.Driver.CLI where
-
-import           Reanimate.Driver.Check
-import           Reanimate.Driver.Server
-import           Reanimate.Misc          (runCmdLazy, runCmd_)
-import           Reanimate.Monad         (Animation)
-import           Reanimate.Render        (Format (..), render, renderSnippets,
-                                          renderSvgs)
+module Reanimate.Driver.CLI
+  ( getDriverOptions
+  , Options(..)
+  , Command(..)
+  , Preset(..)
+  , Format(..)
+  ) where
 
 import           Data.Char
+import           Data.Monoid         ((<>))
 import           Options.Applicative
-import           Data.Monoid
+import           Reanimate.Render    (Format (..), Width, Height, FPS)
 
 data Options = Options
   { optsCommand :: Command
@@ -23,9 +23,9 @@ data Command
   | View
   | Render
     { renderTarget  :: Maybe String
-    , renderFPS     :: Maybe Int
-    , renderWidth   :: Maybe Int
-    , renderHeight  :: Maybe Int
+    , renderFPS     :: Maybe FPS
+    , renderWidth   :: Maybe Width
+    , renderHeight  :: Maybe Height
     , renderCompile :: Bool
     , renderFormat  :: Maybe Format
     , renderPreset  :: Maybe Preset
@@ -36,21 +36,21 @@ data Preset = Youtube | ExampleGif | Quick
   deriving (Show)
 
 readFormat :: String -> Maybe Format
-readFormat str =
-  case map toLower str of
+readFormat fmt =
+  case map toLower fmt of
     "mp4"  -> Just RenderMp4
     "gif"  -> Just RenderGif
     "webm" -> Just RenderWebm
     _      -> Nothing
 
-showFormat :: Format -> String
-showFormat RenderMp4  = "mp4"
-showFormat RenderGif  = "gif"
-showFormat RenderWebm = "webm"
+-- showFormat :: Format -> String
+-- showFormat RenderMp4  = "mp4"
+-- showFormat RenderGif  = "gif"
+-- showFormat RenderWebm = "webm"
 
 readPreset :: String -> Maybe Preset
-readPreset str =
-  case map toLower str of
+readPreset preset =
+  case map toLower preset of
     "youtube" -> Just Youtube
     "gif"     -> Just ExampleGif
     "quick"   -> Just Quick

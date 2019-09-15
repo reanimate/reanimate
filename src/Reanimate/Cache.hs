@@ -6,23 +6,20 @@ module Reanimate.Cache
   , cacheDiskLines
   ) where
 
-import           Control.Exception
 import           Data.Hashable
 import           Data.IORef
 import           Data.Map           (Map)
 import qualified Data.Map           as Map
 import           Data.Text          (Text)
 import qualified Data.Text          as T
-import qualified Data.Text.Encoding as T
 import qualified Data.Text.IO       as T
-import           Graphics.SvgTree   (Tree (..), parseSvgFile, unparse)
+import           Graphics.SvgTree   (Tree (..), unparse)
 import           Reanimate.Monad    (renderTree)
-import           Reanimate.Svg      (unbox)
-import Text.XML.Light ( Content(..), parseXML )
 import           System.Directory
 import           System.FilePath
-import           System.IO.Unsafe
 import           System.IO
+import           System.IO.Unsafe
+import           Text.XML.Light     (Content (..), parseXML)
 
 -- Memory cache and disk cache
 
@@ -36,7 +33,7 @@ cacheDisk parse render gen key = do
       then do
         inp <- T.readFile path
         case parse inp of
-          Nothing -> genCache root path
+          Nothing  -> genCache root path
           Just val -> pure val
       else genCache root path
   where
@@ -56,7 +53,7 @@ cacheDiskSvg = cacheDisk parse render
   where
     parse txt = case parseXML txt of
       [Elem t] -> Just (unparse t)
-      _   -> Nothing
+      _        -> Nothing
     render = T.pack . renderTree
 
 cacheDiskLines :: (Text -> IO [Text]) -> (Text -> IO [Text])
@@ -81,4 +78,4 @@ cacheMem gen key = do
         -- None usually indicates that latex or another tool was misconfigured. In this case,
         -- don't store the result.
         None -> pure None
-        _ -> atomicModifyIORef cache (\store -> (Map.insert key svg store, svg))
+        _    -> atomicModifyIORef cache (\m -> (Map.insert key svg m, svg))

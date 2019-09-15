@@ -2,27 +2,18 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Reanimate.LaTeX (latex,xelatex,latexAlign) where
 
-import           Control.Exception     (SomeException, handle)
-import qualified Data.ByteString       as B
-import           Data.IORef
-import           Data.Map              (Map)
-import qualified Data.Map              as Map
-import Data.Monoid
+import           Control.Exception (SomeException, handle)
+import qualified Data.ByteString   as B
+import           Data.Monoid ((<>))
+import           Data.Text         (Text)
+import qualified Data.Text         as T
+import qualified Data.Text.IO      as T
+import           Graphics.SvgTree  (Tree (..), defaultSvg, parseSvgFile)
 import           Reanimate.Cache
 import           Reanimate.Misc
 import           Reanimate.Svg
-import           System.FilePath       (replaceExtension, takeFileName, (</>))
-import           System.IO.Unsafe      (unsafePerformIO)
-
-import           Control.Lens          (over, set, (%~), (&), (.~), (^.))
-import           Data.Text             (Text)
-import qualified Data.Text             as T
-import qualified Data.Text.IO             as T
-import           Graphics.SvgTree      (Document (..), Tree (..), defaultSvg,
-                                        elements, loadSvgFile, parseSvgFile,
-                                        xmlOfDocument)
-import           Text.XML.Light        (elContent)
-import           Text.XML.Light.Output (ppcContent, ppcElement, prettyConfigPP)
+import           System.FilePath   (replaceExtension, takeFileName, (</>))
+import           System.IO.Unsafe  (unsafePerformIO)
 
 latex :: T.Text -> Tree
 latex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) latexToSVG)
@@ -37,8 +28,8 @@ latexAlign tex = latex $ T.unlines ["\\begin{align*}", tex, "\\end{align*}"]
 
 
 latexToSVG :: Text -> IO Tree
-latexToSVG tex = handle (\(e::SomeException) -> return (failedSvg tex)) $ do
-  latex <- requireExecutable "latex"
+latexToSVG tex = handle (\(_::SomeException) -> return (failedSvg tex)) $ do
+  latexBin <- requireExecutable "latex"
   dvisvgm <- requireExecutable "dvisvgm"
   withTempDir $ \tmp_dir -> withTempFile "tex" $ \tex_file -> withTempFile "svg" $ \svg_file -> do
     let dvi_file = tmp_dir </> replaceExtension (takeFileName tex_file) "dvi"
@@ -46,7 +37,7 @@ latexToSVG tex = handle (\(e::SomeException) -> return (failedSvg tex)) $ do
     appendFile tex_file tex_prologue
     T.appendFile tex_file tex
     appendFile tex_file tex_epilogue
-    runCmd latex ["-interaction=batchmode", "-halt-on-error", "-output-directory="++tmp_dir, tex_file]
+    runCmd latexBin ["-interaction=batchmode", "-halt-on-error", "-output-directory="++tmp_dir, tex_file]
     runCmd dvisvgm [ dvi_file
                    , "--exact"    -- better bboxes.
                    -- , "--bbox=1,1" -- increase bbox size.
@@ -58,8 +49,8 @@ latexToSVG tex = handle (\(e::SomeException) -> return (failedSvg tex)) $ do
       Just svg -> return $ unbox $ replaceUses svg
 
 xelatexToSVG :: Text -> IO Tree
-xelatexToSVG tex = handle (\(e::SomeException) -> return (failedSvg tex)) $ do
-  latex <- requireExecutable "xelatex"
+xelatexToSVG tex = handle (\(_::SomeException) -> return (failedSvg tex)) $ do
+  xetexBin <- requireExecutable "xelatex"
   dvisvgm <- requireExecutable "dvisvgm"
   withTempDir $ \tmp_dir -> withTempFile "tex" $ \tex_file -> withTempFile "svg" $ \svg_file -> do
     let dvi_file = tmp_dir </> replaceExtension (takeFileName tex_file) "xdv"
@@ -68,7 +59,7 @@ xelatexToSVG tex = handle (\(e::SomeException) -> return (failedSvg tex)) $ do
     appendFile tex_file tex_prologue
     T.appendFile tex_file tex
     appendFile tex_file tex_epilogue
-    runCmd latex ["-no-pdf", "-interaction=batchmode", "-halt-on-error", "-output-directory="++tmp_dir, tex_file]
+    runCmd xetexBin ["-no-pdf", "-interaction=batchmode", "-halt-on-error", "-output-directory="++tmp_dir, tex_file]
     runCmd dvisvgm [ dvi_file
                    , "--exact"    -- better bboxes.
                    -- , "--bbox=1,1" -- increase bbox size.
@@ -80,13 +71,18 @@ xelatexToSVG tex = handle (\(e::SomeException) -> return (failedSvg tex)) $ do
       Just svg -> return $ unbox $ replaceUses svg
 
 failedSvg :: Text -> Tree
-failedSvg tex = defaultSvg
+failedSvg _tex = defaultSvg
   -- text_ [ font_size_ "20"
   --       , fill_ "white"] (toHtml $ "bad latex: "++tex)
 
+tex_document :: String
 tex_document = "\\documentclass[preview]{standalone}\n"
+
+tex_xelatex :: String
 tex_xelatex =
   "\\usepackage[UTF8]{ctex}\n"
+
+tex_prologue :: String
 tex_prologue =
   "\\usepackage[english]{babel}\n\
   \\\usepackage{amsmath}\n\
@@ -107,6 +103,7 @@ tex_prologue =
   \\\linespread{1}\n\
   \\\begin{document}\n"
 
+tex_epilogue :: String
 tex_epilogue =
   "\n\
   \\\end{document}"

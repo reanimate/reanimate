@@ -5,8 +5,7 @@ module Reanimate.Raster
 
 import Control.Lens
 import Codec.Picture
-import Codec.Picture.Png
-import Codec.Picture.Types
+import Codec.Picture.Types (dynamicMap)
 import qualified Data.ByteString.Base64.Lazy as Base64
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import Graphics.SvgTree (Tree(..), defaultSvg)
