@@ -38,7 +38,7 @@ genGolden path = withTempDir $ \tmpDir -> withTempFile ".exe" $ \tmpExecutable -
   -- ret <- runCmd_ "stack" $ ["ghc", "--"] ++ ghcOptions tmpDir ++ [self, "-o", tmpExecutable]
   -- ["-rtsopts", "--make", "-threaded", "-O2"] ++
   -- ["-odir", tmpDir, "-hidir", tmpDir]
-  (inh, outh, errh, pid) <- runInteractiveProcess tmpExecutable (["snippets"] ++ runOpts)
+  (inh, outh, errh, pid) <- runInteractiveProcess tmpExecutable (["test"] ++ runOpts)
     Nothing Nothing
   hClose inh
   hClose errh
