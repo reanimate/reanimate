@@ -10,6 +10,7 @@ module Reanimate.ColorMap
   , cividis
   , jet
   , hsv
+  , hsvMatlab
   , greyscale
   ) where
 
@@ -150,9 +151,9 @@ sinebow t = PixelRGB8 r g b
     pi_1_3 = pi / 3
     pi_2_3 = pi * 2 / 3
     x = (0.5 - t) * pi
-    r = round $ 255 * sin(x)^2
-    g = round $ 255 * sin(x+pi_1_3)^2
-    b = round $ 255 * sin(x+pi_2_3)^2
+    r = round $ 255 * sin(x)**2
+    g = round $ 255 * sin(x+pi_1_3)**2
+    b = round $ 255 * sin(x+pi_2_3)**2
 
 -- | Given a number t in the range [0,1], returns the corresponding color from
 --   the “cividis” color vision deficiency-optimized color scheme designed by
@@ -174,7 +175,7 @@ jet t = PixelRGB8 red green blue
     green = trunc $ min (4*t - 0.5) (-4*t + 3.5)
     blue  = trunc $ min (4*t + 0.5) (-4*t + 2.5)
     trunc :: Double -> Pixel8
-    trunc = fromIntegral . min 255 . max 0 . round . (*) 255
+    trunc = round . min 255 . max 0 . (*) 255
 
 -- | hsv colormap. Goes from 0 degrees to 360 degrees.
 hsv :: Double -> PixelRGB8
@@ -196,12 +197,14 @@ greyscale t = PixelRGB8 v v v
 parula :: Double -> PixelRGB8
 parula = ramp vec
   where
-    vec = V.fromList $ pixels colors
+    vec = V.fromList $ pixels colorList
     pixels [] = []
     pixels (r:g:b:xs) =
       PixelRGB8 (round $ r*255) (round $ g*255) (round $ b*255) :
       pixels xs
-    colors =
+    pixels _ = error "Reanimate.ColorMap.parula: Broken data"
+    colorList :: [Double]
+    colorList =
        [0.2081, 0.1663, 0.5292
        ,0.2091, 0.1721, 0.5411
        ,0.2101, 0.1779, 0.5530
@@ -467,6 +470,7 @@ colors = V.fromList . map (toColor . map (fromIntegral . digitToInt) . T.unpack)
   where
     toColor [r1,r2,g1,g2,b1,b2] =
       PixelRGB8 (r1 `shiftL` 4 + r2) (g1 `shiftL` 4 + g2) (b1 `shiftL` 4+b2)
+    toColor _ = error "Reanimate.ColorMap.colors: Broken data"
 
 ramp :: Vector PixelRGB8 -> Double -> PixelRGB8
 ramp v = \t -> v V.! (max 0 $ min (len-1) $ round $ t * (len'-1))

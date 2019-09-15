@@ -7,7 +7,7 @@ module Reanimate.Misc
   , withTempFile
   ) where
 
-import           Control.Exception (evaluate, finally, throwIO)
+import           Control.Exception (evaluate, finally)
 import qualified Data.Text         as T
 import qualified Data.Text.IO      as T
 import           System.Directory  (createDirectory, findExecutable,
@@ -35,7 +35,7 @@ runCmd exec args = do
 runCmd_ :: FilePath -> [String] -> IO (Either String String)
 runCmd_ exec args = do
   (ret, stdout, stderr) <- readProcessWithExitCode exec args ""
-  evaluate (length stdout + length stderr)
+  _ <- evaluate (length stdout + length stderr)
   case ret of
     ExitSuccess -> return (Right stdout)
     ExitFailure err -> do
@@ -53,14 +53,14 @@ runCmdLazy exec args = do
     if eof
       then do
         stderr <- hGetContents err
-        evaluate (length stderr)
+        _ <- evaluate (length stderr)
         ret <- waitForProcess pid
         case ret of
           ExitSuccess -> return (Left "")
-          ExitFailure err -> do
+          ExitFailure errMsg -> do
             return $ Left $
               "Failed to run: " ++ showCommandForUser exec args ++ "\n" ++
-              "Error code: " ++ show err ++ "\n" ++
+              "Error code: " ++ show errMsg ++ "\n" ++
               "stderr: " ++ stderr
       else do
         line <- T.hGetLine out
@@ -73,11 +73,11 @@ withTempDir action = do
   hClose handle
   removeFile path
   createDirectory (dir </> path)
-  action (dir </> path) -- `finally` removeDirectoryRecursive (dir </> path)
+  action (dir </> path) `finally` removeDirectoryRecursive (dir </> path)
 
 withTempFile :: String -> (FilePath -> IO a) -> IO a
 withTempFile ext action = do
   dir <- getTemporaryDirectory
   (path, handle) <- openTempFile dir ("reanimate" <.> ext)
   hClose handle
-  action path -- `finally` removeFile path
+  action path `finally` removeFile path

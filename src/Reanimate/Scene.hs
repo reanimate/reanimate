@@ -1,18 +1,10 @@
-{-# LANGUAGE RankNTypes   #-}
+{-# LANGUAGE RankNTypes #-}
 module Reanimate.Scene where
 
 import           Control.Monad.ST
-import           Control.Monad.ST.Unsafe
-import           Data.IORef
-import           Data.Map                (Map)
-import qualified Data.Map                as Map
-import           Data.STRef
-import           Debug.Trace
-import           Data.Ord
 import           Data.List
-import           System.IO.Unsafe
-import           System.Mem.StableName
-
+import           Data.Ord
+import           Debug.Trace
 import           Reanimate.Monad
 
 data World
@@ -51,7 +43,7 @@ instance Monad (Scene s) where
 
 --data Frame a = Frame {unFrame :: Duration -> Time -> State ([Tree] -> [Tree]) a}
 sceneAnimation :: (forall s. Scene s a) -> Animation
-sceneAnimation action = Animation (max s p) $ Frame $ \d t ->
+sceneAnimation action = Animation (max s p) $ Frame $ \_ t ->
   sequence_ $ map snd $ sortBy (comparing fst)
     [ (z, unFrame frameGen dur (t-startT))
     | (startT, Animation dur frameGen, z) <- tl
@@ -62,7 +54,7 @@ sceneAnimation action = Animation (max s p) $ Frame $ \d t ->
     (_, s, p, tl) = runST (unM action 0)
 
 debug :: String -> Scene s ()
-debug msg = M $ \t -> trace msg (return ((), 0, 0, emptyTimeline))
+debug msg = M $ \_ -> trace msg (return ((), 0, 0, emptyTimeline))
 
 someaction :: Scene s ()
 someaction = debug "someaction"
@@ -95,7 +87,7 @@ waitUntil tNew = do
   wait (max 0 (tNew - now))
 
 wait :: Duration -> Scene s ()
-wait d = M $ \t ->
+wait d = M $ \_ ->
   return ((), d, 0, emptyTimeline)
 
 adjustZ :: (ZIndex -> ZIndex) -> Scene s a -> Scene s a
@@ -103,7 +95,7 @@ adjustZ fn (M action) = M $ \t -> do
   (a, s, p, tl) <- action t
   return (a, s, p, [ (startT, ani, fn z) | (startT, ani, z) <- tl ])
 
-withSceneDuration :: Scene s a -> Scene s Duration
+withSceneDuration :: Scene s () -> Scene s Duration
 withSceneDuration s = do
   t1 <- queryNow
   s

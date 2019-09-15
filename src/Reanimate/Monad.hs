@@ -1,24 +1,16 @@
 module Reanimate.Monad where
 
-import           Control.Arrow         ()
-import qualified Control.Category      as C
+import           Control.Arrow            ()
 import           Control.Monad.State
-import           Data.Fixed
-import           Data.Fixed            (mod')
-import Text.Printf
-import qualified Data.Map              as M
-import           Data.Monoid           ((<>))
-import           Data.Text             (Text, pack)
-import           Graphics.SvgTree      (Document (..), Number (..), Text (..),
-                                        TextSpan (..), TextSpanContent (..),
-                                        Tree, Tree (..), xmlOfDocument, xmlOfTree)
+import           Data.Fixed               (mod')
+import qualified Data.Map                 as M
+import           Graphics.SvgTree         (Document (..), Number (..),
+                                           Tree (..),
+                                           xmlOfTree)
 import           Graphics.SvgTree.Printer
-import           Reanimate.Svg
 import           Reanimate.Signal
-import           Text.XML.Light        (elContent)
+import           Reanimate.Svg
 import           Text.XML.Light.Output
-
-import           Reanimate.Combinators (approxFnData, morphPath)
 
 type Duration = Double
 type Time = Double
@@ -31,9 +23,9 @@ instance Functor Frame where
 instance Applicative Frame where
   pure a = Frame $ \_ _ -> pure a
   fn <*> fa = Frame $ \d t -> do
-    fn <- unFrame fn d t
+    f <- unFrame fn d t
     a <- unFrame fa d t
-    pure (fn a)
+    pure (f a)
 
 instance Monad Frame where
   return a = Frame $ \_ _ -> pure a
@@ -63,21 +55,21 @@ before (Animation d1 (Frame f1)) (Animation d2 (Frame f2)) =
 -- Play two animation concurrently. Shortest animation freezes on last frame.
 sim :: Animation -> Animation -> Animation
 sim (Animation d1 (Frame f1)) (Animation d2 (Frame f2)) =
-  Animation (max d1 d2) $ Frame $ \d t -> do
+  Animation (max d1 d2) $ Frame $ \_ t -> do
     f1 d1 (min d1 t)
     f2 d2 (min d2 t)
 
 -- Play two animation concurrently. Shortest animation loops.
 simLoop :: Animation -> Animation -> Animation
 simLoop (Animation d1 (Frame f1)) (Animation d2 (Frame f2)) =
-  Animation (max d1 d2) $ Frame $ \d t -> do
+  Animation (max d1 d2) $ Frame $ \_ t -> do
     f1 d1 (t `mod'` d1)
     f2 d2 (t `mod'` d2)
 
 -- Play two animation concurrently. Animations disappear after playing once.
 simDrop :: Animation -> Animation -> Animation
 simDrop (Animation d1 (Frame f1)) (Animation d2 (Frame f2)) =
-  Animation (max d1 d2) $ Frame $ \d t -> do
+  Animation (max d1 d2) $ Frame $ \_ t -> do
     when (t < d1) (f1 d1 t)
     when (t < d2) (f2 d2 t)
 
@@ -138,7 +130,7 @@ adjustSpeed factor (Animation d fn) =
   Animation (d/factor) $ Frame $ \_dur t -> unFrame fn d (t*factor)
 
 setDuration :: Double -> Animation -> Animation
-setDuration newD (Animation d fn) =
+setDuration newD (Animation _ fn) =
   Animation newD $ Frame $ \dur t -> unFrame fn dur t
 
 reverseAnimation :: Animation -> Animation

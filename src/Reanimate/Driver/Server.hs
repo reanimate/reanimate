@@ -2,41 +2,33 @@ module Reanimate.Driver.Server
   ( serve
   , findOwnSource ) where
 
-import           Control.Concurrent           (MVar, forkIO, forkOS, killThread,
-                                               modifyMVar_, newEmptyMVar,
-                                               putMVar, takeMVar)
-import           Control.Exception            (SomeException, finally, handle)
-import           Control.Monad
-import           Control.Monad.Fix            (fix)
-import           Data.Maybe
-import qualified Data.Text                    as T
-import qualified Data.Text.Read               as T
-import           Data.Version
-import           GHC.Environment              (getFullArgs)
+import           Control.Concurrent (forkIO, forkOS, killThread, modifyMVar_,
+                                     newEmptyMVar, putMVar, takeMVar)
+import           Control.Exception  (finally)
+import           Control.Monad.Fix  (fix)
+import           Data.Text          (Text)
+import qualified Data.Text          as T
+import qualified Data.Text.Read     as T
+import           GHC.Environment    (getFullArgs)
 import           Network.WebSockets
 import           Paths_reanimate
-import           Reanimate.Misc               (runCmdLazy, runCmd_)
-import           Reanimate.Monad              (Animation)
-import           Reanimate.Render             (render, renderSnippets,
-                                               renderSvgs)
-import           System.Directory             (doesFileExist, findExecutable,
-                                               findFile, listDirectory, withCurrentDirectory)
-import           System.Environment           (getArgs, getProgName)
+import           Reanimate.Misc     (runCmdLazy, runCmd_)
+import           System.Directory   (doesFileExist, findFile, listDirectory,
+                                     withCurrentDirectory)
+import           System.Environment (getProgName)
 import           System.Exit
 import           System.FilePath
 import           System.FSNotify
 import           System.IO
 import           System.IO.Temp
-import           Text.ParserCombinators.ReadP
-import qualified Text.PrettyPrint.ANSI.Leijen as Doc
-import           Text.Printf
-import           Web.Browser                  (openBrowser)
+import           Web.Browser        (openBrowser)
 
+opts :: ConnectionOptions
 opts = defaultConnectionOptions
   { connectionCompressionOptions = PermessageDeflateCompression defaultPermessageDeflate }
 
-serve :: Animation -> IO ()
-serve animation = do
+serve :: IO ()
+serve = do
   watch <- startManager
   hSetBuffering stdin NoBuffering
   self <- findOwnSource
@@ -55,19 +47,20 @@ serve animation = do
 
           putStrLn "Reloading code..."
           killThread tid
-          tid <- forkOS $ slaveHandler conn self
-          return tid
+          forkOS $ slaveHandler conn self
         killSlave = do
           tid <- takeMVar slave
           killThread tid
     stop <- watchFile watch self handler
     putMVar slave =<< forkIO (return ())
     let loop = do
-          fps <- receiveData conn :: IO T.Text
+          -- FIXME: We don't use fps here.
+          _fps <- receiveData conn :: IO T.Text
           handler
           loop
     loop `finally` (stop >> killSlave)
 
+slaveHandler :: Connection -> FilePath -> IO ()
 slaveHandler conn self =
   withCurrentDirectory (takeDirectory self) $
   withSystemTempDirectory "reanimate" $ \tmpDir ->
@@ -88,6 +81,7 @@ slaveHandler conn self =
           sendTextData conn frame
           loop
   where
+    expectFrame :: Either String Text -> IO (Integer, Text)
     expectFrame (Left "") = do
       sendTextData conn (T.pack "Done")
       exitWith ExitSuccess
@@ -103,6 +97,7 @@ slaveHandler conn self =
           exitWith (ExitFailure 1)
         Right (frameNumber, rest) -> pure (frameNumber, rest)
 
+watchFile :: WatchManager -> FilePath -> IO () -> IO StopListening
 watchFile watch file action = watchDir watch (takeDirectory file) check (const action)
   where
     check event = takeFileName (eventPath event) == takeFileName file
