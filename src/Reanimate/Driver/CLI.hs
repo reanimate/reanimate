@@ -10,6 +10,7 @@ import           Reanimate.Render        (Format (..), render, renderSnippets,
 
 import           Data.Char
 import           Options.Applicative
+import           Data.Monoid
 
 data Options = Options
   { optsCommand :: Command
