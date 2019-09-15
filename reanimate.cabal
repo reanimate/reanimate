@@ -59,6 +59,9 @@ library
                       Reanimate.Povray
   other-modules:      Reanimate.Svg.NamedColors
                       Reanimate.Cache
+                      Reanimate.Driver.Check
+                      Reanimate.Driver.CLI
+                      Reanimate.Driver.Server
                       Paths_reanimate
   build-depends:       base >=4.10 && <4.13,
                        time, text, filepath, process, directory,
@@ -67,7 +70,8 @@ library
                        diagrams-core, diagrams-lib, diagrams-contrib,
                        svg-builder, matrices, cubicbezier, palette, websockets,
                        hashable, fsnotify, open-browser, random-shuffle, base64-bytestring,
-                       vector, colour, cassava, ansi-wl-pprint, here, temporary
+                       vector, colour, cassava, ansi-wl-pprint, here, temporary,
+                       optparse-applicative
 
 test-suite spec
   type: exitcode-stdio-1.0
