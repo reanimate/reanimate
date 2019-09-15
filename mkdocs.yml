@@ -1,0 +1,7 @@
+site_name: Reanimate
+repo_url: https://github.com/Lemmih/reanimate
+theme:
+  name: readthedocs
+  highlightjs: false
+markdown_extensions:
+  - markdown_include.include
