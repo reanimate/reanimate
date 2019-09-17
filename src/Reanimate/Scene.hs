@@ -1,6 +1,7 @@
 {-# LANGUAGE RankNTypes #-}
 module Reanimate.Scene where
 
+import           Control.Monad.Fix
 import           Control.Monad.ST
 import           Data.List
 import           Data.Ord
@@ -9,6 +10,9 @@ import           Reanimate.Monad
 
 data World
 type ZIndex = Int
+
+(#) :: a -> (a -> b) -> b
+o # f = f o
 
 -- (seq duration, par duration)
 -- [(Time, Animation, ZIndex)]
@@ -41,14 +45,17 @@ instance Monad (Scene s) where
     (b, s2, p2, tl2) <- unM (g a) (t+s1)
     return (b, s1+s2, max p1 (s1+p2), unionTimeline tl1 tl2)
 
+instance MonadFix (Scene s) where
+  mfix fn = M $ \t -> mfix (\v -> let (a,_s,_p,_tl) = v in unM (fn a) t)
+
 --data Frame a = Frame {unFrame :: Duration -> Time -> State ([Tree] -> [Tree]) a}
 sceneAnimation :: (forall s. Scene s a) -> Animation
 sceneAnimation action = Animation (max s p) $ Frame $ \_ t ->
   sequence_ $ map snd $ sortBy (comparing fst)
     [ (z, unFrame frameGen dur (t-startT))
     | (startT, Animation dur frameGen, z) <- tl
-    , startT < t
-    , startT+dur > t
+    , t >= startT
+    , t < startT+dur
     ]
   where
     (_, s, p, tl) = runST (unM action 0)

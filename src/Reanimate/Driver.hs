@@ -5,11 +5,13 @@ import           Control.Monad
 import           Data.Maybe
 import           Reanimate.Driver.Check
 import           Reanimate.Driver.CLI
+import           Reanimate.Driver.Compile
 import           Reanimate.Driver.Server
-import           Reanimate.Monad         (Animation)
-import           Reanimate.Render        (FPS, Format (..), Height, Width,
-                                          render, renderSnippets, renderSvgs)
+import           Reanimate.Monad          (Animation)
+import           Reanimate.Render         (FPS, Format (..), Height, Width,
+                                           render, renderSnippets, renderSvgs)
 import           System.FilePath
+import           Text.Printf
 
 presetFormat :: Preset -> Format
 presetFormat Youtube    = RenderMp4
@@ -82,8 +84,27 @@ reanimate animation = do
           height = guessParameter renderHeight (fmap presetHeight renderPreset) $
                   (formatHeight fmt)
 
-      print (fps, width, height, fmt, target)
-      render animation target fmt width height fps
+      if renderCompile
+        then
+          compile
+            ["render"
+            ,"--fps", show fps
+            ,"--width", show width
+            ,"--height", show height
+            ,"--format", showFormat fmt
+            ,"--target", target
+            ,"+RTS", "-N", "-RTS"]
+        else do
+          printf "Animation options:\n\
+                 \  fps:    %d\n\
+                 \  width:  %d\n\
+                 \  height: %d\n\
+                 \  fmt:    %s\n\
+                 \  target: %s\n"
+            fps width height (showFormat fmt) target
+          render animation target fmt width height fps
+
+
 
 guessParameter :: Maybe a -> Maybe a -> a -> a
 guessParameter a b def = fromMaybe def (a `mplus` b)

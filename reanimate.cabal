@@ -56,10 +56,12 @@ library
                       Reanimate.Memo
                       Reanimate.Scene
                       Reanimate.Povray
+                      Reanimate.Effect
   other-modules:      Reanimate.Cache
                       Reanimate.Driver.Check
                       Reanimate.Driver.CLI
                       Reanimate.Driver.Server
+                      Reanimate.Driver.Compile
                       Paths_reanimate
   build-depends:       base >=4.10 && <4.13,
                        time, text, filepath, process, directory,
