@@ -4,9 +4,7 @@ module UnitTests
   , compileVideoFolder
   ) where
 
-import           Control.Monad        (forM)
 import qualified Data.ByteString.Lazy as LBS
-import           Data.Maybe           (catMaybes)
 import           Reanimate.Misc       (withTempDir, withTempFile)
 import           System.Directory
 import           System.Exit
@@ -38,7 +36,7 @@ genGolden path = withTempDir $ \tmpDir -> withTempFile ".exe" $ \tmpExecutable -
   -- ret <- runCmd_ "stack" $ ["ghc", "--"] ++ ghcOptions tmpDir ++ [self, "-o", tmpExecutable]
   -- ["-rtsopts", "--make", "-threaded", "-O2"] ++
   -- ["-odir", tmpDir, "-hidir", tmpDir]
-  (inh, outh, errh, pid) <- runInteractiveProcess tmpExecutable (["test"] ++ runOpts)
+  (inh, outh, errh, _pid) <- runInteractiveProcess tmpExecutable (["test"] ++ runOpts)
     Nothing Nothing
   hClose inh
   hClose errh
