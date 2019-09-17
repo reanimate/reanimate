@@ -47,8 +47,8 @@ sceneAnimation action = Animation (max s p) $ Frame $ \_ t ->
   sequence_ $ map snd $ sortBy (comparing fst)
     [ (z, unFrame frameGen dur (t-startT))
     | (startT, Animation dur frameGen, z) <- tl
-    , startT < t
-    , startT+dur > t
+    , t >= startT
+    , t < startT+dur
     ]
   where
     (_, s, p, tl) = runST (unM action 0)
