@@ -28,6 +28,8 @@ import           Reanimate.Signal
 import           Reanimate.Svg
 import           System.IO.Unsafe
 
+import Colorspace
+
 highdef = True
 
 takeA :: Double -> Animation -> Animation
@@ -46,35 +48,48 @@ o # f = f o
 main :: IO ()
 main = reanimate $
   (mkAnimation 0 $ emit $ mkBackground "black") `sim`
+  -- monalisaScene
+  colorSpacesScene
+
+
+monalisaScene :: Animation
+monalisaScene =
   sceneAnimation (do
-    wait blackIntro
-    fork $ do
-      wait beginPause
-      play $ drawPixelImage 0 1
-        # setDuration toGrayScaleTime
-        # pauseAround 1 5
-    -- fork $ -- 4
+    -- wait blackIntro
+    -- Draw numbers
+    -- fork $
     --   play $ drawHexPixels
     --     # setDuration toGrayScaleTime
     --     # pauseAtBeginning beginPause
     --     # fadeOut 2
     --     # fadeIn stdFade
-    wait beginPause
-    play $ showColorMap 0 1
-      # setDuration toGrayScaleTime
-      # pauseAround 1 1
-      # fadeIn stdFade
-      # fadeOut stdFade
+    -- wait beginPause
+    -- Schedule monalisa fade-in
+    waitAll $ do
+      fork $ do
+        playZ (-1) $ drawPixelImage 0 1
+          # setDuration toGrayScaleTime
+          # pauseAround 1 5
+        -- Move monalisa to the side of the screen
+        play $ sceneFalseColorIntro
 
-    -- wait 4
-    -- fork $ play $ sceneColorMaps `sim` (sceneFalseColorChain $ map snd
-    --   [ ("Greyscale", greyscale)
-    --   , ("Jet", jet)
-    --   , ("Turbo", turbo)
-    --   , ("Viridis", viridis)
-    --   , ("Parula", parula)
-    --   , ("Plasma", plasma)
-    --   , ("Cividis", cividis) ])
+      -- Show colormap as monalisa fades in
+      play $ showColorMap 0 1
+        # setDuration toGrayScaleTime
+        # pauseAround 1 1
+        # fadeIn stdFade
+        # fadeOut stdFade
+
+    -- Cycle through colormaps for monalisa
+    play $ sceneColorMaps `sim` (sceneFalseColorChain $ map snd
+      [ ("Greyscale", greyscale)
+      , ("Jet", jet)
+      , ("Turbo", turbo)
+      , ("Viridis", viridis)
+      , ("Parula", parula)
+      , ("Plasma", plasma)
+      , ("Cividis", cividis)
+      ])
     return ()
   )
   where
@@ -82,34 +97,7 @@ main = reanimate $
     beginPause = 4
     stdFade = 0.3
     toGrayScaleTime = 3
-  -- -- drawBox
-  -- sceneColorMaps `sim`
-  -- (sceneFalseColorChain $ map snd
-  --   [ ("Greyscale", greyscale)
-  --   , ("Jet", jet)
-  --   , ("Turbo", turbo)
-  --   , ("Viridis", viridis)
-  --   , ("Parula", parula)
-  --   , ("Plasma", plasma)
-  --   , ("Cividis", cividis) ])
 
-  -- pauseAtBeginning 2 (
-  --   (pauseAtEnd 1 $ pauseAtBeginning 1 $ drawPixelImage 0 0.5)
-  --   `before`
-  --   (pauseAtEnd 2 $ pauseAtBeginning 0 $ drawPixelImage 0.5 1)
-  --   )  `sim`
-  -- fadeOut 2 (pauseAtEnd 4 drawHexPixels) `sim`
-  -- (pauseAtBeginning 2 (
-  --    fadeIn 0.2 (pauseAtEnd 1 $ pauseAtBeginning 1 $ showColorMap 0 0.5)
-  --    `before`
-  --    fadeOut 0.2 (pauseAtEnd 2 $ pauseAtBeginning 0 $ showColorMap 0.5 1)
-  --    ))
-  -- `sim` pauseAtEnd 3 (fadeIn 1 $ fadeOut 1 drawHexPixels)
-
-  -- pauseAtBeginning 2 drawHexPixels --  `sim`
-  -- fadeIn 1 (fadeOut 1 (pauseAtEnd 1 $ showColorMap))
-
-  -- latexTest
 
 monalisa :: Image PixelRGB8
 monalisa = unsafePerformIO $ do
@@ -147,6 +135,20 @@ interpolateColorMap d cmap1 cmap2 =
 
 sceneFalseColorChain (x:y:xs) = sceneFalseColor x y `before` sceneFalseColorChain (y:xs)
 sceneFalseColorChain _ = pause 0
+
+sceneFalseColorIntro :: Animation
+sceneFalseColorIntro = mkAnimation 2 $ do
+  s <- getSignal $ signalFromTo 1 2 $ signalCurve 3
+  d <- getSignal $ signalCurve 3
+  emit $
+    translate ((320/4 - 15)*d) 0 $
+    scaleToSize (320/s) (180/s) $
+    center $ embedImage monalisaLarge
+  emit $
+    withGroupOpacity d $
+    translate ((320/4 - 15)*d) 0 $
+    scaleToSize (320/s) (180/s) $
+    center $ embedImage monalisa
 
 sceneFalseColor :: (Double -> PixelRGB8) -> (Double -> PixelRGB8) -> Animation
 sceneFalseColor cmap1 cmap2 = mkAnimation 5 $ do
