@@ -14,7 +14,7 @@ import           Network.WebSockets
 import           Paths_reanimate
 import           Reanimate.Misc     (runCmdLazy, runCmd_)
 import           System.Directory   (doesFileExist, findFile, listDirectory,
-                                     withCurrentDirectory, makeAbsolute)
+                                     makeAbsolute, withCurrentDirectory)
 import           System.Environment (getProgName)
 import           System.Exit
 import           System.FilePath
