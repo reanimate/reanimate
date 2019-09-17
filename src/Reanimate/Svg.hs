@@ -452,6 +452,18 @@ scaleToSize w h t =
   where
     (_x, _y, w', h') = boundingBox t
 
+scaleToWidth :: Double -> Tree -> Tree
+scaleToWidth w t =
+    scale (w/w') t
+  where
+    (_x, _y, w', _h') = boundingBox t
+
+scaleToHeight :: Double -> Tree -> Tree
+scaleToHeight h t =
+    scale (h/h') t
+  where
+    (_x, _y, _w', h') = boundingBox t
+
 scaleXY :: Double -> Double -> Tree -> Tree
 scaleXY x y = withTransformations [Scale x (Just y)]
 
