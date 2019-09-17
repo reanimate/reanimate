@@ -11,7 +11,8 @@
 # For better organization, you split various jobs into seprate parts
 # and each of them are controlled via individual file.
 
-trigger: master
+trigger:
+- master
 
 jobs:
 - template: ./.azure/azure-linux-template.yml
