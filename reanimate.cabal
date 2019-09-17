@@ -60,6 +60,7 @@ library
                       Reanimate.Driver.Check
                       Reanimate.Driver.CLI
                       Reanimate.Driver.Server
+                      Reanimate.Driver.Compile
                       Paths_reanimate
   build-depends:       base >=4.10 && <4.13,
                        time, text, filepath, process, directory,

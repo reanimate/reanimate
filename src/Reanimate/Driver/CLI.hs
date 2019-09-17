@@ -5,6 +5,7 @@ module Reanimate.Driver.CLI
   , Command(..)
   , Preset(..)
   , Format(..)
+  , showFormat
   ) where
 
 import           Data.Char
@@ -43,10 +44,10 @@ readFormat fmt =
     "webm" -> Just RenderWebm
     _      -> Nothing
 
--- showFormat :: Format -> String
--- showFormat RenderMp4  = "mp4"
--- showFormat RenderGif  = "gif"
--- showFormat RenderWebm = "webm"
+showFormat :: Format -> String
+showFormat RenderMp4  = "mp4"
+showFormat RenderGif  = "gif"
+showFormat RenderWebm = "webm"
 
 readPreset :: String -> Maybe Preset
 readPreset preset =
