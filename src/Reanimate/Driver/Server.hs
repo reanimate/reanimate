@@ -2,7 +2,7 @@ module Reanimate.Driver.Server
   ( serve
   , findOwnSource ) where
 
-import           Control.Concurrent (forkIO, forkOS, killThread, modifyMVar_,
+import           Control.Concurrent (forkIO, killThread, modifyMVar_,
                                      newEmptyMVar, putMVar, takeMVar)
 import           Control.Exception  (finally)
 import           Control.Monad.Fix  (fix)
@@ -14,7 +14,7 @@ import           Network.WebSockets
 import           Paths_reanimate
 import           Reanimate.Misc     (runCmdLazy, runCmd_)
 import           System.Directory   (doesFileExist, findFile, listDirectory,
-                                     withCurrentDirectory)
+                                     withCurrentDirectory, makeAbsolute)
 import           System.Environment (getProgName)
 import           System.Exit
 import           System.FilePath
@@ -47,7 +47,7 @@ serve = do
 
           putStrLn "Reloading code..."
           killThread tid
-          forkOS $ slaveHandler conn self
+          forkIO $ slaveHandler conn self
         killSlave = do
           tid <- takeMVar slave
           killThread tid
@@ -117,7 +117,7 @@ ghcOptions tmpDir =
 findOwnSource :: IO FilePath
 findOwnSource = do
   fullArgs <- getFullArgs
-  let stackSource = last fullArgs
+  stackSource <- makeAbsolute (last fullArgs)
   exist <- doesFileExist stackSource
   if exist
     then return stackSource
