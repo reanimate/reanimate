@@ -1,64 +1,89 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module Reanimate.Driver.Server
   ( serve
-  , findOwnSource ) where
+  , findOwnSource
+  ) where
 
-import           Control.Concurrent (forkIO, killThread, modifyMVar_,
-                                     newEmptyMVar, putMVar, takeMVar)
-import           Control.Exception  (finally)
-import           Control.Monad.Fix  (fix)
-import           Data.Text          (Text)
-import qualified Data.Text          as T
-import qualified Data.Text.Read     as T
-import           GHC.Environment    (getFullArgs)
+import           Control.Concurrent      (forkIO, killThread, modifyMVar_,
+                                          newEmptyMVar, putMVar, takeMVar,
+                                          threadDelay)
+import           Control.Concurrent.MVar
+import           Control.Exception       (SomeException, catch, finally)
+import           Control.Monad
+import           Control.Monad.Fix       (fix)
+import           Data.Text               (Text)
+import qualified Data.Text               as T
+import qualified Data.Text.Read          as T
+import           GHC.Environment         (getFullArgs)
 import           Network.WebSockets
 import           Paths_reanimate
-import           Reanimate.Misc     (runCmdLazy, runCmd_)
-import           System.Directory   (doesFileExist, findFile, listDirectory,
-                                     makeAbsolute, withCurrentDirectory)
-import           System.Environment (getProgName)
+import           Reanimate.Misc          (runCmdLazy, runCmd_)
+import           System.Directory        (doesFileExist, findFile,
+                                          listDirectory, makeAbsolute,
+                                          withCurrentDirectory)
+import           System.Environment      (getProgName)
 import           System.Exit
 import           System.FilePath
 import           System.FSNotify
 import           System.IO
 import           System.IO.Temp
-import           Web.Browser        (openBrowser)
+import           Web.Browser             (openBrowser)
 
 opts :: ConnectionOptions
 opts = defaultConnectionOptions
   { connectionCompressionOptions = PermessageDeflateCompression defaultPermessageDeflate }
 
 serve :: IO ()
-serve = do
-  watch <- startManager
+serve = withManager $ \watch -> do
   hSetBuffering stdin NoBuffering
   self <- findOwnSource
+  hasConnectionVar <- newMVar False
+
+  -- There might already browser window open. Wait 2s to see if that window
+  -- connects to us. If not, open a new window.
+  _ <- forkIO $ do
+    threadDelay (2*10^(6::Int))
+    hasConn <- readMVar hasConnectionVar
+    unless hasConn openViewer
+
+  putStrLn "Listening..."
+  runServerWith "127.0.0.1" 9161 opts $ \pending -> do
+    putStrLn "New connection received."
+    hasConn <- swapMVar hasConnectionVar True
+    if hasConn
+      then do
+        putStrLn "Already connected to browser. Rejecting."
+        rejectRequestWith pending defaultRejectRequest
+      else do
+        conn <- acceptRequest pending
+        slave <- newEmptyMVar
+        let handler = modifyMVar_ slave $ \tid -> do
+              putStrLn "Reloading code..."
+              killThread tid
+              forkIO $ ignoreErrors $ slaveHandler conn self
+            killSlave = do
+              tid <- takeMVar slave
+              killThread tid
+        stop <- watchFile watch self handler
+        putMVar slave =<< forkIO (return ())
+        let loop = do
+              -- FIXME: We don't use fps here.
+              _fps <- receiveData conn :: IO T.Text
+              handler
+              loop
+        loop `finally` (swapMVar hasConnectionVar False >> stop >> killSlave)
+
+ignoreErrors :: IO () -> IO ()
+ignoreErrors action = action `catch` \(_::SomeException) -> return ()
+
+openViewer :: IO ()
+openViewer = do
   url <- getDataFileName "viewer/build/index.html"
   putStrLn "Opening browser..."
   bSucc <- openBrowser url
   if bSucc
       then putStrLn "Browser opened."
       else hPutStrLn stderr $ "Failed to open browser. Manually visit: " ++ url
-  putStrLn "Listening..."
-  runServerWith "127.0.0.1" 9161 opts $ \pending -> do
-    putStrLn "New connection received."
-    conn <- acceptRequest pending
-    slave <- newEmptyMVar
-    let handler = modifyMVar_ slave $ \tid -> do
-
-          putStrLn "Reloading code..."
-          killThread tid
-          forkIO $ slaveHandler conn self
-        killSlave = do
-          tid <- takeMVar slave
-          killThread tid
-    stop <- watchFile watch self handler
-    putMVar slave =<< forkIO (return ())
-    let loop = do
-          -- FIXME: We don't use fps here.
-          _fps <- receiveData conn :: IO T.Text
-          handler
-          loop
-    loop `finally` (stop >> killSlave)
 
 slaveHandler :: Connection -> FilePath -> IO ()
 slaveHandler conn self =
