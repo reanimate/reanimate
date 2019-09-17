@@ -98,9 +98,14 @@ slaveHandler conn self =
         Right (frameNumber, rest) -> pure (frameNumber, rest)
 
 watchFile :: WatchManager -> FilePath -> IO () -> IO StopListening
-watchFile watch file action = watchDir watch (takeDirectory file) check (const action)
+watchFile watch file action = watchTree watch (takeDirectory file) check (const action)
   where
-    check event = takeFileName (eventPath event) == takeFileName file
+    check event =
+      takeFileName (eventPath event) == takeFileName file ||
+      takeExtension (eventPath event) `elem` sourceExtensions ||
+      takeExtension (eventPath event) `elem` dataExtensions
+    sourceExtensions = [".hs", ".lhs"]
+    dataExtensions = [".jpg", ".png", ".bmp", ".pov", ".tex", ".csv"]
 
 ghcOptions :: FilePath -> [String]
 ghcOptions tmpDir =
