@@ -57,6 +57,7 @@ library
                       Reanimate.Scene
                       Reanimate.Povray
                       Reanimate.Effect
+                      Reanimate.Builtin.TernaryPlot
   other-modules:      Reanimate.Cache
                       Reanimate.Driver.Check
                       Reanimate.Driver.CLI

@@ -8,8 +8,8 @@ import           Control.Lens          ()
 import           Control.Monad
 import qualified Data.ByteString       as BS
 import qualified Data.Map              as Map
-import qualified Data.Text             as T
 import           Data.Monoid
+import qualified Data.Text             as T
 
 import           Codec.Picture
 import           Codec.Picture.Jpg
@@ -28,7 +28,7 @@ import           Reanimate.Signal
 import           Reanimate.Svg
 import           System.IO.Unsafe
 
-import Colorspace
+import           Colorspace
 
 highdef = True
 
