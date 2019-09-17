@@ -149,3 +149,7 @@ oscillate f = Frame $ \d t -> do
 repeatAnimation :: Double -> Animation -> Animation
 repeatAnimation n (Animation d f) = Animation (d*n) $ Frame $ \_ t ->
   unFrame f d (t `mod'` d)
+
+freezeAtPercentage :: Double -> Animation -> Animation
+freezeAtPercentage frac (Animation d genFrame) =
+  Animation d $ Frame $ \_ _ -> unFrame genFrame d (d*frac)
