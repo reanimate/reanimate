@@ -39,8 +39,6 @@ dropA :: Double -> Animation -> Animation
 dropA d1 (Animation d2 f) = Animation (max 0 (d2-d1)) $
   Frame $ \d t -> unFrame f d (t+d1)
 
-o # f = f o
-
 -- screen width 320
 -- screen height 180
 main :: IO ()

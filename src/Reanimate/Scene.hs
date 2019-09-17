@@ -11,6 +11,9 @@ import           Reanimate.Monad
 data World
 type ZIndex = Int
 
+(#) :: a -> (a -> b) -> b
+o # f = f o
+
 -- (seq duration, par duration)
 -- [(Time, Animation, ZIndex)]
 -- Map Time [(Animation, ZIndex)]
