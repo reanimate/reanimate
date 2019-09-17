@@ -58,6 +58,7 @@ animation source code, the browser window will automatically reload and show the
 
 The example gifs are displayed at 25 fps.
 
+![LaTeX wheel](gifs/latex_wheel.gif)
 ![Sunflower](gifs/sunflower.gif)
 ![Tangent](gifs/tangent.gif)
 ![Goo](gifs/goo.gif)
@@ -65,12 +66,5 @@ The example gifs are displayed at 25 fps.
 ![Bounding boxes](gifs/bbox.gif)
 ![Colorful LaTeX](gifs/latex_color.gif)
 ![Bezier curves](gifs/bezier.gif)
-![Sine wave](gifs/sinewave.gif)
-![Morphing wave](gifs/morphwave.gif)
-![Morphing wave to circle](gifs/morphwave_circle.gif)
-![Speed modification](gifs/progress.gif)
-![Highlight](gifs/highlight.gif)
-![Clipping](gifs/clip_rect.gif)
-![Scaling](gifs/scaling.gif)
 ![Valentine's Day](gifs/valentine.gif)
 ![Basic LaTeX](gifs/latex_basic.gif)
