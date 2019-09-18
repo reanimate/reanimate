@@ -14,7 +14,7 @@ import           Reanimate.Svg
 main :: IO ()
 main = reanimate $ mkAnimation 1 $ do
     emit $ mkBackground "black"
-    emit $ withStrokeWidth (Num 0.1) $
+    emit $
       withStrokeColor "white" $
       withSubglyphs [0] (withFillColor "blue") $
       withSubglyphs [1] (withFillColor "yellow") $
@@ -23,4 +23,4 @@ main = reanimate $ mkAnimation 1 $ do
       withSubglyphs [4] (withFillColor "darkslategrey") $
       svg
   where
-    svg = scale 10 $ center $ latex "\\LaTeX"
+    svg = withStrokeWidth (Num 0.01) $ scale 4 $ center $ latex "\\LaTeX"

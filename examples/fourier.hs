@@ -13,6 +13,7 @@ import           Reanimate.LaTeX  (latex)
 import           Reanimate.Monad
 import           Reanimate.Svg
 import           Reanimate.Signal
+import           Reanimate.Constants
 
 waveMultiplier :: Int
 -- waveMultiplier = 1 -- Sawtooth wave
@@ -29,30 +30,30 @@ main = reanimate $
   fourierAnimation 50 `before`
   fourierAnimation 100
 
-sWidth = 0.5
+sWidth = 0.02
 
 fourierAnimation :: Int -> Animation
 fourierAnimation nCircles = repeatAnimation 2 $ mkAnimation 3 $ do
     emit $ mkBackground "black"
     phi <- getSignal $ signalFromTo 0 (2*pi) signalLinear
-    mapF (translate (-100) 0) $ do
+    mapF (translate (-screenWidth/4) 0) $ do
       drawNCircles nCircles phi
       emit $ withStrokeColor "white" $
         withStrokeWidth (Num sWidth) $
         withFillOpacity 0 $
-        translate 80 0 $
+        translate (screenWidth/4) 0 $
         mkCirclePath nCircles phi
     emit $ withStrokeWidth (Num sWidth) $
       withFillColor "white" $
-      translate (-140) (-80) $
-      scale 2 $ latex $ T.pack $ "Circles: " ++ show nCircles
+      translate (-screenWidth/8*3) (screenHeight/8*3) $
+      latex $ T.pack $ "Circles: " ++ show nCircles
 
 drawNCircles totalCircles phi = do
     worker circles
     let x :+ y = sum circles
     emit $ withStrokeWidth (Num sWidth) $
       withStrokeColor "white" $
-      mkLine (Num x, Num y) (Num 80, Num y)
+      mkLine (Num x, Num y) (Num (screenWidth/4), Num y)
   where
     circles = [ nthCircle n phi | n <- [0..totalCircles-1] ]
     worker [] = return ()
@@ -70,7 +71,7 @@ drawNCircles totalCircles phi = do
         mkLine (Num 0, Num 0) (Num x, Num y)
 
 mkCirclePath nCircles phiOffset = mkLinePath $ take 2000 $
-    zip [ 50 * i/granularity | i <- [0..]]
+    zip [ 2 * i/granularity | i <- [0..]]
     $ drop (round $ (1-phiOffset/(2*pi)) * granularity) $
     cycle $ [ fourierYValue nCircles phi
     | x <- reverse [1..granularity]
@@ -88,4 +89,4 @@ nthCircle n phi = x :+ y
     n' = fromIntegral (n*waveMultiplier+1)
     x = cos (n'*phi) * radius
     y = sin (n'*phi) * radius
-    radius = 40 * (2 / (n'*pi))
+    radius = 2.5 * (2 / (n'*pi))

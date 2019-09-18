@@ -27,7 +27,8 @@ main :: IO ()
 main = reanimate $ mkAnimation 5 $ do
     s <- oscillate $ getSignal $ signalCurve 2
     emit $ mkBackground "black"
-    emit $ translate (-320/2) (-180/2) $ withStrokeColor "white" $
+    emit $ scale (2/50) $ scaleXY 1 (-1) $
+      translate (-320/2) (-180/2) $ withStrokeColor "white" $
       renderDiagram $
         withEnvelope (D.rect 320 180 :: SvgDiagram) $
         D.scale 50 $ D.translate (V2 (-2) (-0.75)) $ dia s
@@ -37,9 +38,9 @@ main = reanimate $ mkAnimation 5 $ do
         mconcat
           [ lc green $ rightAngleSquare
           , tangentLine
-          , baselineText "tangent" # D.translate tangentVector
+          , fc white $ baselineText "tangent" # D.translate tangentVector
           , normalLine
-          , topLeftText "normal" # D.translate (-normalVector)
+          , fc white $ topLeftText "normal" # D.translate (-normalVector)
           ] # moveTo pt # D.fontSize large
           <> strokeLocTrail spline
       where
