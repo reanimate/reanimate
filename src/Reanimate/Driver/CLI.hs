@@ -33,7 +33,7 @@ data Command
     }
    deriving (Show)
 
-data Preset = Youtube | ExampleGif | Quick
+data Preset = Youtube | ExampleGif | Quick | MediumQ | HighQ
   deriving (Show)
 
 readFormat :: String -> Maybe Format
@@ -55,12 +55,16 @@ readPreset preset =
     "youtube" -> Just Youtube
     "gif"     -> Just ExampleGif
     "quick"   -> Just Quick
+    "medium"  -> Just MediumQ
+    "high"    -> Just HighQ
     _         -> Nothing
 
 showPreset :: Preset -> String
 showPreset Youtube    = "youtube"
 showPreset ExampleGif = "gif"
 showPreset Quick      = "quick"
+showPreset MediumQ    = "medium"
+showPreset HighQ      = "high"
 
 options :: Parser Options
 options = Options <$> commandP
@@ -137,7 +141,7 @@ renderCommand = info (parse)
       <*> optional (option (maybeReader readPreset)
           (long "preset" <> showDefaultWith showPreset
           <> metavar "TYPE"
-          <> help "Parameter presets: youtube, gif, quick"))
+          <> help "Parameter presets: youtube, gif, quick, medium, high"))
 
 opts :: ParserInfo Options
 opts = info (options <**> helper )
