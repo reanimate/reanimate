@@ -24,6 +24,7 @@ mainScene :: Animation
 mainScene = sceneAnimation $ mdo
     play $ drawCircle
       # setDuration drawCircleT
+      # applyE (constE $ scaleXY (-1) 1)
     fork $ play $ drawCircle
       # freezeAtPercentage 1
       # setDuration rotDur
@@ -44,7 +45,6 @@ mainScene = sceneAnimation $ mdo
     play $ drawCircle
       # setDuration drawCircleT
       # reverseAnimation
-      # applyE (constE $ scaleXY (-1) 1)
     return ()
   where
     drawCircleT = 1
@@ -54,16 +54,16 @@ mainScene = sceneAnimation $ mdo
     svg = center $ latex "\\LaTeX"
     getNth n = snd (splitGlyphs [n] svg)
     svgs = [
-        scale 5 $
-        translate 0 (-tickLength*1.1) $
-        withStrokeWidth (Num 0.2) $
+        withStrokeWidth (Num 0.01) $ 
+        scale 2 $
+        translate 0 (tickLength*2) $
         withStrokeColor "white" $
         withFillColor "white" $
         center $ getNth n
       | n <- [0..4]]
 
-radius = 25
-tickLength = 5
+radius = 1.25
+tickLength = 0.25
 
 drawCircle :: Animation
 drawCircle = mkAnimation 1 $ do
@@ -71,19 +71,19 @@ drawCircle = mkAnimation 1 $ do
   emit $
     withFillOpacity 0 $
     withStrokeColor "white" $
-    rotate 90 $
+    rotate (-90) $
     partialSvg n circPath
   where
     circPath = pathify $ mkCircle (Num radius)
 
 drawTick :: Animation
-drawTick = drawSVG $ mkLine (Num 0, Num 0) (Num 0, Num $ -tickLength)
+drawTick = drawSVG $ mkLine (Num 0, Num 0) (Num 0, Num $ tickLength)
 
 drawSVG :: Tree -> Animation
 drawSVG t = mkAnimation 1 $ do
   n <- getSignal signalLinear
   emit $
     withStrokeColor "white" $
-    rotate (-n*360) $
-    translate 0 (-radius) $
+    rotate (n*360) $
+    translate 0 radius $
     t

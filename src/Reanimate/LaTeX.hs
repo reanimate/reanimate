@@ -26,6 +26,8 @@ xelatex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) xelatexToSVG)
 latexAlign :: Text -> Tree
 latexAlign tex = latex $ T.unlines ["\\begin{align*}", tex, "\\end{align*}"]
 
+postprocess :: Tree -> Tree
+postprocess = lowerTransformations . scaleXY 1 (-1) . scale 0.1 . pathify
 
 latexToSVG :: Text -> IO Tree
 latexToSVG tex = handle (\(_::SomeException) -> return (failedSvg tex)) $ do
@@ -46,7 +48,7 @@ latexToSVG tex = handle (\(_::SomeException) -> return (failedSvg tex)) $ do
     svg_data <- B.readFile svg_file
     case parseSvgFile svg_file svg_data of
       Nothing  -> error "Malformed svg"
-      Just svg -> return $ unbox $ replaceUses svg
+      Just svg -> return $ postprocess $ unbox $ replaceUses svg
 
 xelatexToSVG :: Text -> IO Tree
 xelatexToSVG tex = handle (\(_::SomeException) -> return (failedSvg tex)) $ do
@@ -68,7 +70,7 @@ xelatexToSVG tex = handle (\(_::SomeException) -> return (failedSvg tex)) $ do
     svg_data <- B.readFile svg_file
     case parseSvgFile svg_file svg_data of
       Nothing  -> error "Malformed svg"
-      Just svg -> return $ unbox $ replaceUses svg
+      Just svg -> return $ postprocess $ unbox $ replaceUses svg
 
 failedSvg :: Text -> Tree
 failedSvg _tex = defaultSvg
