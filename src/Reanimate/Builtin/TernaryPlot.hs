@@ -11,15 +11,14 @@ type ACoord = Double
 type BCoord = Double
 type CCoord = Double
 
--- Creates a centered ternary plot with a width of 100.
+-- Creates a centered ternary plot with a width of 5.
 raster :: Int -> (ACoord -> BCoord -> CCoord -> PixelRGBA8) -> Tree
 raster density fn =
-    scaleXY 1 (-1) $
     translate (-cX*stdWidth) (-cY*stdWidth) $
     scaleToWidth stdWidth $
     embedImage $ generateImage gen density height
   where
-    stdWidth = 100
+    stdWidth = 5
     (cX, cY) = toCartesianCoords (1/3) (1/3)
     height = round (fromIntegral density * (sqrt 3 / 2) :: Double)
     gen x y =

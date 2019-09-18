@@ -467,6 +467,13 @@ scaleToHeight h t =
 scaleXY :: Double -> Double -> Tree -> Tree
 scaleXY x y = withTransformations [Scale x (Just y)]
 
+flipXAxis :: Tree -> Tree
+flipXAxis = scaleXY (-1) 1
+
+flipYAxis :: Tree -> Tree
+flipYAxis = scaleXY 1 (-1)
+
+
 -- scalePoints :: Double -> Tree -> Tree
 -- scalePoints a = scalePointsXY a a
 --
