@@ -46,6 +46,6 @@ mkPovrayImage args script = cacheDiskKey key $ do
         png <- B.readFile out
         case decodePng png of
           Left{}    -> error "bad image"
-          Right img -> return $ center $ scaleToSize 320 180 $ embedDynamicImage img
+          Right img -> return $ center $ scaleToSize 16 9 $ embedDynamicImage img
   where
     key = T.concat (script:map T.pack args)

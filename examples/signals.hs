@@ -16,6 +16,9 @@ import           Reanimate.Monad
 import           Reanimate.Svg
 import           Reanimate.Signal
 
+screenWidth = 16
+screenHeight = 9
+
 main :: IO ()
 main = reanimate $ pauseAtEnd 5 $
     curvesExample (\_ -> ([], "[]"))
@@ -46,36 +49,39 @@ main = reanimate $ pauseAtEnd 5 $
   where
     showFloat s = pack (showFFloat (Just 2) s "")
 
+convertX x = x*(screenWidth/320)
+convertY y = y*(screenHeight/180)
+
 curvesExample :: (Double -> ([(Double, Double -> Double)], Text)) -> Animation
 curvesExample gen = mkAnimation 2 $ do
     emit $ mkBackground "black"
     emit $ withFillColor "white" $
-      translate 0 (-70) $
-      scale 2 $ center $ latex "Signals"
+      translate 0 (screenHeight*0.35) $
+      center $ latex "Signals"
     s <- getSignal signalLinear
     let (curveFns, name) = gen s
     emit $
         center $
         mkGroup
-        [ withStrokeColor "white" $ withStrokeWidth (Num 0.5) $
+        [ withStrokeColor "white" $ withStrokeWidth (Num 0.01) $
           mkGroup
           [ mkLine (Num 0, Num 0)
-                   (Num 200, Num 0)
+                   (Num $ convertX 200, Num 0)
           , mkLine (Num $ 0, Num 0)
-                   (Num $ 0, Num $ -50) ]
-        , withStrokeColor "white" $ withStrokeWidth (Num 0.1) $
+                   (Num $ 0, Num $ convertY 50) ]
+        , withStrokeColor "white" $ withStrokeWidth (Num 0.01) $
           mkGroup
-          [ mkLine (Num 0, Num $ -y)
-                   (Num 200, Num $ -y)
+          [ mkLine (Num 0, Num $ convertX $ y)
+                   (Num $ convertX 200, Num $ convertX y)
           | y <- [10,20,30,40,50] ]
         , withFillColor "white" $
           mkGroup
-            [ translate (-5) 5     $ center $ latex "0"
-            , translate (-5) (-50) $ center $ latex "1"
-            , translate (205) 5    $ center $ latex "1"
-            , translate 100 20     $ center $ latex name ]
-        , withFillOpacity 0 $ withStrokeColor "green" $ withStrokeWidth (Num 0.5) $
-          lowerTransformations $ scaleXY 200 (-50) $ mkSignalLine (signalFromList curveFns)
+            [ translate (convertX $ -5) (convertX $ -5)  $ scale 0.5 $ center $ latex "0"
+            , translate (convertX $ -5) (convertX $ 50)  $ scale 0.5 $ center $ latex "1"
+            , translate (convertX $ 205) (convertX $ -5) $ scale 0.5 $ center $ latex "1"
+            , translate (convertX $ 100) (convertX $ -30)$ scale 0.6 $ center $ latex name ]
+        , withFillOpacity 0 $ withStrokeColor "green" $ -- withStrokeWidth (Num 0.5) $
+          lowerTransformations $ scaleXY (convertX $ 200) (convertX $ (50)) $ mkSignalLine (signalFromList curveFns)
         ]
 
 mkSignalLine :: Signal -> Tree

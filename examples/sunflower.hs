@@ -22,6 +22,8 @@ import           Reanimate.Monad
 import           Reanimate.Signal
 import           Reanimate.Svg
 
+screenWidth = 16
+screenHeight = 9
 
 main :: IO ()
 main = reanimate $ mkAnimation 10 $ do
@@ -33,7 +35,7 @@ main = reanimate $ mkAnimation 10 $ do
   where
     cached = [ dSvg n | n <- [0..]]
     dSvg n = renderDiagram $ withEnvelope (D.rect 320 180 :: SvgDiagram) $
-      D.scale 5 $ sunflower n
+      D.scale 0.2 $ sunflower n
 
     mkCoords :: [P2 Double]
     mkCoords =[coord (fromIntegral i) | i <- [1..]]
