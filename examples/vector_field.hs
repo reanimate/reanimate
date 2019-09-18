@@ -28,7 +28,7 @@ main :: IO ()
 main = reanimate $ repeatAnimation 5 $ mkAnimation 5 $ do
     s <- getSignal signalLinear
     emit $ mkBackground "black"
-    emit $ center $ -- translate (-320/2) (-180/2) $
+    emit $ scale (2/50) $ center $ -- translate (-320/2) (-180/2) $
       withStrokeColor "white" $
       renderDiagram $
         withEnvelope (D.rect 320 180 :: SvgDiagram) $

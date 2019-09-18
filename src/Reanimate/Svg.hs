@@ -392,7 +392,7 @@ lowerTransformations = worker Transform.identity
         GroupTree g -> GroupTree $
           g & groupChildren %~ map (worker m')
             & transform .~ Nothing
-        _ -> t
+        _ -> mkGroup [t] & transform .~ Just [ Transform.toTransformation m ]
 
 lowerIds :: Tree -> Tree
 lowerIds = mapTree worker

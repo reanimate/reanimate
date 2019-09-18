@@ -96,8 +96,7 @@ slaveHandler conn self =
     case ret of
       Left err ->
         sendTextData conn $ T.pack $ "Error" ++ unlines (drop 3 (lines err))
-      Right{} -> do
-        getFrame <- runCmdLazy tmpExecutable ["raw", "+RTS", "-N", "-M1G", "-RTS"]
+      Right{} -> runCmdLazy tmpExecutable execOpts $ \getFrame -> do
         (frameCount,_) <- expectFrame =<< getFrame
         sendTextData conn (T.pack $ show frameCount)
         fix $ \loop -> do
@@ -106,6 +105,7 @@ slaveHandler conn self =
           sendTextData conn frame
           loop
   where
+    execOpts = ["raw", "+RTS", "-N", "-M1G", "-RTS"]
     expectFrame :: Either String Text -> IO (Integer, Text)
     expectFrame (Left "") = do
       sendTextData conn (T.pack "Done")

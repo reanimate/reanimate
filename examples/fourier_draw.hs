@@ -15,20 +15,21 @@ import           Reanimate.LaTeX
 import           Reanimate.Monad
 import           Reanimate.Svg
 import           Reanimate.Signal
+import           Reanimate.Constants
 
 main :: IO ()
 main = reanimate $ pauseAtEnd 2 $
   fourierAnimation_
 
 sWidth :: Double
-sWidth = 0.5
+sWidth = 0.02
 
 piFourier :: Fourier
 piFourier = mkFourier piPoints
 
 piPoints :: [RPoint]
 piPoints = lineToPoints 500 $
-  toLineCommands $ extractPath $ scale 30 $ center $ latexAlign "\\pi"
+  toLineCommands $ extractPath $ scale 10 $ center $ latexAlign "\\pi"
 
 
 fourierAnimation_ :: Animation
@@ -40,14 +41,14 @@ fourierAnimation_ = mkAnimation 50 $ do
     let circles = setFourierLength (fLength*maxLength) piFourier
         maxLength = sum $ map magnitude $ take 499 $ drop 1 $ fourierCoefficients piFourier
 
-    emit $ withStrokeWidth (Num 1) $ withStrokeColor "green" $
+    emit $ withStrokeColor "green" $
       mkLinePath $ mkFourierOutline circles
     drawCircles $ fourierCoefficients $ rotateFourier phi circles
 
-    emit $ withStrokeWidth (Num sWidth) $
+    emit $
       withFillColor "white" $
-      translate (-140) (-80) $
-      scale 2 $ latex $ T.pack $ "Circles: " ++ show (length $ fourierCoefficients circles)
+      translate (-screenWidth/16*7) (screenHeight/16*7) $
+      latex $ T.pack $ "Circles: " ++ show (length $ fourierCoefficients circles)
 
 data Fourier = Fourier {fourierCoefficients :: [Complex Double]}
 
@@ -112,7 +113,8 @@ drawCircles circles = do
     worker [] = return ()
     worker (x :+ y : rest) = do
       let radius = sqrt(x*x+y*y)
-      emit $ withStrokeWidth (Num 0.2) $
+      emit $
+        withStrokeWidth (Num sWidth) $
         withStrokeColor "dimgrey" $
         withFillOpacity 0 $
         CircleTree $ defaultSvg
