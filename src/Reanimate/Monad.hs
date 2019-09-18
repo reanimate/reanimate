@@ -92,13 +92,13 @@ renderSvg :: Maybe Number -> Maybe Number -> Tree -> String
 renderSvg w h t = ppDocument doc
 -- renderSvg w h t = ppFastElement (xmlOfDocument doc)
   where
-    width = 320
-    height = width / (16/9)
+    width = 16
+    height = 9
     doc = Document
       { _viewBox = Just (-width/2, -height/2, width, height)
       , _width = w
       , _height = h
-      , _elements = [t]
+      , _elements = [withStrokeWidth (Num 0.05) $ scaleXY 1 (-1) t]
       , _definitions = M.empty
       , _description = ""
       , _documentLocation = ""

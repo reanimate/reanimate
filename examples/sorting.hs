@@ -25,6 +25,7 @@ import qualified Data.Vector.Unboxed         as V
 import           Debug.Trace
 import           System.Random
 import           System.Random.Shuffle
+import           Reanimate.Constants
 
 main :: IO ()
 main = reanimate $
@@ -44,18 +45,22 @@ demonstrateAlgorithm name algo = mkAnimation 10 $ do
           where
             num = (sortedDat !! y) V.! x
         sortedDat = runSort' seed algo width
-        width = 1024
+        -- width = 1024
+        width = 500
         height = length sortedDat
     emit $ mkGroup
       [ mkBackground "black"
 
-      , translate 0 (10) $ center $ scaleToSize 150 150 $ embedImage img
-      , translate 0 (-75) $ withFillColor "white" $ scale 1.5 $ center $
+      , translate 0 (-screenWidth*0.03) $ center $ scaleXY (-1) 1 $
+        scaleToSize 7.5 7.5 $ embedImage img
+      , translate 0 (screenWidth*0.24) $ withFillColor "white" $ scale 1 $ center $
         latex name
-      , withFillColor "white" $ translate (-85) 10 $ rotate 90 $ center $
+      , withFillColor "white" $
+        translate (-screenWidth*0.26) (-screenHeight*0.05) $
+        rotate (-90) $ scale 0.5 $ center $
         latex "$Time \\rightarrow$"
-      , withFillColor "white" $ translate (90) 10 $
-        mkCircle (Num $ (1-s)*10)
+      , withFillColor "white" $ translate ((screenWidth*0.30)) 0 $
+        mkCircle (Num $ (1-s)*0.5)
       ]
   where
 
