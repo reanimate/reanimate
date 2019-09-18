@@ -29,7 +29,7 @@ for e in $EXAMPLES; do
 </details>
 <br/>
 <video width="$WIDTH" height="$HEIGHT" autoplay loop>
-  <source src="/rendered/$e.mp4">
+  <source src="https://github.com/Lemmih/reanimate/raw/docs/docs/rendered/$e.mp4">
 </video>
 
 <br/><hr><br/>
