@@ -1,8 +1,4 @@
-{-# LANGUAGE FlexibleContexts          #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE OverloadedStrings         #-}
-{-# LANGUAGE PackageImports            #-}
-{-# LANGUAGE TypeFamilies              #-}
 module Reanimate.Diagrams
   ( renderDiagram
   , SvgDiagram
@@ -10,18 +6,11 @@ module Reanimate.Diagrams
 
 import qualified Data.ByteString.Lazy  as BL
 import qualified Diagrams.Backend.SVG  as D
-import qualified Diagrams.Core.Compile as D
 import qualified Diagrams.Core.Types   as D
-import qualified Diagrams.Size         as D
-import           Graphics.SvgTree      (Document (..), Tree (..), defaultSvg,
-                                        elements, loadSvgFile, parseSvgFile,
-                                        xmlOfDocument)
-import qualified Graphics.Svg.Core as Svg
-import           Linear.V2
-import           Reanimate.Svg         (unbox)
-
 import           Diagrams.Prelude
-import qualified Diagrams.Prelude      as D
+import qualified Graphics.Svg.Core     as Svg
+import           Graphics.SvgTree      (Tree (..), parseSvgFile)
+import           Reanimate.Svg         (unbox)
 
 renderDiagram :: SvgDiagram -> Tree
 renderDiagram d =

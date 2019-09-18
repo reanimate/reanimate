@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 module Reanimate.Povray
   ( povray
   , povrayQuick
@@ -7,33 +6,18 @@ module Reanimate.Povray
   ) where
 
 import           Codec.Picture.Png
-import           Control.Exception     (SomeException, handle)
-import qualified Data.ByteString       as B
-import qualified Data.ByteString.Lazy  as BL
-import           Data.IORef
-import           Data.Map              (Map)
-import qualified Data.Map              as Map
-import           Data.Monoid
-import           Reanimate.Cache
+import qualified Data.ByteString   as B
+import           Data.Text         (Text)
+import qualified Data.Text         as T
+import qualified Data.Text.IO      as T
+import           Graphics.SvgTree  (Tree (..))
 import           Reanimate.Cache
 import           Reanimate.Memo
 import           Reanimate.Misc
 import           Reanimate.Raster
 import           Reanimate.Svg
-import           System.IO
-
-import           System.FilePath       (replaceExtension, takeFileName, (</>))
-import           System.IO.Unsafe      (unsafePerformIO)
-
-import           Control.Lens          (over, set, (%~), (&), (.~), (^.))
-import           Data.Text             (Text)
-import qualified Data.Text             as T
-import qualified Data.Text.IO          as T
-import           Graphics.SvgTree      (Document (..), Tree (..), defaultSvg,
-                                        elements, loadSvgFile, parseSvgFile,
-                                        xmlOfDocument)
-import           Text.XML.Light        (elContent)
-import           Text.XML.Light.Output (ppcContent, ppcElement, prettyConfigPP)
+import           System.FilePath   (replaceExtension)
+import           System.IO.Unsafe  (unsafePerformIO)
 
 povrayRaw :: [String] -> Text -> Tree
 povrayRaw args script =
@@ -51,11 +35,11 @@ povraySlow args = povrayRaw (["+H1440","+W2560", "+A"] ++ args)
 
 mkPovrayImage :: [String] -> Text -> IO Tree
 mkPovrayImage args script = cacheDiskKey key $ do
-  povray <- requireExecutable "povray"
+  exec <- requireExecutable "povray"
   withTempFile "pov" $ \pov_file -> do
     let out = replaceExtension pov_file "png"
     T.writeFile pov_file script
-    ret <- runCmd_ povray (args ++ ["-D","+UA", pov_file, "+o"++out])
+    ret <- runCmd_ exec (args ++ ["-D","+UA", pov_file, "+o"++out])
     case ret of
       Left{} -> error "povray went wrong"
       Right{} -> do

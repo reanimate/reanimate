@@ -1,27 +1,25 @@
 {-# LANGUAGE LambdaCase #-}
 module Reanimate.Svg where
 
-import           Codec.Picture               (PixelRGBA8 (..))
-import           Codec.Picture.Types         ()
+import           Codec.Picture                (PixelRGBA8 (..))
+import           Codec.Picture.Types          ()
 import           Control.Arrow
-import           Control.Lens                (over, set, (%~), (&), (.~), (^.))
+import           Control.Lens                 (set, (%~), (&), (.~), (^.))
 import           Control.Monad.Fix
 import           Control.Monad.State
-import           Data.Attoparsec.Text        (parseOnly)
+import           Data.Attoparsec.Text         (parseOnly)
 import           Data.List
-import qualified Data.Map                    as Map
-import           Data.Maybe
-import qualified Data.Text                   as T
-import qualified Geom2D.CubicBezier          as Bezier
-import           Graphics.SvgTree
+import qualified Data.Map                     as Map
+import qualified Data.Text                    as T
+import           Graphics.SvgTree             hiding (height, line, path, use,
+                                               width)
+import           Graphics.SvgTree.NamedColors
 import           Graphics.SvgTree.PathParser
 import           Linear.Metric
-import           Linear.V2
+import           Linear.V2                    hiding (angle)
 import           Linear.Vector
-import           Reanimate.Svg.NamedColors
-import qualified Reanimate.Transform         as Transform
-
-import           Debug.Trace
+import qualified Reanimate.Transform          as Transform
+-- import qualified Geom2D.CubicBezier           as Bezier
 
 defaultDPI :: Dpi
 defaultDPI = 96
@@ -31,7 +29,7 @@ replaceUses doc = doc & elements %~ map (mapTree replace)
                       & definitions .~ Map.empty
   where
     replaceDefinition PathTree{} = None
-    replaceDefinition t = t
+    replaceDefinition t          = t
 
     replace t@DefinitionTree{} = mapTree replaceDefinition t
     replace (UseTree _ Just{}) = error "replaceUses: subtree in use?"
@@ -93,6 +91,7 @@ lineToPath = map worker
     worker (LineBezier [a,b,c]) = CurveTo OriginAbsolute [(a,b,c)]
     worker (LineBezier [a,b])   = QuadraticBezier OriginAbsolute [(a,b)]
     worker (LineBezier [a])     = LineTo OriginAbsolute [a]
+    worker LineBezier{}         = error "Reanimate.Svg.lineToPath: invalid bezier curve"
     worker LineEnd              = EndPath
 
 lineToPoints :: Int -> [LineCommand] -> [RPoint]
@@ -100,15 +99,14 @@ lineToPoints nPoints cmds =
     map lineEnd lineSegments
   where
     lineSegments = [ partialLine (fromIntegral n/ fromIntegral nPoints) cmds | n <- [0 .. nPoints-1] ]
-    totalLen = evalState (sum <$> mapM lineLength cmds) zero
-    lineEnd [LineBezier bezier] = last bezier
-    lineEnd (_:xs) = lineEnd xs
-    lineEnd _ = error "invalid line"
+    lineEnd [LineBezier pts] = last pts
+    lineEnd (_:xs)           = lineEnd xs
+    lineEnd _                = error "invalid line"
 
 partialLine :: Double -> [LineCommand] -> [LineCommand]
 partialLine alpha cmds = evalState (worker 0 cmds) zero
   where
-    worker d [] = pure []
+    worker _d [] = pure []
     worker d (cmd:xs) = do
       from <- get
       len <- lineLength cmd
@@ -138,7 +136,7 @@ lineLength cmd =
 toLineCommands :: [PathCommand] -> [LineCommand]
 toLineCommands ps = evalState (worker zero Nothing ps) zero
   where
-    worker startPos mbPrevControlPt [] = pure []
+    worker _startPos _mbPrevControlPt [] = pure []
     worker startPos mbPrevControlPt (cmd:cmds) = do
       lcmds <- toLineCommand startPos mbPrevControlPt cmd
       let startPos' =
@@ -147,9 +145,11 @@ toLineCommands ps = evalState (worker zero Nothing ps) zero
               _              -> startPos
       (lcmds++) <$> worker startPos' (cmdToControlPoint $ last lcmds) cmds
 
+cmdToControlPoint :: LineCommand -> Maybe RPoint
 cmdToControlPoint (LineBezier points) = Just (last (init points))
 cmdToControlPoint _                   = Nothing
 
+mkStraightLine :: RPoint -> LineCommand
 mkStraightLine p = LineBezier [p]
 
 toLineCommand :: RPoint -> Maybe RPoint -> PathCommand -> CmdM [LineCommand]
@@ -201,8 +201,8 @@ toLineCommand startPos mbPrevControlPt cmd = do
     mirrorPoint c p = c*2-p
     adjustPosition OriginRelative p = modify (+p)
     adjustPosition OriginAbsolute p = put p
-    makeAbsolute OriginAbsolute from p = p
-    makeAbsolute OriginRelative from p = from+p
+    makeAbsolute OriginAbsolute _from p = p
+    makeAbsolute OriginRelative from p  = from+p
 
 
 calculateVectorAngle :: Double -> Double -> Double -> Double -> Double
@@ -285,9 +285,9 @@ convertSvgArc (V2 x0 y0) radiusX radiusY angle largeArcFlag sweepFlag (V2 x y)
 bezier :: [RPoint] -> Double -> RPoint
 bezier points t = sum
     [ point ^* (((1-t)**(fromIntegral $ n-k)) * (t**fromIntegral k) * fromIntegral (choose n k))
-    | (k, point) <- zip [0..] points ]
+    | (k, point) <- zip [0..] points
+    , let n = length points-1 ]
   where
-    n = length points -1
     choose n k = product [n,n-1 .. n-k+1] `div` product [1..k]
 
 partial_bezier_points :: [RPoint] -> Double -> Double -> [RPoint]
@@ -325,7 +325,7 @@ boundingBox t =
 linePoints :: [LineCommand] -> [RPoint]
 linePoints = worker zero
   where
-    worker from [] = []
+    worker _from [] = []
     worker from (x:xs) =
       case x of
         LineMove to     -> worker to xs
@@ -364,22 +364,24 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
             [V2 x y, V2 (x+w) (y+h)]
           _ -> []
       MeshGradientTree{} -> []
+      _ -> []
   where
     m = Transform.mkMatrix (t^.transform)
     mapTuple f = f *** f
     pointToRPoint p =
       case mapTuple (toUserUnit defaultDPI) p of
         (Num x, Num y) -> (V2 x y)
+        _ -> error "Reanimate.Svg.svgBoundingPoints: Unrecognized number format."
 
 lowerTransformations :: Tree -> Tree
 lowerTransformations = worker Transform.identity
   where
     updLineCmd m cmd =
       case cmd of
-        LineMove p -> LineMove $ Transform.transformPoint m p
+        LineMove p    -> LineMove $ Transform.transformPoint m p
         -- LineDraw p -> LineDraw $ Transform.transformPoint m p
         LineBezier ps -> LineBezier $ map (Transform.transformPoint m) ps
-        LineEnd -> LineEnd
+        LineEnd       -> LineEnd
     updPath m = lineToPath . map (updLineCmd m) . toLineCommands
     worker m t =
       let m' = m * Transform.mkMatrix (t^.transform) in
@@ -396,15 +398,15 @@ lowerIds :: Tree -> Tree
 lowerIds = mapTree worker
   where
     worker t@GroupTree{} = t & attrId .~ Nothing
-    worker t@PathTree{} = t & attrId .~ Nothing
-    worker t = t
+    worker t@PathTree{}  = t & attrId .~ Nothing
+    worker t             = t
 
 simplify :: Tree -> Tree
 simplify root =
   case worker root of
-    [] -> None
+    []  -> None
     [x] -> x
-    xs -> mkGroup xs
+    xs  -> mkGroup xs
   where
     worker None = []
     worker (DefinitionTree d)
@@ -419,8 +421,8 @@ extractPath :: Tree -> [PathCommand]
 extractPath = worker . simplify . lowerTransformations . pathify
   where
     worker (GroupTree g) = concatMap worker (g^.groupChildren)
-    worker (PathTree p) = p^.pathDefinition
-    worker _ = []
+    worker (PathTree p)  = p^.pathDefinition
+    worker _             = []
 
 withTransformations :: [Transformation] -> Tree -> Tree
 withTransformations transformations t =
@@ -449,6 +451,18 @@ scaleToSize w h t =
     scaleXY (w/w') (h/h') t
   where
     (_x, _y, w', h') = boundingBox t
+
+scaleToWidth :: Double -> Tree -> Tree
+scaleToWidth w t =
+    scale (w/w') t
+  where
+    (_x, _y, w', _h') = boundingBox t
+
+scaleToHeight :: Double -> Tree -> Tree
+scaleToHeight h t =
+    scale (h/h') t
+  where
+    (_x, _y, _w', h') = boundingBox t
 
 scaleXY :: Double -> Double -> Tree -> Tree
 scaleXY x y = withTransformations [Scale x (Just y)]
@@ -490,16 +504,16 @@ center t = translate (-x-w/2) (-y-h/2) t
 centerX :: Tree -> Tree
 centerX t = translate (-x-w/2) 0 t
   where
-    (x, y, w, h) = boundingBox t
+    (x, _y, w, _h) = boundingBox t
 
 centerY :: Tree -> Tree
 centerY t = translate 0 (-y-h/2) t
   where
-    (x, y, w, h) = boundingBox t
+    (_x, y, _w, h) = boundingBox t
 
 mkColor :: String -> Texture
 mkColor name =
-  case Map.lookup name svgNamedColors of
+  case Map.lookup (T.pack name) svgNamedColors of
     Nothing -> ColorRef (PixelRGBA8 240 248 255 255)
     Just c  -> ColorRef c
 
@@ -507,7 +521,7 @@ withStrokeColor :: String -> Tree -> Tree
 withStrokeColor color = strokeColor .~ pure (mkColor color)
 
 withStrokeLineJoin :: LineJoin -> Tree -> Tree
-withStrokeLineJoin join = strokeLineJoin .~ pure join
+withStrokeLineJoin ljoin = strokeLineJoin .~ pure ljoin
 
 withFillColor :: String -> Tree -> Tree
 withFillColor color = fillColor .~ pure (mkColor color)
@@ -594,7 +608,7 @@ mkBackgroundPixel pixel =
     withFillColorPixel pixel $ mkRect (Num 320) (Num 180)
 
 withSubglyphs :: [Int] -> (Tree -> Tree) -> Tree -> Tree
-withSubglyphs target fn t = evalState (worker t) 0
+withSubglyphs target fn = \t -> evalState (worker t) 0
   where
     worker :: Tree -> State Int Tree
     worker t =
@@ -611,11 +625,11 @@ withSubglyphs target fn t = evalState (worker t) 0
         RectangleTree{} -> handleGlyph t
         _ -> return t
     handleGlyph :: Tree -> State Int Tree
-    handleGlyph t = do
+    handleGlyph svg = do
       n <- get <* modify (+1)
       if n `elem` target
-        then return $ fn t
-        else return t
+        then return $ fn svg
+        else return svg
 
 splitGlyphs :: [Int] -> Tree -> (Tree, Tree)
 splitGlyphs target = \t ->
@@ -632,7 +646,7 @@ splitGlyphs target = \t ->
     worker acc t =
       case t of
         GroupTree g -> do
-          let acc' t = acc (GroupTree $ g & groupChildren .~ [t])
+          let acc' sub = acc (GroupTree $ g & groupChildren .~ [sub])
           mapM_ (worker acc') (g ^. groupChildren)
         PathTree{} -> handleGlyph $ acc t
         CircleTree{} -> handleGlyph $ acc t
@@ -642,7 +656,7 @@ splitGlyphs target = \t ->
         LineTree{} -> handleGlyph $ acc t
         RectangleTree{} -> handleGlyph $ acc t
         DefinitionTree{} -> return ()
-        t ->
+        _ ->
           modify $ \(n, l, r) -> (n, acc t:l, r)
 
 

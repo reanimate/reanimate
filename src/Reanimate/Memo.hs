@@ -1,20 +1,18 @@
-{-# LANGUAGE RankNTypes, ExistentialQuantification, BangPatterns #-}
+{-# LANGUAGE BangPatterns              #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE RankNTypes                #-}
 module Reanimate.Memo
   ( Key(..)
   , memo
   ) where
 
-import Control.Monad.ST
-import Data.STRef
-import System.Mem.StableName
-import Debug.Trace
-import System.IO.Unsafe
-import Control.Monad.ST.Unsafe
-import Data.IORef
-import qualified Data.Map as Map
-import Data.Dynamic
-import Data.Typeable
-import Data.Maybe
+import           Data.Dynamic
+import           Data.IORef
+import qualified Data.Map                as Map
+import           Data.Maybe
+import           Data.Typeable
+import           System.IO.Unsafe
+import           System.Mem.StableName
 
 data DynamicName = forall a. DynamicName !(StableName a) | forall a. (Eq a, Ord a, Typeable a) => DynamicKey a
 instance Eq DynamicName where
@@ -61,7 +59,7 @@ cacheMap = unsafePerformIO (newIORef emptyCacheMap)
 data Key = forall a. Key !a | forall a. (Typeable a, Eq a, Ord a) => KeyPrim !a
 
 fromKey :: Key -> IO DynamicName
-fromKey (Key val) = DynamicName <$> makeStableName val
+fromKey (Key val)     = DynamicName <$> makeStableName val
 fromKey (KeyPrim val) = pure (DynamicKey val)
 
 memo :: Typeable a => [Key] -> a -> a

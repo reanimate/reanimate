@@ -7,33 +7,21 @@
 {-# LANGUAGE TypeFamilies          #-}
 module Reanimate.Examples where
 
-import           Codec.Picture.Types
 import           Control.Lens                  ()
-import           Control.Monad
 import qualified Data.Map                      as M
-import           Data.Text                     (Text, pack)
-import           Graphics.SvgTree              as S
+import           Graphics.SvgTree              as S hiding (circle, width)
 import           Linear.V2
-import           Numeric
-import           Text.Printf
 
 import           Reanimate.Combinators
 import           Reanimate.Diagrams
 import           Reanimate.LaTeX
 import           Reanimate.Monad
-import           Reanimate.Svg
 import           Reanimate.Signal
+import           Reanimate.Svg
 
-import qualified Data.Colour.Palette.BrewerSet as D
-import qualified Diagrams.Backend.SVG          as D
-import           Diagrams.Prelude              hiding (Animation, boundingBox,
-                                                center, circle, duration,
-                                                fontSize, rotate, scale,
-                                                translate)
+import           Diagrams.Prelude              (deg, turn, withEnvelope, (@@))
 import qualified Diagrams.Prelude              as D
 import qualified Diagrams.TwoD.Path.LSystem    as D
-
-import           Debug.Trace
 
 {-
 sinewave :: Ani ()

@@ -33,12 +33,6 @@ animation source code, the browser window will automatically reload and show the
 
 # TODO
 
-* ~~website for live coding~~
-* ~~bounding boxes~~
-* ~~Use svg-tree instead of lucid-svg~~
-* ~~crossplatform file watching~~
-* ~~Consistent caching framework~~
-* ~~Support povray (together with here docs: https://github.com/tmhedberg/here)~~
 * Improve bounding box approximations
 * Alignment and positioning combinators
 * Figure out why performance doesn't scale linearly with more cores
@@ -48,21 +42,23 @@ animation source code, the browser window will automatically reload and show the
 * Warn if 'group' nodes are found in 'clippath's.
 * Optionally use gifski for high quality gifs: https://gif.ski/
 * Driver:
-   - ~~Command line options for rendering videos.~~
-   - ~~Generate interleaved frames (1fps, 2fps, 4fps, etc)~~
-   - ~~Command for validating tools: latex, dvisvgm, ffmpeg. Warn of old versions of ffmpeg that don't render SVGs correctly.~~
    - Flags for selecting fps in web viewer
-   - Use GHC.Environment to find own source code.
-   - Flag for generating youtube videos (ffmpeg options preset).
    - Detect if there's already an open browser window. If there is, don't open another one.
+   - Watch all code files in the same directory (and sub-directories) as the source code.
 * Viewer:
-   - ~~Fix race conditions.~~
    - Keys for pausing, moving frame-by-frame, resetting.
+* Documentation:
+   - Tutorials
+     - Coordinate system
+     - "Draw" effect
+     - Pixel perfect povray (orthographic projection)
+   - Gallery
 
 # Examples
 
 The example gifs are displayed at 25 fps.
 
+![LaTeX wheel](gifs/latex_wheel.gif)
 ![Sunflower](gifs/sunflower.gif)
 ![Tangent](gifs/tangent.gif)
 ![Goo](gifs/goo.gif)
@@ -70,12 +66,5 @@ The example gifs are displayed at 25 fps.
 ![Bounding boxes](gifs/bbox.gif)
 ![Colorful LaTeX](gifs/latex_color.gif)
 ![Bezier curves](gifs/bezier.gif)
-![Sine wave](gifs/sinewave.gif)
-![Morphing wave](gifs/morphwave.gif)
-![Morphing wave to circle](gifs/morphwave_circle.gif)
-![Speed modification](gifs/progress.gif)
-![Highlight](gifs/highlight.gif)
-![Clipping](gifs/clip_rect.gif)
-![Scaling](gifs/scaling.gif)
 ![Valentine's Day](gifs/valentine.gif)
 ![Basic LaTeX](gifs/latex_basic.gif)

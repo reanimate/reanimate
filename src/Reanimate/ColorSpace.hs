@@ -1,18 +1,18 @@
 module Reanimate.ColorSpace where
 
-import qualified Data.ByteString.Lazy as BS
+import qualified Data.ByteString.Lazy       as BS
+import           Data.Colour.CIE
+import           Data.Colour.CIE.Illuminant (d65)
 import           Data.Csv
-import           Data.Map             (Map)
-import qualified Data.Map             as Map
+import           Data.Map                   (Map)
+import qualified Data.Map                   as Map
 import           Data.Maybe
-import qualified Data.Vector          as V
-import Data.Colour.CIE
-import Data.Colour.CIE.Illuminant
+import qualified Data.Vector                as V
 import           Paths_reanimate
 import           System.IO.Unsafe
 
+import           Graphics.SvgTree           (Tree)
 import           Reanimate.Svg
-import           Graphics.SvgTree (Number(..), Tree)
 
 type Nanometer = Integer
 
@@ -30,7 +30,7 @@ renderXYZCoordinates =
   withFillOpacity 0 $
   mkLinePath $
   [ (x, 1-y)
-  | (ang, (x,y,_z)) <- Map.toList lightXYZCoordinates
+  | (_nm, (x,y,_z)) <- Map.toList lightXYZCoordinates
   ]
 
 lightLABCoordinates :: Map Nanometer (Double, Double, Double)
@@ -43,7 +43,7 @@ renderLABCoordinates =
   withFillOpacity 0 $
   mkLinePath $
   [ (a/350, (1-b)/150)
-  | (ang, (_l,a,b)) <- Map.toList lightLABCoordinates
+  | (_nm, (_l,a,b)) <- Map.toList lightLABCoordinates
   ]
 
 -- (Long, Medium, Short)
@@ -57,9 +57,9 @@ coneSensitivity = unsafePerformIO $ do
 
 renderSensitivity :: Tree
 renderSensitivity = mkGroup
-  [ withStrokeColor "blue"  $ draw (\(l,m,s) -> s)
-  , withStrokeColor "green" $ draw (\(l,m,s) -> m)
-  , withStrokeColor "red"   $ draw (\(l,m,s) -> l)
+  [ withStrokeColor "blue"  $ draw (\(_,_,s) -> s)
+  , withStrokeColor "green" $ draw (\(_,m,_) -> m)
+  , withStrokeColor "red"   $ draw (\(l,_,_) -> l)
   ]
   where
     draw fn = withFillOpacity 0 $ mkLinePath
