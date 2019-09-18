@@ -25,9 +25,7 @@ import qualified Data.Vector.Unboxed         as V
 import           Debug.Trace
 import           System.Random
 import           System.Random.Shuffle
-
-screenWidth = 16
-screenHeight = 9
+import           Reanimate.Constants
 
 main :: IO ()
 main = reanimate $

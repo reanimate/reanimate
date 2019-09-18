@@ -15,9 +15,7 @@ import           Reanimate.LaTeX
 import           Reanimate.Monad
 import           Reanimate.Svg
 import           Reanimate.Signal
-
-screenWidth = 16
-screenHeight = 9
+import           Reanimate.Constants
 
 main :: IO ()
 main = reanimate $ pauseAtEnd 2 $

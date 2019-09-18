@@ -22,9 +22,6 @@ import           Reanimate.Monad
 import           Reanimate.Signal
 import           Reanimate.Svg
 
-screenWidth = 16
-screenHeight = 9
-
 main :: IO ()
 main = reanimate $ mkAnimation 10 $ do
     n <- getSignal $ signalFromTo 1 500 signalLinear

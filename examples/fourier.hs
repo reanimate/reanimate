@@ -13,6 +13,7 @@ import           Reanimate.LaTeX  (latex)
 import           Reanimate.Monad
 import           Reanimate.Svg
 import           Reanimate.Signal
+import           Reanimate.Constants
 
 waveMultiplier :: Int
 -- waveMultiplier = 1 -- Sawtooth wave
@@ -30,9 +31,6 @@ main = reanimate $
   fourierAnimation 100
 
 sWidth = 0.02
-
-screenWidth = 16
-screenHeight = 9
 
 fourierAnimation :: Int -> Animation
 fourierAnimation nCircles = repeatAnimation 2 $ mkAnimation 3 $ do

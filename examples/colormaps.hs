@@ -20,14 +20,12 @@ import           Reanimate.Monad
 import           Reanimate.Raster
 import           Reanimate.Signal
 import           Reanimate.Svg
+import           Reanimate.Constants
 
 -- Cycle the animation if we want to upload it to youtube.
 youtube :: Animation -> Animation
 -- youtube = repeatAnimation 6
 youtube = id
-
-screenWidth = 16
-screenHeight = 9
 
 main :: IO ()
 main = reanimate $ youtube $ pauseAtEnd 2 $ autoReverse $ pauseAtEnd 2 $ mkAnimation 5 $ do

@@ -11,11 +11,10 @@ import           Reanimate.LaTeX
 import           Reanimate.Monad
 import           Reanimate.Svg
 import           Reanimate.Signal
+import           Reanimate.Constants
 
 main :: IO ()
 main = reanimate bbox
-
-screenWidth = 16
 
 bbox :: Animation
 bbox = bg `sim`
