@@ -21,6 +21,7 @@ import           Reanimate.Monad
 import           Reanimate.Raster
 import           Reanimate.Signal
 import           Reanimate.Svg
+import           Reanimate.Constants
 import qualified Reanimate.Builtin.TernaryPlot as Ternary
 
 labScaleX = 128
@@ -50,7 +51,7 @@ colorSpacesScene = mkAnimation 2 $ do
       --     center $
       --     scaleToWidth 100 $ img1
       --   ]
-      , translate (-60) 10 $ mkGroup
+      , translate (-screenWidth*0.2) 0 $ mkGroup
         [ -- withClipPathRef (Ref "sRGB") $
           --withClipPathRef (Ref "visible") $
           mkGroup [img1]
@@ -59,7 +60,7 @@ colorSpacesScene = mkAnimation 2 $ do
         , withStrokeColor "white" $
           obsColors
         ]
-      , translate (60) 10 $ mkGroup
+      , translate (screenWidth*0.2) 0 $ mkGroup
         [ -- withClipPathRef (Ref "sRGB") $
           withClipPathRef (Ref "sRGB") $
           mkGroup [img1]
@@ -99,8 +100,7 @@ colorSpacesScene = mkAnimation 2 $ do
     img2 = cieLABImage imgSize imgSize
     obsColors =
       lowerTransformations $
-      scaleXY 1 (-1) $
-      scale (100) $
+      scale 5 $
       renderXYZCoordinatesTernary
     labColors =
       lowerTransformations $
@@ -207,8 +207,7 @@ colorMapToXYZCoords colorMap = withFillOpacity 0 $ mkLinePath
 sRGBTriangle :: Tree
 sRGBTriangle =
     lowerTransformations $
-    scaleXY 1 (-1) $
-    scale 100 $
+    scale 5 $
     withFillOpacity 0 $
     mkClosedLinePath
     [ Ternary.toOffsetCartesianCoords rY rX
