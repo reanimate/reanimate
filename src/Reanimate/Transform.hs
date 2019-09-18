@@ -3,6 +3,7 @@ module Reanimate.Transform
   ( identity
   , transformPoint
   , mkMatrix
+  , toTransformation
   ) where
 
 -- XXX: Use Linear.Matrix instead of Data.Matrix to drop the 'matrix' dependency.
@@ -46,3 +47,8 @@ transformationMatrix transformation =
     translate x y = fromList [1,0,0,1,x,y]
     rotate a = fromList [cos r,sin r,-sin r,cos r,0,0]
       where r = a * pi / 180
+
+toTransformation :: TMatrix -> Transformation
+toTransformation m = TransformMatrix a b c d e f
+  where
+    [a,c,e,b,d,f,_,_,_] = M.toList m

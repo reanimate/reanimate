@@ -18,12 +18,12 @@ main = reanimate $
   where
     bg = mkAnimation 0 $ emit (mkBackground "black")
     msg = "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
-    glyphs = pathify $ center $ latexAlign msg
+    glyphs = withStrokeWidth (Num 0.01) $ center $ latexAlign msg
     fillText = mkAnimation 1 $ do
       s <- getSignal signalLinear
-      emit $ scale 5 $ withFillColor "white" $ withFillOpacity s glyphs
+      emit $ scale 2 $ withFillColor "white" $ withFillOpacity s glyphs
     drawText = mkAnimation 2 $ do
       s <- getSignal signalLinear
-      emit $ scale 5 $
-        withStrokeColor "white" $ withFillOpacity 0 $ withStrokeWidth (Num 0.1) $
+      emit $ scale 2 $
+        withStrokeColor "white" $ withFillOpacity 0 $
           partialSvg s glyphs
