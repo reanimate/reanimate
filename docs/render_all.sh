@@ -23,7 +23,7 @@ for e in $EXAMPLES; do
 
 <details>
   <summary>View $e.hs</summary>
-  <pre><code>
+  <pre><code class="haskell">
   {!examples/$e.hs!}
   </code></pre>
 </details>
