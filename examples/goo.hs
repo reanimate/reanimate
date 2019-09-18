@@ -44,7 +44,7 @@ main = reanimate $ autoReverse $ mkAnimation 5 $ do
       & filterX .~ pure (Percent (-1))
       & filterHeight .~ pure (Percent 3)
       & filterY .~ pure (Percent (-1))
-  emit $ translate 0 (-radius*2) $ withFillColor "red" $ mkGroup
+  emit $ translate 0 (radius*2.2) $ withFillColor "red" $ mkGroup
     [ translate (s*(-radius)) 0 circ
     , translate (s*radius) 0 circ
     ]
@@ -52,14 +52,14 @@ main = reanimate $ autoReverse $ mkAnimation 5 $ do
     [ translate (s*(-radius)) 0 circ
     , translate (s*radius) 0 circ
     ] & filterRef .~ pure (Ref "blur")
-  emit $ translate 0 (radius*2) $ withFillColor "red" $ mkGroup
+  emit $ translate 0 (-radius*2.2) $ withFillColor "red" $ mkGroup
     [ translate (s*(-radius)) 0 circ
     , translate (s*radius) 0 circ
     ] & filterRef .~ pure (Ref "goo")
   where
     sharpness = 10
-    dev = 5
-    radius = 25
+    dev = 0.2
+    radius = 1
     circ = mkCircle (Num radius)
 
 mkFilter :: String -> [FilterElement] -> Filter

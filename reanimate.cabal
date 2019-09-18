@@ -57,6 +57,7 @@ library
                       Reanimate.Scene
                       Reanimate.Povray
                       Reanimate.Effect
+                      Reanimate.Constants
   other-modules:      Reanimate.Cache
                       Reanimate.Driver.Check
                       Reanimate.Driver.CLI

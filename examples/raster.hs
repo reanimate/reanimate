@@ -19,7 +19,8 @@ main = reanimate $ mkAnimation 5 $ do
     s <- getSignal signalLinear
     emit $ mkGroup
       [ mkBackground "black"
-      , rotate (s*360) $ center $ scale 0.5 $ embedImage img ]
+      , rotate (s*360) $ center $ scaleToWidth 6 $ embedImage img
+      ]
   where
     img = generateImage pixelRenderer 255 255
     pixelRenderer x y = PixelRGB8 (fromIntegral x) (fromIntegral y) 128
