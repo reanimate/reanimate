@@ -17,21 +17,25 @@ presetFormat :: Preset -> Format
 presetFormat Youtube    = RenderMp4
 presetFormat ExampleGif = RenderGif
 presetFormat Quick      = RenderMp4
+presetFormat MediumQ    = RenderMp4
+presetFormat HighQ      = RenderMp4
 
 presetFPS :: Preset -> FPS
 presetFPS Youtube    = 60
 presetFPS ExampleGif = 24
 presetFPS Quick      = 15
+presetFPS MediumQ    = 30
+presetFPS HighQ      = 30
 
 presetWidth :: Preset -> Width
 presetWidth Youtube    = 2560
 presetWidth ExampleGif = 320
 presetWidth Quick      = 320
+presetWidth MediumQ    = 800
+presetWidth HighQ      = 1920
 
 presetHeight :: Preset -> Height
-presetHeight Youtube    = 1440
-presetHeight ExampleGif = 180
-presetHeight Quick      = 180
+presetHeight preset = presetWidth preset * 9 `div` 16
 
 formatFPS :: Format -> FPS
 formatFPS RenderMp4  = 60
