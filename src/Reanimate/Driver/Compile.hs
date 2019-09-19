@@ -11,13 +11,13 @@ compile opts = do
   self <- findOwnSource
   let selfDir = takeDirectory self
       selfName = takeBaseName self
-      outDir = selfDir </> ".reanimate"
+      outDir = selfDir </> ".reanimate" </> selfName
       target = outDir </> selfName
       ghcOptions =
           ["-rtsopts", "--make", "-threaded", "-O2"] ++
           ["-odir", outDir, "-hidir", outDir] ++
           [self, "-o", target]
-  createDirectoryIfMissing False outDir
+  createDirectoryIfMissing True outDir
   withCurrentDirectory selfDir $ do
     checkExitCode =<< rawSystem "stack" (["ghc", "--"] ++ ghcOptions)
     checkExitCode =<< rawSystem target opts
