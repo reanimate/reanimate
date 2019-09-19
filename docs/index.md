@@ -1,22 +1,24 @@
-# Welcome to MkDocs
+# Getting started
 
-For full documentation visit [mkdocs.org](https://mkdocs.org).
+## Viewing a basic animation
 
-## Commands
+```console
+$ git clone https://github.com/Lemmih/reanimate.git
+$ cd reanimate/
+$ stack build
+$ stack ./examples/raster.hs
+```
 
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs help` - Print this help message.
+## Checking dependencies
 
-## Project layout
+Reanimate includes a run-time for optional dependencies.
 
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files.
+```console
+$ stack ./examples/raster.hs check
+```
 
+## Rendering movies
 
-```haskell
-{!examples/latex_color.hs!}
+```console
+$ stack ./examples/raster.hs render
 ```
