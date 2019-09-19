@@ -11,6 +11,7 @@ import           Reanimate.Monad          (Animation)
 import           Reanimate.Render         (FPS, Format (..), Height, Width,
                                            render, renderSnippets, renderSvgs)
 import           System.FilePath
+import           System.Directory
 import           Text.Printf
 
 presetFormat :: Preset -> Format
@@ -79,7 +80,7 @@ reanimate animation = do
             RenderMp4  -> replaceExtension self "mp4"
             RenderGif  -> replaceExtension self "gif"
             RenderWebm -> replaceExtension self "webm"
-        Just target -> pure target
+        Just target -> makeAbsolute target
 
       let fps = guessParameter renderFPS (fmap presetFPS renderPreset) $
                 (formatFPS fmt)
