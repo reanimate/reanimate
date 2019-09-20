@@ -1,7 +1,7 @@
 module Reanimate.Builtin.TernaryPlot where
 
 import           Codec.Picture
-import           Graphics.SvgTree (Tree)
+import           Graphics.SvgTree (Tree, Number(..))
 import           Reanimate.Raster
 import           Reanimate.Svg
 
@@ -14,8 +14,11 @@ type CCoord = Double
 -- Creates a centered ternary plot with a width of 5.
 raster :: Int -> (ACoord -> BCoord -> CCoord -> PixelRGBA8) -> Tree
 raster density fn =
-    translate (-cX*stdWidth) (-cY*stdWidth) $
     scaleToWidth stdWidth $
+    translate (-cX) (-cY) $
+    scaleToWidth 1 $
+    flipYAxis $
+    translate (fromIntegral density/2) (-fromIntegral height/2) $
     embedImage $ generateImage gen density height
   where
     stdWidth = 5

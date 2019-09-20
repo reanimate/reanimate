@@ -115,6 +115,9 @@ mapF fn frame = Frame $ \d t -> do
 pauseAtEnd :: Double -> Animation -> Animation
 pauseAtEnd p a = a `andThen` pause p
 
+pauseUntil :: Double -> Animation -> Animation
+pauseUntil p a = a `andThen` pause (p - duration a)
+
 pauseAtBeginning :: Double -> Animation -> Animation
 pauseAtBeginning d1 a =
     Animation d1 (freezeFrame 0 a) `before` a

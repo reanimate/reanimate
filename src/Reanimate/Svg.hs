@@ -322,6 +322,16 @@ boundingBox t =
     worker (minx, miny, maxx, maxy) (V2 x y) =
       (min minx x, min miny y, max maxx x, max maxy y)
 
+svgHeight :: Tree -> Double
+svgHeight t = h
+  where
+    (_x,_y,_w,h) = boundingBox t
+
+svgWidth :: Tree -> Double
+svgWidth t = w
+  where
+    (_x,_y,w,_h) = boundingBox t
+
 linePoints :: [LineCommand] -> [RPoint]
 linePoints = worker zero
   where
@@ -597,7 +607,10 @@ mkPathText :: T.Text -> Tree
 mkPathText str =
   case parseOnly pathParser str of
     Left err   -> error err
-    Right cmds -> PathTree $ defaultSvg & pathDefinition .~ cmds
+    Right cmds -> mkPath cmds
+
+mkPath :: [PathCommand] -> Tree
+mkPath cmds = PathTree $ defaultSvg & pathDefinition .~ cmds
 
 mkLinePath :: [(Double, Double)] -> Tree
 mkLinePath [] = mkGroup []

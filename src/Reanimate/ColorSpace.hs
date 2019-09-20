@@ -25,6 +25,14 @@ lightXYZCoordinates = unsafePerformIO $ do
     Right vec -> return $ Map.fromList
       [ (nm, (x,y,z)) | (nm,x,y,z) <- V.toList vec, nm <= 700 ]
 
+bigXYZCoordinates :: Map Nanometer (Double, Double, Double)
+bigXYZCoordinates = unsafePerformIO $ do
+  dat <- BS.readFile =<< getDataFileName "data/CIE_XYZ.csv"
+  case decode NoHeader dat of
+    Left err -> error err
+    Right vec -> return $ Map.fromList
+      [ (nm, (x,y,z)) | (nm,x,y,z) <- V.toList vec, nm <= 700 ]
+
 renderXYZCoordinates :: Tree
 renderXYZCoordinates =
   withFillOpacity 0 $
@@ -53,7 +61,7 @@ coneSensitivity = unsafePerformIO $ do
   case decode NoHeader dat of
     Left err -> error err
     Right vec -> return $ Map.fromList
-      [ (nm, (l,m,fromMaybe 0 s)) | (nm,l,m,s) <- V.toList vec ]
+      [ (nm, (l,m,fromMaybe 0 s)) | (nm,l,m,s) <- V.toList vec, nm <= 700 ]
 
 renderSensitivity :: Tree
 renderSensitivity = mkGroup
