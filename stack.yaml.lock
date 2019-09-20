@@ -19,6 +19,13 @@ packages:
   original:
     hackage: palette-0.3.0.2
 - completed:
+    hackage: chiphunk-0.1.0.3@sha256:0c88d66e5b66ffd0b3bd70fc63ff00be0ab0757c26f1315a1b6f788852e14a6c,4870
+    pantry-tree:
+      size: 6384
+      sha256: cfdae0ee139b7d41cca8e947aae2fa8d9d1ce8aba038df02a555abb24a22bd01
+  original:
+    hackage: chiphunk-0.1.0.3@sha256:0c88d66e5b66ffd0b3bd70fc63ff00be0ab0757c26f1315a1b6f788852e14a6c,4870
+- completed:
     hackage: diagrams-1.4@sha256:3e36369e84115b900fd9dcb570672a188339a470eb19ca62170775cd835cf8ca,5483
     pantry-tree:
       size: 208
