@@ -26,6 +26,7 @@ import           Reanimate.Raster
 import           Reanimate.Scene
 import           Reanimate.Signal
 import           Reanimate.Svg
+import           Reanimate.ColorSpace
 import           Reanimate.Constants
 import           System.IO.Unsafe
 
@@ -45,8 +46,9 @@ dropA d1 (Animation d2 f) = Animation (max 0 (d2-d1)) $
 main :: IO ()
 main = reanimate $
   (mkAnimation 0 $ emit $ mkBackground "black") `sim`
-  monalisaScene
-  -- colorSpacesScene
+  -- monalisaScene
+  colorSpacesScene
+  -- clipPathTest
 
 
 monalisaScene :: Animation
