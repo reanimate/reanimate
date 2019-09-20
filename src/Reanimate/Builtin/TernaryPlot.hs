@@ -1,7 +1,7 @@
 module Reanimate.Builtin.TernaryPlot where
 
 import           Codec.Picture
-import           Graphics.SvgTree (Tree, Number(..))
+import           Graphics.SvgTree (Tree)
 import           Reanimate.Raster
 import           Reanimate.Svg
 
