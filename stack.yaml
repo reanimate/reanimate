@@ -8,7 +8,8 @@ packages:
 extra-deps:
 - reanimate-svg-0.9.2.1
 - palette-0.3.0.2
-- chiphunk-0.1.0.3@sha256:0c88d66e5b66ffd0b3bd70fc63ff00be0ab0757c26f1315a1b6f788852e14a6c,4870
+- git: https://github.com/CthulhuDen/chiphunk.git
+  commit: 873e3548feceea62e1db70ba4a1d7a2177164306
 - diagrams-1.4@sha256:3e36369e84115b900fd9dcb570672a188339a470eb19ca62170775cd835cf8ca
 - diagrams-contrib-1.4.3@sha256:bcfa6c85f8c33b8c48c3a61b7216afdebd51cd793c50da3a2dd358827d25fc76
 - diagrams-core-1.4.1.1@sha256:6ef6b17785d77997c481eb085570e21b6a00cc91d086fbf49490504130ebc7d1
