@@ -1,5 +1,18 @@
+import { HotKeys, configure } from 'react-hotkeys';
 import React, {Component} from 'react';
 import './App.css';
+
+configure({
+  ignoreRepeatedEventsWhenKeyHeldDown: false
+});
+
+const keyMap = {
+  PAUSE: "space",
+  STEP_FORWARD: "right",
+  STEP_BACKWARDS: "left",
+  SKIP_FORWARD: "up",
+  SKIP_BACKWARDS: "down"
+}
 
 class App extends Component {
   connect = () => {
@@ -18,6 +31,12 @@ class App extends Component {
         ...state,
         message: "Disconnected."
       }));
+
+      this.svgs = [];
+      this.status = '';
+      this.frame_count = 0;
+      this.next_frame = 0;
+
       setTimeout(this.connect, 1000);
     }
     ws.onmessage = event => {
@@ -49,7 +68,7 @@ class App extends Component {
           this.svgs[this.next_frame] = div;
           var count = 0;
           this.svgs.forEach(_ => count++);
-          console.log('Received', this.next_frame, this.frame_count, count);
+          //console.log('Received', this.next_frame, this.frame_count, count);
         } else {
 
           if( this.status === 'compiling' ) {
@@ -73,6 +92,11 @@ class App extends Component {
       message: "Connecting..."
     }));
   }
+  frameByTimer() {
+    const now = Date.now();
+    const nFrames = this.frame_count;
+    return (Math.round((now - this.start) / 1000 * 60)) % nFrames;
+  }
   constructor(props) {
     super(props);
 
@@ -85,13 +109,17 @@ class App extends Component {
     this.status = '';
     this.frame_count = 0;
     this.next_frame = 0;
+    this.freeze_frame = null;
 
     const self = this;
     const animate = () => {
       const now = Date.now();
       const nFrames = self.frame_count;
       const aniDuration = self.frame_count/60;
-      const thisFrame = (Math.round((now - this.start) / 1000 * 60)) % nFrames
+      const thisFrame =
+        (this.freeze_frame !== null)
+          ? this.freeze_frame
+          : self.frameByTimer();
       // const thisFrame = 0; console.log('Animation frame:', thisFrame, nFrames);
       var count = 0;
       this.svgs.forEach(_ => count++);
@@ -116,17 +144,63 @@ class App extends Component {
       ace.resize();
     }, 0);
   }
+
+
   render() {
+    const self = this;
+    const pause = () => {
+      if(self.freeze_frame === null) {
+        console.log('Pause')
+        self.freeze_frame = self.frameByTimer();
+      }
+    }
+    const keyHandlers = {
+      PAUSE: event => {
+          event.preventDefault();
+          if(self.freeze_frame === null) {
+            pause();
+          } else {
+            console.log('unpause')
+            self.start = Date.now() - (self.freeze_frame/60*1000)
+            self.freeze_frame = null;
+          }
+        },
+      STEP_FORWARD: event => {
+        pause();
+        self.freeze_frame=(self.freeze_frame+1)%self.frame_count;
+      },
+      SKIP_FORWARD: event => {
+        pause();
+        self.freeze_frame=(self.freeze_frame+10)%self.frame_count;
+      },
+      STEP_BACKWARDS: event => {
+        pause();
+        self.freeze_frame-=1;
+        if(self.freeze_frame<0) {
+          self.freeze_frame = self.frame_count+self.freeze_frame;
+        }
+      },
+      SKIP_BACKWARDS: event => {
+        pause();
+        self.freeze_frame-=10;
+        if(self.freeze_frame<0) {
+          self.freeze_frame = self.frame_count+self.freeze_frame;
+        }
+      }
+
+    }
     const {message} = this.state;
     return (
-      <div className="App">
-        <div className="viewer">
-          <div ref={node => this.svg = node}/>
-          <div className="messages">
-            <pre>{message}</pre>
+      <HotKeys handlers={keyHandlers} keyMap={keyMap}>
+        <div className="App">
+          <div className="viewer">
+            <div ref={node => this.svg = node}/>
+            <div className="messages">
+              <pre>{message}</pre>
+            </div>
           </div>
         </div>
-      </div>
+      </HotKeys>
     );
   }
 }
