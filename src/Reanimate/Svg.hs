@@ -409,13 +409,24 @@ simplify root =
     xs  -> mkGroup xs
   where
     worker None = []
-    worker (DefinitionTree d)
-      | null (d ^. groupChildren) = []
-      | otherwise = [DefinitionTree $ d & groupChildren %~ concatMap worker]
+    worker (DefinitionTree d) =
+      concatMap dropNulls $
+      [DefinitionTree $ d & groupChildren %~ concatMap worker]
     worker (GroupTree g)
-      | g ^. drawAttributes == defaultSvg = concatMap worker (g^.groupChildren)
-      | otherwise = [GroupTree $ g & groupChildren %~ concatMap worker]
-    worker t = [t]
+      | g ^. drawAttributes == defaultSvg =
+        concatMap dropNulls $
+        concatMap worker (g^.groupChildren)
+      | otherwise =
+        dropNulls $
+        GroupTree $ g & groupChildren %~ concatMap worker
+    worker t = dropNulls t
+
+    dropNulls None = []
+    dropNulls (DefinitionTree d)
+      | null (d^.groupChildren) = []
+    dropNulls (GroupTree g)
+      | null (g^.groupChildren) = []
+    dropNulls t = [t]
 
 extractPath :: Tree -> [PathCommand]
 extractPath = worker . simplify . lowerTransformations . pathify
