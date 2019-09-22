@@ -18,6 +18,7 @@ import           Graphics.SvgTree.PathParser
 import           Linear.Metric
 import           Linear.V2                    hiding (angle)
 import           Linear.Vector
+import           Reanimate.Constants
 import qualified Reanimate.Transform          as Transform
 -- import qualified Geom2D.CubicBezier           as Bezier
 
@@ -80,7 +81,7 @@ data LineCommand
   = LineMove RPoint
   -- | LineDraw RPoint
   | LineBezier [RPoint]
-  | LineEnd
+  | LineEnd RPoint
   deriving (Show)
 
 lineToPath :: [LineCommand] -> [PathCommand]
@@ -92,7 +93,7 @@ lineToPath = map worker
     worker (LineBezier [a,b])   = QuadraticBezier OriginAbsolute [(a,b)]
     worker (LineBezier [a])     = LineTo OriginAbsolute [a]
     worker LineBezier{}         = error "Reanimate.Svg.lineToPath: invalid bezier curve"
-    worker LineEnd              = EndPath
+    worker LineEnd{}            = EndPath
 
 lineToPoints :: Int -> [LineCommand] -> [RPoint]
 lineToPoints nPoints cmds =
@@ -111,7 +112,7 @@ partialLine alpha cmds = evalState (worker 0 cmds) zero
       from <- get
       len <- lineLength cmd
       let frac = (targetLen-d) / len
-      if len == 0 || frac > 1
+      if len == 0 || frac >= 1
         then (cmd:) <$> worker (d+len) xs
         else pure [adjustLineLength frac from cmd]
     totalLen = evalState (sum <$> mapM lineLength cmds) zero
@@ -123,7 +124,7 @@ adjustLineLength alpha from cmd =
     LineBezier points -> LineBezier $ drop 1 $ partial_bezier_points (from:points) 0 alpha
     LineMove p -> LineMove p
     -- LineDraw t -> LineDraw (lerp alpha t from)
-    LineEnd -> LineEnd
+    LineEnd p -> LineBezier [lerp alpha p from]
 
 lineLength :: LineCommand -> CmdM Double
 lineLength cmd =
@@ -131,7 +132,7 @@ lineLength cmd =
     LineMove to       -> pure 0 <* put to
     -- LineDraw to       -> gets (distance to) <* put to
     LineBezier points -> gets (distance (last points)) <* put (last points)
-    LineEnd           -> pure 0
+    LineEnd to        -> gets (distance to) <* put to
 
 toLineCommands :: [PathCommand] -> [LineCommand]
 toLineCommands ps = evalState (worker zero Nothing ps) zero
@@ -196,7 +197,7 @@ toLineCommand startPos mbPrevControlPt cmd = do
       (forM points $ \(rotX, rotY, angle, largeArc, sweepFlag, to) -> do
         from <- get <* adjustPosition o to
         return $ convertSvgArc from rotX rotY angle largeArc sweepFlag (makeAbsolute o from to))
-    EndPath -> put startPos *> pure [LineBezier [startPos], LineEnd]
+    EndPath -> put startPos *> pure [LineEnd startPos]
   where
     mirrorPoint c p = c*2-p
     adjustPosition OriginRelative p = modify (+p)
@@ -334,7 +335,7 @@ linePoints = worker zero
         LineBezier ctrl -> -- approximation
           [ last (partial_bezier_points (from:ctrl) 0 (recip chunks*i)) | i <- [0..chunks]] ++
           worker (last ctrl) xs
-        LineEnd -> worker from xs
+        LineEnd p -> p : worker p xs
     chunks = 10
 
 svgBoundingPoints :: Tree -> [RPoint]
@@ -347,9 +348,9 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
       FilterTree{}    -> []
       DefinitionTree{} -> []
       PathTree p      -> linePoints $ toLineCommands (p^.pathDefinition)
-      CircleTree{}    -> error "CircleTree"
-      PolyLineTree{}  -> error "PolyLineTree"
-      EllipseTree{}   -> error "EllipseTree"
+      CircleTree{}    -> error "Bounding box: CircleTree"
+      PolyLineTree{}  -> error "Bounding box: PolyLineTree"
+      EllipseTree{}   -> error "Bounding box: EllipseTree"
       LineTree line   -> map pointToRPoint [line^.linePoint1, line^.linePoint2]
       RectangleTree rect ->
         case pointToRPoint (rect^.rectUpperLeftCorner) of
@@ -381,7 +382,7 @@ lowerTransformations = worker Transform.identity
         LineMove p    -> LineMove $ Transform.transformPoint m p
         -- LineDraw p -> LineDraw $ Transform.transformPoint m p
         LineBezier ps -> LineBezier $ map (Transform.transformPoint m) ps
-        LineEnd       -> LineEnd
+        LineEnd p     -> LineEnd $ Transform.transformPoint m p
     updPath m = lineToPath . map (updLineCmd m) . toLineCommands
     worker m t =
       let m' = m * Transform.mkMatrix (t^.transform) in
@@ -717,3 +718,16 @@ pathify = mapTree worker
       case toUserUnit defaultDPI n of
         Num d -> Just d
         _     -> Nothing
+
+gridLayout :: [[Tree]] -> Tree
+gridLayout rows = mkGroup
+    [ translate (-screenWidth/2+colSep*(nCol))
+                (screenHeight/2-rowSep*(nRow))
+      elt
+    | (nRow, col) <- zip [1..] rows
+    , let nCols = length col
+          colSep = screenWidth / fromIntegral (nCols+1)
+    , (nCol, elt) <- zip [1..] col ]
+  where
+    rowSep = screenHeight / fromIntegral (nRows+1)
+    nRows = length rows

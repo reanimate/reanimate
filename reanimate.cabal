@@ -59,6 +59,7 @@ library
                       Reanimate.Effect
                       Reanimate.Constants
                       Reanimate.Chiphunk
+                      Reanimate.PolyShape
   other-modules:      Reanimate.Cache
                       Reanimate.Driver.Check
                       Reanimate.Driver.CLI

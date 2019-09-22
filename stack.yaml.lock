@@ -24,14 +24,14 @@ packages:
       sha256: fc1220770da653a870989623f233c5aed129f30f500e80d2d955133d3338d866
     name: chiphunk
     version: 0.1.1.0
-    git: https://github.com/CthulhuDen/chiphunk.git
+    git: https://github.com/Lemmih/chiphunk.git
     pantry-tree:
-      size: 6674
-      sha256: 50890199baa8a763c8cc8e58305fe6631e99df0e5e4dc549fbdc596bda7c63c5
-    commit: 873e3548feceea62e1db70ba4a1d7a2177164306
+      size: 6675
+      sha256: e2506ff9459479f0d939c0d224a4f9140f119d3485302273ea1372a442a866c3
+    commit: 610e8e669ba9baf5489ee598e86416bc7ea3c882
   original:
-    git: https://github.com/CthulhuDen/chiphunk.git
-    commit: 873e3548feceea62e1db70ba4a1d7a2177164306
+    git: https://github.com/Lemmih/chiphunk.git
+    commit: 610e8e669ba9baf5489ee598e86416bc7ea3c882
 - completed:
     hackage: diagrams-1.4@sha256:3e36369e84115b900fd9dcb570672a188339a470eb19ca62170775cd835cf8ca,5483
     pantry-tree:
