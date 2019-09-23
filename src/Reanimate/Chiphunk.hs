@@ -65,5 +65,5 @@ simulate space store fps stepsPerFrame dur = do
   frozen <- V.unsafeFreeze v
   return $ mkAnimation dur $ do
     t <- getSignal signalLinear
-    let key = round (t * fromIntegral frames)
+    let key = round (t * fromIntegral (frames-1))
     emit $ frozen V.! key
