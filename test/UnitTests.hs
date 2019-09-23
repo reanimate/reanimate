@@ -42,9 +42,9 @@ genGolden path = withTempDir $ \tmpDir -> withTempFile ".exe" $ \tmpExecutable -
   hSetNewlineMode outh universalNewlineMode
   hClose inh
   hClose errh
-  str <- hGetContents outh
-  return $ LB8.pack str
-  --LBS.hGetContents outh
+  -- str <- hGetContents outh
+  -- return $ LB8.pack str
+  LBS.hGetContents outh
 
 compileTestFolder :: FilePath -> IO TestTree
 compileTestFolder path = do
