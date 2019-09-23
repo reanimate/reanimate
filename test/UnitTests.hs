@@ -5,6 +5,7 @@ module UnitTests
   ) where
 
 import qualified Data.ByteString.Lazy as LBS
+import qualified Data.ByteString.Lazy.Char8 as LB8
 import           Reanimate.Misc       (withTempDir, withTempFile)
 import           System.Directory
 import           System.Exit
@@ -40,7 +41,9 @@ genGolden path = withTempDir $ \tmpDir -> withTempFile ".exe" $ \tmpExecutable -
     Nothing Nothing
   hClose inh
   hClose errh
-  LBS.hGetContents outh
+  str <- hGetContents outh
+  return $ LB8.pack str
+  --LBS.hGetContents outh
 
 compileTestFolder :: FilePath -> IO TestTree
 compileTestFolder path = do
