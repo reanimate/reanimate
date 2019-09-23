@@ -54,7 +54,9 @@ reanimate animation = do
   Options{..} <- getDriverOptions
   case optsCommand of
     Raw        -> renderSvgs animation
-    Test       -> renderSnippets animation
+    Test       -> do
+      hSetBinaryMode stdout True
+      renderSnippets animation
     Check      -> checkEnvironment
     View       -> serve
     Render{..} -> do
