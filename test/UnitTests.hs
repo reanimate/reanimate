@@ -5,14 +5,11 @@ module UnitTests
   ) where
 
 import qualified Data.ByteString.Lazy as LBS
-import qualified Data.ByteString.Lazy.Char8 as LB8
 import           Reanimate.Misc       (withTempDir, withTempFile)
 import           System.Directory
 import           System.Exit
 import           System.FilePath
 import           System.IO
-import           System.Info
-import Data.Char
 import           System.Process
 import           Test.Tasty
 import           Test.Tasty.Golden
@@ -45,16 +42,7 @@ genGolden path = withTempDir $ \tmpDir -> withTempFile ".exe" $ \tmpExecutable -
   -- hSetNewlineMode outh universalNewlineMode
   hClose inh
   hClose errh
-  str <- windowsFix <$> hGetContents outh
-  let checksum = sum (map ord str)
-  putStrLn $ "Arch: " ++ arch
-  putStrLn $ "Checksum: " ++ show checksum
-  return $ LB8.pack str
-  -- LBS.hGetContents outh
-  where
-    windowsFix [] = []
-    windowsFix ('\r':'\n':xs) = '\n' : windowsFix xs
-    windowsFix (x:xs) = x : windowsFix xs
+  LBS.hGetContents outh
 
 compileTestFolder :: FilePath -> IO TestTree
 compileTestFolder path = do
