@@ -12,6 +12,7 @@ import           Reanimate.Render         (FPS, Format (..), Height, Width,
                                            render, renderSnippets, renderSvgs)
 import           System.FilePath
 import           System.Directory
+import           System.IO
 import           Text.Printf
 
 presetFormat :: Preset -> Format
