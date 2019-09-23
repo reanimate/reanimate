@@ -11,6 +11,8 @@ import           System.Directory
 import           System.Exit
 import           System.FilePath
 import           System.IO
+import           System.Info
+import Data.Char
 import           System.Process
 import           Test.Tasty
 import           Test.Tasty.Golden
@@ -43,8 +45,11 @@ genGolden path = withTempDir $ \tmpDir -> withTempFile ".exe" $ \tmpExecutable -
   -- hSetNewlineMode outh universalNewlineMode
   hClose inh
   hClose errh
-  str <- hGetContents outh
-  return $ LB8.pack $ windowsFix str
+  str <- windowsFix <$> hGetContents outh
+  let checksum = sum (map ord str)
+  putStrLn $ "Arch: " ++ arch
+  putStrLn $ "Checksum: " ++ show checksum
+  return $ LB8.pack str
   -- LBS.hGetContents outh
   where
     windowsFix [] = []
