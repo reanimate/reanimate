@@ -5,7 +5,7 @@ module UnitTests
   ) where
 
 import qualified Data.ByteString.Lazy as LBS
-import qualified Data.ByteString.Lazy.Char8 as LB8
+-- import qualified Data.ByteString.Lazy.Char8 as LB8
 import           Reanimate.Misc       (withTempDir, withTempFile)
 import           System.Directory
 import           System.Exit
