@@ -20,7 +20,7 @@ unitTestFolder :: FilePath -> IO TestTree
 unitTestFolder path = do
   files <- getDirectoryContents path
   return $ testGroup "animate"
-    [ goldenVsStringDiff file (\ref new -> ["diff", "--brief", ref, new]) fullPath (genGolden hsPath)
+    [ goldenVsStringDiff file (\ref new -> ["diff", "-a", ref, new]) fullPath (genGolden hsPath)
     | file <- files
     , let fullPath = path </> file
           hsPath = replaceExtension fullPath "hs"
