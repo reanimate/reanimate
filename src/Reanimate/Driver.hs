@@ -12,7 +12,7 @@ import           Reanimate.Render         (FPS, Format (..), Height, Width,
                                            render, renderSnippets, renderSvgs)
 import           System.FilePath
 import           System.Directory
-import           System.IO
+-- import           System.IO
 import           Text.Printf
 
 presetFormat :: Preset -> Format
@@ -56,7 +56,7 @@ reanimate animation = do
   case optsCommand of
     Raw        -> renderSvgs animation
     Test       -> do
-      hSetBinaryMode stdout True
+      -- hSetBinaryMode stdout True
       renderSnippets animation
     Check      -> checkEnvironment
     View       -> serve

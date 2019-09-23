@@ -5,7 +5,7 @@ module UnitTests
   ) where
 
 import qualified Data.ByteString.Lazy as LBS
--- import qualified Data.ByteString.Lazy.Char8 as LB8
+import qualified Data.ByteString.Lazy.Char8 as LB8
 import           Reanimate.Misc       (withTempDir, withTempFile)
 import           System.Directory
 import           System.Exit
@@ -39,13 +39,17 @@ genGolden path = withTempDir $ \tmpDir -> withTempFile ".exe" $ \tmpExecutable -
   -- ["-odir", tmpDir, "-hidir", tmpDir]
   (inh, outh, errh, _pid) <- runInteractiveProcess tmpExecutable (["test"] ++ runOpts)
     Nothing Nothing
-  hSetBinaryMode outh True
+  -- hSetBinaryMode outh True
   -- hSetNewlineMode outh universalNewlineMode
   hClose inh
   hClose errh
-  -- str <- hGetContents outh
-  -- return $ LB8.pack str
-  LBS.hGetContents outh
+  str <- hGetContents outh
+  return $ LB8.pack $ windowsFix str
+  -- LBS.hGetContents outh
+  where
+    windowsFix [] = []
+    windowsFix ('\r':'\n':xs) = '\n' : windowsFix xs
+    windowsFix (x:xs) = x : windowsFix xs
 
 compileTestFolder :: FilePath -> IO TestTree
 compileTestFolder path = do
