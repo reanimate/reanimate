@@ -39,7 +39,7 @@ genGolden path = withTempDir $ \tmpDir -> withTempFile ".exe" $ \tmpExecutable -
   -- ["-odir", tmpDir, "-hidir", tmpDir]
   (inh, outh, errh, _pid) <- runInteractiveProcess tmpExecutable (["test"] ++ runOpts)
     Nothing Nothing
-  hSetBinaryMode stdout True
+  hSetBinaryMode outh True
   -- hSetNewlineMode outh universalNewlineMode
   hClose inh
   hClose errh
