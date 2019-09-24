@@ -95,12 +95,12 @@ ffmpegVersion = do
         Right out ->
           case map (take 3 . words) $ take 1 $ lines out of
             [["ffmpeg", "version", vs]] ->
-              return $ parseVS vs
+              return $ Just $ fromMaybe noVersion $ parseVS vs
             _ -> return $ Just noVersion
   where
     noVersion = Version [] []
-    parseVS vs = listToMaybe
-      [ v | (v, "") <- readP_to_S parseVersion vs ]
+    parseVS vs = listToMaybe $ reverse
+      [ v | (v, _) <- readP_to_S parseVersion vs ]
 
 
 hasTeXPackage :: FilePath -> String -> IO (Either String String)
