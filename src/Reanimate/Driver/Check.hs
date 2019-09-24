@@ -78,7 +78,7 @@ hasFFmpeg = do
   mbVersion <- ffmpegVersion
   return $ case mbVersion of
     Nothing                   -> Left "no"
-    Just vs | vs < minVersion -> Left "too old"
+    Just vs | vs < minVersion -> Left $ "too old: " ++ showVersion vs ++ " < " ++ showVersion minVersion
             | otherwise       -> Right (showVersion vs)
   where
     minVersion = Version [4,1,3] []
