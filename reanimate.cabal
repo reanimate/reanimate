@@ -58,6 +58,8 @@ library
                       Reanimate.Povray
                       Reanimate.Effect
                       Reanimate.Constants
+                      Reanimate.Chiphunk
+                      Reanimate.PolyShape
   other-modules:      Reanimate.Cache
                       Reanimate.Driver.Check
                       Reanimate.Driver.CLI
@@ -69,10 +71,10 @@ library
                        containers, reanimate-svg >= 0.9.2.1, xml, bytestring, lens, linear, mtl, matrix,
                        JuicyPixels, attoparsec, parallel, diagrams, diagrams-svg,
                        diagrams-core, diagrams-lib, diagrams-contrib,
-                       svg-builder, matrices, cubicbezier, palette, websockets,
+                       svg-builder, cubicbezier, palette, websockets,
                        hashable, fsnotify, open-browser, random-shuffle, base64-bytestring,
                        vector, colour, cassava, ansi-wl-pprint, here, temporary,
-                       optparse-applicative
+                       optparse-applicative, chiphunk
   ghc-options: -Wall
 
 test-suite spec

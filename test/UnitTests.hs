@@ -19,7 +19,7 @@ unitTestFolder :: FilePath -> IO TestTree
 unitTestFolder path = do
   files <- getDirectoryContents path
   return $ testGroup "animate"
-    [ goldenVsStringDiff file (\ref new -> ["diff", "--brief", ref, new]) fullPath (genGolden hsPath)
+    [ goldenVsStringDiff file (\ref new -> ["diff", "--strip-trailing-cr", ref, new]) fullPath (genGolden hsPath)
     | file <- files
     , let fullPath = path </> file
           hsPath = replaceExtension fullPath "hs"
@@ -38,6 +38,8 @@ genGolden path = withTempDir $ \tmpDir -> withTempFile ".exe" $ \tmpExecutable -
   -- ["-odir", tmpDir, "-hidir", tmpDir]
   (inh, outh, errh, _pid) <- runInteractiveProcess tmpExecutable (["test"] ++ runOpts)
     Nothing Nothing
+  -- hSetBinaryMode outh True
+  -- hSetNewlineMode outh universalNewlineMode
   hClose inh
   hClose errh
   LBS.hGetContents outh
