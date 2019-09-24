@@ -18,10 +18,12 @@ module Reanimate.PolyShape
   , plPolygonify        -- :: Double -> PolyShape -> [Point Double]
   , plDecompose         -- :: [PolyShape] -> [[RPoint]]
   , unionPolyShapes     -- :: [PolyShape] -> [PolyShape]
+  , unionPolyShapes'    -- :: Double -> [PolyShape] -> [PolyShape]
   , plDecompose'        -- :: Double -> [PolyShape] -> [[RPoint]]
   , decomposePolygon    -- :: [Point Double] -> [[RPoint]]
   , plGroupShapes       -- :: [PolyShape] -> [PolyShapeWithHoles]
   , mergePolyShapeHoles -- :: PolyShapeWithHoles -> PolyShape
+  , polyShapeTolerance
   ) where
 
 import           Chiphunk.Low
@@ -94,11 +96,13 @@ plDecompose' tol =
 
 decomposePolygon :: [Point Double] -> [[RPoint]]
 decomposePolygon poly =
-  map (map fromVect) $ convexDecomposition (map toVect poly) tol
+  map (map fromVect . adjust) $ convexDecomposition (map toVect poly) tol
   where
     tol = polyShapeTolerance
     toVect (Point x y) = Vect x y
     fromVect (Vect x y) = V2 x y
+    adjust [] = []
+    adjust x = if head x == last x then adjust (init x) else x
 
 plPolygonify :: Double -> PolyShape -> [Point Double]
 plPolygonify tol shape =
@@ -126,12 +130,16 @@ plLineCommands pl =
     []                  -> []
     (CubicBezier start _ _ _:_) ->
       LineMove (toRPoint start) :
-      map worker curves ++
+      zipWith worker (drop 1 dstList ++ [start]) joinList ++
       [LineEnd (toRPoint start)]
   where
+    ClosedPath closedPath = unPolyShape pl
+    (dstList, joinList) = unzip closedPath
     curves = plCurves pl
-    worker (CubicBezier _ b c d) =
-      LineBezier (map toRPoint [b,c,d])
+    worker dst JoinLine =
+      LineBezier [toRPoint dst]
+    worker dst (JoinCurve a b) =
+      LineBezier $ map toRPoint [a,b,dst]
     toRPoint :: Point Double -> RPoint
     toRPoint (Point x y) = V2 x y
 
@@ -174,7 +182,12 @@ cmdsToPolyShapes cmds =
 unionPolyShapes :: [PolyShape] -> [PolyShape]
 unionPolyShapes shapes =
     map PolyShape $
-    union (map unPolyShape shapes) NonZero polyShapeTolerance
+    union (map unPolyShape shapes) NonZero (polyShapeTolerance/10000)
+
+unionPolyShapes' :: Double -> [PolyShape] -> [PolyShape]
+unionPolyShapes' tol shapes =
+    map PolyShape $
+    union (map unPolyShape shapes) NonZero tol
 
 -- True iff lhs is inside of rhs.
 -- lhs and rhs may not overlap.
