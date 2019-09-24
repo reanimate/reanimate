@@ -82,6 +82,7 @@ hasFFmpeg = do
             | otherwise       -> Right (showVersion vs)
   where
     minVersion = Version [4,1,3] []
+
 ffmpegVersion :: IO (Maybe Version)
 ffmpegVersion = do
   mbPath <- findExecutable "ffmpeg"
@@ -90,13 +91,14 @@ ffmpegVersion = do
     Just path -> do
       ret <- runCmd_ path ["-version"]
       case ret of
-        Left{} -> return Nothing
+        Left{} -> return $ Just noVersion
         Right out ->
           case map (take 3 . words) $ take 1 $ lines out of
             [["ffmpeg", "version", vs]] ->
               return $ parseVS vs
-            _ -> return Nothing
+            _ -> return $ Just noVersion
   where
+    noVersion = Version [] []
     parseVS vs = listToMaybe
       [ v | (v, "") <- readP_to_S parseVersion vs ]
 
