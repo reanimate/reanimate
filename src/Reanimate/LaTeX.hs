@@ -40,7 +40,7 @@ latexToSVG tex = handle (\(_::SomeException) -> return (failedSvg tex)) $ do
     T.appendFile tex_file tex
     appendFile tex_file tex_epilogue
     runCmd latexBin ["-interaction=batchmode", "-halt-on-error", "-output-directory="++tmp_dir, tex_file]
-    runCmd dvisvgm [ dvi_file
+    runCmd dvisvgm [ dvi_file, "--precision=5"
                    , "--exact"    -- better bboxes.
                    -- , "--bbox=1,1" -- increase bbox size.
                    , "--no-fonts" -- use glyphs instead of fonts.
