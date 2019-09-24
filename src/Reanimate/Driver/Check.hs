@@ -36,7 +36,8 @@ checkEnvironment = do
         "{"++pkg++"}"
   where
     latexPackages =
-      ["amsmath"
+      ["preview"
+      ,"amsmath"
       ,"amssymb"
       ,"dsfont"
       ,"setspace"
