@@ -35,18 +35,20 @@ import           System.IO.Unsafe
 
 polygonTest :: Animation
 polygonTest = mkAnimation 10 $ do
-    s <- getSignal $ signalFromTo 0.5 (-0.5) signalLinear
+    s <- getSignal $ signalLinear
     let bigBox = head $ svgToPolyShapes $ pathify $
+          rotate (-45) $
           mkRect (Num 2) (Num 2)
         smallBox = head $ svgToPolyShapes $ pathify $
           translate (0) (screenHeight*s) $
           rotate (-45) $
           mkRect (Num 1) (Num 1)
 
-        overlap = mkGroup $ map renderPolyShape [bigBox, smallBox]
+        overlap = center $ mkGroup $ map renderPolyShape [pl1,pl2]
         merged = translate (screenWidth/2*0.1) 0 $
-          mkGroup $ map renderPolyShape $
-          unionPolyShapes [bigBox, smallBox]
+          partialSvg s $
+          center $ mkGroup $ map renderPolyShape $
+          unionPolyShapes' 0.1 [pl1, pl2]
     emit $ std $ gridLayout [[ overlap, merged ]]
   where
     std =
@@ -55,8 +57,17 @@ polygonTest = mkAnimation 10 $ do
       withStrokeWidth (Num 0.01) .
       withStrokeColor "white"
 
+pl1 :: PolyShape
+pl1 = PolyShape $ ClosedPath
+  [ (G.Point 2 0, G.JoinLine)
+  , (G.Point 4 3, G.JoinLine)
+  , (G.Point 0 3, G.JoinLine)]
 
-
+pl2 :: PolyShape
+pl2 = PolyShape $ ClosedPath
+  [ (G.Point 2 1, G.JoinLine)
+  , (G.Point 6 1, G.JoinLine)
+  , (G.Point 6 3, G.JoinLine)]
 
 main :: IO ()
 main = reanimate $ bg `sim` polygonTest
