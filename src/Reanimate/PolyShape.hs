@@ -17,6 +17,7 @@ module Reanimate.PolyShape
   , plFromPolygon       -- :: [RPoint] -> PolyShape
   , plPolygonify        -- :: Double -> PolyShape -> [Point Double]
   , plDecompose         -- :: [PolyShape] -> [[RPoint]]
+  , plReducePrecision   -- :: Double -> PolyShape -> PolyShape
   , unionPolyShapes     -- :: [PolyShape] -> [PolyShape]
   , unionPolyShapes'    -- :: Double -> [PolyShape] -> [PolyShape]
   , plDecompose'        -- :: Double -> [PolyShape] -> [[RPoint]]
@@ -179,10 +180,15 @@ cmdsToPolyShapes cmds =
     toGPoint :: RPoint -> Point Double
     toGPoint (V2 x y) = Point x y
 
+plReducePrecision :: Double -> PolyShape -> PolyShape
+plReducePrecision tol (PolyShape c) = PolyShape $ fmap fn c
+  where
+    fn v = fromIntegral (round (v/tol)::Integer) * tol
+
 unionPolyShapes :: [PolyShape] -> [PolyShape]
 unionPolyShapes shapes =
     map PolyShape $
-    union (map unPolyShape shapes) NonZero (polyShapeTolerance/10000)
+    union (map unPolyShape shapes) NonZero polyShapeTolerance
 
 unionPolyShapes' :: Double -> [PolyShape] -> [PolyShape]
 unionPolyShapes' tol shapes =
