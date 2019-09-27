@@ -37,6 +37,8 @@ instance Monad Frame where
 --   Freeze at last frame
 --   Loop
 --   Disappear
+-- | Animations are SVGs over a finite time. Isomorphic to
+--   (Duration, Double -> Tree).
 data Animation = Animation Duration (Frame ())
 
 mkAnimation :: Duration -> Frame () -> Animation
@@ -48,34 +50,42 @@ duration (Animation d _) = d
 emit :: Tree -> Frame ()
 emit svg = Frame $ \_ _ -> modify (.(svg:))
 
+-- | Play animations in sequence. The @lhs@ animation is removed after it has
+--   completed. New animation duration is @duration lhs + duration rhs@.
 before :: Animation -> Animation -> Animation
 before (Animation d1 (Frame f1)) (Animation d2 (Frame f2)) =
   Animation (d1+d2) (Frame $ \_ t -> if t < d1 then f1 d1 t else f2 d2 (t-d1))
 
--- Play two animation concurrently. Shortest animation freezes on last frame.
+-- | Play two animation concurrently. Shortest animation freezes on last frame.
+--   New animation duration is @max (duration lhs) (duration rhs)@.
 sim :: Animation -> Animation -> Animation
 sim (Animation d1 (Frame f1)) (Animation d2 (Frame f2)) =
   Animation (max d1 d2) $ Frame $ \_ t -> do
     f1 d1 (min d1 t)
     f2 d2 (min d2 t)
 
--- Play two animation concurrently. Shortest animation loops.
+-- | Play two animation concurrently. Shortest animation loops.
+--   New animation duration is @max (duration lhs) (duration rhs)@.
 simLoop :: Animation -> Animation -> Animation
 simLoop (Animation d1 (Frame f1)) (Animation d2 (Frame f2)) =
   Animation (max d1 d2) $ Frame $ \_ t -> do
     f1 d1 (t `mod'` d1)
     f2 d2 (t `mod'` d2)
 
--- Play two animation concurrently. Animations disappear after playing once.
+-- | Play two animation concurrently. Animations disappear after playing once.
+--   New animation duration is @max (duration lhs) (duration rhs)@.
 simDrop :: Animation -> Animation -> Animation
 simDrop (Animation d1 (Frame f1)) (Animation d2 (Frame f2)) =
   Animation (max d1 d2) $ Frame $ \_ t -> do
     when (t < d1) (f1 d1 t)
     when (t < d2) (f2 d2 t)
 
+-- | Empty animation (no SVG output) with a fixed duration.
 pause :: Double -> Animation
 pause d = Animation d (pure ())
 
+-- | Play left animation and freeze on the last frame, then play the right
+--   animation. New duration is @duration lhs + duration rhs@.
 andThen :: Animation -> Animation -> Animation
 andThen a b = a `sim` (pause (duration a) `before` b)
 
@@ -104,6 +114,7 @@ renderSvg w h t = ppDocument doc
       , _documentLocation = ""
       }
 
+-- | Map over the SVG produced by an animation at every frame.
 mapA :: (Tree -> Tree) -> Animation -> Animation
 mapA fn (Animation d f) = Animation d (mapF fn f)
 
@@ -112,13 +123,16 @@ mapF fn frame = Frame $ \d t -> do
   case runState (unFrame frame d t) id of
     (a, children) -> modify (. (fn (mkGroup (children [])):)) >> pure a
 
+-- | Freeze the last frame for @t@ seconds at the end of the animation.
 pauseAtEnd :: Double -> Animation -> Animation
-pauseAtEnd p a = a `andThen` pause p
+pauseAtEnd t a = a `andThen` pause t
 
+-- | Freeze the first frame for @t@ seconds at the beginning of the animation.
 pauseAtBeginning :: Double -> Animation -> Animation
-pauseAtBeginning d1 a =
-    Animation d1 (freezeFrame 0 a) `before` a
+pauseAtBeginning t a =
+    Animation t (freezeFrame 0 a) `before` a
 
+-- | Freeze the first and the last frame of the animation for a specified duration.
 pauseAround :: Double -> Double -> Animation -> Animation
 pauseAround start end = pauseAtEnd end . pauseAtBeginning start
 
@@ -129,14 +143,19 @@ adjustSpeed :: Double -> Animation -> Animation
 adjustSpeed factor (Animation d fn) =
   Animation (d/factor) $ Frame $ \_dur t -> unFrame fn d (t*factor)
 
+-- | Set the duration of an animation by adjusting its playback rate. The
+--   animation is still played from start to finish without being cropped.
 setDuration :: Double -> Animation -> Animation
 setDuration newD (Animation _ fn) =
   Animation newD $ Frame $ \dur t -> unFrame fn dur t
 
+-- | Play an animation in reverse. Duration remains unchanged.
 reverseAnimation :: Animation -> Animation
 reverseAnimation (Animation d fn) = Animation d $ Frame $ \_dur t ->
   unFrame fn d (d-t)
 
+-- | Play animation before playing it again in reverse. Duration is twice
+--   the duration of the input.
 autoReverse :: Animation -> Animation
 autoReverse a = a `before` reverseAnimation a
 
@@ -146,6 +165,9 @@ oscillate f = Frame $ \d t -> do
     then unFrame f d (t*2)
     else unFrame f d (d*2-t*2)
 
+-- | Loop animation @n@ number of times. This number may be fractional and it
+--   may be less than 1. It must be greater than or equal to 0, though.
+--   New duration is @n*duration input@.
 repeatAnimation :: Double -> Animation -> Animation
 repeatAnimation n (Animation d f) = Animation (d*n) $ Frame $ \_ t ->
   unFrame f d (t `mod'` d)
