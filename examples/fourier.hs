@@ -33,7 +33,7 @@ main = reanimate $
 sWidth = 0.02
 
 fourierAnimation :: Int -> Animation
-fourierAnimation nCircles = repeatAnimation 2 $ mkAnimation 3 $ \t ->
+fourierAnimation nCircles = repeatA 2 $ mkAnimation 3 $ \t ->
     let phi = signalFromTo 0 (2*pi) signalLinear t
     in mkGroup
     [ mkBackground "black"

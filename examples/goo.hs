@@ -14,7 +14,7 @@ import           Reanimate.Signal
 import           Reanimate.Combinators
 
 main :: IO ()
-main = reanimate $ autoReverse $ mkAnimation 5 $ \t ->
+main = reanimate $ playThenReverseA $ mkAnimation 5 $ \t ->
     let s = signalFromTo 0 1.5 (signalCurve 2) t in
     mkGroup
     [ mkBackground "black"

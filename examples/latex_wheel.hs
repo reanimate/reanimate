@@ -33,19 +33,19 @@ mainScene = sceneAnimation $ mdo
       forM_ svgs $ \svg -> do
         fork $ play $ drawTick
           # setDuration rotateT
-          # repeatAnimation rotateN
+          # repeatA rotateN
           # applyE (overBeginning 0.5 drawInE)
           # applyE (overEnding 0.5 drawOutE)
         fork $ play $ drawSVG svg
           # setDuration rotateT
-          # repeatAnimation rotateN
+          # repeatA rotateN
           # applyE (overBeginning rotateT drawInE)
           # applyE (delayE rotateT $ overBeginning 1 fillInE)
           # applyE (overEnding 0.5 fadeOutE)
         wait (rotateT / fromIntegral (1+length svgs))
     play $ drawCircle
       # setDuration drawCircleT
-      # reverseAnimation
+      # reverseA
     return ()
   where
     drawCircleT = 1

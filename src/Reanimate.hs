@@ -1,6 +1,6 @@
 {-|
 Module      : Reanimate
-Description : Short description
+Description : SVG-base animation library.
 Copyright   : Written by David Himmelstrup
 License     : Unlicense
 Maintainer  : lemmih@gmail.com
@@ -40,11 +40,11 @@ module Reanimate
     pauseAtEnd,
     pauseAtBeginning,
     pauseAround,
-    adjustSpeed,
+    adjustDuration,
     setDuration,
-    reverseAnimation,
-    autoReverse,
-    repeatAnimation,
+    reverseA,
+    playThenReverseA,
+    repeatA,
     freezeAtPercentage
   ) where
 

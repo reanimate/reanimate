@@ -32,7 +32,7 @@ bbox1 = mkAnimation 5 $ \t ->
     svg = scale 2 $ center $ latexAlign "\\sum_{k=1}^\\infty"
 
 bbox2 :: Animation
-bbox2 = autoReverse $ mkAnimation 2.5 $ \t ->
+bbox2 = playThenReverseA $ mkAnimation 2.5 $ \t ->
   mkGroup
     [ mkBoundingBox $ partialSvg t heartShape
     , withStrokeColor "white" $ withFillOpacity 0 $

@@ -25,7 +25,7 @@ import           Reanimate.Svg
 
 
 main :: IO ()
-main = reanimate $ repeatAnimation 5 $ mkAnimation 5 $ \t ->
+main = reanimate $ repeatA 5 $ mkAnimation 5 $ \t ->
     mkGroup
     [ mkBackground "black"
     , scale (2/50) $ center $ -- translate (-320/2) (-180/2) $

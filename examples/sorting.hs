@@ -34,7 +34,7 @@ main = reanimate $
   demonstrateAlgorithm "Merge sort" mergeSortUp `before`
   demonstrateAlgorithm "Insertion sort" insertSort `before`
   demonstrateAlgorithm "Selection sort" selectionSort `before`
-  adjustSpeed (1/3) (demonstrateAlgorithm "Quicksort" quicksort)
+  adjustDuration (*3) (demonstrateAlgorithm "Quicksort" quicksort)
 
 demonstrateAlgorithm :: Text -> (forall s. S s ()) -> Animation
 demonstrateAlgorithm name algo = mkAnimation 10 $ \t ->

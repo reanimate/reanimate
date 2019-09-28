@@ -13,7 +13,7 @@ import           Reanimate.Svg
 import           Reanimate.Signal
 
 main :: IO ()
-main = reanimate $ autoReverse $ mkAnimation 2 $ \t ->
+main = reanimate $ playThenReverseA $ mkAnimation 2 $ \t ->
     mkGroup
       [ mkBackground "black"
       , withStrokeColor "white" $ withFillOpacity 0 text

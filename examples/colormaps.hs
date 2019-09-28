@@ -28,7 +28,7 @@ youtube :: Animation -> Animation
 youtube = id
 
 main :: IO ()
-main = reanimate $ youtube $ pauseAtEnd 2 $ autoReverse $ pauseAtEnd 2 $ mkAnimation 5 $ \t ->
+main = reanimate $ youtube $ pauseAtEnd 2 $ playThenReverseA $ pauseAtEnd 2 $ mkAnimation 5 $ \t ->
     let s           = signalCurve 2 t
         scaleWidth  = screenWidth * 0.5
         nubWidth    = 0.2

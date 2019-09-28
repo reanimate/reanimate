@@ -22,9 +22,11 @@ data Animation = Animation Duration (Time -> SVG)
 mkAnimation :: Duration -> (Time -> SVG) -> Animation
 mkAnimation = Animation
 
+-- | Construct animation with a duration of @1@.
 animate :: (Time -> SVG) -> Animation
 animate = Animation 1
 
+-- | Query the duration of an animation.
 duration :: Animation -> Duration
 duration (Animation d _) = d
 
@@ -115,48 +117,50 @@ mapA :: (Tree -> Tree) -> Animation -> Animation
 mapA fn (Animation d f) = Animation d (fn . f)
 
 -- | Freeze the last frame for @t@ seconds at the end of the animation.
-pauseAtEnd :: Double -> Animation -> Animation
+pauseAtEnd :: Duration -> Animation -> Animation
 pauseAtEnd t a = a `andThen` pause t
 
 -- | Freeze the first frame for @t@ seconds at the beginning of the animation.
-pauseAtBeginning :: Double -> Animation -> Animation
+pauseAtBeginning :: Duration -> Animation -> Animation
 pauseAtBeginning t a =
     Animation t (freezeFrame 0 a) `before` a
 
 -- | Freeze the first and the last frame of the animation for a specified duration.
-pauseAround :: Double -> Double -> Animation -> Animation
+pauseAround :: Duration -> Duration -> Animation -> Animation
 pauseAround start end = pauseAtEnd end . pauseAtBeginning start
 
 -- Freeze frame at time @t@.
 freezeFrame :: Double -> Animation -> (Time -> SVG)
 freezeFrame t (Animation d f) = const $ f (t/d)
 
-adjustSpeed :: Double -> Animation -> Animation
-adjustSpeed factor (Animation d fn) =
-  Animation (d/factor) fn
+-- | Change the duration of an animation. Animates are stretched or squished
+--   (rather than truncated) to fit the new duration.
+adjustDuration :: (Duration -> Duration) -> Animation -> Animation
+adjustDuration fn (Animation d gen) =
+  Animation (fn d) gen
 
 -- | Set the duration of an animation by adjusting its playback rate. The
 --   animation is still played from start to finish without being cropped.
-setDuration :: Double -> Animation -> Animation
-setDuration newD (Animation _ fn) = Animation newD fn
+setDuration :: Duration -> Animation -> Animation
+setDuration newD = adjustDuration (const newD)
 
 -- | Play an animation in reverse. Duration remains unchanged.
-reverseAnimation :: Animation -> Animation
-reverseAnimation (Animation d fn) = Animation d $ \t ->
+reverseA :: Animation -> Animation
+reverseA (Animation d fn) = Animation d $ \t ->
   fn (1-t)
 
 -- | Play animation before playing it again in reverse. Duration is twice
 --   the duration of the input.
-autoReverse :: Animation -> Animation
-autoReverse a = a `before` reverseAnimation a
+playThenReverseA :: Animation -> Animation
+playThenReverseA a = a `before` reverseA a
 
 -- | Loop animation @n@ number of times. This number may be fractional and it
 --   may be less than 1. It must be greater than or equal to 0, though.
 --   New duration is @n*duration input@.
-repeatAnimation :: Double -> Animation -> Animation
-repeatAnimation n (Animation d f) = Animation (d*n) $ \t ->
+repeatA :: Double -> Animation -> Animation
+repeatA n (Animation d f) = Animation (d*n) $ \t ->
   f (t `mod'` recip n)
 
-freezeAtPercentage :: Double -> Animation -> Animation
+freezeAtPercentage :: Time -> Animation -> Animation
 freezeAtPercentage frac (Animation d genFrame) =
   Animation d $ const $ genFrame frac

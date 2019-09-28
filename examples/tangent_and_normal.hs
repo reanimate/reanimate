@@ -24,7 +24,7 @@ import           Reanimate.Svg
 
 
 main :: IO ()
-main = reanimate $ autoReverse $ mkAnimation 5 $ \t ->
+main = reanimate $ playThenReverseA $ mkAnimation 5 $ \t ->
     let s = signalCurve 2 t in
     mkGroup
     [ mkBackground "black"
