@@ -13,12 +13,11 @@ import           Reanimate.Svg
 import           Reanimate.Signal
 
 main :: IO ()
-main = reanimate $ autoReverse $ mkAnimation 2 $ do
-    s <- getSignal signalLinear
-    emit $ mkGroup
+main = reanimate $ autoReverse $ mkAnimation 2 $ \t ->
+    mkGroup
       [ mkBackground "black"
       , withStrokeColor "white" $ withFillOpacity 0 text
-      , withFillColor "white" $ withFillOpacity s text
+      , withFillColor "white" $ withFillOpacity t text
       ]
   where
     text = withStrokeWidth (Num 0.01) $ scale 2 $ center $ latexAlign

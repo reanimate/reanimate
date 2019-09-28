@@ -4,6 +4,9 @@
 {-# LANGUAGE RecordWildCards   #-}
 module Main (main) where
 
+main :: IO ()
+main = return ()
+{-
 import           Control.Lens          ()
 import           Control.Monad
 import qualified Data.ByteString       as BS
@@ -269,10 +272,10 @@ drawPixelImage start end = mkAnimation 2 $ do
     limitGreyPixels (floor (limit*255)) monalisaLarge
 
 drawHexPixels :: Animation
-drawHexPixels = mkAnimation 1 $ do
-  when highdef $
-    emit $ defs
-  emit $ withFillOpacity 1 $ withStrokeWidth (Num 0) $ withFillColor "white" $
+drawHexPixels = mkAnimation 1 $ \_ ->
+  mkGroup
+  [ if highdef then defs else None
+  , withFillOpacity 1 $ withStrokeWidth (Num 0) $ withFillColor "white" $
     mkGroup
     [ translate ((fromIntegral x+0.5)/fromIntegral width*320 - 320/2)
                 ((fromIntegral y+0.5)/fromIntegral height*180 - 180/2) $
@@ -283,6 +286,7 @@ drawHexPixels = mkAnimation 1 $ do
     , y <- [0..height-1]
     , let pixel@(PixelRGB8 r _ _) = pixelAt monalisa x y
     ]
+  ]
   where
     defs = preRender $ mkDefinitions images
     getNthSet n = centerX $ snd (splitGlyphs [n*2,n*2+1] allGlyphs)
@@ -310,3 +314,4 @@ fadeOut = undefined
 
 askTime :: Frame Time
 askTime = Frame $ \t -> return t
+-}

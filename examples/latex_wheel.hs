@@ -17,8 +17,9 @@ import           Reanimate.Signal    (signalLinear)
 import           Reanimate.Svg
 
 main :: IO ()
-main = reanimate $ mkAnimation 0 (emit $ mkBackground "black") `sim`
-  mainScene
+main = reanimate $ bg `sim` mainScene
+  where
+    bg = animate $ const $ mkBackground "black"
 
 mainScene :: Animation
 mainScene = sceneAnimation $ mdo
@@ -54,7 +55,7 @@ mainScene = sceneAnimation $ mdo
     svg = center $ latex "\\LaTeX"
     getNth n = snd (splitGlyphs [n] svg)
     svgs = [
-        withStrokeWidth (Num 0.01) $ 
+        withStrokeWidth (Num 0.01) $
         scale 2 $
         translate 0 (tickLength*2) $
         withStrokeColor "white" $
@@ -66,13 +67,11 @@ radius = 1.25
 tickLength = 0.25
 
 drawCircle :: Animation
-drawCircle = mkAnimation 1 $ do
-  n <- getSignal signalLinear
-  emit $
+drawCircle = animate $ \t ->
     withFillOpacity 0 $
     withStrokeColor "white" $
     rotate (-90) $
-    partialSvg n circPath
+    partialSvg t circPath
   where
     circPath = pathify $ mkCircle (Num radius)
 
@@ -80,10 +79,8 @@ drawTick :: Animation
 drawTick = drawSVG $ mkLine (Num 0, Num 0) (Num 0, Num $ tickLength)
 
 drawSVG :: Tree -> Animation
-drawSVG t = mkAnimation 1 $ do
-  n <- getSignal signalLinear
-  emit $
+drawSVG svg = animate $ \t ->
     withStrokeColor "white" $
-    rotate (n*360) $
+    rotate (t*360) $
     translate 0 radius $
-    t
+    svg

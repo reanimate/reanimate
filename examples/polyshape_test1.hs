@@ -34,9 +34,8 @@ import           System.IO.Unsafe
 
 
 polygonTest :: Animation
-polygonTest = mkAnimation 1 $ do
-    s <- getSignal signalLinear
-    emit $ std $ gridLayout $ transpose
+polygonTest = animate $ \_ ->
+    std $ gridLayout $ transpose
       [ test0, test1, test2, test3, test4, test5 ]
   where
     test0 = column ppA poly1
@@ -113,4 +112,4 @@ starPolyShape = PolyShape $ G.ClosedPath
 main :: IO ()
 main = reanimate $ bg `sim` polygonTest
   where
-    bg = mkAnimation 0 $ emit $ mkBackground "black"
+    bg = animate $ const $ mkBackground "black"

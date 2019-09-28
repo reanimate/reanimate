@@ -33,42 +33,44 @@ main = reanimate $
 sWidth = 0.02
 
 fourierAnimation :: Int -> Animation
-fourierAnimation nCircles = repeatAnimation 2 $ mkAnimation 3 $ do
-    emit $ mkBackground "black"
-    phi <- getSignal $ signalFromTo 0 (2*pi) signalLinear
-    mapF (translate (-screenWidth/4) 0) $ do
-      drawNCircles nCircles phi
-      emit $ withStrokeColor "white" $
+fourierAnimation nCircles = repeatAnimation 2 $ mkAnimation 3 $ \t ->
+    let phi = signalFromTo 0 (2*pi) signalLinear t
+    in mkGroup
+    [ mkBackground "black"
+    , translate (-screenWidth/4) 0 $ mkGroup
+      [ drawNCircles nCircles phi
+      , withStrokeColor "white" $
         withStrokeWidth (Num sWidth) $
         withFillOpacity 0 $
         translate (screenWidth/4) 0 $
-        mkCirclePath nCircles phi
-    emit $ withStrokeWidth (Num sWidth) $
+        mkCirclePath nCircles phi ]
+    , withStrokeWidth (Num sWidth) $
       withFillColor "white" $
       translate (-screenWidth/8*3) (screenHeight/8*3) $
-      latex $ T.pack $ "Circles: " ++ show nCircles
+      latex $ T.pack $ "Circles: " ++ show nCircles ]
 
-drawNCircles totalCircles phi = do
-    worker circles
-    let x :+ y = sum circles
-    emit $ withStrokeWidth (Num sWidth) $
+drawNCircles totalCircles phi = mkGroup
+    [ worker circles
+    , let x :+ y = sum circles in
+      withStrokeWidth (Num sWidth) $
       withStrokeColor "white" $
-      mkLine (Num x, Num y) (Num (screenWidth/4), Num y)
+      mkLine (Num x, Num y) (Num (screenWidth/4), Num y) ]
   where
     circles = [ nthCircle n phi | n <- [0..totalCircles-1] ]
-    worker [] = return ()
-    worker (x :+ y : rest) = do
-      let radius = sqrt(x*x+y*y)
-      emit $ withStrokeWidth (Num sWidth) $
+    worker [] = None
+    worker (x :+ y : rest) =
+      let radius = sqrt(x*x+y*y) in
+      mkGroup
+      [ withStrokeWidth (Num sWidth) $
         withStrokeColor "grey" $
         withFillOpacity 0 $
         CircleTree $ defaultSvg
           & circleCenter .~ (Num 0, Num 0)
           & circleRadius .~ Num radius
-      mapF (translate x y) $ worker rest
-      emit $ withStrokeWidth (Num sWidth) $
+      , translate x y $ worker rest
+      , withStrokeWidth (Num sWidth) $
         withStrokeColor "white" $
-        mkLine (Num 0, Num 0) (Num x, Num y)
+        mkLine (Num 0, Num 0) (Num x, Num y) ]
 
 mkCirclePath nCircles phiOffset = mkLinePath $ take 2000 $
     zip [ 2 * i/granularity | i <- [0..]]

@@ -15,11 +15,10 @@ import           Reanimate.Raster
 import           Codec.Picture
 
 main :: IO ()
-main = reanimate $ mkAnimation 5 $ do
-    s <- getSignal signalLinear
-    emit $ mkGroup
+main = reanimate $ mkAnimation 5 $ \t ->
+    mkGroup
       [ mkBackground "black"
-      , rotate (s*360) $ center $ scaleToWidth 6 $ embedImage img
+      , rotate (t*360) $ center $ scaleToWidth 6 $ embedImage img
       ]
   where
     img = generateImage pixelRenderer 255 255

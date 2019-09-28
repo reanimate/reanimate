@@ -7,6 +7,7 @@ import           Data.List
 import           Data.Ord
 import           Debug.Trace
 import           Reanimate.Monad
+import           Reanimate.Svg
 
 data World
 type ZIndex = Int
@@ -50,9 +51,9 @@ instance MonadFix (Scene s) where
 
 --data Frame a = Frame {unFrame :: Duration -> Time -> State ([Tree] -> [Tree]) a}
 sceneAnimation :: (forall s. Scene s a) -> Animation
-sceneAnimation action = Animation (max s p) $ Frame $ \t ->
-  sequence_ $ map snd $ sortBy (comparing fst)
-    [ (z, unFrame frameGen (t-startT))
+sceneAnimation action = Animation (max s p) $ \t ->
+  mkGroup $ map snd $ sortBy (comparing fst)
+    [ (z, frameGen (t-startT))
     | (startT, Animation dur frameGen, z) <- tl
     , t >= startT
     , t < startT+dur

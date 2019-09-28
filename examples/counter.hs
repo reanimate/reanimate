@@ -16,6 +16,8 @@ import           Reanimate.Svg
 import           Reanimate.Signal
 
 main :: IO ()
-main = reanimate $ mkAnimation 2 $ do
-  s <- getSignal $ signalFromTo 0 (2*60-1) signalLinear
-  emit $ mkCircle (Num s)
+main = reanimate $ mkAnimation dur $ \t ->
+    let s = signalFromTo 0 (dur*60-1) signalLinear t
+    in mkCircle (Num s)
+  where
+    dur = 2

@@ -24,14 +24,15 @@ import           Reanimate.Svg
 
 
 main :: IO ()
-main = reanimate $ mkAnimation 5 $ do
-    s <- oscillate $ getSignal $ signalCurve 2
-    emit $ mkBackground "black"
-    emit $ scale (2/50) $ scaleXY 1 (-1) $
+main = reanimate $ autoReverse $ mkAnimation 5 $ \t ->
+    let s = signalCurve 2 t in
+    mkGroup
+    [ mkBackground "black"
+    , scale (2/50) $ scaleXY 1 (-1) $
       translate (-320/2) (-180/2) $ withStrokeColor "white" $
       renderDiagram $
         withEnvelope (D.rect 320 180 :: SvgDiagram) $
-        D.scale 50 $ D.translate (V2 (-2) (-0.75)) $ dia s
+        D.scale 50 $ D.translate (V2 (-2) (-0.75)) $ dia s ]
   where
     dia param =
         frame 0.5 $ lc white $

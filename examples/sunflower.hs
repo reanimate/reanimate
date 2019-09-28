@@ -23,12 +23,13 @@ import           Reanimate.Signal
 import           Reanimate.Svg
 
 main :: IO ()
-main = reanimate $ mkAnimation 10 $ do
-    n <- getSignal $ signalFromTo 1 500 signalLinear
-    rot <- getSignal $ signalFromTo 0 45 signalLinear
-    emit $ mkBackground "black"
-    emit $ rotate rot $ translate (-320/2) (-180/2)
-      (dSvg $ round n)
+main = reanimate $ mkAnimation 10 $ \t ->
+    let n = signalFromTo 1 500 signalLinear t
+        rot = signalFromTo 0 45 signalLinear t
+    in mkGroup
+    [ mkBackground "black"
+    , rotate rot $ translate (-320/2) (-180/2)
+      (dSvg $ round n) ]
   where
     cached = [ dSvg n | n <- [0..]]
     dSvg n = renderDiagram $ withEnvelope (D.rect 320 180 :: SvgDiagram) $

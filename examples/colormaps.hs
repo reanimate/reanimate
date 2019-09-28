@@ -28,12 +28,12 @@ youtube :: Animation -> Animation
 youtube = id
 
 main :: IO ()
-main = reanimate $ youtube $ pauseAtEnd 2 $ autoReverse $ pauseAtEnd 2 $ mkAnimation 5 $ do
-    s <- getSignal $ signalCurve 2
-    let scaleWidth = screenWidth * 0.5
-        nubWidth = 0.2
+main = reanimate $ youtube $ pauseAtEnd 2 $ autoReverse $ pauseAtEnd 2 $ mkAnimation 5 $ \t ->
+    let s           = signalCurve 2 t
+        scaleWidth  = screenWidth * 0.5
+        nubWidth    = 0.2
         textYOffset = 0.2
-    emit $ mkGroup
+    in mkGroup
       [ mkBackground "black"
       , translate 0 (screenHeight/2*0.85) $ withFillColor "white" $ mkGroup
         [ translate (scaleWidth*s - scaleWidth/2) 0 $

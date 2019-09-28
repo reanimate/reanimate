@@ -20,7 +20,6 @@ import           Graphics.SvgTree    (Tree)
 import           Linear.V2 (V2(..))
 import           Reanimate.Monad
 import           Reanimate.PolyShape
-import           Reanimate.Signal
 import           Reanimate.Svg
 
 type BodyStore = IORef (Map WordPtr Tree)
@@ -68,10 +67,9 @@ simulate space store fps stepsPerFrame dur = do
     V.write v nth svg
     replicateM_ stepsPerFrame $ spaceStep space timeStep
   frozen <- V.unsafeFreeze v
-  return $ mkAnimation dur $ do
-    t <- getSignal signalLinear
+  return $ mkAnimation dur $ \t ->
     let key = round (t * fromIntegral (frames-1))
-    emit $ frozen V.! key
+    in frozen V.! key
 
 polyShapesToBody :: Space -> [PolyShape] -> IO Body
 polyShapesToBody space poly = do

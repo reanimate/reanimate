@@ -12,15 +12,15 @@ import           Reanimate.Monad  (emit, mkAnimation)
 import           Reanimate.Svg
 
 main :: IO ()
-main = reanimate $ mkAnimation 1 $ do
-    emit $ mkBackground "black"
-    emit $
-      withStrokeColor "white" $
+main = reanimate $ mkAnimation 1 $ \_ ->
+    mkGroup
+    [ mkBackground "black"
+    , withStrokeColor "white" $
       withSubglyphs [0] (withFillColor "blue") $
       withSubglyphs [1] (withFillColor "yellow") $
       withSubglyphs [2] (withFillColor "green") $
       withSubglyphs [3] (withFillColor "red") $
       withSubglyphs [4] (withFillColor "darkslategrey") $
-      svg
+      svg ]
   where
     svg = withStrokeWidth (Num 0.01) $ scale 4 $ center $ latex "\\LaTeX"

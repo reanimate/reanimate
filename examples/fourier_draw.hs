@@ -33,22 +33,21 @@ piPoints = lineToPoints 500 $
 
 
 fourierAnimation_ :: Animation
-fourierAnimation_ = mkAnimation 50 $ do
-    emit $ mkBackground "black"
-    phi <- getSignal $ signalFromTo 0 15 signalLinear
-    fLength <- getSignal signalLinear
-
-    let circles = setFourierLength (fLength*maxLength) piFourier
+fourierAnimation_ = mkAnimation 50 $ \t ->
+    let fLength = t
+        circles = setFourierLength (fLength*maxLength) piFourier
         maxLength = sum $ map magnitude $ take 499 $ drop 1 $ fourierCoefficients piFourier
-
-    emit $ withStrokeColor "green" $
+        phi = signalFromTo 0 15 signalLinear t
+    in mkGroup
+    [ mkBackground "black"
+    , drawCircles $ fourierCoefficients $ rotateFourier phi circles
+    , withStrokeColor "green" $
+      withFillOpacity 0 $
       mkLinePath $ mkFourierOutline circles
-    drawCircles $ fourierCoefficients $ rotateFourier phi circles
-
-    emit $
-      withFillColor "white" $
+    , withFillColor "white" $
       translate (-screenWidth/16*7) (screenHeight/16*7) $
       latex $ T.pack $ "Circles: " ++ show (length $ fourierCoefficients circles)
+    ]
 
 data Fourier = Fourier {fourierCoefficients :: [Complex Double]}
 
@@ -101,26 +100,26 @@ rotateFourier phi (Fourier coeffs) =
     n = length coeffs `div` 2
     phi' = realToFrac phi
 
-drawCircles :: [Complex Double] -> Frame ()
-drawCircles circles = do
-    worker circles
-    emit $ withStrokeWidth (Num sWidth) $
+drawCircles :: [Complex Double] -> SVG
+drawCircles circles = mkGroup
+    [ worker circles
+    , withStrokeWidth (Num sWidth) $
       withStrokeColor "white" $
       withStrokeLineJoin JoinRound $
       withFillOpacity 0 $
-      mkLinePath [ (x, y) | x :+ y <- scanl (+) 0 circles ]
+      mkLinePath [ (x, y) | x :+ y <- scanl (+) 0 circles ] ]
   where
-    worker [] = return ()
-    worker (x :+ y : rest) = do
-      let radius = sqrt(x*x+y*y)
-      emit $
-        withStrokeWidth (Num sWidth) $
+    worker [] = None
+    worker (x :+ y : rest) =
+      let radius = sqrt(x*x+y*y) in
+      mkGroup
+      [ withStrokeWidth (Num sWidth) $
         withStrokeColor "dimgrey" $
         withFillOpacity 0 $
         CircleTree $ defaultSvg
           & circleCenter .~ (Num 0, Num 0)
           & circleRadius .~ Num radius
-      mapF (translate x y) $ worker rest
+      , translate x y $ worker rest ]
 
 mkFourierOutline :: Fourier -> [(Double, Double)]
 mkFourierOutline fourier =

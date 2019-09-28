@@ -81,8 +81,8 @@ test = unsafePerformIO $ do
 main :: IO ()
 main = reanimate $ bg `sim` line `sim` test
   where
-    bg = mkAnimation 0 $ emit $ mkBackground "black"
-    line = mkAnimation 0 $ emit $ withStrokeColor "white" $
+    bg = animate $ const $ mkBackground "black"
+    line = animate $ const $ withStrokeColor "white" $
       withStrokeWidth (Num 0.01) $
       mkLine (Num (-screenWidth/2), Num 0)
              (Num (screenWidth/2), Num $ -screenHeight/2)

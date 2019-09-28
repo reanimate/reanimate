@@ -25,16 +25,16 @@ import           Reanimate.Svg
 
 
 main :: IO ()
-main = reanimate $ repeatAnimation 5 $ mkAnimation 5 $ do
-    s <- getSignal signalLinear
-    emit $ mkBackground "black"
-    emit $ scale (2/50) $ center $ -- translate (-320/2) (-180/2) $
+main = reanimate $ repeatAnimation 5 $ mkAnimation 5 $ \t ->
+    mkGroup
+    [ mkBackground "black"
+    , scale (2/50) $ center $ -- translate (-320/2) (-180/2) $
       withStrokeColor "white" $
       renderDiagram $
         withEnvelope (D.rect 320 180 :: SvgDiagram) $
         D.scale 50 $
         lc white $
-        example s
+        example t ]
 
 vectorField (x, y) = r2 (sin (y + 1), sin (x + 1))
 

@@ -21,24 +21,22 @@ bbox = bg `sim`
     mapA (translate (-screenWidth/4) 0) bbox1 `sim`
     mapA (translate (screenWidth/4) 0) bbox2
   where
-    bg = mkAnimation 0 $ emit $ mkBackground "black"
+    bg = animate $ const $ mkBackground "black"
 
 bbox1 :: Animation
-bbox1 = mkAnimation 5 $ do
-    s <- getSignal signalLinear
-    emit $ mkGroup
-      [ mkBoundingBox $ rotate (360*s) svg
-      , withFillColor "white" $ rotate (360*s) svg ]
+bbox1 = mkAnimation 5 $ \t ->
+    mkGroup
+      [ mkBoundingBox $ rotate (360*t) svg
+      , withFillColor "white" $ rotate (360*t) svg ]
   where
     svg = scale 2 $ center $ latexAlign "\\sum_{k=1}^\\infty"
 
 bbox2 :: Animation
-bbox2 = autoReverse $ mkAnimation 2.5 $ do
-  s <- getSignal signalLinear
-  emit $ mkGroup
-    [ mkBoundingBox $ partialSvg s heartShape
+bbox2 = autoReverse $ mkAnimation 2.5 $ \t ->
+  mkGroup
+    [ mkBoundingBox $ partialSvg t heartShape
     , withStrokeColor "white" $ withFillOpacity 0 $
-      partialSvg s heartShape ]
+      partialSvg t heartShape ]
 
 mkBoundingBox :: Tree -> Tree
 mkBoundingBox svg = withStrokeColor "red" $ withFillOpacity 0 $

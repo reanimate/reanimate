@@ -29,40 +29,44 @@ run out.
 -}
 main :: IO ()
 main = reanimate $ pauseAtEnd 2
-  (mkAnimation 0 $ emit $ mkBackground "black") `sim`
+  (animate $ const $ mkBackground "black") `sim`
   drawBox
 
 drawBox :: Animation
-drawBox = mkAnimation 5 $ do
-  emit $ withFillColor "white" $
+drawBox = mkAnimation 5 $ \t ->
+  mkGroup
+  [ withFillColor "white" $
     translate 0 (-70) $
     scale 2 $ center $ latex "Baker's Algorithm"
-  s <- getSignal $ signalFromList    [(0.7, signalFlat 0), (1, signalLinear)]
-  d <- getSignal $ signalFromList    [(0.7, signalFlat 0), (1, signalLinear)]
-  draw <- getSignal $ signalFromList [(0.5, signalLinear), (1, signalFlat 1)]
-  let mlc = MemoryLineChart
-        { mlcWidth = 230
-        , mlcHeight = 50 + s*50
-        , mlcDivider = d
-        , mlcOuterBox = draw }
-  emit $ translate 0 20 $ renderMemoryLineChart mlc
+  , let s    = signalFromList    [(0.7, signalFlat 0), (1, signalLinear)] t
+        d    = signalFromList    [(0.7, signalFlat 0), (1, signalLinear)] t
+        draw = signalFromList [(0.5, signalLinear), (1, signalFlat 1)] t
+        mlc  = MemoryLineChart
+               { mlcWidth = 230
+               , mlcHeight = 50 + s*50
+               , mlcDivider = d
+               , mlcOuterBox = draw }
+    in translate 0 20 $ renderMemoryLineChart mlc
+  ]
 
 highlightBox :: Animation
-highlightBox = mkAnimation 2 $ do
-  emit $ withFillColor "white" $
+highlightBox = mkAnimation 2 $ \t ->
+  mkGroup
+  [ withFillColor "white" $
     translate 0 (-70) $
     scale 2 $ center $ latex "Highlightbox"
-  let boxX = negate mlcWidth / 2
-      boxY = negate mlcHeight / 2
-      mlcWidth = 230
-      mlcHeight = 50
-  s <- getSignal $ signalFromList    [(0.0, signalFlat 0), (1, signalBell 2)]
-  emit $
+  , let boxX = negate mlcWidth / 2
+        boxY = negate mlcHeight / 2
+        mlcWidth = 230
+        mlcHeight = 50
+        s = signalFromList [(0.0, signalFlat 0), (1, signalBell 2)] t
+    in
     withStrokeColor "white" $
     withStrokeWidth (Num $ 0.5 + s) $
     withFillOpacity 0 $
     translate (boxX + mlcWidth/2) (boxY + mlcHeight/2) $
     mkRect (Num mlcWidth) (Num mlcHeight)
+  ]
 
 data MemoryLineChart = MemoryLineChart
   { mlcWidth  :: Double

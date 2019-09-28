@@ -23,21 +23,20 @@ import System.Random
 import Data.List
 
 fixed :: Tree -> Animation -> Animation
-fixed svg ani = mkAnimation 0 (emit svg) `sim` ani
+fixed svg ani = animate (const svg) `sim` ani
 
 digitWidth = 25
 digitCount = 10
 
 main :: IO ()
 main = reanimate $ fixed bg $ pauseAtEnd 1 $
-    mkAnimation 5 $ do
-      s <- getSignal $ signalLinear
-      emit $ withFillColor "white" $ translate (negate $ digitWidth*digitCount/2) 0 $
+    mkAnimation 5 $ \t ->
+      withFillColor "white" $ translate (negate $ digitWidth*digitCount/2) 0 $
         -- sortingTransition (zip [9,0,1,2,3,4,5,6,8,7] squares) s
         -- sortingTransition (zip [9,0,1,2,3,4,5,6,8,7] digits) s
         -- sortingTransition (zip [1,0,2,3,4,5,6,7,8,9] digiSquares) s
         -- jumpTransition (zip [1,0,2,3,4,5,6,7,8,9] digiSquares) s
-        renderSortElements (mkJumpSorted lst) s
+        renderSortElements (mkJumpSorted lst) t
   where
     seed = 0xDEADBEEF
     lst = shuffle' (zip [0..] digiSquares) 10 (mkStdGen seed)
@@ -53,11 +52,10 @@ main = reanimate $ fixed bg $ pauseAtEnd 1 $
 
     -- msg = "Eve"
     glyphs = lowerTransformations $ scale 3 $ pathify $ center $ latexAlign msg
-    fillText = mkAnimation 1 $ do
-      s <- getSignal signalLinear
-      sat <- getSignal $ signalFromTo 0 0.7 signalLinear
-      emit $ withFillColor "white" $ withStrokeColor "white" $ withStrokeWidth (Num $ 0.4 * (1-s)) $
-        withFillOpacity s glyphs
+    fillText = mkAnimation 1 $ \t ->
+      let sat = signalFromTo 0 0.7 signalLinear t in
+      withFillColor "white" $ withStrokeColor "white" $ withStrokeWidth (Num $ 0.4 * (1-t)) $
+        withFillOpacity t glyphs
         -- withSubglyphs [0] (withFillColorPixel $ toRGBString sat 0.0) $
         -- withSubglyphs [1] (withFillColorPixel $ toRGBString sat 0.1) $
         -- withSubglyphs [2] (withFillColorPixel $ toRGBString sat 0.2) $
@@ -69,11 +67,9 @@ main = reanimate $ fixed bg $ pauseAtEnd 1 $
         -- withSubglyphs [8] (withFillColorPixel $ toRGBString sat 0.8) $
         -- withSubglyphs [9] (withFillColorPixel $ toRGBString sat 0.9) $
         -- glyphs
-    drawText = mkAnimation 2 $ do
-      s <- getSignal signalLinear
-      emit $
-        withStrokeColor "white" $ withFillOpacity 0 $ withStrokeWidth (Num 0.4) $
-          partialSvg s glyphs
+    drawText = mkAnimation 2 $ \t ->
+      withStrokeColor "white" $ withFillOpacity 0 $ withStrokeWidth (Num 0.4) $
+        partialSvg t glyphs
 
 data Direction = Up | Down | Sideways
 type Delay = Double

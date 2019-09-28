@@ -37,10 +37,9 @@ main = reanimate $
   adjustSpeed (1/3) (demonstrateAlgorithm "Quicksort" quicksort)
 
 demonstrateAlgorithm :: Text -> (forall s. S s ()) -> Animation
-demonstrateAlgorithm name algo = mkAnimation 10 $ do
-    s <- getSignal signalLinear
+demonstrateAlgorithm name algo = mkAnimation 10 $ \t ->
     let img = generateImage pixelRenderer width height
-        seed = round (s * 3000)
+        seed = round (t * 3000)
         pixelRenderer x y = turbo (fromIntegral num / fromIntegral width)
           where
             num = (sortedDat !! y) V.! x
@@ -48,7 +47,7 @@ demonstrateAlgorithm name algo = mkAnimation 10 $ do
         -- width = 1024
         width = 500
         height = length sortedDat
-    emit $ mkGroup
+    in mkGroup
       [ mkBackground "black"
 
       , translate 0 (-screenWidth*0.03) $ center $ scaleXY (-1) 1 $
@@ -60,7 +59,7 @@ demonstrateAlgorithm name algo = mkAnimation 10 $ do
         rotate (-90) $ scale 0.5 $ center $
         latex "$Time \\rightarrow$"
       , withFillColor "white" $ translate ((screenWidth*0.30)) 0 $
-        mkCircle (Num $ (1-s)*0.5)
+        mkCircle (Num $ (1-t)*0.5)
       ]
   where
 

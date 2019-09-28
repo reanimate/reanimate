@@ -34,9 +34,9 @@ import           System.IO.Unsafe
 
 
 polygonTest :: Animation
-polygonTest = mkAnimation 10 $ do
-    s <- getSignal $ signalFromTo 0.5 (-0.5) signalLinear
-    let bigBox = head $ svgToPolyShapes $ pathify $
+polygonTest = mkAnimation 10 $ \t ->
+    let s = signalFromTo 0.5 (-0.5) signalLinear t
+        bigBox = head $ svgToPolyShapes $ pathify $
           mkRect (Num 2) (Num 2)
         smallBox = head $ svgToPolyShapes $ pathify $
           translate (0) (screenHeight*s) $
@@ -47,7 +47,7 @@ polygonTest = mkAnimation 10 $ do
         merged = translate (screenWidth/2*0.1) 0 $
           mkGroup $ map renderPolyShape $
           unionPolyShapes [bigBox, smallBox]
-    emit $ std $ gridLayout [[ overlap, merged ]]
+    in std $ gridLayout [[ overlap, merged ]]
   where
     std =
       withFillOpacity 1 .
@@ -61,4 +61,4 @@ polygonTest = mkAnimation 10 $ do
 main :: IO ()
 main = reanimate $ bg `sim` polygonTest
   where
-    bg = mkAnimation 0 $ emit $ mkBackground "black"
+    bg = animate $ const $ mkBackground "black"

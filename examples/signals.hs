@@ -51,16 +51,15 @@ convertX x = x*(screenWidth/320)
 convertY y = y*(screenHeight/180)
 
 curvesExample :: (Double -> ([(Double, Double -> Double)], Text)) -> Animation
-curvesExample gen = mkAnimation 2 $ do
-    emit $ mkBackground "black"
-    emit $ withFillColor "white" $
+curvesExample gen = mkAnimation 2 $ \t ->
+    mkGroup
+    [ mkBackground "black"
+    , withFillColor "white" $
       translate 0 (screenHeight*0.35) $
       center $ latex "Signals"
-    s <- getSignal signalLinear
-    let (curveFns, name) = gen s
-    emit $
-        center $
-        mkGroup
+    , let (curveFns, name) = gen t in
+      center $
+      mkGroup
         [ withStrokeColor "white" $ withStrokeWidth (Num 0.01) $
           mkGroup
           [ mkLine (Num 0, Num 0)
@@ -81,6 +80,7 @@ curvesExample gen = mkAnimation 2 $ do
         , withFillOpacity 0 $ withStrokeColor "green" $ -- withStrokeWidth (Num 0.5) $
           lowerTransformations $ scaleXY (convertX $ 200) (convertX $ (50)) $ mkSignalLine (signalFromList curveFns)
         ]
+    ]
 
 mkSignalLine :: Signal -> Tree
 mkSignalLine fn = mkLinePath
