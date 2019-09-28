@@ -14,7 +14,7 @@ homepage:            https://github.com/Lemmih/reanimate
 build-type:          Simple
 extra-source-files:  ChangeLog.md
 extra-doc-files:     docs/gifs/*.gif
-cabal-version:       >=1.10
+cabal-version:       >=1.18
 
 description:
   Animation library based on SVGs. Can import (and manipulate) SVGs from
