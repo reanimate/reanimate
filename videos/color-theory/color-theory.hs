@@ -4,6 +4,9 @@
 {-# LANGUAGE RecordWildCards   #-}
 module Main (main) where
 
+main :: IO ()
+main = return ()
+{-
 import           Control.Lens          ()
 import           Control.Monad
 import qualified Data.ByteString       as BS
@@ -31,13 +34,10 @@ import           System.IO.Unsafe
 highdef = True
 
 takeA :: Double -> Animation -> Animation
-takeA d1 (Animation d2 f) = Animation d $ Frame $ \_ t -> unFrame f d (min d t)
-  where
-    d = min d1 d2
+takeA = undefined
 
 dropA :: Double -> Animation -> Animation
-dropA d1 (Animation d2 f) = Animation (max 0 (d2-d1)) $
-  Frame $ \d t -> unFrame f d (t+d1)
+dropA = undefined
 
 -- screen width 320
 -- screen height 180
@@ -272,10 +272,10 @@ drawPixelImage start end = mkAnimation 2 $ do
     limitGreyPixels (floor (limit*255)) monalisaLarge
 
 drawHexPixels :: Animation
-drawHexPixels = mkAnimation 1 $ do
-  when highdef $
-    emit $ defs
-  emit $ withFillOpacity 1 $ withStrokeWidth (Num 0) $ withFillColor "white" $
+drawHexPixels = mkAnimation 1 $ \_ ->
+  mkGroup
+  [ if highdef then defs else None
+  , withFillOpacity 1 $ withStrokeWidth (Num 0) $ withFillColor "white" $
     mkGroup
     [ translate ((fromIntegral x+0.5)/fromIntegral width*320 - 320/2)
                 ((fromIntegral y+0.5)/fromIntegral height*180 - 180/2) $
@@ -286,6 +286,7 @@ drawHexPixels = mkAnimation 1 $ do
     , y <- [0..height-1]
     , let pixel@(PixelRGB8 r _ _) = pixelAt monalisa x y
     ]
+  ]
   where
     defs = preRender $ mkDefinitions images
     getNthSet n = centerX $ snd (splitGlyphs [n*2,n*2+1] allGlyphs)
@@ -306,14 +307,11 @@ drawHexPixels = mkAnimation 1 $ do
 
 
 fadeIn :: Double -> Animation -> Animation
-fadeIn fadeDuration (Animation d genFrame) = Animation d $ do
-  t <- askTime
-  mapF (withGroupOpacity (max 0 $ min 1 (t/fadeDuration))) genFrame
+fadeIn = undefined
 
 fadeOut :: Double -> Animation -> Animation
-fadeOut fadeDuration (Animation d genFrame) = Animation d $ do
-  t <- askTime
-  mapF (withGroupOpacity (max 0 $ min 1 ((d-t)/fadeDuration))) genFrame
+fadeOut = undefined
 
 askTime :: Frame Time
-askTime = Frame $ \_dur t -> return t
+askTime = Frame $ \t -> return t
+-}

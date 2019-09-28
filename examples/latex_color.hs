@@ -3,24 +3,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import           Control.Lens
-
-import           Graphics.SvgTree (Number(..))
-import           Reanimate.Driver (reanimate)
-import           Reanimate.LaTeX  (latex)
-import           Reanimate.Monad  (emit, mkAnimation)
-import           Reanimate.Svg
+import           Reanimate
 
 main :: IO ()
-main = reanimate $ mkAnimation 1 $ do
-    emit $ mkBackground "black"
-    emit $
-      withStrokeColor "white" $
+main = reanimate $ animate $ const $
+    mkGroup
+    [ mkBackground "black"
+    , withStrokeColor "white" $
       withSubglyphs [0] (withFillColor "blue") $
       withSubglyphs [1] (withFillColor "yellow") $
       withSubglyphs [2] (withFillColor "green") $
       withSubglyphs [3] (withFillColor "red") $
       withSubglyphs [4] (withFillColor "darkslategrey") $
-      svg
+      svg ]
   where
-    svg = withStrokeWidth (Num 0.01) $ scale 4 $ center $ latex "\\LaTeX"
+    svg = withStrokeWidth 0.01 $ scale 4 $ center $ latex "\\LaTeX"

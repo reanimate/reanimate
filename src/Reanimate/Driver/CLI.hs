@@ -92,19 +92,19 @@ testCommand = info (parse <**> helper)
 
 checkCommand :: ParserInfo Command
 checkCommand = info (parse)
-    (progDesc "check")
+    (progDesc "Run a system's diagnostic and report any missing external dependencies.")
   where
     parse = pure Check
 
 viewCommand :: ParserInfo Command
 viewCommand = info (parse)
-    (progDesc "view")
+    (progDesc "Play animation in browser window.")
   where
     parse = pure View
 
 renderCommand :: ParserInfo Command
 renderCommand = info (parse)
-    (progDesc "render")
+    (progDesc "Render animation to file.")
   where
     -- fromPreset :: (Maybe Preset -> (Command -> Command))
     -- fromPreset Nothing = id
@@ -142,8 +142,8 @@ renderCommand = info (parse)
 opts :: ParserInfo Options
 opts = info (options <**> helper )
   ( fullDesc
-  <> progDesc "PROG DESC"
-  <> header "HEADER"
+  <> progDesc "This program contains an animation which can either be viewed \
+              \in a web-browser or rendered to disk."
   )
 
 getDriverOptions :: IO Options

@@ -3,24 +3,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import           Control.Lens               ()
-
 import           Codec.Picture
 import qualified Data.Colour.CIE            as CIE
-import           Data.Colour.CIE.Illuminant
+import           Data.Colour.CIE.Illuminant (d65)
 import           Data.Colour.RGBSpace
-import qualified Data.Colour.RGBSpace.HSL   as HSL
 import           Data.Colour.SRGB
 import           Data.Word
-import           Graphics.SvgTree           (Number (..), Tree)
-import           Reanimate.ColorMap
-import           Reanimate.Driver           (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate.Monad
-import           Reanimate.Raster
-import           Reanimate.Signal
-import           Reanimate.Svg
-import           Reanimate.Constants
+import           Graphics.SvgTree           (Tree)
+import           Reanimate
 
 -- Cycle the animation if we want to upload it to youtube.
 youtube :: Animation -> Animation
@@ -28,22 +18,22 @@ youtube :: Animation -> Animation
 youtube = id
 
 main :: IO ()
-main = reanimate $ youtube $ pauseAtEnd 2 $ autoReverse $ pauseAtEnd 2 $ mkAnimation 5 $ do
-    s <- getSignal $ signalCurve 2
-    let scaleWidth = screenWidth * 0.5
-        nubWidth = 0.2
+main = reanimate $ youtube $ pauseAtEnd 2 $ playThenReverseA $ pauseAtEnd 2 $ mkAnimation 5 $ \t ->
+    let s           = signalCurve 2 t
+        offsetWidth  = screenWidth * 0.5
+        nubWidth    = 0.2
         textYOffset = 0.2
-    emit $ mkGroup
+    in mkGroup
       [ mkBackground "black"
       , translate 0 (screenHeight/2*0.85) $ withFillColor "white" $ mkGroup
-        [ translate (scaleWidth*s - scaleWidth/2) 0 $
-          withFillColor "white" $ mkCircle (Num nubWidth)
-        , withStrokeColor "white" $ withStrokeWidth (Num 0.05) $
-          mkLine (Num $ -(scaleWidth-nubWidth)/2,Num 0)
-                 (Num $ (scaleWidth-nubWidth)/2, Num 0)
-        , translate (-scaleWidth/2-1.0) textYOffset $
+        [ translate (offsetWidth*s - offsetWidth/2) 0 $
+          withFillColor "white" $ mkCircle nubWidth
+        , withStrokeColor "white" $ withStrokeWidth 0.05 $
+          mkLine (-(offsetWidth-nubWidth)/2, 0)
+                 ((offsetWidth-nubWidth)/2, 0)
+        , translate (-offsetWidth/2-1.0) textYOffset $
           scale 0.5 $ centerX $ latex "Color"
-        , translate (scaleWidth/2+1.5) textYOffset $
+        , translate (offsetWidth/2+1.5) textYOffset $
           scale 0.5 $ centerX $ latex "Greyscale"
         ]
       , translate (-columnX) (rowInit-rowStep*0) $ mkOutline "viridis" (dimmer s . viridis)
@@ -65,7 +55,7 @@ main = reanimate $ youtube $ pauseAtEnd 2 $ autoReverse $ pauseAtEnd 2 $ mkAnima
 
     mkOutline label f =
       mkGroup
-      [ center $ withFillColor "grey" $ mkRect (Num $ scaleWidth+0.05) (Num $ scaleHeight+0.05)
+      [ center $ withFillColor "grey" $ mkRect (scaleWidth+0.05) (scaleHeight+0.05)
       , scaleToSize scaleWidth scaleHeight $ mkColorMap f
       , translate (-scaleWidth/2) (0.5) $ centerY $ withFillColor "white" $
         scale 0.5 $ latex label
