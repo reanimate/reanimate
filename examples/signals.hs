@@ -1,19 +1,19 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards   #-}
 module Main (main) where
 
-import           Data.Text (pack, Text)
+import           Data.Monoid         ((<>))
+import           Data.Text           (Text, pack)
+import           Graphics.SvgTree    hiding (Text)
 import           Numeric
-
-import           Graphics.SvgTree hiding (Text)
-import           Reanimate.Driver (reanimate)
-import           Reanimate.LaTeX
 import           Reanimate.Animation
-import           Reanimate.Svg
-import           Reanimate.Signal
 import           Reanimate.Constants
+import           Reanimate.Driver    (reanimate)
+import           Reanimate.LaTeX
+import           Reanimate.Signal
+import           Reanimate.Svg
 
 main :: IO ()
 main = reanimate $ pauseAtEnd 5 $
