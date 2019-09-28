@@ -24,12 +24,12 @@ module Reanimate
     --     rate eaches 60 fps.
     --   * Key commands for pausing, frame stepping, forward/rewind.
     reanimate,
-    -- * Key types
+    -- * Animations
     Animation(..),
     mkAnimation,
     animate,
     duration,
-    -- * Animation composition
+    -- ** Composition
     before,
     sim,
     simLoop,
@@ -45,8 +45,25 @@ module Reanimate
     reverseA,
     playThenReverseA,
     repeatA,
-    freezeAtPercentage
+    freezeAtPercentage,
+    -- * Signals
+    Signal,
+    signalFlat,
+    signalLinear,
+    signalFromTo,
+    signalReverse,
+    signalCurve,
+    signalBell,
+    signalOscillate,
+    signalFromList,
+    -- * External tools
+    latex,
+    latexAlign,
+    xelatex
   ) where
 
-import Reanimate.Driver
-import Reanimate.Animation
+import           Reanimate.Animation
+import           Reanimate.Driver
+import           Reanimate.LaTeX
+import           Reanimate.Signal
+-- import           Reanimate.Svg

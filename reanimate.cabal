@@ -46,6 +46,7 @@ library
                       Reanimate.Combinators
                       Reanimate.LaTeX
                       Reanimate.Svg
+                      Reanimate.Svg.Unuse
                       Reanimate.Diagrams
                       Reanimate.Transform
                       Reanimate.Driver

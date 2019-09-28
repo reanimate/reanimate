@@ -12,6 +12,7 @@ import           Graphics.SvgTree  (Tree (..), defaultSvg, parseSvgFile)
 import           Reanimate.Cache
 import           Reanimate.Misc
 import           Reanimate.Svg
+import           Reanimate.Svg.Unuse
 import           System.FilePath   (replaceExtension, takeFileName, (</>))
 import           System.IO.Unsafe  (unsafePerformIO)
 
