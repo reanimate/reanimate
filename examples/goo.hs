@@ -62,7 +62,7 @@ main = reanimate $ playThenReverseA $ mkAnimation 5 $ \t ->
     sharpness = 10
     dev = 0.2
     radius = 1
-    circ = mkCircle (Num radius)
+    circ = mkCircle radius
 
 mkFilter :: String -> [FilterElement] -> Filter
 mkFilter ident fe = defaultSvg & filterChildren .~ fe & attrId .~ Just ident

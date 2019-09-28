@@ -55,7 +55,7 @@ mainScene = sceneAnimation $ mdo
     svg = center $ latex "\\LaTeX"
     getNth n = snd (splitGlyphs [n] svg)
     svgs = [
-        withStrokeWidth (Num 0.01) $
+        withStrokeWidth 0.01 $
         scale 2 $
         translate 0 (tickLength*2) $
         withStrokeColor "white" $
@@ -73,10 +73,10 @@ drawCircle = animate $ \t ->
     rotate (-90) $
     partialSvg t circPath
   where
-    circPath = pathify $ mkCircle (Num radius)
+    circPath = pathify $ mkCircle radius
 
 drawTick :: Animation
-drawTick = drawSVG $ mkLine (Num 0, Num 0) (Num 0, Num $ tickLength)
+drawTick = drawSVG $ mkLine (0, 0) (0, tickLength)
 
 drawSVG :: Tree -> Animation
 drawSVG svg = animate $ \t ->

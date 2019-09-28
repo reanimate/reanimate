@@ -68,7 +68,7 @@ test = unsafePerformIO $ do
       -- vects' = fst $ convexHull vects 0
       svg' =
         withFillOpacity 0 $ withStrokeColor "white" $
-        withStrokeWidth (Num 0.01) $
+        withStrokeWidth 0.01 $
         renderPolyShapes (map plFromPolygon vectGroup)
   --
   -- ballBody <- polyShapesToBody space poly
@@ -144,7 +144,7 @@ chunkPolyshapes t =
   --   withFillOpacity 0 $
   --   mkGroup $ map renderPolyShape $
   --   svgToPolyShapes t
-    withStrokeWidth (Num 0.001) $
+    withStrokeWidth 0.001 $
     withStrokeColor "red" $
     mkGroup $ map renderPolyShape [pl12,pl13]
   ]
@@ -215,6 +215,6 @@ main = reanimate $ bg `sim` mapA reorient (line `sim` mapA chunkPolyshapes test)
   where
     bg = animate $ const $ mkBackground "black"
     line = animate $ const $ withStrokeColor "white" $
-      withStrokeWidth (Num 0.01) $
-      mkLine (Num (-screenWidth/2), Num $ (screenHeight/2))
-             (Num (screenWidth/2), Num $ -screenHeight/2)
+      withStrokeWidth 0.01 $
+      mkLine (-screenWidth/2, screenHeight/2)
+             (screenWidth/2, -screenHeight/2)

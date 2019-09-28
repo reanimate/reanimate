@@ -38,7 +38,7 @@ import           Geom2D.CubicBezier  (ClosedPath (..), CubicBezier (..), DPoint,
                                       curvesToClosed, evalBezier, splitBezier,
                                       union, vectorDistance)
 import           Graphics.SvgTree    (PathCommand (..), RPoint, Tree (..),
-                                      defaultSvg, pathDefinition, Number(Num))
+                                      defaultSvg, pathDefinition)
 import           Linear.V2
 import           Reanimate.Constants
 import           Reanimate.Svg
@@ -65,7 +65,7 @@ renderPolyShapePoints :: PolyShape -> Tree
 renderPolyShapePoints = mkGroup . map renderPoint . plCurves
   where
     renderPoint (CubicBezier (Point x y) _ _ _) =
-      translate x y $ mkCircle (Num 0.02)
+      translate x y $ mkCircle 0.02
 
 plLength :: PolyShape -> Double
 plLength = sum . map cubicLength . plCurves

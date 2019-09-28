@@ -60,16 +60,16 @@ curvesExample gen = mkAnimation 2 $ \t ->
     , let (curveFns, name) = gen t in
       center $
       mkGroup
-        [ withStrokeColor "white" $ withStrokeWidth (Num 0.01) $
+        [ withStrokeColor "white" $ withStrokeWidth 0.01 $
           mkGroup
-          [ mkLine (Num 0, Num 0)
-                   (Num $ convertX 200, Num 0)
-          , mkLine (Num $ 0, Num 0)
-                   (Num $ 0, Num $ convertY 50) ]
-        , withStrokeColor "white" $ withStrokeWidth (Num 0.01) $
+          [ mkLine (0, 0)
+                   (convertX 200, 0)
+          , mkLine (0, 0)
+                   (0, convertY 50) ]
+        , withStrokeColor "white" $ withStrokeWidth 0.01 $
           mkGroup
-          [ mkLine (Num 0, Num $ convertX $ y)
-                   (Num $ convertX 200, Num $ convertX y)
+          [ mkLine (0, convertX $ y)
+                   (convertX 200, convertX y)
           | y <- [10,20,30,40,50] ]
         , withFillColor "white" $
           mkGroup
@@ -77,7 +77,7 @@ curvesExample gen = mkAnimation 2 $ \t ->
             , translate (convertX $ -5) (convertX $ 50)  $ scale 0.5 $ center $ latex "1"
             , translate (convertX $ 205) (convertX $ -5) $ scale 0.5 $ center $ latex "1"
             , translate (convertX $ 100) (convertX $ -30)$ scale 0.6 $ center $ latex name ]
-        , withFillOpacity 0 $ withStrokeColor "green" $ -- withStrokeWidth (Num 0.5) $
+        , withFillOpacity 0 $ withStrokeColor "green" $ -- withStrokeWidth 0.5 $
           lowerTransformations $ scaleXY (convertX $ 200) (convertX $ (50)) $ mkSignalLine (signalFromList curveFns)
         ]
     ]

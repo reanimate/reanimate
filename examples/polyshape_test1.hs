@@ -73,7 +73,7 @@ polygonTest = animate $ \_ ->
     std =
       withFillOpacity 1 .
       withFillColor "blue" .
-      withStrokeWidth (Num 0.01) .
+      withStrokeWidth 0.01 .
       withStrokeColor "white"
     offset = 0.2
 

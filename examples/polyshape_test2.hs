@@ -52,7 +52,7 @@ polygonTest = mkAnimation 10 $ \t ->
     std =
       withFillOpacity 1 .
       withFillColor "blue" .
-      withStrokeWidth (Num 0.01) .
+      withStrokeWidth 0.01 .
       withStrokeColor "white"
 
 

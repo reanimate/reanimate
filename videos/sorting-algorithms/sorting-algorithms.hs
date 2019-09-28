@@ -43,7 +43,7 @@ main = reanimate $ fixed bg $ pauseAtEnd 1 $
     bg = mkBackground "black"
     msg = "0 1 2 3 4 5 6 7 8 9"
     digits =
-      map (withStrokeColor "black" . withStrokeWidth (Num 0.2)) $
+      map (withStrokeColor "black" . withStrokeWidth 0.2) $
       map (lowerTransformations . scale 3 . pathify . center . latex . T.pack . show) [0..9]
     squares = map center [ withFillColorPixel (promotePixel $ viridis (n/9)) $
       mkRect (digitWidth+0.2) digitWidth | n <- [0..9]]
@@ -54,7 +54,7 @@ main = reanimate $ fixed bg $ pauseAtEnd 1 $
     glyphs = lowerTransformations $ scale 3 $ pathify $ center $ latexAlign msg
     fillText = mkAnimation 1 $ \t ->
       let sat = signalFromTo 0 0.7 signalLinear t in
-      withFillColor "white" $ withStrokeColor "white" $ withStrokeWidth (Num $ 0.4 * (1-t)) $
+      withFillColor "white" $ withStrokeColor "white" $ withStrokeWidth (0.4 * (1-t)) $
         withFillOpacity t glyphs
         -- withSubglyphs [0] (withFillColorPixel $ toRGBString sat 0.0) $
         -- withSubglyphs [1] (withFillColorPixel $ toRGBString sat 0.1) $
@@ -68,7 +68,7 @@ main = reanimate $ fixed bg $ pauseAtEnd 1 $
         -- withSubglyphs [9] (withFillColorPixel $ toRGBString sat 0.9) $
         -- glyphs
     drawText = mkAnimation 2 $ \t ->
-      withStrokeColor "white" $ withFillOpacity 0 $ withStrokeWidth (Num 0.4) $
+      withStrokeColor "white" $ withFillOpacity 0 $ withStrokeWidth 0.4 $
         partialSvg t glyphs
 
 data Direction = Up | Down | Sideways

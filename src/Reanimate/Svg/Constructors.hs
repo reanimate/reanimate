@@ -95,8 +95,8 @@ withFillOpacity opacity = fillOpacity .~ Just (realToFrac opacity)
 withGroupOpacity :: Double -> Tree -> Tree
 withGroupOpacity opacity = groupOpacity .~ Just (realToFrac opacity)
 
-withStrokeWidth :: Number -> Tree -> Tree
-withStrokeWidth width = strokeWidth .~ pure width
+withStrokeWidth :: Double -> Tree -> Tree
+withStrokeWidth width = strokeWidth .~ pure (Num width)
 
 withClipPathRef :: ElementRef -> Tree -> Tree
 withClipPathRef ref = clipPathRef .~ pure ref
@@ -110,15 +110,15 @@ mkRect width height = translate (-width/2) (-height/2) $ RectangleTree $ default
   & rectWidth .~ Just (Num width)
   & rectHeight .~ Just (Num height)
 
-mkCircle :: Number -> Tree
+mkCircle :: Double -> Tree
 mkCircle radius = CircleTree $ defaultSvg
   & circleCenter .~ (Num 0, Num 0)
-  & circleRadius .~ radius
+  & circleRadius .~ Num radius
 
-mkLine :: Point -> Point -> Tree
-mkLine point1 point2 = LineTree $ defaultSvg
-  & linePoint1 .~ point1
-  & linePoint2 .~ point2
+mkLine :: (Double,Double) -> (Double, Double) -> Tree
+mkLine (x1,y1) (x2,y2) = LineTree $ defaultSvg
+  & linePoint1 .~ (Num x1, Num y1)
+  & linePoint2 .~ (Num x2, Num y2)
 
 mkGroup :: [Tree] -> Tree
 mkGroup forest = GroupTree $ defaultSvg

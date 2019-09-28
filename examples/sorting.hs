@@ -59,7 +59,7 @@ demonstrateAlgorithm name algo = mkAnimation 10 $ \t ->
         rotate (-90) $ scale 0.5 $ center $
         latex "$Time \\rightarrow$"
       , withFillColor "white" $ translate ((screenWidth*0.30)) 0 $
-        mkCircle (Num $ (1-t)*0.5)
+        mkCircle ((1-t)*0.5)
       ]
   where
 

@@ -103,7 +103,7 @@ rotateFourier phi (Fourier coeffs) =
 drawCircles :: [Complex Double] -> SVG
 drawCircles circles = mkGroup
     [ worker circles
-    , withStrokeWidth (Num sWidth) $
+    , withStrokeWidth sWidth $
       withStrokeColor "white" $
       withStrokeLineJoin JoinRound $
       withFillOpacity 0 $
@@ -113,7 +113,7 @@ drawCircles circles = mkGroup
     worker (x :+ y : rest) =
       let radius = sqrt(x*x+y*y) in
       mkGroup
-      [ withStrokeWidth (Num sWidth) $
+      [ withStrokeWidth sWidth $
         withStrokeColor "dimgrey" $
         withFillOpacity 0 $
         CircleTree $ defaultSvg

@@ -9,3 +9,6 @@ screenHeight = 9
 
 defaultDPI :: Dpi
 defaultDPI = 96
+
+defaultStrokeWidth :: Double
+defaultStrokeWidth = 0.05

@@ -62,7 +62,7 @@ highlightBox = mkAnimation 2 $ \t ->
         s = signalFromList [(0.0, signalFlat 0), (1, signalBell 2)] t
     in
     withStrokeColor "white" $
-    withStrokeWidth (Num $ 0.5 + s) $
+    withStrokeWidth (0.5 + s) $
     withFillOpacity 0 $
     translate (boxX + mlcWidth/2) (boxY + mlcHeight/2) $
     mkRect mlcWidth mlcHeight
@@ -84,15 +84,15 @@ mlcBox MemoryLineChart{..} = (boxX, boxY, mlcWidth, mlcHeight)
 renderMemoryLineChart :: MemoryLineChart -> Tree
 renderMemoryLineChart MemoryLineChart{..} = mkGroup
     [ withStrokeColor "white" $
-      withStrokeWidth (Num 0.5) $
+      withStrokeWidth 0.5 $
       withFillOpacity 0 $
       partialSvg mlcOuterBox $ pathify $
       translate (boxX + mlcWidth/2) (boxY + mlcHeight/2) $
       mkRect mlcWidth mlcHeight
     , withStrokeColor "white" $
-      withStrokeWidth (Num 0.5) $
-      mkLine (Num (negate $ mlcWidth/2), Num 0)
-             (Num (negate (mlcWidth/2) + lineWidth), Num 0)
+      withStrokeWidth 0.5 $
+      mkLine (negate (mlcWidth/2), 0)
+             (negate (mlcWidth/2) + lineWidth, 0)
     , withFillColor "white" $
       translate (negate (mlcWidth/2) - 10) 0 $ rotate (-90) $
       center $ latex "Memory"

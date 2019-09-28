@@ -23,4 +23,4 @@ main = reanimate $ animate $ const $
       withSubglyphs [4] (withFillColor "darkslategrey") $
       svg ]
   where
-    svg = withStrokeWidth (Num 0.01) $ scale 4 $ center $ latex "\\LaTeX"
+    svg = withStrokeWidth 0.01 $ scale 4 $ center $ latex "\\LaTeX"

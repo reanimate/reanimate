@@ -40,11 +40,11 @@ fourierAnimation nCircles = repeatA 2 $ mkAnimation 3 $ \t ->
     , translate (-screenWidth/4) 0 $ mkGroup
       [ drawNCircles nCircles phi
       , withStrokeColor "white" $
-        withStrokeWidth (Num sWidth) $
+        withStrokeWidth sWidth $
         withFillOpacity 0 $
         translate (screenWidth/4) 0 $
         mkCirclePath nCircles phi ]
-    , withStrokeWidth (Num sWidth) $
+    , withStrokeWidth sWidth $
       withFillColor "white" $
       translate (-screenWidth/8*3) (screenHeight/8*3) $
       latex $ T.pack $ "Circles: " ++ show nCircles ]
@@ -52,25 +52,25 @@ fourierAnimation nCircles = repeatA 2 $ mkAnimation 3 $ \t ->
 drawNCircles totalCircles phi = mkGroup
     [ worker circles
     , let x :+ y = sum circles in
-      withStrokeWidth (Num sWidth) $
+      withStrokeWidth sWidth $
       withStrokeColor "white" $
-      mkLine (Num x, Num y) (Num (screenWidth/4), Num y) ]
+      mkLine (x, y) (screenWidth/4, y) ]
   where
     circles = [ nthCircle n phi | n <- [0..totalCircles-1] ]
     worker [] = None
     worker (x :+ y : rest) =
       let radius = sqrt(x*x+y*y) in
       mkGroup
-      [ withStrokeWidth (Num sWidth) $
+      [ withStrokeWidth sWidth $
         withStrokeColor "grey" $
         withFillOpacity 0 $
         CircleTree $ defaultSvg
           & circleCenter .~ (Num 0, Num 0)
           & circleRadius .~ Num radius
       , translate x y $ worker rest
-      , withStrokeWidth (Num sWidth) $
+      , withStrokeWidth sWidth $
         withStrokeColor "white" $
-        mkLine (Num 0, Num 0) (Num x, Num y) ]
+        mkLine (0, 0) (x, y) ]
 
 mkCirclePath nCircles phiOffset = mkLinePath $ take 2000 $
     zip [ 2 * i/granularity | i <- [0..]]

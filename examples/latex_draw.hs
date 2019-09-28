@@ -18,7 +18,7 @@ main = reanimate $
   where
     bg = animate $ const $ mkBackground "black"
     msg = "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
-    glyphs = withStrokeWidth (Num 0.01) $ center $ latexAlign msg
+    glyphs = withStrokeWidth 0.01 $ center $ latexAlign msg
     fillText = mkAnimation 1 $ \t ->
       scale 2 $ withFillColor "white" $ withFillOpacity t glyphs
     drawText = mkAnimation 2 $ \t ->

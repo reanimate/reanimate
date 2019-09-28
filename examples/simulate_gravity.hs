@@ -65,9 +65,9 @@ test = unsafePerformIO $ do
   addToBodyStore bodyStore ballBody $
     withFillColor "white" $
     mkGroup
-      [ mkCircle (Num radius)
+      [ mkCircle radius
       , withStrokeColor "black" $
-        mkLine (Num 0, Num 0) (Num 0, Num radius) ]
+        mkLine (0, 0) (0, radius) ]
 
   ani <- simulate space bodyStore 60 3 4
 
@@ -83,6 +83,6 @@ main = reanimate $ bg `sim` line `sim` test
   where
     bg = animate $ const $ mkBackground "black"
     line = animate $ const $ withStrokeColor "white" $
-      withStrokeWidth (Num 0.01) $
-      mkLine (Num (-screenWidth/2), Num 0)
-             (Num (screenWidth/2), Num $ -screenHeight/2)
+      withStrokeWidth 0.01 $
+      mkLine (-screenWidth/2, 0)
+             (screenWidth/2, -screenHeight/2)

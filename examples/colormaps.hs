@@ -37,10 +37,10 @@ main = reanimate $ youtube $ pauseAtEnd 2 $ playThenReverseA $ pauseAtEnd 2 $ mk
       [ mkBackground "black"
       , translate 0 (screenHeight/2*0.85) $ withFillColor "white" $ mkGroup
         [ translate (scaleWidth*s - scaleWidth/2) 0 $
-          withFillColor "white" $ mkCircle (Num nubWidth)
-        , withStrokeColor "white" $ withStrokeWidth (Num 0.05) $
-          mkLine (Num $ -(scaleWidth-nubWidth)/2,Num 0)
-                 (Num $ (scaleWidth-nubWidth)/2, Num 0)
+          withFillColor "white" $ mkCircle nubWidth
+        , withStrokeColor "white" $ withStrokeWidth 0.05 $
+          mkLine (-(scaleWidth-nubWidth)/2, 0)
+                 ((scaleWidth-nubWidth)/2, 0)
         , translate (-scaleWidth/2-1.0) textYOffset $
           scale 0.5 $ centerX $ latex "Color"
         , translate (scaleWidth/2+1.5) textYOffset $

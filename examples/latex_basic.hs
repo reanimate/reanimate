@@ -20,5 +20,5 @@ main = reanimate $ playThenReverseA $ mkAnimation 2 $ \t ->
       , withFillColor "white" $ withFillOpacity t text
       ]
   where
-    text = withStrokeWidth (Num 0.01) $ scale 2 $ center $ latexAlign
+    text = withStrokeWidth 0.01 $ scale 2 $ center $ latexAlign
       "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"

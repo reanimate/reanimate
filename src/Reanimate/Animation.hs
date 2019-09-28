@@ -1,11 +1,12 @@
 module Reanimate.Animation where
 
-import           Control.Arrow            ()
-import           Data.Fixed               (mod')
-import qualified Data.Map                 as M
-import           Graphics.SvgTree         (Document (..), Number (..),
-                                           Tree (..), xmlOfTree)
+import           Control.Arrow              ()
+import           Data.Fixed                 (mod')
+import qualified Data.Map                   as M
+import           Graphics.SvgTree           (Document (..), Number (..),
+                                             Tree (..), xmlOfTree)
 import           Graphics.SvgTree.Printer
+import           Reanimate.Constants
 import           Reanimate.Svg.Constructors
 import           Text.XML.Light.Output
 
@@ -106,7 +107,7 @@ renderSvg w h t = ppDocument doc
       { _viewBox = Just (-width/2, -height/2, width, height)
       , _width = w
       , _height = h
-      , _elements = [withStrokeWidth (Num 0.05) $ scaleXY 1 (-1) t]
+      , _elements = [withStrokeWidth defaultStrokeWidth $ scaleXY 1 (-1) t]
       , _definitions = M.empty
       , _description = ""
       , _documentLocation = ""
