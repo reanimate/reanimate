@@ -29,7 +29,7 @@ run out.
 -}
 main :: IO ()
 main = reanimate $ pauseAtEnd 2
-  (animate $ const $ mkBackground "black") `sim`
+  (animate $ const $ mkBackground "black") `parA`
   drawBox
 
 drawBox :: Animation
@@ -38,9 +38,9 @@ drawBox = mkAnimation 5 $ \t ->
   [ withFillColor "white" $
     translate 0 (-70) $
     scale 2 $ center $ latex "Baker's Algorithm"
-  , let s    = signalFromList    [(0.7, signalFlat 0), (1, signalLinear)] t
-        d    = signalFromList    [(0.7, signalFlat 0), (1, signalLinear)] t
-        draw = signalFromList [(0.5, signalLinear), (1, signalFlat 1)] t
+  , let s    = fromListS    [(0.7, constantS 0), (1, id)] t
+        d    = fromListS    [(0.7, constantS 0), (1, id)] t
+        draw = fromListS [(0.5, id), (1, constantS 1)] t
         mlc  = MemoryLineChart
                { mlcWidth = 230
                , mlcHeight = 50 + s*50
@@ -59,7 +59,7 @@ highlightBox = mkAnimation 2 $ \t ->
         boxY = negate mlcHeight / 2
         mlcWidth = 230
         mlcHeight = 50
-        s = signalFromList [(0.0, signalFlat 0), (1, signalBell 2)] t
+        s = fromListS [(0.0, constantS 0), (1, bellS 2)] t
     in
     withStrokeColor "white" $
     withStrokeWidth (0.5 + s) $

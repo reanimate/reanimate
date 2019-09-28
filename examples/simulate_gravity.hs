@@ -70,7 +70,7 @@ test = unsafePerformIO $ do
 
 
 main :: IO ()
-main = reanimate $ bg `sim` line `sim` test
+main = reanimate $ bg `parA` line `parA` test
   where
     bg = animate $ const $ mkBackground "black"
     line = animate $ const $ withStrokeColor "white" $

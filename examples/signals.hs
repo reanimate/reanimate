@@ -18,30 +18,30 @@ import           Reanimate.Svg
 main :: IO ()
 main = reanimate $ pauseAtEnd 5 $
     curvesExample (\_ -> ([], "[]"))
-      `before`
+      `seqA`
     curvesExample (\s ->
-      ( [(1, signalFlat s)]
-      , "[(1, signalFlat " <> ppD s <> ")]"))
-      `before`
+      ( [(1, constantS s)]
+      , "[(1, constantS " <> ppD s <> ")]"))
+      `seqA`
     curvesExample (\s ->
-      ( [(s, signalFlat 0), (1, signalLinear)]
-      , "[(" <> ppD s <> ", signalFlat 0), (1, signalLinear)]"))
-      `before`
+      ( [(s, constantS 0), (1, id)]
+      , "[(" <> ppD s <> ", constantS 0), (1, id)]"))
+      `seqA`
     curvesExample (\s ->
-      ( [(s, signalFlat 1), (1, signalReverse signalLinear)]
-      , "[(" <> ppD s <> ", signalFlat 0), (1, signalReverse signalLinear)]"))
-      `before`
+      ( [(s, constantS 1), (1, reverseS)]
+      , "[(" <> ppD s <> ", constantS 1), (1, reverseS)]"))
+      `seqA`
     curvesExample (\s ->
-      ( [(1, signalCurve (2+s*3))]
-      , "[(1, signalCurve "<> ppD (2+s*3) <>")]"))
-      `before`
+      ( [(1, curveS (2+s*3))]
+      , "[(1, curveS "<> ppD (2+s*3) <>")]"))
+      `seqA`
     curvesExample (\s ->
-      ( [(1, signalFromTo s 1 $ signalCurve 5)]
-      , "[(1, signalFromTo "<>  ppD s <>" 1 \\$ signalCurve 5)]"))
-      `before`
+      ( [(1, fromToS s 1 . curveS 5)]
+      , "[(1, fromToS "<>  ppD s <>" 1 \\$ curveS 5)]"))
+      `seqA`
     curvesExample (\s ->
-      ( [(1, signalBell (2+s*3))]
-      , "[(1, signalBell "<> ppD (2+s*3)<>")]"))
+      ( [(1, bellS (2+s*3))]
+      , "[(1, bellS "<> ppD (2+s*3)<>")]"))
   where
     ppD s = pack (showFFloat (Just 2) s "")
 
@@ -77,7 +77,7 @@ curvesExample gen = mkAnimation 2 $ \t ->
             , translate (convertX $ 205) (convertX $ -5) $ scale 0.5 $ center $ latex "1"
             , translate (convertX $ 100) (convertX $ -30)$ scale 0.6 $ center $ latex name ]
         , withFillOpacity 0 $ withStrokeColor "green" $ -- withStrokeWidth 0.5 $
-          lowerTransformations $ scaleXY (convertX $ 200) (convertX $ (50)) $ mkSignalLine (signalFromList curveFns)
+          lowerTransformations $ scaleXY (convertX $ 200) (convertX $ (50)) $ mkSignalLine (fromListS curveFns)
         ]
     ]
 

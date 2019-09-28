@@ -10,7 +10,7 @@ import           Reanimate
 
 main :: IO ()
 main = reanimate $ playThenReverseA $ mkAnimation 5 $ \t ->
-    let s = signalFromTo 0 1.5 (signalCurve 2) t in
+    let s = fromToS 0 1.5 $ curveS 2 t in
     mkGroup
     [ mkBackground "black"
     , FilterTree $ mkFilter "blur"

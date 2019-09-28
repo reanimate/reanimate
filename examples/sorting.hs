@@ -17,11 +17,11 @@ import           System.Random.Shuffle
 
 main :: IO ()
 main = reanimate $
-  demonstrateAlgorithm "Bubble sort" bubbleSort `before`
-  demonstrateAlgorithm "Merge sort (left leaning)" mergeSort `before`
-  demonstrateAlgorithm "Merge sort" mergeSortUp `before`
-  demonstrateAlgorithm "Insertion sort" insertSort `before`
-  demonstrateAlgorithm "Selection sort" selectionSort `before`
+  demonstrateAlgorithm "Bubble sort" bubbleSort `seqA`
+  demonstrateAlgorithm "Merge sort (left leaning)" mergeSort `seqA`
+  demonstrateAlgorithm "Merge sort" mergeSortUp `seqA`
+  demonstrateAlgorithm "Insertion sort" insertSort `seqA`
+  demonstrateAlgorithm "Selection sort" selectionSort `seqA`
   adjustDuration (*3) (demonstrateAlgorithm "Quicksort" quicksort)
 
 demonstrateAlgorithm :: Text -> (forall s. S s ()) -> Animation
