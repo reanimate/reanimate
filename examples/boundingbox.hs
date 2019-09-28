@@ -10,8 +10,8 @@ main :: IO ()
 main = reanimate bbox
 
 bbox :: Animation
-bbox = bg `sim`
-    mapA (translate (-screenWidth/4) 0) bbox1 `sim`
+bbox = bg `parA`
+    mapA (translate (-screenWidth/4) 0) bbox1 `parA`
     mapA (translate (screenWidth/4) 0) bbox2
   where
     bg = animate $ const $ mkBackground "black"

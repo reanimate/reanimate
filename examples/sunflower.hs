@@ -14,8 +14,8 @@ import           Reanimate
 
 main :: IO ()
 main = reanimate $ mkAnimation 10 $ \t ->
-    let n = signalFromTo 1 500 signalLinear t
-        rot = signalFromTo 0 45 signalLinear t
+    let n = fromToS 1 500 t
+        rot = fromToS 0 45 t
     in mkGroup
     [ mkBackground "black"
     , rotate rot $ translate (-320/2) (-180/2)

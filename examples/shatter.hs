@@ -126,7 +126,7 @@ reorient :: Tree -> Tree
 reorient = id -- scale 4 . translate 0 (-0.9)
 
 main :: IO ()
-main = reanimate $ bg `sim` mapA reorient (line `sim` mapA chunkPolyshapes test)
+main = reanimate $ bg `parA` mapA reorient (line `parA` mapA chunkPolyshapes test)
   where
     bg = animate $ const $ mkBackground "black"
     line = animate $ const $ withStrokeColor "white" $

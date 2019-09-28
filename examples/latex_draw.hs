@@ -7,7 +7,7 @@ import           Reanimate
 
 main :: IO ()
 main = reanimate $
-    bg `sim` (playThenReverseA $ drawText `andThen` fillText)
+    bg `parA` (playThenReverseA $ drawText `andThen` fillText)
   where
     bg = animate $ const $ mkBackground "black"
     msg = "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"

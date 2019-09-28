@@ -13,6 +13,7 @@ synopsis:            Animation library based on SVGs.
 homepage:            https://github.com/Lemmih/reanimate
 build-type:          Simple
 extra-source-files:  ChangeLog.md
+extra-doc-files:     docs/gifs/*.gif
 cabal-version:       >=1.10
 
 description:
@@ -65,6 +66,7 @@ library
                       Reanimate.Constants
                       Reanimate.Chiphunk
                       Reanimate.PolyShape
+                      Reanimate.Builtin.Documentation
   other-modules:      Reanimate.Cache
                       Reanimate.Driver.Check
                       Reanimate.Driver.CLI

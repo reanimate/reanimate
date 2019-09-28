@@ -88,6 +88,6 @@ starPolyShape = PolyShape $ G.ClosedPath
   ]
 
 main :: IO ()
-main = reanimate $ bg `sim` polygonTest
+main = reanimate $ bg `parA` polygonTest
   where
     bg = animate $ const $ mkBackground "black"

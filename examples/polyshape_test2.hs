@@ -9,7 +9,7 @@ import           Reanimate.PolyShape
 
 polygonTest :: Animation
 polygonTest = mkAnimation 10 $ \t ->
-    let s = signalFromTo 0.5 (-0.5) signalLinear t
+    let s = fromToS 0.5 (-0.5) t
         bigBox = head $ svgToPolyShapes $ pathify $
           mkRect 2 2
         smallBox = head $ svgToPolyShapes $ pathify $
@@ -30,6 +30,6 @@ polygonTest = mkAnimation 10 $ \t ->
       withStrokeColor "white"
 
 main :: IO ()
-main = reanimate $ bg `sim` polygonTest
+main = reanimate $ bg `parA` polygonTest
   where
     bg = animate $ const $ mkBackground "black"

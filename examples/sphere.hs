@@ -9,7 +9,7 @@ import           Data.String.Here
 
 main :: IO ()
 main = reanimate $ mkAnimation 5 $ \t ->
-    let s = signalFromTo 0 360 signalLinear t in
+    let s = fromToS 0 360 t in
     mkGroup
     [ mkBackground "black"
     , povray [] (script s) ]

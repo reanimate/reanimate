@@ -192,7 +192,7 @@ reorient = scale 6 . translate 0 (-0.9)
 --       unionPolyShapes
 
 main :: IO ()
-main = reanimate $ bg `sim` mapA reorient (line `sim` mapA chunkPolyshapes test)
+main = reanimate $ bg `parA` mapA reorient (line `parA` mapA chunkPolyshapes test)
   where
     bg = animate $ const $ mkBackground "black"
     line = animate $ const $ withStrokeColor "white" $

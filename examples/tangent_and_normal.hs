@@ -17,7 +17,7 @@ import           Reanimate.Svg
 
 main :: IO ()
 main = reanimate $ playThenReverseA $ mkAnimation 5 $ \t ->
-    let s = signalCurve 2 t in
+    let s = curveS 2 t in
     mkGroup
     [ mkBackground "black"
     , scale (2/50) $ scaleXY 1 (-1) $
