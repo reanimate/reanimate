@@ -23,7 +23,7 @@ import           System.Random
 import           System.Random.Shuffle
 
 fixed :: Tree -> Animation -> Animation
-fixed svg ani = animate (const svg) `sim` ani
+fixed svg ani = animate (const svg) `parA` ani
 
 digitWidth = 25
 digitCount = 10
@@ -53,7 +53,7 @@ main = reanimate $ fixed bg $ pauseAtEnd 1 $
     -- msg = "Eve"
     glyphs = lowerTransformations $ scale 3 $ pathify $ center $ latexAlign msg
     fillText = mkAnimation 1 $ \t ->
-      let sat = signalFromTo 0 0.7 signalLinear t in
+      let sat = fromToS 0 0.7 t in
       withFillColor "white" $ withStrokeColor "white" $ withStrokeWidth (0.4 * (1-t)) $
         withFillOpacity t glyphs
         -- withSubglyphs [0] (withFillColorPixel $ toRGBString sat 0.0) $
@@ -146,7 +146,7 @@ renderSortElement SortElement{..} t
   | t > sortElementStartTime + sortElementDuration =
     translate (fromIntegral sortElementEndPosition * digitWidth) 0 sortElementTree
   | otherwise =
-    let pos = signalCurve 2 $ (t - sortElementStartTime) / sortElementDuration
+    let pos = curveS 2 $ (t - sortElementStartTime) / sortElementDuration
         from = sortElementStartPosition
         to = sortElementEndPosition
         linear = fromIntegral from + (fromIntegral (to-from))*pos

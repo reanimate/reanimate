@@ -7,12 +7,7 @@ import           Data.Complex
 import qualified Data.Text           as T
 import           Graphics.SvgTree
 import           Linear.V2
-import           Reanimate.Animation
-import           Reanimate.Constants
-import           Reanimate.Driver    (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate.Signal
-import           Reanimate.Svg
+import           Reanimate
 
 main :: IO ()
 main = reanimate $ pauseAtEnd 2 $
@@ -34,7 +29,7 @@ fourierAnimation_ = mkAnimation 50 $ \t ->
     let fLength = t
         circles = setFourierLength (fLength*maxLength) piFourier
         maxLength = sum $ map magnitude $ take 499 $ drop 1 $ fourierCoefficients piFourier
-        phi = signalFromTo 0 15 signalLinear t
+        phi = fromToS 0 15 t
     in mkGroup
     [ mkBackground "black"
     , drawCircles $ fourierCoefficients $ rotateFourier phi circles

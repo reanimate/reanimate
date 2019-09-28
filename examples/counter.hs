@@ -6,6 +6,6 @@ import           Reanimate
 
 main :: IO ()
 main = reanimate $ mkAnimation dur $
-    mkCircle . signalFromTo 0 (dur*60-1) signalLinear
+    mkCircle . fromToS 0 (dur*60-1)
   where
     dur = 2

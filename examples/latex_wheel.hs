@@ -12,7 +12,7 @@ import           Reanimate.Effect
 import           Reanimate.Scene
 
 main :: IO ()
-main = reanimate $ bg `sim` mainScene
+main = reanimate $ bg `parA` mainScene
   where
     bg = animate $ const $ mkBackground "black"
 

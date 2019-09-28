@@ -20,13 +20,13 @@ waveMultiplier = 2 -- Square wave
 
 main :: IO ()
 main = reanimate $
-  fourierAnimation 1 `before`
-  fourierAnimation 2 `before`
-  fourierAnimation 3 `before`
-  fourierAnimation 5 `before`
-  fourierAnimation 10 `before`
-  fourierAnimation 25 `before`
-  fourierAnimation 50 `before`
+  fourierAnimation 1 `seqA`
+  fourierAnimation 2 `seqA`
+  fourierAnimation 3 `seqA`
+  fourierAnimation 5 `seqA`
+  fourierAnimation 10 `seqA`
+  fourierAnimation 25 `seqA`
+  fourierAnimation 50 `seqA`
   fourierAnimation 100
 
 sWidth :: Double
@@ -34,7 +34,7 @@ sWidth = 0.02
 
 fourierAnimation :: Int -> Animation
 fourierAnimation nCircles = repeatA 2 $ mkAnimation 3 $ \t ->
-    let phi = signalFromTo 0 (2*pi) signalLinear t
+    let phi = fromToS 0 (2*pi) t
     in mkGroup
     [ mkBackground "black"
     , translate (-screenWidth/4) 0 $ mkGroup

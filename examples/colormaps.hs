@@ -19,8 +19,8 @@ youtube = id
 
 main :: IO ()
 main = reanimate $ youtube $ pauseAtEnd 2 $ playThenReverseA $ pauseAtEnd 2 $ mkAnimation 5 $ \t ->
-    let s           = signalCurve 2 t
-        offsetWidth  = screenWidth * 0.5
+    let s           = curveS 2 t
+        offsetWidth = screenWidth * 0.5
         nubWidth    = 0.2
         textYOffset = 0.2
     in mkGroup
