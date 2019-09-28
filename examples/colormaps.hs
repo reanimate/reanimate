@@ -3,24 +3,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import           Control.Lens               ()
-
 import           Codec.Picture
 import qualified Data.Colour.CIE            as CIE
-import           Data.Colour.CIE.Illuminant
+import           Data.Colour.CIE.Illuminant (d65)
 import           Data.Colour.RGBSpace
-import qualified Data.Colour.RGBSpace.HSL   as HSL
 import           Data.Colour.SRGB
 import           Data.Word
-import           Graphics.SvgTree           (Number (..), Tree)
-import           Reanimate.ColorMap
-import           Reanimate.Driver           (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate.Animation
-import           Reanimate.Raster
-import           Reanimate.Signal
-import           Reanimate.Svg
-import           Reanimate.Constants
+import           Graphics.SvgTree           (Tree)
+import           Reanimate
 
 -- Cycle the animation if we want to upload it to youtube.
 youtube :: Animation -> Animation
@@ -30,20 +20,20 @@ youtube = id
 main :: IO ()
 main = reanimate $ youtube $ pauseAtEnd 2 $ playThenReverseA $ pauseAtEnd 2 $ mkAnimation 5 $ \t ->
     let s           = signalCurve 2 t
-        scaleWidth  = screenWidth * 0.5
+        offsetWidth  = screenWidth * 0.5
         nubWidth    = 0.2
         textYOffset = 0.2
     in mkGroup
       [ mkBackground "black"
       , translate 0 (screenHeight/2*0.85) $ withFillColor "white" $ mkGroup
-        [ translate (scaleWidth*s - scaleWidth/2) 0 $
+        [ translate (offsetWidth*s - offsetWidth/2) 0 $
           withFillColor "white" $ mkCircle nubWidth
         , withStrokeColor "white" $ withStrokeWidth 0.05 $
-          mkLine (-(scaleWidth-nubWidth)/2, 0)
-                 ((scaleWidth-nubWidth)/2, 0)
-        , translate (-scaleWidth/2-1.0) textYOffset $
+          mkLine (-(offsetWidth-nubWidth)/2, 0)
+                 ((offsetWidth-nubWidth)/2, 0)
+        , translate (-offsetWidth/2-1.0) textYOffset $
           scale 0.5 $ centerX $ latex "Color"
-        , translate (scaleWidth/2+1.5) textYOffset $
+        , translate (offsetWidth/2+1.5) textYOffset $
           scale 0.5 $ centerX $ latex "Greyscale"
         ]
       , translate (-columnX) (rowInit-rowStep*0) $ mkOutline "viridis" (dimmer s . viridis)

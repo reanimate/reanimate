@@ -61,19 +61,45 @@ module Reanimate
     module Reanimate.Svg.LineCommand,
     module Reanimate.Svg.BoundingBox,
     module Reanimate.Svg,
-    -- * External tools
+    -- ** Raster data
+    embedImage,
+    embedDynamicImage,
+    embedPng,
+    raster,
+    -- ** External SVG providers
     latex,
     latexAlign,
     xelatex,
-    povray
+    povray,
+    -- * Colormaps
+    turbo,
+    viridis,
+    magma,
+    inferno,
+    plasma,
+    sinebow,
+    parula,
+    cividis,
+    jet,
+    hsv,
+    hsvMatlab,
+    greyscale,
+    -- * Constants
+    screenWidth,
+    screenHeight,
+    defaultDPI,
+    defaultStrokeWidth
   ) where
 
 import           Reanimate.Animation
+import           Reanimate.ColorMap
+import           Reanimate.Constants
 import           Reanimate.Driver
 import           Reanimate.LaTeX
 import           Reanimate.Povray
+import           Reanimate.Raster
 import           Reanimate.Signal
 import           Reanimate.Svg
+import           Reanimate.Svg.BoundingBox
 import           Reanimate.Svg.Constructors
 import           Reanimate.Svg.LineCommand
-import           Reanimate.Svg.BoundingBox

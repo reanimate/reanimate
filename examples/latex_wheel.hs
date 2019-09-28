@@ -4,17 +4,12 @@
 {-# LANGUAGE RecursiveDo       #-}
 module Main (main) where
 
-import           Codec.Picture.Types
-import           Control.Monad       (forM_)
-import           Data.Fixed          (mod')
-import           Graphics.SvgTree    (Number (..), Tree)
-import           Reanimate.Driver    (reanimate)
+import           Control.Monad    (forM_)
+import           Graphics.SvgTree (Tree)
+import           Reanimate
+import           Reanimate.Driver (reanimate)
 import           Reanimate.Effect
-import           Reanimate.LaTeX     (latex)
-import           Reanimate.Animation
 import           Reanimate.Scene
-import           Reanimate.Signal    (signalLinear)
-import           Reanimate.Svg
 
 main :: IO ()
 main = reanimate $ bg `sim` mainScene
@@ -52,8 +47,8 @@ mainScene = sceneAnimation $ mdo
     rotateT     = 5
     rotateN     = 3
 
-    svg = center $ latex "\\LaTeX"
-    getNth n = snd (splitGlyphs [n] svg)
+    svgCAF = center $ latex "\\LaTeX"
+    getNth n = snd (splitGlyphs [n] svgCAF)
     svgs = [
         withStrokeWidth 0.01 $
         scale 2 $
@@ -63,6 +58,7 @@ mainScene = sceneAnimation $ mdo
         center $ getNth n
       | n <- [0..4]]
 
+radius, tickLength :: Double
 radius = 1.25
 tickLength = 0.25
 

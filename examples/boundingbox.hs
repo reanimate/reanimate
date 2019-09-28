@@ -3,15 +3,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import           Control.Lens
-
-import           Graphics.SvgTree (Number(..),Tree)
-import           Reanimate.Driver (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate.Animation
-import           Reanimate.Svg
-import           Reanimate.Signal
-import           Reanimate.Constants
+import           Graphics.SvgTree (Tree)
+import           Reanimate
 
 main :: IO ()
 main = reanimate bbox
@@ -45,6 +38,7 @@ mkBoundingBox svg = withStrokeColor "red" $ withFillOpacity 0 $
   where
     (x, y, w, h) = boundingBox svg
 
+heartShape :: Tree
 heartShape = lowerTransformations $ scaleXY 1 (-1) $ scale 0.1 $
     center $ rotateAroundCenter 225 $ mkPathString
       "M0.0,40.0 v-40.0 h40.0\

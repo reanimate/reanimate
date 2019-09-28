@@ -6,12 +6,7 @@ module Main (main) where
 import           Control.Lens
 
 import           Graphics.SvgTree
-import           Reanimate.Driver (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate.Animation
-import           Reanimate.Svg
-import           Reanimate.Signal
-import           Reanimate.Combinators
+import           Reanimate
 
 main :: IO ()
 main = reanimate $ playThenReverseA $ mkAnimation 5 $ \t ->
@@ -59,7 +54,7 @@ main = reanimate $ playThenReverseA $ mkAnimation 5 $ \t ->
       ] & filterRef .~ pure (Ref "goo")
     ]
   where
-    sharpness = 10
+    sharpness = 10 :: Integer
     dev = 0.2
     radius = 1
     circ = mkCircle radius

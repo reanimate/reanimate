@@ -3,19 +3,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import           Control.Lens
 import           Data.Complex
-import           Data.Fixed
-import qualified Data.Text        as T
-
+import qualified Data.Text           as T
 import           Graphics.SvgTree
 import           Linear.V2
-import           Reanimate.Driver (reanimate)
-import           Reanimate.LaTeX
 import           Reanimate.Animation
-import           Reanimate.Svg
-import           Reanimate.Signal
 import           Reanimate.Constants
+import           Reanimate.Driver    (reanimate)
+import           Reanimate.LaTeX
+import           Reanimate.Signal
+import           Reanimate.Svg
 
 main :: IO ()
 main = reanimate $ pauseAtEnd 2 $
@@ -68,17 +65,18 @@ mkFourier points = Fourier $ findCoefficient 0 :
     nPoints = fromIntegral (length points)
 
 
-setFourierCircles :: Double -> Fourier -> Fourier
-setFourierCircles n _ | n < 1 = error "Invalid argument. Need at least one circle."
-setFourierCircles n (Fourier coeffs) =
-    Fourier $ take iCircles coeffs ++ [coeffs!!iCircles * realToFrac fCircle]
-  where
-    (iCircles, fCircle) = divMod' n 1
+-- setFourierCircles :: Double -> Fourier -> Fourier
+-- setFourierCircles n _ | n < 1 = error "Invalid argument. Need at least one circle."
+-- setFourierCircles n (Fourier coeffs) =
+--     Fourier $ take iCircles coeffs ++ [coeffs!!iCircles * realToFrac fCircle]
+--   where
+--     (iCircles, fCircle) = divMod' n 1
 
 setFourierLength :: Double -> Fourier -> Fourier
-setFourierLength len (Fourier (first:lst)) = Fourier $ first : worker len lst
+setFourierLength _ (Fourier []) = Fourier []
+setFourierLength len0 (Fourier (first:lst)) = Fourier $ first : worker len0 lst
   where
-    worker len [] = []
+    worker _len [] = []
     worker len (c:cs) =
       if magnitude c < len
         then c : worker (len - magnitude c) cs
@@ -86,7 +84,7 @@ setFourierLength len (Fourier (first:lst)) = Fourier $ first : worker len lst
 
 rotateFourier :: Double -> Fourier -> Fourier
 rotateFourier phi (Fourier coeffs) =
-    Fourier $ worker (coeffs) 0
+    Fourier $ worker (coeffs) (0::Integer)
   where
     worker [] _ = []
     worker (x:rest) 0 = x : worker rest 1
@@ -97,7 +95,7 @@ rotateFourier phi (Fourier coeffs) =
       right * exp (n' * 2 * pi * i * phi') :
       worker rest (n+1)
     i = 0 :+ 1
-    n = length coeffs `div` 2
+    -- n = length coeffs `div` 2
     phi' = realToFrac phi
 
 drawCircles :: [Complex Double] -> SVG

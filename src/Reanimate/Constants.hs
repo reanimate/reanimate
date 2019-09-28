@@ -1,4 +1,9 @@
-module Reanimate.Constants where
+module Reanimate.Constants
+  ( screenWidth
+  , screenHeight
+  , defaultDPI
+  , defaultStrokeWidth
+  ) where
 
 import           Graphics.SvgTree
 

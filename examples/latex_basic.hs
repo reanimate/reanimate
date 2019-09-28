@@ -3,14 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import           Control.Lens
-
-import           Graphics.SvgTree (Number(..))
-import           Reanimate.Driver (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate.Animation
-import           Reanimate.Svg
-import           Reanimate.Signal
+import           Reanimate
 
 main :: IO ()
 main = reanimate $ playThenReverseA $ mkAnimation 2 $ \t ->

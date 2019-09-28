@@ -3,7 +3,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import           Control.Lens
 import           Data.Complex
 import qualified Data.Text as T
 
@@ -30,6 +29,7 @@ main = reanimate $
   fourierAnimation 50 `before`
   fourierAnimation 100
 
+sWidth :: Double
 sWidth = 0.02
 
 fourierAnimation :: Int -> Animation
@@ -49,6 +49,7 @@ fourierAnimation nCircles = repeatA 2 $ mkAnimation 3 $ \t ->
       translate (-screenWidth/8*3) (screenHeight/8*3) $
       latex $ T.pack $ "Circles: " ++ show nCircles ]
 
+drawNCircles :: Int -> Double -> Tree
 drawNCircles totalCircles phi = mkGroup
     [ worker circles
     , let x :+ y = sum circles in
@@ -70,6 +71,7 @@ drawNCircles totalCircles phi = mkGroup
         withStrokeColor "white" $
         mkLine (0, 0) (x, y) ]
 
+mkCirclePath :: Int -> Double -> Tree
 mkCirclePath nCircles phiOffset = mkLinePath $ take 2000 $
     zip [ 2 * i/granularity | i <- [0..]]
     $ drop (round $ (1-phiOffset/(2*pi)) * granularity) $
@@ -80,6 +82,7 @@ mkCirclePath nCircles phiOffset = mkLinePath $ take 2000 $
   where
     granularity = 500
 
+fourierYValue :: Int -> Double -> Double
 fourierYValue n phi =
   imagPart (sum [ nthCircle i phi | i <- [0..n-1]])
 

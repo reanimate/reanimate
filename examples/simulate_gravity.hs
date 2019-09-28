@@ -5,17 +5,8 @@
 module Main (main) where
 
 import           Chiphunk.Low
-import           Control.Lens
-import           Data.Text          (Text, pack)
-import           Graphics.SvgTree   hiding (Text)
-import           Numeric
 import           Reanimate.Chiphunk
-import           Reanimate.Driver   (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate.Animation
-import           Reanimate.Signal
-import           Reanimate.Constants
-import           Reanimate.Svg
+import           Reanimate
 import           System.IO.Unsafe
 
 

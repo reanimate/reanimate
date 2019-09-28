@@ -4,24 +4,13 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Main (main) where
 
-import           Codec.Picture.Types
-import qualified Data.Colour.Palette.BrewerSet as D
-import qualified Diagrams.Backend.SVG          as D
 import           Diagrams.Prelude              hiding (Animation, boundingBox,
                                                 center, circle, duration,
                                                 fontSize, rotate, scale,
                                                 translate)
 import qualified Diagrams.Prelude              as D
-import qualified Diagrams.TwoD.Path.LSystem    as D
-import           Graphics.SvgTree              (Number (..))
-import           Graphics.SvgTree              as S
-import           Linear.V2
 import           Reanimate.Diagrams
-import           Reanimate.Driver              (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate.Animation
-import           Reanimate.Signal
-import           Reanimate.Svg
+import           Reanimate
 
 
 main :: IO ()
@@ -36,8 +25,10 @@ main = reanimate $ repeatA 5 $ mkAnimation 5 $ \t ->
         lc white $
         example t ]
 
+vectorField :: (Double, Double) -> V2 Double
 vectorField (x, y) = r2 (sin (y + 1), sin (x + 1))
 
+arrowAtPoint :: (Double, Double) -> SvgDiagram
 arrowAtPoint (x, y) = arrowAt' opts (p2 (x, y)) (sL *^ vf) # alignTL
   where
     vf   = vectorField (x, y)

@@ -4,28 +4,16 @@
 {-# LANGUAGE RankNTypes        #-}
 module Main (main) where
 
-import           Control.Lens ()
-
 import           Codec.Picture
-import           Data.Text                   (Text)
-import           Graphics.SvgTree            (Number (..))
-import           Reanimate.Driver            (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate.Animation
-import           Reanimate.Raster
-import           Reanimate.Signal
-import           Reanimate.Svg
-import           Reanimate.ColorMap
-
 import           Control.Monad.ST
 import           Control.Monad.State.Strict
+import           Data.Text                   (Text)
 import qualified Data.Vector.Generic.Mutable as GV
 import           Data.Vector.Unboxed         (Vector)
 import qualified Data.Vector.Unboxed         as V
-import           Debug.Trace
+import           Reanimate
 import           System.Random
 import           System.Random.Shuffle
-import           Reanimate.Constants
 
 main :: IO ()
 main = reanimate $
@@ -82,8 +70,8 @@ data Env s = Env
 
 type S s a = StateT (Env s) (ST s) a
 
-runSort :: (forall s. S s ()) -> Int -> [Vector Int]
-runSort = runSort' 0xDEADBEEF
+-- runSort :: (forall s. S s ()) -> Int -> [Vector Int]
+-- runSort = runSort' 0xDEADBEEF
 
 runSort' :: Int -> (forall s. S s ()) -> Int -> [Vector Int]
 runSort' seed sortFn len = reverse $ runST (do
@@ -92,9 +80,6 @@ runSort' seed sortFn len = reverse $ runST (do
     envHistory <$> execStateT sortFn env)
   where
     lst = shuffle' [1 .. len] len (mkStdGen seed)
-    skipDups (x:y:xs) | x == y = skipDups (x:xs)
-    skipDups (x:xs)   = x : skipDups xs
-    skipDups []       = []
 
 readS :: Int -> S s Int
 readS idx = do
@@ -137,6 +122,7 @@ mergeSort' start end = do
   zipWithM_ writeS [start..] (merge leftVals rightVals)
   snapshot
 
+merge :: Ord a => [a] -> [a] -> [a]
 merge [] xs = xs
 merge xs [] = xs
 merge (x:xs) (y:ys)
@@ -148,7 +134,7 @@ mergeSortUp :: S s ()
 mergeSortUp = do
   snapshot
   len <- inputLength
-  let chunkSizes = takeWhile (< len) $ map (2^) [0..]
+  let chunkSizes = takeWhile (< len) $ map (2^) [0::Int ..]
   forM_ chunkSizes $ bottomUpMergeSort'
 
 bottomUpMergeSort' :: Int -> S s ()
@@ -165,7 +151,6 @@ selectionSort = do
   snapshot
   len <- inputLength
   forM_ [0 .. len-1] $ \j -> do
-    jVal <- readS j
     i <- findMin j (j+1) len
     swapS j i
     snapshot

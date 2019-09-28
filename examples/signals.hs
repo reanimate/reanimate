@@ -4,10 +4,8 @@
 {-# LANGUAGE RecordWildCards #-}
 module Main (main) where
 
-import           Control.Lens
 import           Data.Text (pack, Text)
 import           Numeric
-import           Data.Monoid
 
 import           Graphics.SvgTree hiding (Text)
 import           Reanimate.Driver (reanimate)
@@ -23,30 +21,31 @@ main = reanimate $ pauseAtEnd 5 $
       `before`
     curvesExample (\s ->
       ( [(1, signalFlat s)]
-      , "[(1, signalFlat " <> showFloat s <> ")]"))
+      , "[(1, signalFlat " <> ppD s <> ")]"))
       `before`
     curvesExample (\s ->
       ( [(s, signalFlat 0), (1, signalLinear)]
-      , "[(" <> showFloat s <> ", signalFlat 0), (1, signalLinear)]"))
+      , "[(" <> ppD s <> ", signalFlat 0), (1, signalLinear)]"))
       `before`
     curvesExample (\s ->
       ( [(s, signalFlat 1), (1, signalReverse signalLinear)]
-      , "[(" <> showFloat s <> ", signalFlat 0), (1, signalReverse signalLinear)]"))
+      , "[(" <> ppD s <> ", signalFlat 0), (1, signalReverse signalLinear)]"))
       `before`
     curvesExample (\s ->
       ( [(1, signalCurve (2+s*3))]
-      , "[(1, signalCurve "<> showFloat (2+s*3) <>")]"))
+      , "[(1, signalCurve "<> ppD (2+s*3) <>")]"))
       `before`
     curvesExample (\s ->
       ( [(1, signalFromTo s 1 $ signalCurve 5)]
-      , "[(1, signalFromTo "<>  showFloat s <>" 1 \\$ signalCurve 5)]"))
+      , "[(1, signalFromTo "<>  ppD s <>" 1 \\$ signalCurve 5)]"))
       `before`
     curvesExample (\s ->
       ( [(1, signalBell (2+s*3))]
-      , "[(1, signalBell "<> showFloat (2+s*3)<>")]"))
+      , "[(1, signalBell "<> ppD (2+s*3)<>")]"))
   where
-    showFloat s = pack (showFFloat (Just 2) s "")
+    ppD s = pack (showFFloat (Just 2) s "")
 
+convertX, convertY :: Double -> Double
 convertX x = x*(screenWidth/320)
 convertY y = y*(screenHeight/180)
 

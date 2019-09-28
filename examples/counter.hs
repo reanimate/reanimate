@@ -2,7 +2,6 @@
 -- stack runghc --package reanimate
 module Main (main) where
 
-import           Graphics.SvgTree hiding (Text)
 import           Reanimate
 
 main :: IO ()

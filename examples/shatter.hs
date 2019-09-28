@@ -1,36 +1,15 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
 module Main (main) where
 
 import           Chiphunk.Low
-import           Control.Lens
 import           Control.Monad
-import           Data.List
-import Data.Ord
-import           Data.Map            (Map)
-import qualified Data.Map            as Map
-import           Data.Set            (Set)
-import qualified Data.Set            as Set
-import           Data.Text           (Text, pack)
-import           Debug.Trace
-import           Geom2D.CubicBezier  (ClosedPath (..), CubicBezier (..),
-                                      PathJoin (..), bezierIntersection,
-                                      bezierLineIntersections, closedPathCurves,
-                                      evalBezier, rotateScaleVec, transform, Point(..))
-import qualified Geom2D.CubicBezier  as G
-import           Graphics.SvgTree    hiding (Text,Point)
+import           Graphics.SvgTree    (Tree)
 import           Linear.V2
-import           Numeric
+import           Reanimate
 import           Reanimate.Chiphunk
-import           Reanimate.Constants
 import           Reanimate.PolyShape
-import           Reanimate.Driver    (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate.Animation
-import           Reanimate.Signal
-import           Reanimate.Svg
 import           System.IO.Unsafe
 
 test :: Animation
@@ -73,10 +52,10 @@ test = unsafePerformIO $ do
             --mkCircle (Num radius)
       -- vects = svgToVects svg
       -- vects' = fst $ convexHull vects 0
-      svg' =
-        withFillOpacity 0 $ withStrokeColor "white" $
-        withStrokeWidth 0.01 $
-        renderPolyShapes (map plFromPolygon vectGroup)
+      -- svg' =
+      --   withFillOpacity 0 $ withStrokeColor "white" $
+      --   withStrokeWidth 0.01 $
+      --   renderPolyShapes (map plFromPolygon vectGroup)
   --
   -- ballBody <- polyShapesToBody space poly
   -- bodyPosition ballBody $= Vect (-screenWidth/4) (screenHeight/2)
@@ -86,7 +65,7 @@ test = unsafePerformIO $ do
   --   mkGroup
   --     [ svg' ]
 
-  let splitPolys = vectGroup
+  -- let splitPolys = vectGroup
   forM_ vectGroup $ \polygon -> do
     bd <- polygonsToBody space [map toVect polygon]
     bodyPosition bd $= Vect 0 (screenHeight/3)
@@ -111,26 +90,26 @@ test = unsafePerformIO $ do
 --   | LineBezier [RPoint]
 --   | LineEnd
 
-vectsToSVG :: [Vect] -> Tree
-vectsToSVG (Vect x y:rest) =
-  mkPath $
-    MoveTo OriginAbsolute [V2 x y] :
-    [ LineTo OriginAbsolute [V2 a b] | Vect a b <- rest ] ++
-    [ EndPath ]
-  where
-    mkPath cmds = PathTree $ defaultSvg & pathDefinition .~ cmds
+-- vectsToSVG :: [Vect] -> Tree
+-- vectsToSVG (Vect x y:rest) =
+--   mkPath $
+--     MoveTo OriginAbsolute [V2 x y] :
+--     [ LineTo OriginAbsolute [V2 a b] | Vect a b <- rest ] ++
+--     [ EndPath ]
+--   where
+--     mkPath cmds = PathTree $ defaultSvg & pathDefinition .~ cmds
 
-polygonsToSVG :: [[Vect]] -> Tree
-polygonsToSVG = merge . mkGroup . map vectsToSVG
-  where
-    merge svg = PathTree $ defaultSvg & pathDefinition .~ extractPath svg
+-- polygonsToSVG :: [[Vect]] -> Tree
+-- polygonsToSVG = merge . mkGroup . map vectsToSVG
+--   where
+--     merge svg = PathTree $ defaultSvg & pathDefinition .~ extractPath svg
 
-svgToVects :: Tree -> [Vect]
-svgToVects svg = map worker (lineToPoints 200 cmds)
-  where
-    worker (V2 x y) = Vect x y
-    cmds = toLineCommands $ wibble $ extractPath svg
-    wibble xs = takeWhile (/=EndPath) xs ++ [EndPath]
+-- svgToVects :: Tree -> [Vect]
+-- svgToVects svg = map worker (lineToPoints 200 cmds)
+--   where
+--     worker (V2 x y) = Vect x y
+--     cmds = toLineCommands $ wibble $ extractPath svg
+--     wibble xs = takeWhile (/=EndPath) xs ++ [EndPath]
 
 chunkPolyshapes :: Tree -> Tree
 chunkPolyshapes t =
@@ -138,11 +117,12 @@ chunkPolyshapes t =
   withStrokeWidth 0.01 $
   withFillColor "white" $ t
 
-plArea :: PolyShape -> Double
-plArea pl = areaForPoly (map toVect $ plPolygonify polyShapeTolerance pl) 0
-  where
-    toVect (Point x y) = Vect x y
+-- plArea :: PolyShape -> Double
+-- plArea pl = areaForPoly (map toVect $ plPolygonify polyShapeTolerance pl) 0
+--   where
+--     toVect (Point x y) = Vect x y
 
+reorient :: Tree -> Tree
 reorient = id -- scale 4 . translate 0 (-0.9)
 
 main :: IO ()
