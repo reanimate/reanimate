@@ -6,7 +6,7 @@ import qualified Data.Map                 as M
 import           Graphics.SvgTree         (Document (..), Number (..),
                                            Tree (..), xmlOfTree)
 import           Graphics.SvgTree.Printer
-import           Reanimate.Svg
+import           Reanimate.Svg.Constructors
 import           Text.XML.Light.Output
 
 -- | Duration of an animation or effect. Usually measured in seconds.

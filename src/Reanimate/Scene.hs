@@ -7,7 +7,7 @@ import           Data.List
 import           Data.Ord
 import           Debug.Trace
 import           Reanimate.Animation
-import           Reanimate.Svg
+import           Reanimate.Svg.Constructors
 
 data World
 type ZIndex = Int

@@ -37,11 +37,11 @@ polygonTest :: Animation
 polygonTest = mkAnimation 10 $ \t ->
     let s = signalFromTo 0.5 (-0.5) signalLinear t
         bigBox = head $ svgToPolyShapes $ pathify $
-          mkRect (Num 2) (Num 2)
+          mkRect 2 2
         smallBox = head $ svgToPolyShapes $ pathify $
           translate (0) (screenHeight*s) $
           rotate (-45) $
-          mkRect (Num 1) (Num 1)
+          mkRect 1 1
 
         overlap = mkGroup $ map renderPolyShape [bigBox, smallBox]
         merged = translate (screenWidth/2*0.1) 0 $

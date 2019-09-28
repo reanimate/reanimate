@@ -46,7 +46,7 @@ main = reanimate $ fixed bg $ pauseAtEnd 1 $
       map (withStrokeColor "black" . withStrokeWidth (Num 0.2)) $
       map (lowerTransformations . scale 3 . pathify . center . latex . T.pack . show) [0..9]
     squares = map center [ withFillColorPixel (promotePixel $ viridis (n/9)) $
-      mkRect (Num $ digitWidth+0.2) (Num digitWidth) | n <- [0..9]]
+      mkRect (digitWidth+0.2) digitWidth | n <- [0..9]]
 
     digiSquares = zipWith (\a b -> mkGroup [a,b]) squares digits
 

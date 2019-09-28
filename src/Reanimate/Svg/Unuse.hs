@@ -7,7 +7,8 @@ import           Control.Lens                 ((%~), (&), (.~), (^.))
 import qualified Data.Map                     as Map
 import           Graphics.SvgTree             hiding (height, line, path, use,
                                                width)
-import           Reanimate.Svg
+import           Reanimate.Constants
+import           Reanimate.Svg.Constructors
 
 replaceUses :: Document -> Document
 replaceUses doc = doc & elements %~ map (mapTree replace)

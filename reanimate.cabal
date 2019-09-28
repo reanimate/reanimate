@@ -47,6 +47,9 @@ library
                       Reanimate.LaTeX
                       Reanimate.Svg
                       Reanimate.Svg.Unuse
+                      Reanimate.Svg.Constructors
+                      Reanimate.Svg.BoundingBox
+                      Reanimate.Svg.LineCommand
                       Reanimate.Diagrams
                       Reanimate.Transform
                       Reanimate.Driver

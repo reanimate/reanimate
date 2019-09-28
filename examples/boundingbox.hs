@@ -41,7 +41,7 @@ bbox2 = playThenReverseA $ mkAnimation 2.5 $ \t ->
 mkBoundingBox :: Tree -> Tree
 mkBoundingBox svg = withStrokeColor "red" $ withFillOpacity 0 $
     translate (x+w/2) (y+h/2) $
-    mkRect (Num w) (Num h)
+    mkRect w h
   where
     (x, y, w, h) = boundingBox svg
 

@@ -20,7 +20,7 @@ import           Graphics.SvgTree    (Tree)
 import           Linear.V2 (V2(..))
 import           Reanimate.Animation
 import           Reanimate.PolyShape
-import           Reanimate.Svg
+import           Reanimate.Svg.Constructors
 
 type BodyStore = IORef (Map WordPtr Tree)
 

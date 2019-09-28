@@ -65,7 +65,7 @@ highlightBox = mkAnimation 2 $ \t ->
     withStrokeWidth (Num $ 0.5 + s) $
     withFillOpacity 0 $
     translate (boxX + mlcWidth/2) (boxY + mlcHeight/2) $
-    mkRect (Num mlcWidth) (Num mlcHeight)
+    mkRect mlcWidth mlcHeight
   ]
 
 data MemoryLineChart = MemoryLineChart
@@ -88,7 +88,7 @@ renderMemoryLineChart MemoryLineChart{..} = mkGroup
       withFillOpacity 0 $
       partialSvg mlcOuterBox $ pathify $
       translate (boxX + mlcWidth/2) (boxY + mlcHeight/2) $
-      mkRect (Num mlcWidth) (Num mlcHeight)
+      mkRect mlcWidth mlcHeight
     , withStrokeColor "white" $
       withStrokeWidth (Num 0.5) $
       mkLine (Num (negate $ mlcWidth/2), Num 0)

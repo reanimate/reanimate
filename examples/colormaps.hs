@@ -65,7 +65,7 @@ main = reanimate $ youtube $ pauseAtEnd 2 $ playThenReverseA $ pauseAtEnd 2 $ mk
 
     mkOutline label f =
       mkGroup
-      [ center $ withFillColor "grey" $ mkRect (Num $ scaleWidth+0.05) (Num $ scaleHeight+0.05)
+      [ center $ withFillColor "grey" $ mkRect (scaleWidth+0.05) (scaleHeight+0.05)
       , scaleToSize scaleWidth scaleHeight $ mkColorMap f
       , translate (-scaleWidth/2) (0.5) $ centerY $ withFillColor "white" $
         scale 0.5 $ latex label

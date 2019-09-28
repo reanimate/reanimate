@@ -46,7 +46,7 @@ module Reanimate
     playThenReverseA,
     repeatA,
     freezeAtPercentage,
-    -- * Signals
+    -- ** Signals
     Signal,
     signalFlat,
     signalLinear,
@@ -56,14 +56,24 @@ module Reanimate
     signalBell,
     signalOscillate,
     signalFromList,
+    -- * SVG
+    module Reanimate.Svg.Constructors,
+    module Reanimate.Svg.LineCommand,
+    module Reanimate.Svg.BoundingBox,
+    module Reanimate.Svg,
     -- * External tools
     latex,
     latexAlign,
-    xelatex
+    xelatex,
+    povray
   ) where
 
 import           Reanimate.Animation
 import           Reanimate.Driver
 import           Reanimate.LaTeX
+import           Reanimate.Povray
 import           Reanimate.Signal
--- import           Reanimate.Svg
+import           Reanimate.Svg
+import           Reanimate.Svg.Constructors
+import           Reanimate.Svg.LineCommand
+import           Reanimate.Svg.BoundingBox
