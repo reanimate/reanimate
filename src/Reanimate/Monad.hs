@@ -15,23 +15,23 @@ import           Text.XML.Light.Output
 type Duration = Double
 type Time = Double
 
-data Frame a = Frame {unFrame :: Duration -> Time -> State ([Tree] -> [Tree]) a}
+data Frame a = Frame {unFrame :: Time -> State ([Tree] -> [Tree]) a}
 
 instance Functor Frame where
-  fmap fn f = Frame $ \d t -> fmap fn (unFrame f d t)
+  fmap fn f = Frame $ \t -> fmap fn (unFrame f t)
 
 instance Applicative Frame where
-  pure a = Frame $ \_ _ -> pure a
-  fn <*> fa = Frame $ \d t -> do
-    f <- unFrame fn d t
-    a <- unFrame fa d t
+  pure a = Frame $ \_ -> pure a
+  fn <*> fa = Frame $ \t -> do
+    f <- unFrame fn t
+    a <- unFrame fa t
     pure (f a)
 
 instance Monad Frame where
-  return a = Frame $ \_ _ -> pure a
-  f >>= g = Frame $ \d t -> do
-    a <- unFrame f d t
-    unFrame (g a) d t
+  return a = Frame $ \_ -> pure a
+  f >>= g = Frame $ \t -> do
+    a <- unFrame f t
+    unFrame (g a) t
 
 -- End behavior:
 --   Freeze at last frame
@@ -48,37 +48,53 @@ duration :: Animation -> Duration
 duration (Animation d _) = d
 
 emit :: Tree -> Frame ()
-emit svg = Frame $ \_ _ -> modify (.(svg:))
+emit svg = Frame $ \_ -> modify (.(svg:))
 
 -- | Play animations in sequence. The @lhs@ animation is removed after it has
 --   completed. New animation duration is @duration lhs + duration rhs@.
 before :: Animation -> Animation -> Animation
 before (Animation d1 (Frame f1)) (Animation d2 (Frame f2)) =
-  Animation (d1+d2) (Frame $ \_ t -> if t < d1 then f1 d1 t else f2 d2 (t-d1))
+  Animation totalD $ Frame $ \t ->
+    if t < d1/totalD
+      then f1 (t * totalD/d1)
+      else f2 ((t-d1/totalD) * totalD/d2)
+  where
+    totalD = d1+d2
 
 -- | Play two animation concurrently. Shortest animation freezes on last frame.
 --   New animation duration is @max (duration lhs) (duration rhs)@.
 sim :: Animation -> Animation -> Animation
 sim (Animation d1 (Frame f1)) (Animation d2 (Frame f2)) =
-  Animation (max d1 d2) $ Frame $ \_ t -> do
-    f1 d1 (min d1 t)
-    f2 d2 (min d2 t)
-
+  Animation (max d1 d2) $ Frame $ \t -> do
+    let t1 = t * totalD/d1
+        t2 = t * totalD/d2
+    f1 (min 1 t1)
+    f2 (min 1 t2)
+  where
+    totalD = max d1 d2
 -- | Play two animation concurrently. Shortest animation loops.
 --   New animation duration is @max (duration lhs) (duration rhs)@.
 simLoop :: Animation -> Animation -> Animation
 simLoop (Animation d1 (Frame f1)) (Animation d2 (Frame f2)) =
-  Animation (max d1 d2) $ Frame $ \_ t -> do
-    f1 d1 (t `mod'` d1)
-    f2 d2 (t `mod'` d2)
+  Animation totalD $ Frame $ \t -> do
+    let t1 = t * totalD/d1
+        t2 = t * totalD/d2
+    f1 (t1 `mod'` 1)
+    f2 (t2 `mod'` 1)
+  where
+    totalD = max d1 d2
 
 -- | Play two animation concurrently. Animations disappear after playing once.
 --   New animation duration is @max (duration lhs) (duration rhs)@.
 simDrop :: Animation -> Animation -> Animation
 simDrop (Animation d1 (Frame f1)) (Animation d2 (Frame f2)) =
-  Animation (max d1 d2) $ Frame $ \_ t -> do
-    when (t < d1) (f1 d1 t)
-    when (t < d2) (f2 d2 t)
+  Animation totalD $ Frame $ \t -> do
+    let t1 = t * totalD/d1
+        t2 = t * totalD/d2
+    unless (t1>1) (f1 t1)
+    unless (t2>1) (f2 t2)
+  where
+    totalD = max d1 d2
 
 -- | Empty animation (no SVG output) with a fixed duration.
 pause :: Double -> Animation
@@ -90,10 +106,12 @@ andThen :: Animation -> Animation -> Animation
 andThen a b = a `sim` (pause (duration a) `before` b)
 
 getSignal :: Signal -> Frame Double
-getSignal s = Frame $ \d t -> pure $ s (t/d)
+getSignal s = Frame $ \t -> pure $ s t
 
 frameAt :: Double -> Animation -> Tree
-frameAt t (Animation d (Frame f)) = mkGroup $ execState (f d (min d t)) id []
+frameAt t (Animation d (Frame f)) = mkGroup $ execState (f t') id []
+  where
+    t' = min 1 (max 0 (t/d))
 
 renderTree :: Tree -> String
 renderTree t = maybe "" ppElement $ xmlOfTree t
@@ -119,8 +137,8 @@ mapA :: (Tree -> Tree) -> Animation -> Animation
 mapA fn (Animation d f) = Animation d (mapF fn f)
 
 mapF :: (Tree -> Tree) -> Frame a -> Frame a
-mapF fn frame = Frame $ \d t -> do
-  case runState (unFrame frame d t) id of
+mapF fn frame = Frame $ \t -> do
+  case runState (unFrame frame t) id of
     (a, children) -> modify (. (fn (mkGroup (children [])):)) >> pure a
 
 -- | Freeze the last frame for @t@ seconds at the end of the animation.
@@ -136,23 +154,23 @@ pauseAtBeginning t a =
 pauseAround :: Double -> Double -> Animation -> Animation
 pauseAround start end = pauseAtEnd end . pauseAtBeginning start
 
+-- Freeze frame at time @t@.
 freezeFrame :: Double -> Animation -> Frame ()
-freezeFrame t (Animation d f) = Frame $ \_ _ -> unFrame f d t
+freezeFrame t (Animation d f) = Frame $ \_ -> unFrame f (t/d)
 
 adjustSpeed :: Double -> Animation -> Animation
 adjustSpeed factor (Animation d fn) =
-  Animation (d/factor) $ Frame $ \_dur t -> unFrame fn d (t*factor)
+  Animation (d/factor) fn
 
 -- | Set the duration of an animation by adjusting its playback rate. The
 --   animation is still played from start to finish without being cropped.
 setDuration :: Double -> Animation -> Animation
-setDuration newD (Animation _ fn) =
-  Animation newD $ Frame $ \dur t -> unFrame fn dur t
+setDuration newD (Animation _ fn) = Animation newD fn
 
 -- | Play an animation in reverse. Duration remains unchanged.
 reverseAnimation :: Animation -> Animation
-reverseAnimation (Animation d fn) = Animation d $ Frame $ \_dur t ->
-  unFrame fn d (d-t)
+reverseAnimation (Animation d fn) = Animation d $ Frame $ \t ->
+  unFrame fn (1-t)
 
 -- | Play animation before playing it again in reverse. Duration is twice
 --   the duration of the input.
@@ -160,18 +178,18 @@ autoReverse :: Animation -> Animation
 autoReverse a = a `before` reverseAnimation a
 
 oscillate :: Frame a -> Frame a
-oscillate f = Frame $ \d t -> do
-  if t < d/2
-    then unFrame f d (t*2)
-    else unFrame f d (d*2-t*2)
+oscillate f = Frame $ \t -> do
+  if t < 1/2
+    then unFrame f (t*2)
+    else unFrame f (2-t*2)
 
 -- | Loop animation @n@ number of times. This number may be fractional and it
 --   may be less than 1. It must be greater than or equal to 0, though.
 --   New duration is @n*duration input@.
 repeatAnimation :: Double -> Animation -> Animation
-repeatAnimation n (Animation d f) = Animation (d*n) $ Frame $ \_ t ->
-  unFrame f d (t `mod'` d)
+repeatAnimation n (Animation d f) = Animation (d*n) $ Frame $ \t ->
+  unFrame f (t `mod'` recip n)
 
 freezeAtPercentage :: Double -> Animation -> Animation
 freezeAtPercentage frac (Animation d genFrame) =
-  Animation d $ Frame $ \_ _ -> unFrame genFrame d (d*frac)
+  Animation d $ Frame $ \_ -> unFrame genFrame frac

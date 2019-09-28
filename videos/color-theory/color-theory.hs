@@ -31,13 +31,10 @@ import           System.IO.Unsafe
 highdef = True
 
 takeA :: Double -> Animation -> Animation
-takeA d1 (Animation d2 f) = Animation d $ Frame $ \_ t -> unFrame f d (min d t)
-  where
-    d = min d1 d2
+takeA = undefined
 
 dropA :: Double -> Animation -> Animation
-dropA d1 (Animation d2 f) = Animation (max 0 (d2-d1)) $
-  Frame $ \d t -> unFrame f d (t+d1)
+dropA = undefined
 
 -- screen width 320
 -- screen height 180
@@ -306,14 +303,10 @@ drawHexPixels = mkAnimation 1 $ do
 
 
 fadeIn :: Double -> Animation -> Animation
-fadeIn fadeDuration (Animation d genFrame) = Animation d $ do
-  t <- askTime
-  mapF (withGroupOpacity (max 0 $ min 1 (t/fadeDuration))) genFrame
+fadeIn = undefined
 
 fadeOut :: Double -> Animation -> Animation
-fadeOut fadeDuration (Animation d genFrame) = Animation d $ do
-  t <- askTime
-  mapF (withGroupOpacity (max 0 $ min 1 ((d-t)/fadeDuration))) genFrame
+fadeOut = undefined
 
 askTime :: Frame Time
-askTime = Frame $ \_dur t -> return t
+askTime = Frame $ \t -> return t

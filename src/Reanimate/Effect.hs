@@ -5,7 +5,7 @@ import           Reanimate.Monad
 import           Reanimate.Svg
 
 askTime :: Frame Time
-askTime = Frame $ \_dur t -> return t
+askTime = Frame $ \t -> return t
 
 type Effect = Double -> Double -> Tree -> Tree
 
