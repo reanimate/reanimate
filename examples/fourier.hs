@@ -64,9 +64,7 @@ drawNCircles totalCircles phi = mkGroup
       [ withStrokeWidth sWidth $
         withStrokeColor "grey" $
         withFillOpacity 0 $
-        CircleTree $ defaultSvg
-          & circleCenter .~ (Num 0, Num 0)
-          & circleRadius .~ Num radius
+        mkCircle radius
       , translate x y $ worker rest
       , withStrokeWidth sWidth $
         withStrokeColor "white" $

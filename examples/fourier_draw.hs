@@ -116,9 +116,7 @@ drawCircles circles = mkGroup
       [ withStrokeWidth sWidth $
         withStrokeColor "dimgrey" $
         withFillOpacity 0 $
-        CircleTree $ defaultSvg
-          & circleCenter .~ (Num 0, Num 0)
-          & circleRadius .~ Num radius
+        mkCircle radius
       , translate x y $ worker rest ]
 
 mkFourierOutline :: Fourier -> [(Double, Double)]
