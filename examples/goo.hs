@@ -8,7 +8,7 @@ import           Control.Lens
 import           Graphics.SvgTree
 import           Reanimate.Driver (reanimate)
 import           Reanimate.LaTeX
-import           Reanimate.Monad
+import           Reanimate.Animation
 import           Reanimate.Svg
 import           Reanimate.Signal
 import           Reanimate.Combinators

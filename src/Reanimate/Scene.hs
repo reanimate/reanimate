@@ -6,7 +6,7 @@ import           Control.Monad.ST
 import           Data.List
 import           Data.Ord
 import           Debug.Trace
-import           Reanimate.Monad
+import           Reanimate.Animation
 import           Reanimate.Svg
 
 data World

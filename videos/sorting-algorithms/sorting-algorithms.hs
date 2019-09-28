@@ -1,26 +1,26 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-13.14 runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards   #-}
 module Main (main) where
 
-import           Control.Lens ()
+import           Control.Lens          ()
 
-import           Graphics.SvgTree (Number(..), Tree)
-import           Reanimate.Driver (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate.Monad
-import           Reanimate.Svg
-import           Reanimate.Signal
-import           Reanimate.ColorMap
 import           Codec.Picture.Types
+import           Data.Fixed
+import           Data.List
+import qualified Data.Text             as T
+import qualified Geom2D.CubicBezier    as Bezier
+import           Graphics.SvgTree      (Number (..), Tree)
 import           Numeric
-import qualified Data.Text as T
-import qualified Geom2D.CubicBezier          as Bezier
-import Data.Fixed
-import System.Random.Shuffle
-import System.Random
-import Data.List
+import           Reanimate.Animation
+import           Reanimate.ColorMap
+import           Reanimate.Driver      (reanimate)
+import           Reanimate.LaTeX
+import           Reanimate.Signal
+import           Reanimate.Svg
+import           System.Random
+import           System.Random.Shuffle
 
 fixed :: Tree -> Animation -> Animation
 fixed svg ani = animate (const svg) `sim` ani
@@ -75,12 +75,12 @@ data Direction = Up | Down | Sideways
 type Delay = Double
 type Position = Int
 data SortElement = SortElement
-  { sortElementDirection :: Direction
-  , sortElementStartTime :: Double
-  , sortElementDuration   :: Double
+  { sortElementDirection     :: Direction
+  , sortElementStartTime     :: Double
+  , sortElementDuration      :: Double
   , sortElementStartPosition :: Position
-  , sortElementEndPosition :: Position
-  , sortElementTree :: Tree }
+  , sortElementEndPosition   :: Position
+  , sortElementTree          :: Tree }
 
 
 mkJumpSorted :: [(Int, Tree)] -> [SortElement]
@@ -96,7 +96,7 @@ mkJumpSorted = fixParameters . worker Up . zip [0..]
       , sortElementEndPosition = target
       , sortElementTree = elt
       } : worker (flip dir) (yoink target rest)
-    flip Up = Down
+    flip Up   = Down
     flip Down = Up
 
 -- 10
@@ -151,8 +151,8 @@ renderSortElement SortElement{..} t
         to = sortElementEndPosition
         linear = fromIntegral from + (fromIntegral (to-from))*pos
         y = case sortElementDirection of
-               Down -> (sin (pos*pi) * digitWidth)
-               Up   -> negate (sin (pos*pi) * digitWidth)
+               Down     -> (sin (pos*pi) * digitWidth)
+               Up       -> negate (sin (pos*pi) * digitWidth)
                Sideways -> 0 in
     translate (linear * digitWidth) y sortElementTree
 

@@ -18,7 +18,7 @@ import           Linear.V2
 import           Reanimate.Diagrams
 import           Reanimate.Driver              (reanimate)
 import           Reanimate.LaTeX
-import           Reanimate.Monad
+import           Reanimate.Animation
 import           Reanimate.Signal
 import           Reanimate.Svg
 

@@ -39,7 +39,7 @@ library
   default-language:   Haskell2010
   default-extensions: PackageImports
   exposed-modules:    Reanimate
-                      Reanimate.Monad
+                      Reanimate.Animation
                       Reanimate.Signal
                       Reanimate.Render
                       Reanimate.Examples

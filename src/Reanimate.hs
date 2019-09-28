@@ -49,4 +49,4 @@ module Reanimate
   ) where
 
 import Reanimate.Driver
-import Reanimate.Monad
+import Reanimate.Animation

@@ -1,7 +1,7 @@
 module Reanimate.Effect where
 
 import           Graphics.SvgTree    (Tree)
-import           Reanimate.Monad
+import           Reanimate.Animation
 import           Reanimate.Svg
 
 type Effect = Double -> Double -> Tree -> Tree

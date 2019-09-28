@@ -11,7 +11,7 @@ import           Graphics.SvgTree    (Number (..), Tree)
 import           Reanimate.Driver    (reanimate)
 import           Reanimate.Effect
 import           Reanimate.LaTeX     (latex)
-import           Reanimate.Monad
+import           Reanimate.Animation
 import           Reanimate.Scene
 import           Reanimate.Signal    (signalLinear)
 import           Reanimate.Svg

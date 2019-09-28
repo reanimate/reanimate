@@ -3,15 +3,15 @@ module Reanimate.Driver ( reanimate ) where
 
 import           Control.Monad
 import           Data.Maybe
+import           Reanimate.Animation      (Animation)
 import           Reanimate.Driver.Check
 import           Reanimate.Driver.CLI
 import           Reanimate.Driver.Compile
 import           Reanimate.Driver.Server
-import           Reanimate.Monad          (Animation)
 import           Reanimate.Render         (FPS, Format (..), Height, Width,
                                            render, renderSnippets, renderSvgs)
-import           System.FilePath
 import           System.Directory
+import           System.FilePath
 import           Text.Printf
 
 presetFormat :: Preset -> Format

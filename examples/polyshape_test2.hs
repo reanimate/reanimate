@@ -26,7 +26,7 @@ import           Reanimate.Chiphunk
 import           Reanimate.Constants
 import           Reanimate.Driver    (reanimate)
 import           Reanimate.LaTeX
-import           Reanimate.Monad
+import           Reanimate.Animation
 import           Reanimate.PolyShape
 import           Reanimate.Signal
 import           Reanimate.Svg

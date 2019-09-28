@@ -28,7 +28,7 @@ import           Reanimate.Constants
 import           Reanimate.PolyShape
 import           Reanimate.Driver    (reanimate)
 import           Reanimate.LaTeX
-import           Reanimate.Monad
+import           Reanimate.Animation
 import           Reanimate.Signal
 import           Reanimate.Svg
 import           System.IO.Unsafe

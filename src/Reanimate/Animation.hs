@@ -1,4 +1,4 @@
-module Reanimate.Monad where
+module Reanimate.Animation where
 
 import           Control.Arrow            ()
 import           Data.Fixed               (mod')

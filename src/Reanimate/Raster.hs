@@ -5,20 +5,21 @@ module Reanimate.Raster
   , raster
   ) where
 
-import Control.Lens
-import Codec.Picture
-import Codec.Picture.Types (dynamicMap)
+import           Codec.Picture
+import           Codec.Picture.Types         (dynamicMap)
+import           Control.Lens
+import qualified Data.ByteString             as B
 import qualified Data.ByteString.Base64.Lazy as Base64
-import qualified Data.ByteString.Lazy.Char8 as LBS
-import Graphics.SvgTree (Tree(..), defaultSvg,Number(..))
-import qualified Graphics.SvgTree as Svg
+import qualified Data.ByteString.Lazy.Char8  as LBS
+import           Graphics.SvgTree            (Number (..), Tree (..),
+                                              defaultSvg)
+import qualified Graphics.SvgTree            as Svg
+import           Reanimate.Misc
+import           Reanimate.Animation
+import           System.FilePath
+import           System.IO
 import           System.IO.Temp
-import qualified Data.ByteString   as B
-import Reanimate.Monad
-import System.IO
-import System.IO.Unsafe
-import System.FilePath
-import Reanimate.Misc
+import           System.IO.Unsafe
 
 
 -- XXX: Use Px instead of Num for width and height?
@@ -47,7 +48,7 @@ embedDynamicImage img = embedPng width height imgData
     height  = fromIntegral $ dynamicMap imageHeight img
     imgData =
       case encodeDynamicPng img of
-        Left err -> error err
+        Left err  -> error err
         Right dat -> dat
 
 raster :: Tree -> DynamicImage

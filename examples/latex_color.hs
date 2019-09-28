@@ -5,10 +5,10 @@ module Main (main) where
 
 import           Control.Lens
 
-import           Graphics.SvgTree (Number(..))
-import           Reanimate.Driver (reanimate)
-import           Reanimate.LaTeX  (latex)
-import           Reanimate.Monad  (animate)
+import           Graphics.SvgTree    (Number (..))
+import           Reanimate.Animation (animate)
+import           Reanimate.Driver    (reanimate)
+import           Reanimate.LaTeX     (latex)
 import           Reanimate.Svg
 
 main :: IO ()

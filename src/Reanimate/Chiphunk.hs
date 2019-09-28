@@ -18,7 +18,7 @@ import qualified Data.Vector.Mutable as V
 import           Foreign.Ptr
 import           Graphics.SvgTree    (Tree)
 import           Linear.V2 (V2(..))
-import           Reanimate.Monad
+import           Reanimate.Animation
 import           Reanimate.PolyShape
 import           Reanimate.Svg
 
