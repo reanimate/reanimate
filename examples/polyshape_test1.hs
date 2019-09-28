@@ -4,39 +4,16 @@
 {-# LANGUAGE RecordWildCards   #-}
 module Main (main) where
 
-import           Chiphunk.Low
 import           Control.Lens        ()
 import           Data.List
-import           Data.Map            (Map)
-import qualified Data.Map            as Map
-import           Data.Ord
-import           Data.Set            (Set)
-import qualified Data.Set            as Set
-import           Data.Text           (Text, pack)
-import           Debug.Trace
-import           Geom2D.CubicBezier  (ClosedPath (..), CubicBezier (..),
-                                      PathJoin (..), bezierIntersection,
-                                      bezierLineIntersections, closedPathCurves,
-                                      evalBezier, rotateScaleVec, transform)
 import qualified Geom2D.CubicBezier  as G
-import           Graphics.SvgTree (Number(Num))
-import           Linear.V2
-import           Numeric
-import           Reanimate.Chiphunk
-import           Reanimate.Constants
-import           Reanimate.Driver    (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate.Monad
+import           Reanimate
 import           Reanimate.PolyShape
-import           Reanimate.Signal
-import           Reanimate.Svg
-import           System.IO.Unsafe
 
 
 polygonTest :: Animation
-polygonTest = mkAnimation 1 $ do
-    s <- getSignal signalLinear
-    emit $ std $ gridLayout $ transpose
+polygonTest = animate $ \_ ->
+    std $ gridLayout $ transpose
       [ test0, test1, test2, test3, test4, test5 ]
   where
     test0 = column ppA poly1
@@ -74,10 +51,8 @@ polygonTest = mkAnimation 1 $ do
     std =
       withFillOpacity 1 .
       withFillColor "blue" .
-      withStrokeWidth (Num 0.01) .
+      withStrokeWidth 0.01 .
       withStrokeColor "white"
-    offset = 0.2
-
 
 
 boxPolyShape :: PolyShape
@@ -94,12 +69,14 @@ boxPolyShape = PolyShape $ G.ClosedPath
   ,(G.Point 3 0, G.JoinLine)
   ]
 
+{-
 squarePolyShape :: PolyShape
 squarePolyShape = PolyShape $ G.ClosedPath
   [(G.Point 0 0, G.JoinLine)
   ,(G.Point 1 0, G.JoinLine)
   ,(G.Point 1 1, G.JoinLine)
   ,(G.Point 0 1, G.JoinLine)]
+-}
 
 starPolyShape :: PolyShape
 starPolyShape = PolyShape $ G.ClosedPath
@@ -113,4 +90,4 @@ starPolyShape = PolyShape $ G.ClosedPath
 main :: IO ()
 main = reanimate $ bg `sim` polygonTest
   where
-    bg = mkAnimation 0 $ emit $ mkBackground "black"
+    bg = animate $ const $ mkBackground "black"

@@ -1,21 +1,11 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 module Main (main) where
 
-import           Control.Lens
-import           Data.Text (pack, Text)
-import           Numeric
-
-import           Graphics.SvgTree hiding (Text)
-import           Reanimate.Driver (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate.Monad
-import           Reanimate.Svg
-import           Reanimate.Signal
+import           Reanimate
 
 main :: IO ()
-main = reanimate $ mkAnimation 2 $ do
-  s <- getSignal $ signalFromTo 0 (2*60-1) signalLinear
-  emit $ mkCircle (Num s)
+main = reanimate $ mkAnimation dur $
+    mkCircle . signalFromTo 0 (dur*60-1) signalLinear
+  where
+    dur = 2

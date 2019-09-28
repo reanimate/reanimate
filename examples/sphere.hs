@@ -4,24 +4,15 @@
 {-# LANGUAGE QuasiQuotes #-}
 module Main (main) where
 
-import           Control.Lens
-
-import           Graphics.SvgTree (Number(..))
-import           Reanimate.Driver (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate.Monad
-import           Reanimate.Svg
-import           Reanimate.Signal
-import           Reanimate.Raster
-import           Reanimate.Povray
-import           Codec.Picture
+import           Reanimate
 import           Data.String.Here
 
 main :: IO ()
-main = reanimate $ mkAnimation 5 $ do
-    s <- getSignal $ signalFromTo 0 360 signalLinear
-    emit $ mkBackground "black"
-    emit $ povray [] (script s)
+main = reanimate $ mkAnimation 5 $ \t ->
+    let s = signalFromTo 0 360 signalLinear t in
+    mkGroup
+    [ mkBackground "black"
+    , povray [] (script s) ]
   where
     script s = [iTrim|
 //EXAMPLE OF SPHERE

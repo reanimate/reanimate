@@ -1,4 +1,14 @@
-module Reanimate.Signal where
+module Reanimate.Signal
+  ( Signal
+  , signalFlat
+  , signalLinear
+  , signalFromTo
+  , signalReverse
+  , signalCurve
+  , signalBell
+  , signalOscillate
+  , signalFromList
+  ) where
 
 type Signal = Double -> Double
 
@@ -29,7 +39,11 @@ signalCurve steepness s =
     then 0.5 * (2*s)**steepness
     else 1-0.5 * (2 - 2*s)**steepness
 
+signalOscillate :: Signal -> Signal
+signalOscillate fn t =
+  if t < 1/2
+    then fn (t*2)
+    else fn (2-t*2)
+
 signalBell :: Double -> Signal
-signalBell steepness s
-  | s < 0.5   = signalCurve steepness (s/0.5)
-  | otherwise = signalCurve steepness (1-((s-0.5)/0.5))
+signalBell = signalOscillate . signalCurve

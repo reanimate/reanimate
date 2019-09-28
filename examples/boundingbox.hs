@@ -3,15 +3,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import           Control.Lens
-
-import           Graphics.SvgTree (Number(..),Tree)
-import           Reanimate.Driver (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate.Monad
-import           Reanimate.Svg
-import           Reanimate.Signal
-import           Reanimate.Constants
+import           Graphics.SvgTree (Tree)
+import           Reanimate
 
 main :: IO ()
 main = reanimate bbox
@@ -21,32 +14,31 @@ bbox = bg `sim`
     mapA (translate (-screenWidth/4) 0) bbox1 `sim`
     mapA (translate (screenWidth/4) 0) bbox2
   where
-    bg = mkAnimation 0 $ emit $ mkBackground "black"
+    bg = animate $ const $ mkBackground "black"
 
 bbox1 :: Animation
-bbox1 = mkAnimation 5 $ do
-    s <- getSignal signalLinear
-    emit $ mkGroup
-      [ mkBoundingBox $ rotate (360*s) svg
-      , withFillColor "white" $ rotate (360*s) svg ]
+bbox1 = mkAnimation 5 $ \t ->
+    mkGroup
+      [ mkBoundingBox $ rotate (360*t) svg
+      , withFillColor "white" $ rotate (360*t) svg ]
   where
     svg = scale 2 $ center $ latexAlign "\\sum_{k=1}^\\infty"
 
 bbox2 :: Animation
-bbox2 = autoReverse $ mkAnimation 2.5 $ do
-  s <- getSignal signalLinear
-  emit $ mkGroup
-    [ mkBoundingBox $ partialSvg s heartShape
+bbox2 = playThenReverseA $ mkAnimation 2.5 $ \t ->
+  mkGroup
+    [ mkBoundingBox $ partialSvg t heartShape
     , withStrokeColor "white" $ withFillOpacity 0 $
-      partialSvg s heartShape ]
+      partialSvg t heartShape ]
 
 mkBoundingBox :: Tree -> Tree
 mkBoundingBox svg = withStrokeColor "red" $ withFillOpacity 0 $
     translate (x+w/2) (y+h/2) $
-    mkRect (Num w) (Num h)
+    mkRect w h
   where
     (x, y, w, h) = boundingBox svg
 
+heartShape :: Tree
 heartShape = lowerTransformations $ scaleXY 1 (-1) $ scale 0.1 $
     center $ rotateAroundCenter 225 $ mkPathString
       "M0.0,40.0 v-40.0 h40.0\

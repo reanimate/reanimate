@@ -5,17 +5,8 @@
 module Main (main) where
 
 import           Chiphunk.Low
-import           Control.Lens
-import           Data.Text          (Text, pack)
-import           Graphics.SvgTree   hiding (Text)
-import           Numeric
 import           Reanimate.Chiphunk
-import           Reanimate.Driver   (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate.Monad
-import           Reanimate.Signal
-import           Reanimate.Constants
-import           Reanimate.Svg
+import           Reanimate
 import           System.IO.Unsafe
 
 
@@ -65,9 +56,9 @@ test = unsafePerformIO $ do
   addToBodyStore bodyStore ballBody $
     withFillColor "white" $
     mkGroup
-      [ mkCircle (Num radius)
+      [ mkCircle radius
       , withStrokeColor "black" $
-        mkLine (Num 0, Num 0) (Num 0, Num radius) ]
+        mkLine (0, 0) (0, radius) ]
 
   ani <- simulate space bodyStore 60 3 4
 
@@ -81,8 +72,8 @@ test = unsafePerformIO $ do
 main :: IO ()
 main = reanimate $ bg `sim` line `sim` test
   where
-    bg = mkAnimation 0 $ emit $ mkBackground "black"
-    line = mkAnimation 0 $ emit $ withStrokeColor "white" $
-      withStrokeWidth (Num 0.01) $
-      mkLine (Num (-screenWidth/2), Num 0)
-             (Num (screenWidth/2), Num $ -screenHeight/2)
+    bg = animate $ const $ mkBackground "black"
+    line = animate $ const $ withStrokeColor "white" $
+      withStrokeWidth 0.01 $
+      mkLine (-screenWidth/2, 0)
+             (screenWidth/2, -screenHeight/2)

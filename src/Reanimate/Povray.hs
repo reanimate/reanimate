@@ -15,7 +15,7 @@ import           Reanimate.Cache
 import           Reanimate.Memo
 import           Reanimate.Misc
 import           Reanimate.Raster
-import           Reanimate.Svg
+import           Reanimate.Svg.Constructors
 import           System.FilePath   (replaceExtension)
 import           System.IO.Unsafe  (unsafePerformIO)
 
