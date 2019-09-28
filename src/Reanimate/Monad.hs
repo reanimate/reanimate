@@ -1,14 +1,11 @@
 module Reanimate.Monad where
 
 import           Control.Arrow            ()
-import           Control.Monad.State
 import           Data.Fixed               (mod')
 import qualified Data.Map                 as M
 import           Graphics.SvgTree         (Document (..), Number (..),
-                                           Tree (..),
-                                           xmlOfTree)
+                                           Tree (..), xmlOfTree)
 import           Graphics.SvgTree.Printer
-import           Reanimate.Signal
 import           Reanimate.Svg
 import           Text.XML.Light.Output
 
@@ -18,24 +15,6 @@ type Duration = Double
 type Time = Double
 
 type SVG = Tree
-
-data Frame a = Frame {unFrame :: Time -> State ([Tree] -> [Tree]) a}
-
-instance Functor Frame where
-  fmap fn f = Frame $ \t -> fmap fn (unFrame f t)
-
-instance Applicative Frame where
-  pure a = Frame $ \_ -> pure a
-  fn <*> fa = Frame $ \t -> do
-    f <- unFrame fn t
-    a <- unFrame fa t
-    pure (f a)
-
-instance Monad Frame where
-  return a = Frame $ \_ -> pure a
-  f >>= g = Frame $ \t -> do
-    a <- unFrame f t
-    unFrame (g a) t
 
 -- | Animations are SVGs over a finite time.
 data Animation = Animation Duration (Time -> SVG)
@@ -48,9 +27,6 @@ animate = Animation 1
 
 duration :: Animation -> Duration
 duration (Animation d _) = d
-
-emit :: Tree -> Frame ()
-emit svg = Frame $ \_ -> modify (.(svg:))
 
 -- | Play animations in sequence. The @lhs@ animation is removed after it has
 --   completed. New animation duration is @duration lhs + duration rhs@.
@@ -110,9 +86,6 @@ pause d = Animation d (const None)
 andThen :: Animation -> Animation -> Animation
 andThen a b = a `sim` (pause (duration a) `before` b)
 
-getSignal :: Signal -> Frame Double
-getSignal s = Frame $ \t -> pure $ s t
-
 frameAt :: Double -> Animation -> Tree
 frameAt t (Animation d f) = f t'
   where
@@ -140,11 +113,6 @@ renderSvg w h t = ppDocument doc
 -- | Map over the SVG produced by an animation at every frame.
 mapA :: (Tree -> Tree) -> Animation -> Animation
 mapA fn (Animation d f) = Animation d (fn . f)
-
-mapF :: (Tree -> Tree) -> Frame a -> Frame a
-mapF fn frame = Frame $ \t -> do
-  case runState (unFrame frame t) id of
-    (a, children) -> modify (. (fn (mkGroup (children [])):)) >> pure a
 
 -- | Freeze the last frame for @t@ seconds at the end of the animation.
 pauseAtEnd :: Double -> Animation -> Animation
@@ -181,12 +149,6 @@ reverseAnimation (Animation d fn) = Animation d $ \t ->
 --   the duration of the input.
 autoReverse :: Animation -> Animation
 autoReverse a = a `before` reverseAnimation a
-
-oscillate :: Frame a -> Frame a
-oscillate f = Frame $ \t -> do
-  if t < 1/2
-    then unFrame f (t*2)
-    else unFrame f (2-t*2)
 
 -- | Loop animation @n@ number of times. This number may be fractional and it
 --   may be less than 1. It must be greater than or equal to 0, though.

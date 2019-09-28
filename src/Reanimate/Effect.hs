@@ -4,9 +4,6 @@ import           Graphics.SvgTree    (Tree)
 import           Reanimate.Monad
 import           Reanimate.Svg
 
-askTime :: Frame Time
-askTime = Frame $ \t -> return t
-
 type Effect = Double -> Double -> Tree -> Tree
 
 overBeginning :: Double -> Effect -> Effect

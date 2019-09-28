@@ -8,11 +8,11 @@ import           Control.Lens
 import           Graphics.SvgTree (Number(..))
 import           Reanimate.Driver (reanimate)
 import           Reanimate.LaTeX  (latex)
-import           Reanimate.Monad  (emit, mkAnimation)
+import           Reanimate.Monad  (animate)
 import           Reanimate.Svg
 
 main :: IO ()
-main = reanimate $ mkAnimation 1 $ \_ ->
+main = reanimate $ animate $ const $
     mkGroup
     [ mkBackground "black"
     , withStrokeColor "white" $

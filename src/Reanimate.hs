@@ -25,11 +25,10 @@ module Reanimate
     --   * Key commands for pausing, frame stepping, forward/rewind.
     reanimate,
     -- * Key types
-    Animation,
-    Frame,
+    Animation(..),
     mkAnimation,
+    animate,
     duration,
-    emit,
     -- * Animation composition
     before,
     sim,
