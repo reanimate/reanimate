@@ -16,6 +16,7 @@ import           Graphics.SvgTree            (Number (..), Tree (..),
 import qualified Graphics.SvgTree            as Svg
 import           Reanimate.Misc
 import           Reanimate.Animation
+import           Reanimate.Svg.Constructors
 import           System.FilePath
 import           System.IO
 import           System.IO.Temp
@@ -30,8 +31,9 @@ embedImage img = embedPng width height (encodePng img)
     height = fromIntegral $ imageHeight img
 
 embedPng :: Double -> Double -> LBS.ByteString -> Tree
-embedPng w h png =
+embedPng w h png = flipYAxis $
   ImageTree $ defaultSvg
+    & Svg.imageCornerUpperLeft .~ (Svg.Num (-w/2), Svg.Num (-h/2))
     & Svg.imageWidth .~ Svg.Num w
     & Svg.imageHeight .~ Svg.Num h
     & Svg.imageHref .~ ("data:image/png;base64," ++ imgData)
