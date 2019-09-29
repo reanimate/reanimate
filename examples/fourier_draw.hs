@@ -3,19 +3,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import           Control.Lens
 import           Data.Complex
-import           Data.Fixed
-import qualified Data.Text        as T
-
+import qualified Data.Text           as T
 import           Graphics.SvgTree
 import           Linear.V2
-import           Reanimate.Driver (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate.Monad
-import           Reanimate.Svg
-import           Reanimate.Signal
-import           Reanimate.Constants
+import           Reanimate
 
 main :: IO ()
 main = reanimate $ pauseAtEnd 2 $
@@ -33,22 +25,21 @@ piPoints = lineToPoints 500 $
 
 
 fourierAnimation_ :: Animation
-fourierAnimation_ = mkAnimation 50 $ do
-    emit $ mkBackground "black"
-    phi <- getSignal $ signalFromTo 0 15 signalLinear
-    fLength <- getSignal signalLinear
-
-    let circles = setFourierLength (fLength*maxLength) piFourier
+fourierAnimation_ = mkAnimation 50 $ \t ->
+    let fLength = t
+        circles = setFourierLength (fLength*maxLength) piFourier
         maxLength = sum $ map magnitude $ take 499 $ drop 1 $ fourierCoefficients piFourier
-
-    emit $ withStrokeColor "green" $
+        phi = fromToS 0 15 t
+    in mkGroup
+    [ mkBackground "black"
+    , drawCircles $ fourierCoefficients $ rotateFourier phi circles
+    , withStrokeColor "green" $
+      withFillOpacity 0 $
       mkLinePath $ mkFourierOutline circles
-    drawCircles $ fourierCoefficients $ rotateFourier phi circles
-
-    emit $
-      withFillColor "white" $
+    , withFillColor "white" $
       translate (-screenWidth/16*7) (screenHeight/16*7) $
       latex $ T.pack $ "Circles: " ++ show (length $ fourierCoefficients circles)
+    ]
 
 data Fourier = Fourier {fourierCoefficients :: [Complex Double]}
 
@@ -69,17 +60,18 @@ mkFourier points = Fourier $ findCoefficient 0 :
     nPoints = fromIntegral (length points)
 
 
-setFourierCircles :: Double -> Fourier -> Fourier
-setFourierCircles n _ | n < 1 = error "Invalid argument. Need at least one circle."
-setFourierCircles n (Fourier coeffs) =
-    Fourier $ take iCircles coeffs ++ [coeffs!!iCircles * realToFrac fCircle]
-  where
-    (iCircles, fCircle) = divMod' n 1
+-- setFourierCircles :: Double -> Fourier -> Fourier
+-- setFourierCircles n _ | n < 1 = error "Invalid argument. Need at least one circle."
+-- setFourierCircles n (Fourier coeffs) =
+--     Fourier $ take iCircles coeffs ++ [coeffs!!iCircles * realToFrac fCircle]
+--   where
+--     (iCircles, fCircle) = divMod' n 1
 
 setFourierLength :: Double -> Fourier -> Fourier
-setFourierLength len (Fourier (first:lst)) = Fourier $ first : worker len lst
+setFourierLength _ (Fourier []) = Fourier []
+setFourierLength len0 (Fourier (first:lst)) = Fourier $ first : worker len0 lst
   where
-    worker len [] = []
+    worker _len [] = []
     worker len (c:cs) =
       if magnitude c < len
         then c : worker (len - magnitude c) cs
@@ -87,7 +79,7 @@ setFourierLength len (Fourier (first:lst)) = Fourier $ first : worker len lst
 
 rotateFourier :: Double -> Fourier -> Fourier
 rotateFourier phi (Fourier coeffs) =
-    Fourier $ worker (coeffs) 0
+    Fourier $ worker (coeffs) (0::Integer)
   where
     worker [] _ = []
     worker (x:rest) 0 = x : worker rest 1
@@ -98,29 +90,27 @@ rotateFourier phi (Fourier coeffs) =
       right * exp (n' * 2 * pi * i * phi') :
       worker rest (n+1)
     i = 0 :+ 1
-    n = length coeffs `div` 2
+    -- n = length coeffs `div` 2
     phi' = realToFrac phi
 
-drawCircles :: [Complex Double] -> Frame ()
-drawCircles circles = do
-    worker circles
-    emit $ withStrokeWidth (Num sWidth) $
+drawCircles :: [Complex Double] -> SVG
+drawCircles circles = mkGroup
+    [ worker circles
+    , withStrokeWidth sWidth $
       withStrokeColor "white" $
       withStrokeLineJoin JoinRound $
       withFillOpacity 0 $
-      mkLinePath [ (x, y) | x :+ y <- scanl (+) 0 circles ]
+      mkLinePath [ (x, y) | x :+ y <- scanl (+) 0 circles ] ]
   where
-    worker [] = return ()
-    worker (x :+ y : rest) = do
-      let radius = sqrt(x*x+y*y)
-      emit $
-        withStrokeWidth (Num sWidth) $
+    worker [] = None
+    worker (x :+ y : rest) =
+      let radius = sqrt(x*x+y*y) in
+      mkGroup
+      [ withStrokeWidth sWidth $
         withStrokeColor "dimgrey" $
         withFillOpacity 0 $
-        CircleTree $ defaultSvg
-          & circleCenter .~ (Num 0, Num 0)
-          & circleRadius .~ Num radius
-      mapF (translate x y) $ worker rest
+        mkCircle radius
+      , translate x y $ worker rest ]
 
 mkFourierOutline :: Fourier -> [(Double, Double)]
 mkFourierOutline fourier =

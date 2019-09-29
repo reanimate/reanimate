@@ -13,7 +13,7 @@ import qualified Data.Text          as T
 import qualified Data.Text.IO       as T
 import           Graphics.SvgTree   (Number (..))
 import           Reanimate.Misc
-import           Reanimate.Monad
+import           Reanimate.Animation
 import           System.FilePath    ((</>))
 import           System.IO
 import           Text.Printf        (printf)

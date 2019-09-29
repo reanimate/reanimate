@@ -23,8 +23,10 @@ import           Reanimate.ColorSpace
 import           Reanimate.Constants
 import           Reanimate.Driver              (reanimate)
 import           Reanimate.LaTeX
-import           Reanimate.Monad
+import           Reanimate
+import           Reanimate.Animation
 import           Reanimate.Raster
+import           Reanimate.Svg.BoundingBox
 import           Reanimate.Scene
 import           Reanimate.Effect
 import           Reanimate.Signal
@@ -42,7 +44,7 @@ colorSpacesScene = sceneAnimation $ mdo
     beginT <- queryNow
     fork $ play $ frame
       # setDuration (endT-beginT)
-    fork $ playZ 1 $ mkAnimation 1 (emit spectrumGrid)
+    fork $ playZ 1 $ animate (const spectrumGrid)
       # setDuration (endT-beginT)
     dur <- withSceneDuration $ do
       fork $ play $ drawSensitivity 1 short blueName
@@ -131,12 +133,12 @@ colorSpacesScene = sceneAnimation $ mdo
     zCoords = [ (nm, z) | (nm, (x, y, z)) <- Map.toList bigXYZCoordinates ]
 
 
-frame = mkAnimation 2 $ do
+frame = mkAnimation 2 $ \t ->
     -- emit $ mkBackground "black"
     -- emit $ spectrumGrid
-    s <- getSignal signalLinear
-    let cm = hsv
-    emit $ mkGroup
+    let s = t
+        cm = hsv
+    in mkGroup
       [ mkClipPath "sRGB"
         [ simplify
           sRGBTriangle
@@ -150,7 +152,7 @@ frame = mkAnimation 2 $ do
         [ simplify $ lowerTransformations $
           translate 0 (margin/2) $
           pathify $
-          mkRect (Num spectrumWidth) (Num $ spectrumHeight+margin)
+          mkRect spectrumWidth (spectrumHeight+margin)
         ]
       ]
 
@@ -278,7 +280,7 @@ spectrumWidth = screenWidth * 0.7
 
 spectrumGrid :: Tree
 spectrumGrid =
-  withStrokeWidth (Num strokeWidth) $
+  withStrokeWidth strokeWidth $
   mkGroup
   [ center $
     withFillOpacity 0 $ withStrokeColor "white" $ mkPath $
@@ -337,9 +339,8 @@ spectrumGrid =
 
 
 drawSensitivity :: Double -> [(Nanometer, Double)] -> String -> Animation
-drawSensitivity maxHeight dat c = mkAnimation 1 $ do
-  limit <- getSignal signalLinear
-  emit $ sensitivitySVG maxHeight limit dat c
+drawSensitivity maxHeight dat c = animate $ \limit ->
+  sensitivitySVG maxHeight limit dat c
 
 morphSensitivity
   :: Double
@@ -348,12 +349,12 @@ morphSensitivity
   -> [(Nanometer, Double)]
   -> String
   -> Animation
-morphSensitivity maxHeightA maxHeightB datA datB c = mkAnimation 1 $ do
-  m <- getSignal $ signalCurve 2 -- signalLinear
-  let maxHeight = signalFromTo maxHeightA maxHeightB id m
-      dat = [ (nm, signalFromTo a b id m)
+morphSensitivity maxHeightA maxHeightB datA datB c = animate $ \t ->
+  let m = curveS 2 t
+      maxHeight = fromToS maxHeightA maxHeightB m
+      dat = [ (nm, fromToS a b m)
             | ((nm,a),(_,b)) <- zip datA datB ]
-  emit $ sensitivitySVG maxHeight 1 dat c
+  in sensitivitySVG maxHeight 1 dat c
 
   -- emit $
   --  withClipPathRef (Ref "spectrum") $
@@ -380,8 +381,7 @@ sensitivitySVG maxHeight limit dat c =
     lastNM = 700 -- fromIntegral $ fst (last dat)
 
 drawLabel :: Text -> Double -> [(Nanometer, Double)] -> String -> Animation
-drawLabel label maxHeight dat c = mkAnimation 1 $ do
-  emit $
+drawLabel label maxHeight dat c = animate $ const $
     translate (0) (svgHeight labelSVG) $
     translate (spectrumWidth*percent) labelY $
     translate (-spectrumWidth/2) (-spectrumHeight/2) $

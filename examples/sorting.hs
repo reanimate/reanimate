@@ -4,43 +4,30 @@
 {-# LANGUAGE RankNTypes        #-}
 module Main (main) where
 
-import           Control.Lens ()
-
 import           Codec.Picture
-import           Data.Text                   (Text)
-import           Graphics.SvgTree            (Number (..))
-import           Reanimate.Driver            (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate.Monad
-import           Reanimate.Raster
-import           Reanimate.Signal
-import           Reanimate.Svg
-import           Reanimate.ColorMap
-
 import           Control.Monad.ST
 import           Control.Monad.State.Strict
+import           Data.Text                   (Text)
 import qualified Data.Vector.Generic.Mutable as GV
 import           Data.Vector.Unboxed         (Vector)
 import qualified Data.Vector.Unboxed         as V
-import           Debug.Trace
+import           Reanimate
 import           System.Random
 import           System.Random.Shuffle
-import           Reanimate.Constants
 
 main :: IO ()
 main = reanimate $
-  demonstrateAlgorithm "Bubble sort" bubbleSort `before`
-  demonstrateAlgorithm "Merge sort (left leaning)" mergeSort `before`
-  demonstrateAlgorithm "Merge sort" mergeSortUp `before`
-  demonstrateAlgorithm "Insertion sort" insertSort `before`
-  demonstrateAlgorithm "Selection sort" selectionSort `before`
-  adjustSpeed (1/3) (demonstrateAlgorithm "Quicksort" quicksort)
+  demonstrateAlgorithm "Bubble sort" bubbleSort `seqA`
+  demonstrateAlgorithm "Merge sort (left leaning)" mergeSort `seqA`
+  demonstrateAlgorithm "Merge sort" mergeSortUp `seqA`
+  demonstrateAlgorithm "Insertion sort" insertSort `seqA`
+  demonstrateAlgorithm "Selection sort" selectionSort `seqA`
+  adjustDuration (*3) (demonstrateAlgorithm "Quicksort" quicksort)
 
 demonstrateAlgorithm :: Text -> (forall s. S s ()) -> Animation
-demonstrateAlgorithm name algo = mkAnimation 10 $ do
-    s <- getSignal signalLinear
+demonstrateAlgorithm name algo = mkAnimation 10 $ \t ->
     let img = generateImage pixelRenderer width height
-        seed = round (s * 3000)
+        seed = round (t * 3000)
         pixelRenderer x y = turbo (fromIntegral num / fromIntegral width)
           where
             num = (sortedDat !! y) V.! x
@@ -48,7 +35,7 @@ demonstrateAlgorithm name algo = mkAnimation 10 $ do
         -- width = 1024
         width = 500
         height = length sortedDat
-    emit $ mkGroup
+    in mkGroup
       [ mkBackground "black"
 
       , translate 0 (-screenWidth*0.03) $ center $ scaleXY (-1) 1 $
@@ -60,7 +47,7 @@ demonstrateAlgorithm name algo = mkAnimation 10 $ do
         rotate (-90) $ scale 0.5 $ center $
         latex "$Time \\rightarrow$"
       , withFillColor "white" $ translate ((screenWidth*0.30)) 0 $
-        mkCircle (Num $ (1-s)*0.5)
+        mkCircle ((1-t)*0.5)
       ]
   where
 
@@ -83,8 +70,8 @@ data Env s = Env
 
 type S s a = StateT (Env s) (ST s) a
 
-runSort :: (forall s. S s ()) -> Int -> [Vector Int]
-runSort = runSort' 0xDEADBEEF
+-- runSort :: (forall s. S s ()) -> Int -> [Vector Int]
+-- runSort = runSort' 0xDEADBEEF
 
 runSort' :: Int -> (forall s. S s ()) -> Int -> [Vector Int]
 runSort' seed sortFn len = reverse $ runST (do
@@ -93,9 +80,6 @@ runSort' seed sortFn len = reverse $ runST (do
     envHistory <$> execStateT sortFn env)
   where
     lst = shuffle' [1 .. len] len (mkStdGen seed)
-    skipDups (x:y:xs) | x == y = skipDups (x:xs)
-    skipDups (x:xs)   = x : skipDups xs
-    skipDups []       = []
 
 readS :: Int -> S s Int
 readS idx = do
@@ -138,6 +122,7 @@ mergeSort' start end = do
   zipWithM_ writeS [start..] (merge leftVals rightVals)
   snapshot
 
+merge :: Ord a => [a] -> [a] -> [a]
 merge [] xs = xs
 merge xs [] = xs
 merge (x:xs) (y:ys)
@@ -149,7 +134,7 @@ mergeSortUp :: S s ()
 mergeSortUp = do
   snapshot
   len <- inputLength
-  let chunkSizes = takeWhile (< len) $ map (2^) [0..]
+  let chunkSizes = takeWhile (< len) $ map (2^) [0::Int ..]
   forM_ chunkSizes $ bottomUpMergeSort'
 
 bottomUpMergeSort' :: Int -> S s ()
@@ -166,7 +151,6 @@ selectionSort = do
   snapshot
   len <- inputLength
   forM_ [0 .. len-1] $ \j -> do
-    jVal <- readS j
     i <- findMin j (j+1) len
     swapS j i
     snapshot
