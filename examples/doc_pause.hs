@@ -6,4 +6,4 @@ import Reanimate
 import Reanimate.Builtin.Documentation
 
 main :: IO ()
-main = reanimate $ docEnv $ pause 1 `seqA` drawCircle
+main = reanimate $ docEnv $ pause 1 `seqA` drawProgress

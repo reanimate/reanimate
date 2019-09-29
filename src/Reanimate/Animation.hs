@@ -112,7 +112,7 @@ parDropA (Animation d1 f1) (Animation d2 f2) =
 --
 --   Example:
 --
---   > pause 1 `seqA` drawCircle
+--   > pause 1 `seqA` drawProgress
 --
 --   <<docs/gifs/doc_pause.gif>>
 pause :: Duration -> Animation
