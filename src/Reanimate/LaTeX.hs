@@ -15,14 +15,42 @@ import           Reanimate.Svg
 import           System.FilePath   (replaceExtension, takeFileName, (</>))
 import           System.IO.Unsafe  (unsafePerformIO)
 
+-- | Invoke latex and import the result as an SVG object. SVG objects are
+--   cached to improve performance.
+--
+--   Example:
+--
+--   > withStrokeWidth 0 . withFillOpacity 1 . scale 3 . center $
+--   > latex "$e^{i\\pi}+1=0$"
+--
+--   <<docs/gifs/doc_latex.gif>>
 latex :: T.Text -> Tree
 latex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) latexToSVG)
   ("% plain latex\n" <> tex)
 
+-- | Invoke xelatex and import the result as an SVG object. SVG objects are
+--   cached to improve performance. Xelatex has support for non-western scripts.
+--
+--   Example:
+--
+--   > withStrokeWidth 0 . withFillOpacity 1 . scale 4 . center $
+--   > xelatex "中文"
+--
+--   <<docs/gifs/doc_xelatex.gif>>
 xelatex :: Text -> Tree
 xelatex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) xelatexToSVG)
   ("% xelatex\n" <> tex)
 
+-- | Invoke latex and import the result as an SVG object. SVG objects are
+--   cached to improve performance. This wraps the TeX code in an 'align*'
+--   context.
+--
+--   Example:
+--
+--   > withStrokeWidth 0 . withFillOpacity 1 . scale 3 . center $
+--   > latexAlign "R = \\frac{{\\Delta x}}{{kA}}"
+--
+--   <<docs/gifs/doc_latexAlign.gif>>
 latexAlign :: Text -> Tree
 latexAlign tex = latex $ T.unlines ["\\begin{align*}", tex, "\\end{align*}"]
 
@@ -40,7 +68,7 @@ latexToSVG tex = handle (\(_::SomeException) -> return (failedSvg tex)) $ do
     T.appendFile tex_file tex
     appendFile tex_file tex_epilogue
     runCmd latexBin ["-interaction=batchmode", "-halt-on-error", "-output-directory="++tmp_dir, tex_file]
-    runCmd dvisvgm [ dvi_file
+    runCmd dvisvgm [ dvi_file, "--precision=5"
                    , "--exact"    -- better bboxes.
                    -- , "--bbox=1,1" -- increase bbox size.
                    , "--no-fonts" -- use glyphs instead of fonts.

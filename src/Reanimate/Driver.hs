@@ -3,15 +3,15 @@ module Reanimate.Driver ( reanimate ) where
 
 import           Control.Monad
 import           Data.Maybe
+import           Reanimate.Animation      (Animation)
 import           Reanimate.Driver.Check
 import           Reanimate.Driver.CLI
 import           Reanimate.Driver.Compile
 import           Reanimate.Driver.Server
-import           Reanimate.Monad          (Animation)
 import           Reanimate.Render         (FPS, Format (..), Height, Width,
                                            render, renderSnippets, renderSvgs)
-import           System.FilePath
 import           System.Directory
+import           System.FilePath
 import           Text.Printf
 
 presetFormat :: Preset -> Format
@@ -53,12 +53,49 @@ formatHeight RenderMp4  = 1440
 formatHeight RenderGif  = 180
 formatHeight RenderWebm = 1440
 
+{-|
+Main entry-point for accessing an animation. Creates a program that takes the
+following command-line arguments:
+
+> Usage: PROG [COMMAND]
+>   This program contains an animation which can either be viewed in a web-browser
+>   or rendered to disk.
+>
+> Available options:
+>   -h,--help                Show this help text
+>
+> Available commands:
+>   check                    Run a system's diagnostic and report any missing
+>                            external dependencies.
+>   view                     Play animation in browser window.
+>   render                   Render animation to file.
+
+Neither the 'check' nor the 'view' command take any additional arguments.
+Rendering animation can be controlled with these arguments:
+
+> Usage: PROG render [-o|--target FILE] [--fps FPS] [-w|--width PIXELS]
+>                    [-h|--height PIXELS] [--compile] [--format FMT]
+>                    [--preset TYPE]
+>   Render animation to file.
+>
+> Available options:
+>   -o,--target FILE         Write output to FILE
+>   --fps FPS                Set frames per second.
+>   -w,--width PIXELS        Set video width.
+>   -h,--height PIXELS       Set video height.
+>   --compile                Compile source code before rendering.
+>   --format FMT             Video format: mp4, gif, webm
+>   --preset TYPE            Parameter presets: youtube, gif, quick
+>   -h,--help                Show this help text
+-}
 reanimate :: Animation -> IO ()
 reanimate animation = do
   Options{..} <- getDriverOptions
   case optsCommand of
     Raw        -> renderSvgs animation
-    Test       -> renderSnippets animation
+    Test       -> do
+      -- hSetBinaryMode stdout True
+      renderSnippets animation
     Check      -> checkEnvironment
     View       -> serve
     Render{..} -> do

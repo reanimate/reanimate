@@ -3,14 +3,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import           Control.Lens
 import           Data.Complex
 import qualified Data.Text as T
 
 import           Graphics.SvgTree
 import           Reanimate.Driver (reanimate)
 import           Reanimate.LaTeX  (latex)
-import           Reanimate.Monad
+import           Reanimate.Animation
 import           Reanimate.Svg
 import           Reanimate.Signal
 import           Reanimate.Constants
@@ -21,55 +20,58 @@ waveMultiplier = 2 -- Square wave
 
 main :: IO ()
 main = reanimate $
-  fourierAnimation 1 `before`
-  fourierAnimation 2 `before`
-  fourierAnimation 3 `before`
-  fourierAnimation 5 `before`
-  fourierAnimation 10 `before`
-  fourierAnimation 25 `before`
-  fourierAnimation 50 `before`
+  fourierAnimation 1 `seqA`
+  fourierAnimation 2 `seqA`
+  fourierAnimation 3 `seqA`
+  fourierAnimation 5 `seqA`
+  fourierAnimation 10 `seqA`
+  fourierAnimation 25 `seqA`
+  fourierAnimation 50 `seqA`
   fourierAnimation 100
 
+sWidth :: Double
 sWidth = 0.02
 
 fourierAnimation :: Int -> Animation
-fourierAnimation nCircles = repeatAnimation 2 $ mkAnimation 3 $ do
-    emit $ mkBackground "black"
-    phi <- getSignal $ signalFromTo 0 (2*pi) signalLinear
-    mapF (translate (-screenWidth/4) 0) $ do
-      drawNCircles nCircles phi
-      emit $ withStrokeColor "white" $
-        withStrokeWidth (Num sWidth) $
+fourierAnimation nCircles = repeatA 2 $ mkAnimation 3 $ \t ->
+    let phi = fromToS 0 (2*pi) t
+    in mkGroup
+    [ mkBackground "black"
+    , translate (-screenWidth/4) 0 $ mkGroup
+      [ drawNCircles nCircles phi
+      , withStrokeColor "white" $
+        withStrokeWidth sWidth $
         withFillOpacity 0 $
         translate (screenWidth/4) 0 $
-        mkCirclePath nCircles phi
-    emit $ withStrokeWidth (Num sWidth) $
+        mkCirclePath nCircles phi ]
+    , withStrokeWidth sWidth $
       withFillColor "white" $
       translate (-screenWidth/8*3) (screenHeight/8*3) $
-      latex $ T.pack $ "Circles: " ++ show nCircles
+      latex $ T.pack $ "Circles: " ++ show nCircles ]
 
-drawNCircles totalCircles phi = do
-    worker circles
-    let x :+ y = sum circles
-    emit $ withStrokeWidth (Num sWidth) $
+drawNCircles :: Int -> Double -> Tree
+drawNCircles totalCircles phi = mkGroup
+    [ worker circles
+    , let x :+ y = sum circles in
+      withStrokeWidth sWidth $
       withStrokeColor "white" $
-      mkLine (Num x, Num y) (Num (screenWidth/4), Num y)
+      mkLine (x, y) (screenWidth/4, y) ]
   where
     circles = [ nthCircle n phi | n <- [0..totalCircles-1] ]
-    worker [] = return ()
-    worker (x :+ y : rest) = do
-      let radius = sqrt(x*x+y*y)
-      emit $ withStrokeWidth (Num sWidth) $
+    worker [] = None
+    worker (x :+ y : rest) =
+      let radius = sqrt(x*x+y*y) in
+      mkGroup
+      [ withStrokeWidth sWidth $
         withStrokeColor "grey" $
         withFillOpacity 0 $
-        CircleTree $ defaultSvg
-          & circleCenter .~ (Num 0, Num 0)
-          & circleRadius .~ Num radius
-      mapF (translate x y) $ worker rest
-      emit $ withStrokeWidth (Num sWidth) $
+        mkCircle radius
+      , translate x y $ worker rest
+      , withStrokeWidth sWidth $
         withStrokeColor "white" $
-        mkLine (Num 0, Num 0) (Num x, Num y)
+        mkLine (0, 0) (x, y) ]
 
+mkCirclePath :: Int -> Double -> Tree
 mkCirclePath nCircles phiOffset = mkLinePath $ take 2000 $
     zip [ 2 * i/granularity | i <- [0..]]
     $ drop (round $ (1-phiOffset/(2*pi)) * granularity) $
@@ -80,6 +82,7 @@ mkCirclePath nCircles phiOffset = mkLinePath $ take 2000 $
   where
     granularity = 500
 
+fourierYValue :: Int -> Double -> Double
 fourierYValue n phi =
   imagPart (sum [ nthCircle i phi | i <- [0..n-1]])
 

@@ -12,7 +12,7 @@ import           Paths_reanimate
 import           System.IO.Unsafe
 
 import           Graphics.SvgTree           (Tree)
-import           Reanimate.Svg
+import           Reanimate.Svg.Constructors
 
 type Nanometer = Integer
 

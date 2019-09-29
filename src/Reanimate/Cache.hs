@@ -14,7 +14,7 @@ import           Data.Text          (Text)
 import qualified Data.Text          as T
 import qualified Data.Text.IO       as T
 import           Graphics.SvgTree   (Tree (..), unparse)
-import           Reanimate.Monad    (renderTree)
+import           Reanimate.Animation    (renderTree)
 import           System.Directory
 import           System.FilePath
 import           System.IO

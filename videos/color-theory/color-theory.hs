@@ -21,10 +21,12 @@ import           Numeric
 import           Reanimate.ColorMap
 import           Reanimate.Driver      (reanimate)
 import           Reanimate.LaTeX
-import           Reanimate.Monad
+import           Reanimate
+import           Reanimate.Animation
 import           Reanimate.Raster
 import           Reanimate.Scene
 import           Reanimate.Signal
+import           Reanimate.Effect
 import           Reanimate.Svg
 import           Reanimate.ColorSpace
 import           Reanimate.Constants
@@ -35,17 +37,14 @@ import           Colorspace
 highdef = True
 
 takeA :: Double -> Animation -> Animation
-takeA d1 (Animation d2 f) = Animation d $ Frame $ \_ t -> unFrame f d (min d t)
-  where
-    d = min d1 d2
+takeA = undefined
 
 dropA :: Double -> Animation -> Animation
-dropA d1 (Animation d2 f) = Animation (max 0 (d2-d1)) $
-  Frame $ \d t -> unFrame f d (t+d1)
+dropA = undefined
 
 main :: IO ()
 main = reanimate $
-  (mkAnimation 0 $ emit $ mkBackground "black") `sim`
+  (animate $ const $ mkBackground "black") `parA`
   -- monalisaScene
   colorSpacesScene
   -- clipPathTest
@@ -140,34 +139,33 @@ interpolateColorMap d cmap1 cmap2 =
         i a b = round (fromIntegral a + (fromIntegral b-fromIntegral a)*d)
     in PixelRGB8 (i r1 r2) (i g1 g2) (i b1 b2)
 
-sceneFalseColorChain (x:y:xs) = sceneFalseColor x y `before` sceneFalseColorChain (y:xs)
+sceneFalseColorChain (x:y:xs) = sceneFalseColor x y `seqA` sceneFalseColorChain (y:xs)
 sceneFalseColorChain _ = pause 0
 
 sceneFalseColorIntro :: Animation
-sceneFalseColorIntro = mkAnimation 2 $ do
-  s <- getSignal $ signalFromTo 1 2 $ signalCurve 3
-  d <- getSignal $ signalCurve 3
-  emit $
-    translate ((screenWidth/4 - 0.75)*d) 0 $
+sceneFalseColorIntro = mkAnimation 2 $ \t ->
+  let s = fromToS 1 2 $ curveS 3 t
+      d  = curveS 3 t
+  in mkGroup
+  [ translate ((screenWidth/4 - 0.75)*d) 0 $
     scaleToSize (screenWidth/s) (screenHeight/s) $
     center $ embedImage monalisaLarge
-  emit $
-    withGroupOpacity d $
+  , withGroupOpacity d $
     translate ((screenWidth/4 - 0.75)*d) 0 $
     scaleToSize (screenWidth/s) (screenHeight/s) $
-    embedImage monalisa
+    embedImage monalisa ]
 
 sceneFalseColor :: (Double -> PixelRGB8) -> (Double -> PixelRGB8) -> Animation
-sceneFalseColor cmap1 cmap2 = mkAnimation 5 $ do
-  s <- getSignal $ signalCurve 3
-  let cm = interpolateColorMap s cmap1 cmap2
-  emit $ translate (screenWidth/4 - 0.75) 0 $
+sceneFalseColor cmap1 cmap2 = mkAnimation 5 $ \t ->
+  let s = curveS 3 t
+      cm = interpolateColorMap s cmap1 cmap2
+  in translate (screenWidth/4 - 0.75) 0 $
     scaleToSize (screenWidth/2) (screenHeight/2) $ embedImage $
     applyColorMap cm monalisa
 
 sceneColorMaps :: Animation
-sceneColorMaps = mkAnimation 5 $ do
-  emit $ mkGroup
+sceneColorMaps = mkAnimation 5 $ const $
+  mkGroup
     [ translate xOffset (yInit - n*yStep) $
       mkGroup
         [ renderColorMap width height cmap
@@ -199,45 +197,33 @@ limitGreyPixels limit img =
       let pixel@(PixelRGB8 r _ _) = pixelAt img x y
       in if r < limit then promotePixel pixel else PixelRGBA8 0 0 0 1 --limit limit limit
 
-latexTest :: Animation
-latexTest = mkAnimation 5 $ do
-  let (_,_,baseW,baseH) = boundingBox $ latex "Hello world"
-      (_,_,txtW, txtH) = boundingBox $ latex "aa"
-  emit $ withFillColor "white" $ latex "Hello world"
-  emit $ translate (-10) (baseH-txtH) $ withFillColor "white" $ latex "aa"
-  emit $ withStrokeWidth (Num 0.3) $ withStrokeColor "white" $
-    mkGroup
-    [ mkLine (Num (-100), Num 0) (Num 100, Num 0)
-    , mkLine (Num 0, Num (-100)) (Num 0, Num 100)]
-
 renderColorMap :: Double -> Double -> (Double -> PixelRGB8) -> Tree
 renderColorMap width height cmap = mkGroup
   [ scaleToSize width height $ mkColorMap cmap
-  , center $ withStrokeWidth (Num 0.01) $
+  , center $ withStrokeWidth 0.01 $
     withStrokeColor "white" $ withFillOpacity 0 $
-    mkRect (Num width) (Num height)
+    mkRect width height
   ]
 
 showColorMap :: Double -> Double -> Animation
-showColorMap start end = mkAnimation 2 $ do
-    s <- getSignal $ signalCurve 2
-    let n = signalFromTo start end id s
-    emit $
-      translate 0 offsetY $
+showColorMap start end = mkAnimation 2 $ \t ->
+    let s = curveS 2 t
+        n = fromToS start end s
+    in translate 0 offsetY $
       mkGroup
       [ withGroupOpacity 0.9 $
         withFillColor "black" $
         translate 0 (0) $
         center $
-        mkRect (Num $ width + height*2) (Num $ height*3)
-      , scaleToSize width height $ mkColorMap (cm . signalFromTo start end id)
+        mkRect (width + height*2) (height*3)
+      , scaleToSize width height $ mkColorMap (cm . fromToS start end)
       , translate (s*width - width/2) 0 $
         center $
         withStrokeColor "black" $
-        mkLine (Num 0, Num 0) (Num 0, Num height)
+        mkLine (0, 0) (0, height)
       , center $ --withStrokeWidth (Num 0.5) $
         withStrokeColor "white" $ withFillOpacity 0 $
-        mkRect (Num width) (Num height)
+        mkRect width height
       , translate (s*width - width/2) (height) $
         scale 0.3 $
         centerX $
@@ -269,26 +255,27 @@ mkColorMap f = center $ embedImage img
 
 
 drawPixelImage :: Double -> Double -> Animation
-drawPixelImage start end = mkAnimation 2 $ do
-  limit <- getSignal $ signalFromTo start end $ signalCurve 2
-  emit $ scaleToSize screenWidth screenHeight $ center $ embedImage $
-    limitGreyPixels (floor (limit*255)) monalisaLarge
+drawPixelImage start end = mkAnimation 2 $ \t ->
+  let limit = fromToS start end $ curveS 2 t
+  in scaleToSize screenWidth screenHeight $ center $ embedImage $
+     limitGreyPixels (floor (limit*255)) monalisaLarge
 
 drawHexPixels :: Animation
-drawHexPixels = mkAnimation 1 $ do
-  when highdef $
-    emit $ defs
-  emit $ withFillOpacity 1 $ withStrokeWidth (Num 0) $ withFillColor "white" $
+drawHexPixels = mkAnimation 1 $ \_ ->
+  mkGroup
+  [ if highdef then defs else None
+  , withFillOpacity 1 $ withStrokeWidth 0 $ withFillColor "white" $
     mkGroup
     [ translate ((fromIntegral x+0.5)/fromIntegral width*screenWidth - screenWidth/2)
                 (screenHeight/2 - (fromIntegral y+0.5)/fromIntegral height*screenHeight) $
       if highdef
         then mkUse ("tag" ++ show r)
-        else mkCircle (Num 0.5)
+        else mkCircle 0.5
     | x <- [0..width-1]
     , y <- [0..height-1]
     , let pixel@(PixelRGB8 r _ _) = pixelAt monalisa x y
     ]
+  ]
   where
     defs = preRender $ mkDefinitions images
     getNthSet n = centerX $ snd (splitGlyphs [n*2,n*2+1] allGlyphs)
@@ -309,14 +296,7 @@ drawHexPixels = mkAnimation 1 $ do
 
 
 fadeIn :: Double -> Animation -> Animation
-fadeIn fadeDuration (Animation d genFrame) = Animation d $ do
-  t <- askTime
-  mapF (withGroupOpacity (max 0 $ min 1 (t/fadeDuration))) genFrame
+fadeIn t = applyE (overBeginning t fadeInE)
 
 fadeOut :: Double -> Animation -> Animation
-fadeOut fadeDuration (Animation d genFrame) = Animation d $ do
-  t <- askTime
-  mapF (withGroupOpacity (max 0 $ min 1 ((d-t)/fadeDuration))) genFrame
-
-askTime :: Frame Time
-askTime = Frame $ \_dur t -> return t
+fadeOut t = applyE (overEnding t fadeOutE)

@@ -26,6 +26,8 @@ checkEnvironment = do
     runCheck "Has XeLaTeX" hasXeLaTeX
     runCheck "Has dvisvgm" hasDvisvgm
     runCheck "Has povray" hasPovray
+    runCheck ("Has LaTeX package '"++ "babel" ++ "'") $ hasTeXPackage "latex" $
+      "[english]{babel}"
     forM_ latexPackages $ \pkg ->
       runCheck ("Has LaTeX package '"++ pkg ++ "'") $ hasTeXPackage "latex" $
         "{"++pkg++"}"
@@ -34,7 +36,7 @@ checkEnvironment = do
         "{"++pkg++"}"
   where
     latexPackages =
-      ["babel"
+      ["preview"
       ,"amsmath"
       ,"amssymb"
       ,"dsfont"
@@ -78,10 +80,11 @@ hasFFmpeg = do
   mbVersion <- ffmpegVersion
   return $ case mbVersion of
     Nothing                   -> Left "no"
-    Just vs | vs < minVersion -> Left "too old"
+    Just vs | vs < minVersion -> Left $ "too old: " ++ showVersion vs ++ " < " ++ showVersion minVersion
             | otherwise       -> Right (showVersion vs)
   where
     minVersion = Version [4,1,3] []
+
 ffmpegVersion :: IO (Maybe Version)
 ffmpegVersion = do
   mbPath <- findExecutable "ffmpeg"
@@ -90,15 +93,16 @@ ffmpegVersion = do
     Just path -> do
       ret <- runCmd_ path ["-version"]
       case ret of
-        Left{} -> return Nothing
+        Left{} -> return $ Just noVersion
         Right out ->
           case map (take 3 . words) $ take 1 $ lines out of
             [["ffmpeg", "version", vs]] ->
-              return $ parseVS vs
-            _ -> return Nothing
+              return $ Just $ fromMaybe noVersion $ parseVS vs
+            _ -> return $ Just noVersion
   where
-    parseVS vs = listToMaybe
-      [ v | (v, "") <- readP_to_S parseVersion vs ]
+    noVersion = Version [] []
+    parseVS vs = listToMaybe $ reverse
+      [ v | (v, _) <- readP_to_S parseVersion vs ]
 
 
 hasTeXPackage :: FilePath -> String -> IO (Either String String)

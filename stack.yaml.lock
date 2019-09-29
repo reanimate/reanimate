@@ -5,12 +5,12 @@
 
 packages:
 - completed:
-    hackage: reanimate-svg-0.9.1.1@sha256:f00c2af90c1f801c63c7a65c085c145bcf660329a168ccd6253ab912a3eddd33,2448
+    hackage: reanimate-svg-0.9.3.0@sha256:ba0414bce09a0f298b1ab5e1f0f9f75f4f47498e12dd0c6a75c2e63f33e34ca4,2448
     pantry-tree:
       size: 1117
-      sha256: adf1e2b20c77676d48ba990b1d1735a9c88ab38c1bf7f2d0c87690432aa3c183
+      sha256: 1b559678d25e1fa98c75fad0315851c4c805f3cb6f2779ab4be7eb6868b4838e
   original:
-    hackage: reanimate-svg-0.9.1.1
+    hackage: reanimate-svg-0.9.3.0
 - completed:
     hackage: palette-0.3.0.2@sha256:50e210b7d21a0c394a6d672cc3c6d3bffcfa1be07419d72b99e68cfb65d6ca3c,1485
     pantry-tree:
@@ -18,6 +18,20 @@ packages:
       sha256: 9285e95a5701636961e83ed2036cca52a6b66e5ea809500ed6b845bc920f2791
   original:
     hackage: palette-0.3.0.2
+- completed:
+    cabal-file:
+      size: 4595
+      sha256: a84de7ba50404602b63825065cb178a7621b3b77c6cb0fb8fae0200c838c7ff5
+    name: chiphunk
+    version: 0.1.1.0
+    git: https://github.com/Lemmih/chiphunk.git
+    pantry-tree:
+      size: 6730
+      sha256: 46939ee934e58d8896c35fa3c36b3d2b9947f671281618f540976b7ab6aa8675
+    commit: 8328b1adb903abf034562ad95d1bfdaba1ce6397
+  original:
+    git: https://github.com/Lemmih/chiphunk.git
+    commit: 8328b1adb903abf034562ad95d1bfdaba1ce6397
 - completed:
     hackage: diagrams-1.4@sha256:3e36369e84115b900fd9dcb570672a188339a470eb19ca62170775cd835cf8ca,5483
     pantry-tree:
