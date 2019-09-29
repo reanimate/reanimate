@@ -9,7 +9,7 @@ docEnv = mapA $ \svg -> mkGroup
   [ mkBackground "white"
   , withFillOpacity 0 $
     withStrokeWidth 0.1 $
-    withStrokeColor "black" svg ]
+    withStrokeColor "black" (mkGroup [svg]) ]
 
 -- | <<docs/gifs/doc_drawBox.gif>>
 drawBox :: Animation
