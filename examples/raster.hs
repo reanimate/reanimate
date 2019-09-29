@@ -9,7 +9,7 @@ main :: IO ()
 main = reanimate $ mkAnimation 5 $ \t ->
     mkGroup
       [ mkBackground "black"
-      , rotate (t*360) $ center $ scaleToWidth 6 $ embedImage img
+      , rotate (t*360) $ scaleToWidth 6 $ embedImage img
       ]
   where
     img = generateImage pixelRenderer 255 255
