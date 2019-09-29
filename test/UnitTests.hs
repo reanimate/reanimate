@@ -67,9 +67,10 @@ compileVideoFolder path = do
   files <- getDirectoryContents path
   return $ testGroup "videos"
     [ testCase dir $ do
-        (ret, _stdout, _stderr) <- readProcessWithExitCode "stack" (["ghc","--", fullPath] ++ ghcOpts) ""
+        (ret, _stdout, err) <- readProcessWithExitCode "stack" (["ghc","--", "-i"++path</>dir, fullPath] ++ ghcOpts) ""
+        _ <- evaluate (length err)
         case ret of
-          ExitFailure{} -> assertFailure "Failed to compile"
+          ExitFailure{} -> assertFailure $ "Failed to compile:\n" ++ err
           ExitSuccess   -> return ()
     | dir <- files
     , let fullPath = path </> dir </> dir <.> "hs"
