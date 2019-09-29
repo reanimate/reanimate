@@ -3,12 +3,14 @@ module Reanimate.Animation where
 import           Control.Arrow              ()
 import           Data.Fixed                 (mod')
 import qualified Data.Map                   as M
-import           Graphics.SvgTree           (Document (..), Number (..),
+import           Graphics.SvgTree           (Alignment (..), Document (..),
+                                             Number (..),
+                                             PreserveAspectRatio (..),
                                              Tree (..), xmlOfTree)
 import           Graphics.SvgTree.Printer
 import           Reanimate.Constants
-import           Reanimate.Svg.Constructors
 import           Reanimate.Signal
+import           Reanimate.Svg.Constructors
 import           Text.XML.Light.Output
 
 -- | Duration of an animation or effect. Usually measured in seconds.
@@ -149,6 +151,7 @@ renderSvg w h t = ppDocument doc
       , _definitions = M.empty
       , _description = ""
       , _documentLocation = ""
+      , _documentAspectRatio = PreserveAspectRatio False AlignNone Nothing
       }
 
 -- | Map over the SVG produced by an animation at every frame.
