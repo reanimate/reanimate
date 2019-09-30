@@ -95,19 +95,19 @@ testCommand = info (parse <**> helper)
     parse = pure Test
 
 checkCommand :: ParserInfo Command
-checkCommand = info (parse)
+checkCommand = info parse
     (progDesc "Run a system's diagnostic and report any missing external dependencies.")
   where
     parse = pure Check
 
 viewCommand :: ParserInfo Command
-viewCommand = info (parse)
+viewCommand = info parse
     (progDesc "Play animation in browser window.")
   where
     parse = pure View
 
 renderCommand :: ParserInfo Command
-renderCommand = info (parse)
+renderCommand = info parse
     (progDesc "Render animation to file.")
   where
     -- fromPreset :: (Maybe Preset -> (Command -> Command))

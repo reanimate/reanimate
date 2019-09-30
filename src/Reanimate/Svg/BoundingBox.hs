@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
 module Reanimate.Svg.BoundingBox where
 
 import           Control.Arrow
@@ -66,7 +65,7 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
       LineTree line   -> map pointToRPoint [line^.linePoint1, line^.linePoint2]
       RectangleTree rect ->
         case pointToRPoint (rect^.rectUpperLeftCorner) of
-          V2 x y -> [V2 x y] ++
+          V2 x y -> V2 x y :
             case mapTuple (fmap $ toUserUnit defaultDPI) (rect^.rectWidth, rect^.rectHeight) of
               (Just (Num w), Just (Num h)) -> [V2 (x+w) (y+h)]
               _                            -> []
@@ -83,5 +82,5 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
     mapTuple f = f *** f
     pointToRPoint p =
       case mapTuple (toUserUnit defaultDPI) p of
-        (Num x, Num y) -> (V2 x y)
+        (Num x, Num y) -> V2 x y
         _ -> error "Reanimate.Svg.svgBoundingPoints: Unrecognized number format."

@@ -1,7 +1,7 @@
 module Reanimate.Svg.Constructors where
 
 import           Codec.Picture                (PixelRGBA8 (..))
-import           Control.Lens                 ((&), (.~))
+import           Control.Lens                 ((&), (.~), (?~))
 import           Data.Attoparsec.Text         (parseOnly)
 import qualified Data.Map                     as Map
 import qualified Data.Text                    as T
@@ -15,7 +15,7 @@ import           Reanimate.Svg.BoundingBox
 
 withTransformations :: [Transformation] -> Tree -> Tree
 withTransformations transformations t =
-  mkGroup [t] & transform .~ Just transformations
+  mkGroup [t] & transform ?~ transformations
 
 translate :: Double -> Double -> Tree -> Tree
 translate x y = withTransformations [Translate x y]
@@ -96,10 +96,10 @@ withFillColorPixel :: PixelRGBA8 -> Tree -> Tree
 withFillColorPixel color = fillColor .~ pure (ColorRef color)
 
 withFillOpacity :: Double -> Tree -> Tree
-withFillOpacity opacity = fillOpacity .~ Just (realToFrac opacity)
+withFillOpacity opacity = fillOpacity ?~ realToFrac opacity
 
 withGroupOpacity :: Double -> Tree -> Tree
-withGroupOpacity opacity = groupOpacity .~ Just (realToFrac opacity)
+withGroupOpacity opacity = groupOpacity ?~ realToFrac opacity
 
 withStrokeWidth :: Double -> Tree -> Tree
 withStrokeWidth width = strokeWidth .~ pure (Num width)
@@ -108,13 +108,13 @@ withClipPathRef :: ElementRef -> Tree -> Tree
 withClipPathRef ref = clipPathRef .~ pure ref
 
 withId :: String -> Tree -> Tree
-withId idTag = attrId .~ Just idTag
+withId idTag = attrId ?~ idTag
 
 mkRect :: Double -> Double -> Tree
 mkRect width height = translate (-width/2) (-height/2) $ RectangleTree $ defaultSvg
   & rectUpperLeftCorner .~ (Num 0, Num 0)
-  & rectWidth .~ Just (Num width)
-  & rectHeight .~ Just (Num height)
+  & rectWidth ?~ Num width
+  & rectHeight ?~ Num height
 
 mkCircle :: Double -> Tree
 mkCircle radius = CircleTree $ defaultSvg
@@ -138,7 +138,7 @@ mkUse :: String -> Tree
 mkUse name = UseTree (defaultSvg & useName .~ name) Nothing
 
 mkClipPath :: String -> [Tree] -> Tree
-mkClipPath idTag forest = withId idTag $ ClipPathTree $ (defaultSvg
+mkClipPath idTag forest = withId idTag $ ClipPathTree (defaultSvg
   & clipPathContent .~ forest)
 
 mkPath :: [PathCommand] -> Tree
@@ -170,8 +170,8 @@ mkBackgroundPixel pixel =
 
 gridLayout :: [[Tree]] -> Tree
 gridLayout rows = mkGroup
-    [ translate (-screenWidth/2+colSep*(nCol))
-                (screenHeight/2-rowSep*(nRow))
+    [ translate (-screenWidth/2+colSep*nCol)
+                (screenHeight/2-rowSep*nRow)
       elt
     | (nRow, col) <- zip [1..] rows
     , let nCols = length col

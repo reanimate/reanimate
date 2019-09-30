@@ -26,7 +26,7 @@ checkEnvironment = do
     runCheck "Has XeLaTeX" hasXeLaTeX
     runCheck "Has dvisvgm" hasDvisvgm
     runCheck "Has povray" hasPovray
-    runCheck ("Has LaTeX package '"++ "babel" ++ "'") $ hasTeXPackage "latex" $
+    runCheck ("Has LaTeX package '"++ "babel" ++ "'") $ hasTeXPackage "latex"
       "[english]{babel}"
     forM_ latexPackages $ \pkg ->
       runCheck ("Has LaTeX package '"++ pkg ++ "'") $ hasTeXPackage "latex" $
