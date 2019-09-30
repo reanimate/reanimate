@@ -3,7 +3,7 @@ module Reanimate.Svg.Unuse
   , unbox
   ) where
 
-import           Control.Lens                 ((%~), (&), (.~), (^.))
+import           Control.Lens                 ((%~), (&), (.~), (^.),(?~))
 import qualified Data.Map                     as Map
 import           Graphics.SvgTree             hiding (height, line, path, use,
                                                width)
@@ -25,7 +25,7 @@ replaceUses doc = doc & elements %~ map (mapTree replace)
         Just tree ->
           GroupTree $
           defaultSvg & groupChildren .~ [tree]
-                     & transform .~ Just [baseToTransformation (use^.useBase)]
+                     & transform ?~ [baseToTransformation (use^.useBase)]
     replace x = x
     baseToTransformation (x,y) =
       case (toUserUnit defaultDPI x, toUserUnit defaultDPI y) of
@@ -44,7 +44,7 @@ unbox :: Document -> Tree
 unbox doc@Document{_viewBox = Just (minx, minw, _width, _height)} =
   GroupTree $ defaultSvg
           & groupChildren .~ doc^.elements
-          & transform .~ Just [Translate (-minx) (-minw)]
+          & transform ?~ [Translate (-minx) (-minw)]
 unbox doc =
   GroupTree $ defaultSvg
     & groupChildren .~ doc^.elements
