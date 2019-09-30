@@ -132,7 +132,29 @@ splitGlyphs target = \t ->
         DefinitionTree{} -> return ()
         _ ->
           modify $ \(n, l, r) -> (n, acc t:l, r)
+{-
+<g transform="translate(10,10)">
+  <g transform="scale(2)">
+    <circle/>
+  </g>
+  <g transform="scale(0.5)">
+    <rect/>
+  </g>
+</g>
 
+[ (\svg -> <g transform="translate(10,10)"><g transform="scale(2)">svg</g></g>, <circle/>)
+, (\svg -> <g transform="translate(10,10)"><g transform="scale(0.5)">svg</g></g>, <rect/>)]
+-}
+svgGlyphs :: Tree -> [(Tree -> Tree, DrawAttributes, Tree)]
+svgGlyphs = worker id defaultSvg
+  where
+    worker acc attr =
+      \case
+        GroupTree g ->
+          let acc' sub = acc (GroupTree $ g & groupChildren .~ [sub])
+              attr' = (g^.drawAttributes) `mappend` attr
+          in concatMap (worker acc' attr') (g ^. groupChildren)
+        t -> [(acc, attr, t)]
 
 pathify :: Tree -> Tree
 pathify = mapTree worker
