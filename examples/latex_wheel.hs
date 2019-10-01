@@ -9,7 +9,6 @@ import           Graphics.SvgTree (Tree)
 import           Reanimate
 import           Reanimate.Driver (reanimate)
 import           Reanimate.Effect
-import           Reanimate.Scene
 
 main :: IO ()
 main = reanimate $ bg `parA` mainScene

@@ -10,7 +10,7 @@ import           Diagrams.Prelude              hiding (Animation, boundingBox,
                                                 translate)
 import qualified Diagrams.Prelude              as D
 import           Reanimate.Diagrams
-import           Reanimate
+import           Reanimate hiding ((#))
 
 main :: IO ()
 main = reanimate $ mkAnimation 10 $ \t ->
