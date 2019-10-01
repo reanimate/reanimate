@@ -57,6 +57,21 @@ module Reanimate
     bellS,
     oscillateS,
     fromListS,
+    -- ** Scenes
+    (#),
+    ZIndex,
+    Scene,
+    sceneAnimation,
+    fork,
+    play,
+    playZ,
+    queryNow,
+    waitAll,
+    waitUntil,
+    wait,
+    adjustZ ,
+    withSceneDuration,
+
     -- * SVG
     module Reanimate.Svg.Constructors,
     module Reanimate.Svg.LineCommand,
@@ -104,3 +119,4 @@ import           Reanimate.Svg
 import           Reanimate.Svg.BoundingBox
 import           Reanimate.Svg.Constructors
 import           Reanimate.Svg.LineCommand
+import           Reanimate.Scene
