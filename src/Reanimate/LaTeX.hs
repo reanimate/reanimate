@@ -20,7 +20,6 @@ import           System.IO.Unsafe  (unsafePerformIO)
 --
 --   Example:
 --
---   > withStrokeWidth 0 . withFillOpacity 1 . scale 3 . center $
 --   > latex "$e^{i\\pi}+1=0$"
 --
 --   <<docs/gifs/doc_latex.gif>>
@@ -33,7 +32,6 @@ latex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) latexToSVG)
 --
 --   Example:
 --
---   > withStrokeWidth 0 . withFillOpacity 1 . scale 4 . center $
 --   > xelatex "中文"
 --
 --   <<docs/gifs/doc_xelatex.gif>>
@@ -47,7 +45,6 @@ xelatex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) xelatexToSVG)
 --
 --   Example:
 --
---   > withStrokeWidth 0 . withFillOpacity 1 . scale 3 . center $
 --   > latexAlign "R = \\frac{{\\Delta x}}{{kA}}"
 --
 --   <<docs/gifs/doc_latexAlign.gif>>

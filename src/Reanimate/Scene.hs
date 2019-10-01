@@ -5,11 +5,9 @@ import           Control.Monad.Fix
 import           Control.Monad.ST
 import           Data.List
 import           Data.Ord
-import           Debug.Trace
 import           Reanimate.Animation
 import           Reanimate.Svg.Constructors
 
-data World
 type ZIndex = Int
 
 (#) :: a -> (a -> b) -> b
@@ -61,12 +59,6 @@ sceneAnimation action = Animation (max s p) $ \t ->
   where
     (_, s, p, tl) = runST (unM action 0)
 
-debug :: String -> Scene s ()
-debug msg = M $ \_ -> trace msg (return ((), 0, 0, emptyTimeline))
-
-someaction :: Scene s ()
-someaction = debug "someaction"
-
 fork :: Scene s a -> Scene s a
 fork (M action) = M $ \t -> do
   (a, s, p, tl) <- action t
@@ -109,26 +101,3 @@ withSceneDuration s = do
   s
   t2 <- queryNow
   return (t2-t1)
-
-{-
-blackness
-show numbers
-fade in colormap
-slide to middle
-
-do fork $ play $ setDuration 5 showNumbers
-      # fadeOut 1 # fadeIn 1
-   wait 3
-
-   fork $ do
-    playZ (-1) $ setDuration 5 $ revealImage 0 0.5
-      # pauseAround 1 1
-    playZ (-1) $ setDuration 5 $ revealImage 0.5 1
-      # pauseAtEnd 1
-
-   play $ setDuration 5 $ colormap 0 0.5
-     # fadeIn 1 # pauseAround 1 1
-   play $ setDuration 5 $ colormap 0.5 1
-     # fadeOut 1 # pauseAtEnd 1
-
--}

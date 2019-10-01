@@ -23,6 +23,11 @@ drawCircle = mkAnimation 2 $ \t ->
   partialSvg t $ pathify $
   mkCircle (screenHeight/3)
 
+drawBall :: Animation
+drawBall = mkAnimation 2 $ \t ->
+  scale t $ withFillOpacity 1 $ withFillColor "red" $
+  mkCircle (screenHeight/3)
+
 -- | <<docs/gifs/doc_drawProgress.gif>>
 drawProgress :: Animation
 drawProgress = mkAnimation 2 $ \t ->
