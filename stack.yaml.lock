@@ -19,19 +19,12 @@ packages:
   original:
     hackage: palette-0.3.0.2
 - completed:
-    cabal-file:
-      size: 4595
-      sha256: a84de7ba50404602b63825065cb178a7621b3b77c6cb0fb8fae0200c838c7ff5
-    name: chiphunk
-    version: 0.1.1.0
-    git: https://github.com/Lemmih/chiphunk.git
+    hackage: chiphunk-0.1.2.0@sha256:bd129c91033140cb5ad9cc3c446baccdc377a17214026c79c9705c7d886e54cb,4619
     pantry-tree:
-      size: 6730
-      sha256: 46939ee934e58d8896c35fa3c36b3d2b9947f671281618f540976b7ab6aa8675
-    commit: 8328b1adb903abf034562ad95d1bfdaba1ce6397
+      size: 6333
+      sha256: 155b48a7a4ecd4a36b853445b27acec55ebe1247f206cf719613fee43a1a4d7b
   original:
-    git: https://github.com/Lemmih/chiphunk.git
-    commit: 8328b1adb903abf034562ad95d1bfdaba1ce6397
+    hackage: chiphunk-0.1.2.0
 - completed:
     hackage: diagrams-1.4@sha256:3e36369e84115b900fd9dcb570672a188339a470eb19ca62170775cd835cf8ca,5483
     pantry-tree:
