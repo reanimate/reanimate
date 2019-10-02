@@ -2,7 +2,9 @@ module Reanimate.Builtin.Documentation where
 
 import Reanimate.Animation
 import Reanimate.Svg
+import Reanimate.Raster
 import Reanimate.Constants
+import Codec.Picture
 
 docEnv :: Animation -> Animation
 docEnv = mapA $ \svg -> mkGroup
@@ -38,3 +40,11 @@ drawProgress = mkAnimation 2 $ \t ->
     withFillOpacity 1 $ mkCircle 0.5 ]
   where
     widthP = 0.8
+
+showColorMap :: (Double -> PixelRGB8) -> SVG
+showColorMap f = center $ scaleToSize screenWidth screenHeight $ embedImage img
+  where
+    width = 256
+    height = 1
+    img = generateImage pixelRenderer width height
+    pixelRenderer x _y = f (fromIntegral x / fromIntegral (width-1))
