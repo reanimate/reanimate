@@ -5,8 +5,10 @@ import           Control.Monad.Fix
 import           Control.Monad.ST
 import           Data.List
 import           Data.Ord
+import Data.STRef
 import           Reanimate.Animation
 import           Reanimate.Svg.Constructors
+import           Reanimate.Signal
 
 type ZIndex = Int
 
@@ -46,6 +48,9 @@ instance Monad (Scene s) where
 
 instance MonadFix (Scene s) where
   mfix fn = M $ \t -> mfix (\v -> let (a,_s,_p,_tl) = v in unM (fn a) t)
+
+liftST :: ST s a -> Scene s a
+liftST action = M $ \_ -> action >>= \a -> return (a, 0, 0, emptyTimeline)
 
 --data Frame a = Frame {unFrame :: Duration -> Time -> State ([Tree] -> [Tree]) a}
 sceneAnimation :: (forall s. Scene s a) -> Animation
@@ -101,3 +106,40 @@ withSceneDuration s = do
   s
   t2 <- queryNow
   return (t2-t1)
+
+data Object s = Object (STRef s (Maybe Timeline))
+
+newObject :: Scene s (Object s)
+newObject = Object <$> liftST (newSTRef Nothing)
+
+stretchTimeline :: Timeline -> Scene s ()
+stretchTimeline = mapM_ worker
+  where
+    worker (t, a, z) = M $ \tNow ->
+      let tNew = t + duration a
+          dNew = tNow - tNew
+          aNew = setDuration dNew (signalA (constantS 1) a) in
+      if (dNew > 0)
+        then return ((), 0, 0, [(tNew, aNew, z)])
+        else return ((), 0, 0, emptyTimeline)
+
+dropObject :: Object s -> Scene s ()
+dropObject (Object ref) = do
+  mbTimeline <- liftST $ readSTRef ref
+  case mbTimeline of
+    Nothing -> return ()
+    Just timeline -> do
+      liftST $ writeSTRef ref Nothing
+      stretchTimeline timeline
+
+listen :: Scene s a -> Scene s (a, Timeline)
+listen scene = M $ \t -> do
+  (a, s, p, tl) <- unM scene t
+  return ((a,tl), s, p, tl)
+
+withObject :: Object s -> Scene s a -> Scene s a
+withObject obj@(Object ref) scene = do
+  dropObject obj
+  (a, tl) <- listen scene
+  liftST $ writeSTRef ref (Just tl)
+  return a
