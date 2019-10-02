@@ -45,8 +45,6 @@ library
                       Reanimate.Animation
                       Reanimate.Signal
                       Reanimate.Render
-                      Reanimate.Examples
-                      Reanimate.Combinators
                       Reanimate.LaTeX
                       Reanimate.Svg
                       Reanimate.Svg.Unuse
