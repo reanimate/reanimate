@@ -12,8 +12,9 @@ type BCoord = Double
 type CCoord = Double
 
 -- Creates a centered ternary plot with a width of 5.
-raster :: Int -> (ACoord -> BCoord -> CCoord -> PixelRGBA8) -> Tree
-raster density fn =
+ternaryPlot :: Int -- ^ Pixels in the X-axis.
+            -> (ACoord -> BCoord -> CCoord -> PixelRGBA8) -> Tree
+ternaryPlot density fn =
     scaleToWidth stdWidth $
     translate (-cX) (-cY) $
     scaleToWidth 1 $
