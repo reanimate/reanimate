@@ -52,17 +52,14 @@ instance MonadFix (Scene s) where
 liftST :: ST s a -> Scene s a
 liftST action = M $ \_ -> action >>= \a -> return (a, 0, 0, emptyTimeline)
 
---data Frame a = Frame {unFrame :: Duration -> Time -> State ([Tree] -> [Tree]) a}
 sceneAnimation :: (forall s. Scene s a) -> Animation
-sceneAnimation action = Animation (max s p) $ \t ->
-  mkGroup $ map snd $ sortBy (comparing fst)
-    [ (z, frameGen (t-startT))
-    | (startT, Animation dur frameGen, z) <- tl
-    , t >= startT
-    , t < startT+dur
+sceneAnimation action = foldl' parDropA (pause 0) $
+  map snd $ sortBy (comparing fst)
+    [ (z, pause startT `seqA` a)
+    | (startT, a, z) <- tl
     ]
   where
-    (_, s, p, tl) = runST (unM action 0)
+    (_, _, _, tl) = runST (unM action 0)
 
 fork :: Scene s a -> Scene s a
 fork (M action) = M $ \t -> do
@@ -115,9 +112,9 @@ newObject = Object <$> liftST (newSTRef Nothing)
 stretchTimeline :: Timeline -> Scene s ()
 stretchTimeline = mapM_ worker
   where
-    worker (t, a, z) = M $ \tNow ->
-      let tNew = t + duration a
-          dNew = tNow - tNew
+    worker (t, a, z) = M $ \tNow -> -- 3
+      let tNew = t + duration a -- 1+1=2
+          dNew = tNow - tNew -- 3-2=1
           aNew = setDuration dNew (signalA (constantS 1) a) in
       if (dNew > 0)
         then return ((), 0, 0, [(tNew, aNew, z)])
