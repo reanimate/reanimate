@@ -5,9 +5,8 @@ import           Control.Monad.Fix
 import           Control.Monad.ST
 import           Data.List
 import           Data.Ord
-import Data.STRef
+import           Data.STRef
 import           Reanimate.Animation
-import           Reanimate.Svg.Constructors
 import           Reanimate.Signal
 
 type ZIndex = Int

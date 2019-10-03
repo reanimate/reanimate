@@ -8,6 +8,7 @@ import           Control.Lens          ()
 
 import           Codec.Picture.Types
 import           Data.Fixed
+import           Control.Monad
 import           Data.List
 import qualified Data.Text             as T
 import qualified Geom2D.CubicBezier    as Bezier
@@ -19,38 +20,42 @@ import           Reanimate.Driver      (reanimate)
 import           Reanimate.LaTeX
 import           Reanimate.Signal
 import           Reanimate.Svg
+import           Reanimate.Constants
+import           Reanimate.Scene
 import           System.Random
 import           System.Random.Shuffle
+import qualified Data.Vector as V
+import qualified Data.Vector.Mutable as V
 
 fixed :: Tree -> Animation -> Animation
 fixed svg ani = animate (const svg) `parA` ani
 
-digitWidth = 25
+digitWidth = screenWidth/10
 digitCount = 10
 
 main :: IO ()
-main = reanimate $ fixed bg $ pauseAtEnd 1 $
-    mkAnimation 5 $ \t ->
-      withFillColor "white" $ translate (negate $ digitWidth*digitCount/2) 0 $
+main = reanimate $ fixed bg $ pauseAtEnd 1 $ sceneAnimation (simpleSort lst)
+    -- mkAnimation 5 $ \t ->
+    --   withFillColor "white" $ translate (negate $ digitWidth*digitCount/2) 0 $
         -- sortingTransition (zip [9,0,1,2,3,4,5,6,8,7] squares) s
         -- sortingTransition (zip [9,0,1,2,3,4,5,6,8,7] digits) s
         -- sortingTransition (zip [1,0,2,3,4,5,6,7,8,9] digiSquares) s
         -- jumpTransition (zip [1,0,2,3,4,5,6,7,8,9] digiSquares) s
-        renderSortElements (mkJumpSorted lst) t
+        -- renderSortElements (mkJumpSorted lst) t
+
   where
     seed = 0xDEADBEEF
     lst = shuffle' (zip [0..] digiSquares) 10 (mkStdGen seed)
     bg = mkBackground "black"
     msg = "0 1 2 3 4 5 6 7 8 9"
     digits =
-      map (withStrokeColor "black" . withStrokeWidth 0.2) $
-      map (lowerTransformations . scale 3 . pathify . center . latex . T.pack . show) [0..9]
+      map (withStrokeColor "black" . withStrokeWidth 0) $
+      map (lowerTransformations . scale 1 . pathify . center . latex . T.pack . show) [0..9]
     squares = map center [ withFillColorPixel (promotePixel $ viridis (n/9)) $
-      mkRect (digitWidth+0.2) digitWidth | n <- [0..9]]
+      mkRect (digitWidth*1.00) digitWidth | n <- [0..9]]
 
     digiSquares = zipWith (\a b -> mkGroup [a,b]) squares digits
 
-    -- msg = "Eve"
     glyphs = lowerTransformations $ scale 3 $ pathify $ center $ latexAlign msg
     fillText = mkAnimation 1 $ \t ->
       let sat = fromToS 0 0.7 t in
@@ -142,9 +147,9 @@ mkSorted lst =
 renderSortElement :: SortElement -> Double -> Tree
 renderSortElement SortElement{..} t
   | t < sortElementStartTime =
-    translate (fromIntegral sortElementStartPosition * digitWidth) 0 sortElementTree
+    translate (fromIntegral sortElementStartPosition * digitWidth + digitWidth/2) 0 sortElementTree
   | t > sortElementStartTime + sortElementDuration =
-    translate (fromIntegral sortElementEndPosition * digitWidth) 0 sortElementTree
+    translate (fromIntegral sortElementEndPosition * digitWidth + digitWidth/2) 0 sortElementTree
   | otherwise =
     let pos = curveS 2 $ (t - sortElementStartTime) / sortElementDuration
         from = sortElementStartPosition
@@ -154,7 +159,7 @@ renderSortElement SortElement{..} t
                Down     -> (sin (pos*pi) * digitWidth)
                Up       -> negate (sin (pos*pi) * digitWidth)
                Sideways -> 0 in
-    translate (linear * digitWidth) y sortElementTree
+    translate (linear * digitWidth + digitWidth/2) y sortElementTree
 
 renderSortElements :: [SortElement] -> Double -> Tree
 renderSortElements elts t =
@@ -215,3 +220,32 @@ sortingTransition elts s = mkGroup
           let next = from + signum (to-from)
               (target,_) = elts !! next
           in signum (next-target) == signum (from-to) && canMoveDirectly next to
+
+simpleSort :: [(Int, Tree)] -> Scene s ()
+simpleSort lst = do
+  objs <- replicateM 10 newObject
+  forM_ (zip [0..] lst) $ \(i, (nth, t)) -> do
+    withObject (objs!!nth) $
+      fork $ playZ i $ animate $ const $
+        translate (-digitWidth*5 + fromIntegral i*digitWidth + digitWidth/2) 0 t
+
+  wait 1
+
+
+  let worker _ [] = return ()
+      worker dir ((i, (nth,t)):rest) | i == nth =
+        worker dir rest
+      worker dir ((i, (nth,t)):rest) = do
+        z <- round <$> queryNow
+        let obj = objs!!nth
+            fromX = fromIntegral (i-5) * digitWidth + digitWidth/2
+            toX = fromIntegral (nth-5) * digitWidth + digitWidth/2
+        withObject obj $
+          fork $ playZ (10+z) $ signalA (curveS 2) $ animate $ \time ->
+            translate (fromToS fromX toX time) (sin (time*pi)*digitWidth*dir) t
+        wait 0.5
+        worker (negate dir) $ yoink nth rest
+
+  waitAll $ worker 1 (zip [0..] lst)
+
+  forM_ objs dropObject
