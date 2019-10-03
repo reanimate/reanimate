@@ -199,7 +199,7 @@ renderXYZCoordinatesTernary =
 
 
 cieXYImage :: Int -> Tree
-cieXYImage density = Ternary.raster density $ \aCoord bCoord cCoord ->
+cieXYImage density = Ternary.ternaryPlot density $ \aCoord bCoord cCoord ->
     let RGB r g b = toSRGBBounded (cieXYZ aCoord bCoord cCoord)
     in PixelRGBA8 r g b 0xFF
 
