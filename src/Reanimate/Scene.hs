@@ -8,6 +8,7 @@ import           Data.Ord
 import           Data.STRef
 import           Reanimate.Animation
 import           Reanimate.Signal
+import           Reanimate.Svg.Constructors
 
 type ZIndex = Int
 
@@ -18,7 +19,7 @@ o # f = f o
 -- [(Time, Animation, ZIndex)]
 -- Map Time [(Animation, ZIndex)]
 type Timeline = [(Time, Animation, ZIndex)]
-type Gen s = [Time -> ST s (SVG, ZIndex)]
+type Gen s = ST s (Time -> (SVG, ZIndex))
 newtype Scene s a = M { unM :: Time -> ST s (a, Duration, Duration, Timeline, [Gen s]) }
 
 unionTimeline :: Timeline -> Timeline -> Timeline
@@ -29,8 +30,8 @@ emptyTimeline = []
 
 instance Functor (Scene s) where
   fmap f action = M $ \t -> do
-    (a, d1, d2, tl) <- unM action t
-    return (f a, d1, d2, tl)
+    (a, d1, d2, tl, gens) <- unM action t
+    return (f a, d1, d2, tl, gens)
 
 instance Applicative (Scene s) where
   pure a = M $ \_ -> return (a, 0, 0, emptyTimeline, [])
@@ -53,15 +54,21 @@ liftST :: ST s a -> Scene s a
 liftST action = M $ \_ -> action >>= \a -> return (a, 0, 0, emptyTimeline, [])
 
 sceneAnimation :: (forall s. Scene s a) -> Animation
-sceneAnimation action = foldl' parDropA (pause 0) $
-  map snd $ sortBy (comparing fst)
-    [ (z, pause startT `seqA` a)
-    | (startT, a, z) <- tl
-    ]
-  where
-    tl = runST (do
-      (_, _, _, tl, _) <- unM action 0
-      return tl)
+sceneAnimation action =
+  runST (do
+    (_, s, p, tl, gens) <- unM action 0
+    let dur = max s p
+        anis = foldl' parDropA (pause 0) $
+                map snd $ sortBy (comparing fst)
+                  [ (z, pause startT `seqA` a)
+                  | (startT, a, z) <- tl
+                  ]
+    genFns <- sequence gens
+    return $ anis `parA` mkAnimation dur (\t ->
+      mkGroup $
+      map fst $
+      sortBy (comparing snd) [ fn (t*dur)  | fn <- genFns::[Time -> (SVG, ZIndex)] ])
+  )
 
 fork :: Scene s a -> Scene s a
 fork (M action) = M $ \t -> do
@@ -147,19 +154,36 @@ withObject obj@(Object ref) scene = do
 data Param s a = Param (STRef s (Time, Time, Time -> a))
 
 newParam :: a -> Scene s (Param s a)
-newParam = undefined
+newParam initVal = do
+  now <- queryNow
+  Param <$> liftST (newSTRef (now, -1, const initVal))
 
 destroyParam :: Param s a -> Scene s ()
-destroyParam = undefined
+destroyParam (Param ref) = do
+  now <- queryNow
+  liftST $ do
+    (startT, _endT, fn) <- readSTRef ref
+    writeSTRef ref (startT, now, fn)
+
+readParam :: Param s a -> Scene s a
+readParam (Param ref) = do
+  now <- queryNow
+  (_, _, fn) <- liftST $ readSTRef ref
+  return $ fn now
 
 paramAt :: Param s a -> Time -> ST s a
 paramAt = undefined
 
+paramFn :: Param s a -> ST s (Time -> a)
+paramFn (Param ref) = do
+  (_, _, fn) <- readSTRef ref
+  return fn
+
 withParamAt :: Param s a -> Time -> (a -> ST s SVG) -> ST s SVG
 withParamAt = undefined
 
-fromParams :: (Time -> ST s SVG) -> Scene s ()
-fromParams = undefined
+fromParams :: ST s (Time -> (SVG, ZIndex)) -> Scene s ()
+fromParams gen = M $ \_ -> return ((), 0, 0, emptyTimeline, [gen])
 
 setParam :: Param s a -> a -> Scene s ()
 setParam = undefined
@@ -173,8 +197,16 @@ setParam = undefined
 -- adjustParamZIndex_ :: Param s a -> (Time -> ZIndex -> ZIndex) -> Scene s ()
 -- adjustParamZIndex_ = undefined
 
-tweenParam :: Param s a -> Duration -> (Time -> a -> a) -> Scene s ()
-tweenParam = undefined
+tweenParam :: Param s a -> Duration -> (Double -> a -> a) -> Scene s ()
+tweenParam (Param ref) dur fn = do
+  now <- queryNow
+  liftST $ do
+    (startT,endT,prevFn) <- readSTRef ref
+    let worker t
+          | t > now = fn (min 1 ((t-now)/dur)) (prevFn t)
+          | otherwise = prevFn t
+    writeSTRef ref (startT, endT, worker)
+  wait dur
 
 tweenParam_ :: Param s a -> (Time -> a -> a) -> Scene s ()
 tweenParam_ = undefined
@@ -182,5 +214,7 @@ tweenParam_ = undefined
 simpleParam :: (a -> SVG) -> a -> Scene s (Param s a)
 simpleParam render def = do
   p <- newParam def
-  fromParams $ \t -> withParamAt p t (pure . render)
+  fromParams $ do
+    fn <- paramFn p
+    return $ \t -> (render $ fn t, 0)
   return p

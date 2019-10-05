@@ -34,7 +34,9 @@ digitWidth = screenWidth/10
 digitCount = 10
 
 main :: IO ()
-main = reanimate $ fixed bg $ pauseAtEnd 1 $ sceneAnimation (simpleSort lst)
+main = reanimate $ fixed bg $ pauseAtEnd 1 $
+    -- sceneAnimation (bubbleSort lst) `seqA` sceneAnimation (simpleSort lst)
+    sceneAnimation (simpleSort_ lst)
     -- mkAnimation 5 $ \t ->
     --   withFillColor "white" $ translate (negate $ digitWidth*digitCount/2) 0 $
         -- sortingTransition (zip [9,0,1,2,3,4,5,6,8,7] squares) s
@@ -49,7 +51,7 @@ main = reanimate $ fixed bg $ pauseAtEnd 1 $ sceneAnimation (simpleSort lst)
     bg = mkBackground "black"
     msg = "0 1 2 3 4 5 6 7 8 9"
     digits =
-      map (withStrokeColor "black" . withStrokeWidth 0) $
+      map (withStrokeColor "black" . withStrokeWidth 0.01 . withFillColor "white") $
       map (lowerTransformations . scale 1 . pathify . center . latex . T.pack . show) [0..9]
     squares = map center [ withFillColorPixel (promotePixel $ viridis (n/9)) $
       mkRect (digitWidth*1.00) digitWidth | n <- [0..9]]
@@ -221,6 +223,14 @@ sortingTransition elts s = mkGroup
               (target,_) = elts !! next
           in signum (next-target) == signum (from-to) && canMoveDirectly next to
 
+moveDigit :: Int -> Int -> Double -> Tree -> Animation
+moveDigit fromX toX dir t =
+  signalA (curveS 2) $ animate $ \time ->
+    translate (fromToS fromPos toPos time) (sin (time*pi)*digitWidth*dir) t
+  where
+    fromPos = fromIntegral (fromX-5) * digitWidth + digitWidth/2
+    toPos = fromIntegral (toX-5) * digitWidth + digitWidth/2
+
 simpleSort :: [(Int, Tree)] -> Scene s ()
 simpleSort lst = do
   objs <- replicateM 10 newObject
@@ -237,15 +247,77 @@ simpleSort lst = do
         worker dir rest
       worker dir ((i, (nth,t)):rest) = do
         z <- round <$> queryNow
-        let obj = objs!!nth
-            fromX = fromIntegral (i-5) * digitWidth + digitWidth/2
-            toX = fromIntegral (nth-5) * digitWidth + digitWidth/2
-        withObject obj $
-          fork $ playZ (10+z) $ signalA (curveS 2) $ animate $ \time ->
-            translate (fromToS fromX toX time) (sin (time*pi)*digitWidth*dir) t
+        withObject (objs!!nth) $
+          fork $ playZ (10+z) $ moveDigit i nth dir t
         wait 0.5
         worker (negate dir) $ yoink nth rest
 
   waitAll $ worker 1 (zip [0..] lst)
 
   forM_ objs dropObject
+
+simpleSort_ :: [(Int, Tree)] -> Scene s ()
+simpleSort_ lst = do
+    params <- forM (zip [0..] lst) newBlock
+    wait 1
+    let worker _ [] = return ()
+        worker dir ((i, (nth,t)):rest) | i == nth =
+          worker dir rest
+        worker dir ((i, (nth,t)):rest) = do
+          z <- round <$> queryNow
+          fork $ tweenParam (params!!i) 1 $ \t (x,y,elt) ->
+            let s = curveS 2 t in
+            (fromToS x (fromIntegral nth) s, y+sin (pi*s)*dir, elt)
+          wait 0.5
+          worker (negate dir) $ yoink nth rest
+
+    waitAll $ worker 1 (zip [0..] lst)
+  where
+    newBlock (i, elt) = simpleParam render (i, 0, elt)
+    render (i, y, (_, t)) =
+      translate (-digitWidth*5 + i*digitWidth + digitWidth/2)
+                (y*digitWidth) t
+
+bubbleSort :: [(Int, Tree)] -> Scene s ()
+bubbleSort lst = do
+  objs <- replicateM (length lst) newObject
+  forM_ (zip [0..] lst) $ \(i, (nth, t)) -> do
+    withObject (objs!!nth) $
+      fork $ playZ 0 $ animate $ const $
+        translate (-digitWidth*5 + fromIntegral i*digitWidth + digitWidth/2) 0 t
+
+  wait 1
+
+  v <- liftST $ V.new (length lst)
+  liftST $ mapM_ (\(i,e) -> V.write v i e) (zip [0..] lst)
+
+  let worker n c | n+1 >= length lst =
+        when c $ worker 0 False
+      worker n c = do
+        (nth1, t1) <- liftST $ V.read v n
+        (nth2, t2) <- liftST $ V.read v (n+1)
+        when (nth1 > nth2) $ waitAll $ do
+          liftST $ V.write v n (nth2, t2)
+          liftST $ V.write v (n+1) (nth1, t1)
+          withObject (objs!!nth1) $
+            fork $ playZ 1 $ moveDigit n (n+1) (0.5) t1
+          withObject (objs!!nth2) $
+            fork $ playZ 1 $ moveDigit (n+1) n (-0.5) t2
+        worker (n+1) (c || nth1 > nth2)
+  worker 0 False
+  forM_ objs dropObject
+
+highlightPair :: Int -> Int -> Animation
+highlightPair fromX toX = animate $ \t ->
+    withStrokeWidth 0.1 $
+    withStrokeColor "white" $
+    mkLinePath
+      [ (xPos t,yPos-0.3)
+      , (xPos t,yPos)
+      , (xPos t+digitWidth, yPos)
+      , (xPos t+digitWidth, yPos-0.3)]
+  where
+    yPos = digitWidth*1.1
+    xPos = fromToS fromPos toPos
+    fromPos = fromIntegral (fromX-5) * digitWidth + digitWidth/2
+    toPos = fromIntegral (toX-5) * digitWidth + digitWidth/2
