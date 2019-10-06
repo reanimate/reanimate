@@ -10,6 +10,7 @@ import           Codec.Picture.Types
 import           Data.Fixed
 import           Control.Monad
 import           Data.List
+import           Data.Ord (comparing)
 import qualified Data.Text             as T
 import qualified Geom2D.CubicBezier    as Bezier
 import           Graphics.SvgTree      (Number (..), Tree)
@@ -36,7 +37,8 @@ digitCount = 10
 main :: IO ()
 main = reanimate $ fixed bg $ pauseAtEnd 1 $
     -- sceneAnimation (bubbleSort lst) `seqA` sceneAnimation (simpleSort lst)
-    sceneAnimation (simpleSort_ lst)
+    -- sceneAnimation (simpleSort_ lst)
+    sceneAnimation (quicksort_ lst)
     -- mkAnimation 5 $ \t ->
     --   withFillColor "white" $ translate (negate $ digitWidth*digitCount/2) 0 $
         -- sortingTransition (zip [9,0,1,2,3,4,5,6,8,7] squares) s
@@ -267,7 +269,7 @@ simpleSort_ lst = do
           z <- round <$> queryNow
           fork $ tweenParam (params!!i) 1 $ \t (x,y,elt) ->
             let s = curveS 2 t in
-            (fromToS x (fromIntegral nth) s, y+sin (pi*s)*dir, elt)
+            (fromToS x (fromIntegral nth) s, y+sin (pi*s )*dir, elt)
           wait 0.5
           worker (negate dir) $ yoink nth rest
 
@@ -277,6 +279,64 @@ simpleSort_ lst = do
     render (i, y, (_, t)) =
       translate (-digitWidth*5 + i*digitWidth + digitWidth/2)
                 (y*digitWidth) t
+
+quicksort_ :: [(Int, Tree)] -> Scene s ()
+quicksort_ lst = do
+    params <- liftST $ V.new (length lst)
+    forM_ (zip [0..] lst) $ \(i, elt) -> do
+      block <- newBlock (fromIntegral i, elt)
+      liftST $ V.write params i block
+
+    let partition pivot lo hi = do
+          loValP <- liftST (V.read params lo)
+          loVal <- readParam loValP
+          hiValP <- liftST (V.read params hi)
+          hiVal <- readParam hiValP
+          if getKey loVal < getKey pivot
+            then partition pivot (lo+1) hi
+            else if getKey hiVal > getKey pivot
+              then partition pivot lo (hi-1)
+              else if lo >= hi
+                then return hi
+                else do
+                  liftST $ V.write params lo hiValP
+                  liftST $ V.write params hi loValP
+                  fork $ tweenParam hiValP 1 $ \t (x,y,elt) ->
+                    let s = curveS 2 t in
+                    (fromToS x (getPos loVal) s, y+sin (pi*s), elt)
+                  fork $ tweenParam loValP 1 $ \t (x,y,elt) ->
+                    let s = curveS 2 t in
+                    (fromToS x (getPos hiVal) s, y-sin (pi*s), elt)
+                  wait 1
+                  partition pivot (lo+1) (hi-1)
+    let worker lo hi | lo >= hi = return ()
+        worker lo hi = do
+          pivotP <- getPivot params lo hi
+          pivot <- readParam pivotP
+          tweenParam pivotP 1 $ \t (x,y,elt) ->
+            let s = curveS 2 t in
+            (x, y-s/2, elt)
+          p <- partition pivot lo hi
+          tweenParam pivotP 1 $ \t (x,y,elt) ->
+            let s = curveS 2 t in
+            (x, y+s/2, elt)
+          fork $ worker lo p
+          fork $ worker (p+1) hi
+    worker 0 (length lst-1)
+  where
+    getPivot params lo hi = do
+      let middle = lo + (hi-lo) `div` 2
+          indices = filter (< hi) $ filter (>= lo) [middle-1,middle,middle+1]
+      selected <- forM indices $ \idx -> liftST (V.read params idx)
+      keys <- mapM readParam selected
+      return $ head $ drop (length indices `div` 2) $ map snd $ sortBy (comparing fst) $ zip (map getKey keys) selected
+    getPos (x, _, _) = x
+    getKey (_x, _y, (i, _)) = i
+    newBlock (i, elt) = simpleParam render (i, 0, elt)
+    render (i, y, (_, t)) =
+      translate (-digitWidth*5 + i*digitWidth + digitWidth/2)
+                (y*digitWidth) t
+
 
 bubbleSort :: [(Int, Tree)] -> Scene s ()
 bubbleSort lst = do
