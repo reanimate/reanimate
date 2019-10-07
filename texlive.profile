@@ -66,7 +66,7 @@ tlpdbopt_install_srcfiles 1
 
 tlpdbopt_post_code 1
 
-tlpdbopt_sys_bin /usr/local/bin
+tlpdbopt_sys_bin ./bin
 
 tlpdbopt_sys_info /usr/local/share/info
 
