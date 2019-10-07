@@ -9,7 +9,7 @@ import           Control.Lens
 import           Graphics.SvgTree
 import           Reanimate.Driver (reanimate)
 import           Reanimate.LaTeX
-import           Reanimate.Monad
+import           Reanimate.Animation
 import           Reanimate.Svg
 import           Reanimate.Signal
 
@@ -29,40 +29,44 @@ run out.
 -}
 main :: IO ()
 main = reanimate $ pauseAtEnd 2
-  (mkAnimation 0 $ emit $ mkBackground "black") `sim`
+  (animate $ const $ mkBackground "black") `parA`
   drawBox
 
 drawBox :: Animation
-drawBox = mkAnimation 5 $ do
-  emit $ withFillColor "white" $
+drawBox = mkAnimation 5 $ \t ->
+  mkGroup
+  [ withFillColor "white" $
     translate 0 (-70) $
     scale 2 $ center $ latex "Baker's Algorithm"
-  s <- getSignal $ signalFromList    [(0.7, signalFlat 0), (1, signalLinear)]
-  d <- getSignal $ signalFromList    [(0.7, signalFlat 0), (1, signalLinear)]
-  draw <- getSignal $ signalFromList [(0.5, signalLinear), (1, signalFlat 1)]
-  let mlc = MemoryLineChart
-        { mlcWidth = 230
-        , mlcHeight = 50 + s*50
-        , mlcDivider = d
-        , mlcOuterBox = draw }
-  emit $ translate 0 20 $ renderMemoryLineChart mlc
+  , let s    = fromListS    [(0.7, constantS 0), (1, id)] t
+        d    = fromListS    [(0.7, constantS 0), (1, id)] t
+        draw = fromListS [(0.5, id), (1, constantS 1)] t
+        mlc  = MemoryLineChart
+               { mlcWidth = 230
+               , mlcHeight = 50 + s*50
+               , mlcDivider = d
+               , mlcOuterBox = draw }
+    in translate 0 20 $ renderMemoryLineChart mlc
+  ]
 
 highlightBox :: Animation
-highlightBox = mkAnimation 2 $ do
-  emit $ withFillColor "white" $
+highlightBox = mkAnimation 2 $ \t ->
+  mkGroup
+  [ withFillColor "white" $
     translate 0 (-70) $
     scale 2 $ center $ latex "Highlightbox"
-  let boxX = negate mlcWidth / 2
-      boxY = negate mlcHeight / 2
-      mlcWidth = 230
-      mlcHeight = 50
-  s <- getSignal $ signalFromList    [(0.0, signalFlat 0), (1, signalBell 2)]
-  emit $
+  , let boxX = negate mlcWidth / 2
+        boxY = negate mlcHeight / 2
+        mlcWidth = 230
+        mlcHeight = 50
+        s = fromListS [(0.0, constantS 0), (1, bellS 2)] t
+    in
     withStrokeColor "white" $
-    withStrokeWidth (Num $ 0.5 + s) $
+    withStrokeWidth (0.5 + s) $
     withFillOpacity 0 $
     translate (boxX + mlcWidth/2) (boxY + mlcHeight/2) $
-    mkRect (Num mlcWidth) (Num mlcHeight)
+    mkRect mlcWidth mlcHeight
+  ]
 
 data MemoryLineChart = MemoryLineChart
   { mlcWidth  :: Double
@@ -80,15 +84,15 @@ mlcBox MemoryLineChart{..} = (boxX, boxY, mlcWidth, mlcHeight)
 renderMemoryLineChart :: MemoryLineChart -> Tree
 renderMemoryLineChart MemoryLineChart{..} = mkGroup
     [ withStrokeColor "white" $
-      withStrokeWidth (Num 0.5) $
+      withStrokeWidth 0.5 $
       withFillOpacity 0 $
       partialSvg mlcOuterBox $ pathify $
       translate (boxX + mlcWidth/2) (boxY + mlcHeight/2) $
-      mkRect (Num mlcWidth) (Num mlcHeight)
+      mkRect mlcWidth mlcHeight
     , withStrokeColor "white" $
-      withStrokeWidth (Num 0.5) $
-      mkLine (Num (negate $ mlcWidth/2), Num 0)
-             (Num (negate (mlcWidth/2) + lineWidth), Num 0)
+      withStrokeWidth 0.5 $
+      mkLine (negate (mlcWidth/2), 0)
+             (negate (mlcWidth/2) + lineWidth, 0)
     , withFillColor "white" $
       translate (negate (mlcWidth/2) - 10) 0 $ rotate (-90) $
       center $ latex "Memory"

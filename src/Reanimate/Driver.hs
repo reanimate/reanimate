@@ -3,36 +3,40 @@ module Reanimate.Driver ( reanimate ) where
 
 import           Control.Monad
 import           Data.Maybe
+import           Reanimate.Animation      (Animation)
 import           Reanimate.Driver.Check
 import           Reanimate.Driver.CLI
 import           Reanimate.Driver.Compile
 import           Reanimate.Driver.Server
-import           Reanimate.Monad          (Animation)
 import           Reanimate.Render         (FPS, Format (..), Height, Width,
                                            render, renderSnippets, renderSvgs)
-import           System.FilePath
 import           System.Directory
+import           System.FilePath
 import           Text.Printf
 
 presetFormat :: Preset -> Format
 presetFormat Youtube    = RenderMp4
 presetFormat ExampleGif = RenderGif
 presetFormat Quick      = RenderMp4
+presetFormat MediumQ    = RenderMp4
+presetFormat HighQ      = RenderMp4
 
 presetFPS :: Preset -> FPS
 presetFPS Youtube    = 60
 presetFPS ExampleGif = 24
 presetFPS Quick      = 15
+presetFPS MediumQ    = 30
+presetFPS HighQ      = 30
 
 presetWidth :: Preset -> Width
 presetWidth Youtube    = 2560
 presetWidth ExampleGif = 320
 presetWidth Quick      = 320
+presetWidth MediumQ    = 800
+presetWidth HighQ      = 1920
 
 presetHeight :: Preset -> Height
-presetHeight Youtube    = 1440
-presetHeight ExampleGif = 180
-presetHeight Quick      = 180
+presetHeight preset = presetWidth preset * 9 `div` 16
 
 formatFPS :: Format -> FPS
 formatFPS RenderMp4  = 60
@@ -49,6 +53,41 @@ formatHeight RenderMp4  = 1440
 formatHeight RenderGif  = 180
 formatHeight RenderWebm = 1440
 
+{-|
+Main entry-point for accessing an animation. Creates a program that takes the
+following command-line arguments:
+
+> Usage: PROG [COMMAND]
+>   This program contains an animation which can either be viewed in a web-browser
+>   or rendered to disk.
+>
+> Available options:
+>   -h,--help                Show this help text
+>
+> Available commands:
+>   check                    Run a system's diagnostic and report any missing
+>                            external dependencies.
+>   view                     Play animation in browser window.
+>   render                   Render animation to file.
+
+Neither the 'check' nor the 'view' command take any additional arguments.
+Rendering animation can be controlled with these arguments:
+
+> Usage: PROG render [-o|--target FILE] [--fps FPS] [-w|--width PIXELS]
+>                    [-h|--height PIXELS] [--compile] [--format FMT]
+>                    [--preset TYPE]
+>   Render animation to file.
+>
+> Available options:
+>   -o,--target FILE         Write output to FILE
+>   --fps FPS                Set frames per second.
+>   -w,--width PIXELS        Set video width.
+>   -h,--height PIXELS       Set video height.
+>   --compile                Compile source code before rendering.
+>   --format FMT             Video format: mp4, gif, webm
+>   --preset TYPE            Parameter presets: youtube, gif, quick
+>   -h,--help                Show this help text
+-}
 reanimate :: Animation -> IO ()
 reanimate animation = do
   Options{..} <- getDriverOptions

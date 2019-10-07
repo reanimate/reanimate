@@ -4,6 +4,7 @@ module UnitTests
   , compileVideoFolder
   ) where
 
+import           Control.Exception
 import qualified Data.ByteString.Lazy as LBS
 import           Reanimate.Misc       (withTempDir, withTempFile)
 import           System.Directory
@@ -49,25 +50,27 @@ compileTestFolder path = do
   files <- getDirectoryContents path
   return $ testGroup "compile"
     [ testCase file $ do
-        (ret, _stdout, _stderr) <- readProcessWithExitCode "stack" (["ghc","--", fullPath] ++ ghcOpts) ""
+        (ret, _stdout, err) <- readProcessWithExitCode "stack" (["ghc","--", fullPath] ++ ghcOpts) ""
+        _ <- evaluate (length err)
         case ret of
-          ExitFailure{} -> assertFailure "Failed to compile"
+          ExitFailure{} -> assertFailure $ "Failed to compile:\n" ++ err
           ExitSuccess   -> return ()
     | file <- files
     , let fullPath = path </> file
     , takeExtension file == ".hs" || takeExtension file == ".lhs"
     ]
   where
-    ghcOpts = ["-fno-code", "-O0"]
+    ghcOpts = ["-fno-code", "-O0", "-Werror", "-Wall"]
 
 compileVideoFolder :: FilePath -> IO TestTree
 compileVideoFolder path = do
   files <- getDirectoryContents path
   return $ testGroup "videos"
     [ testCase dir $ do
-        (ret, _stdout, _stderr) <- readProcessWithExitCode "stack" (["ghc","--", fullPath] ++ ghcOpts) ""
+        (ret, _stdout, err) <- readProcessWithExitCode "stack" (["ghc","--", "-i"++path</>dir, fullPath] ++ ghcOpts) ""
+        _ <- evaluate (length err)
         case ret of
-          ExitFailure{} -> assertFailure "Failed to compile"
+          ExitFailure{} -> assertFailure $ "Failed to compile:\n" ++ err
           ExitSuccess   -> return ()
     | dir <- files
     , let fullPath = path </> dir </> dir <.> "hs"

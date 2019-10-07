@@ -33,7 +33,7 @@ data Command
     }
    deriving (Show)
 
-data Preset = Youtube | ExampleGif | Quick
+data Preset = Youtube | ExampleGif | Quick | MediumQ | HighQ
   deriving (Show)
 
 readFormat :: String -> Maybe Format
@@ -55,12 +55,16 @@ readPreset preset =
     "youtube" -> Just Youtube
     "gif"     -> Just ExampleGif
     "quick"   -> Just Quick
+    "medium"  -> Just MediumQ
+    "high"    -> Just HighQ
     _         -> Nothing
 
 showPreset :: Preset -> String
 showPreset Youtube    = "youtube"
 showPreset ExampleGif = "gif"
 showPreset Quick      = "quick"
+showPreset MediumQ    = "medium"
+showPreset HighQ      = "high"
 
 options :: Parser Options
 options = Options <$> commandP
@@ -91,20 +95,20 @@ testCommand = info (parse <**> helper)
     parse = pure Test
 
 checkCommand :: ParserInfo Command
-checkCommand = info (parse)
-    (progDesc "check")
+checkCommand = info parse
+    (progDesc "Run a system's diagnostic and report any missing external dependencies.")
   where
     parse = pure Check
 
 viewCommand :: ParserInfo Command
-viewCommand = info (parse)
-    (progDesc "view")
+viewCommand = info parse
+    (progDesc "Play animation in browser window.")
   where
     parse = pure View
 
 renderCommand :: ParserInfo Command
-renderCommand = info (parse)
-    (progDesc "render")
+renderCommand = info parse
+    (progDesc "Render animation to file.")
   where
     -- fromPreset :: (Maybe Preset -> (Command -> Command))
     -- fromPreset Nothing = id
@@ -137,13 +141,13 @@ renderCommand = info (parse)
       <*> optional (option (maybeReader readPreset)
           (long "preset" <> showDefaultWith showPreset
           <> metavar "TYPE"
-          <> help "Parameter presets: youtube, gif, quick"))
+          <> help "Parameter presets: youtube, gif, quick, medium, high"))
 
 opts :: ParserInfo Options
 opts = info (options <**> helper )
   ( fullDesc
-  <> progDesc "PROG DESC"
-  <> header "HEADER"
+  <> progDesc "This program contains an animation which can either be viewed \
+              \in a web-browser or rendered to disk."
   )
 
 getDriverOptions :: IO Options

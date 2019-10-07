@@ -1,11 +1,8 @@
 module Reanimate.Effect where
 
 import           Graphics.SvgTree    (Tree)
-import           Reanimate.Monad
+import           Reanimate.Animation
 import           Reanimate.Svg
-
-askTime :: Frame Time
-askTime = Frame $ \_dur t -> return t
 
 type Effect = Double -> Double -> Tree -> Tree
 
@@ -30,9 +27,7 @@ delayE :: Double -> Effect -> Effect
 delayE delayT fn = \d t -> overEnding (d-delayT) fn d t
 
 applyE :: Effect -> Animation -> Animation
-applyE fn (Animation d genFrame) = Animation d $ do
-  t <- askTime
-  mapF (fn d t) genFrame
+applyE fn (Animation d genFrame) = Animation d $ \t -> fn d (d*t) $ genFrame t
 
 constE :: (Tree -> Tree) -> Effect
 constE fn _d _t = fn

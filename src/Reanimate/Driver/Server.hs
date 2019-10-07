@@ -109,7 +109,7 @@ slaveHandler conn self =
     expectFrame :: Either String Text -> IO (Integer, Text)
     expectFrame (Left "") = do
       sendTextData conn (T.pack "Done")
-      exitWith ExitSuccess
+      exitSuccess
     expectFrame (Left err) = do
       sendTextData conn $ T.pack $ "Error" ++ err
       exitWith (ExitFailure 1)

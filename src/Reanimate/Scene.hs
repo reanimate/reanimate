@@ -5,10 +5,10 @@ import           Control.Monad.Fix
 import           Control.Monad.ST
 import           Data.List
 import           Data.Ord
-import           Debug.Trace
-import           Reanimate.Monad
+import           Data.STRef
+import           Reanimate.Animation
+import           Reanimate.Signal
 
-data World
 type ZIndex = Int
 
 (#) :: a -> (a -> b) -> b
@@ -48,23 +48,17 @@ instance Monad (Scene s) where
 instance MonadFix (Scene s) where
   mfix fn = M $ \t -> mfix (\v -> let (a,_s,_p,_tl) = v in unM (fn a) t)
 
---data Frame a = Frame {unFrame :: Duration -> Time -> State ([Tree] -> [Tree]) a}
+liftST :: ST s a -> Scene s a
+liftST action = M $ \_ -> action >>= \a -> return (a, 0, 0, emptyTimeline)
+
 sceneAnimation :: (forall s. Scene s a) -> Animation
-sceneAnimation action = Animation (max s p) $ Frame $ \_ t ->
-  sequence_ $ map snd $ sortBy (comparing fst)
-    [ (z, unFrame frameGen dur (t-startT))
-    | (startT, Animation dur frameGen, z) <- tl
-    , t >= startT
-    , t < startT+dur
+sceneAnimation action = foldl' parDropA (pause 0) $
+  map snd $ sortBy (comparing fst)
+    [ (z, pause startT `seqA` a)
+    | (startT, a, z) <- tl
     ]
   where
-    (_, s, p, tl) = runST (unM action 0)
-
-debug :: String -> Scene s ()
-debug msg = M $ \_ -> trace msg (return ((), 0, 0, emptyTimeline))
-
-someaction :: Scene s ()
-someaction = debug "someaction"
+    (_, _, _, tl) = runST (unM action 0)
 
 fork :: Scene s a -> Scene s a
 fork (M action) = M $ \t -> do
@@ -109,25 +103,39 @@ withSceneDuration s = do
   t2 <- queryNow
   return (t2-t1)
 
-{-
-blackness
-show numbers
-fade in colormap
-slide to middle
+data Object s = Object (STRef s (Maybe Timeline))
 
-do fork $ play $ setDuration 5 showNumbers
-      # fadeOut 1 # fadeIn 1
-   wait 3
+newObject :: Scene s (Object s)
+newObject = Object <$> liftST (newSTRef Nothing)
 
-   fork $ do
-    playZ (-1) $ setDuration 5 $ revealImage 0 0.5
-      # pauseAround 1 1
-    playZ (-1) $ setDuration 5 $ revealImage 0.5 1
-      # pauseAtEnd 1
+stretchTimeline :: Timeline -> Scene s ()
+stretchTimeline = mapM_ worker
+  where
+    worker (t, a, z) = M $ \tNow -> -- 3
+      let tNew = t + duration a -- 1+1=2
+          dNew = tNow - tNew -- 3-2=1
+          aNew = setDuration dNew (signalA (constantS 1) a) in
+      if (dNew > 0)
+        then return ((), 0, 0, [(tNew, aNew, z)])
+        else return ((), 0, 0, emptyTimeline)
 
-   play $ setDuration 5 $ colormap 0 0.5
-     # fadeIn 1 # pauseAround 1 1
-   play $ setDuration 5 $ colormap 0.5 1
-     # fadeOut 1 # pauseAtEnd 1
+dropObject :: Object s -> Scene s ()
+dropObject (Object ref) = do
+  mbTimeline <- liftST $ readSTRef ref
+  case mbTimeline of
+    Nothing -> return ()
+    Just timeline -> do
+      liftST $ writeSTRef ref Nothing
+      stretchTimeline timeline
 
--}
+listen :: Scene s a -> Scene s (a, Timeline)
+listen scene = M $ \t -> do
+  (a, s, p, tl) <- unM scene t
+  return ((a,tl), s, p, tl)
+
+withObject :: Object s -> Scene s a -> Scene s a
+withObject obj@(Object ref) scene = do
+  dropObject obj
+  (a, tl) <- listen scene
+  liftST $ writeSTRef ref (Just tl)
+  return a

@@ -3,6 +3,9 @@ module Reanimate.Chiphunk
   , BodyStore
   , newBodyStore
   , addToBodyStore
+  , spaceFreeRecursive
+  , polyShapesToBody
+  , polygonsToBody
   ) where
 
 import           Chiphunk.Low
@@ -10,13 +13,14 @@ import           Control.Monad
 import           Data.IORef
 import           Data.Map            (Map)
 import qualified Data.Map            as Map
+import qualified Data.Vector         as V
 import qualified Data.Vector.Mutable as V
-import qualified Data.Vector as V
 import           Foreign.Ptr
 import           Graphics.SvgTree    (Tree)
-import           Reanimate.Monad
-import           Reanimate.Svg
-import           Reanimate.Signal
+import           Linear.V2 (V2(..))
+import           Reanimate.Animation
+import           Reanimate.PolyShape
+import           Reanimate.Svg.Constructors
 
 type BodyStore = IORef (Map WordPtr Tree)
 
@@ -63,7 +67,30 @@ simulate space store fps stepsPerFrame dur = do
     V.write v nth svg
     replicateM_ stepsPerFrame $ spaceStep space timeStep
   frozen <- V.unsafeFreeze v
-  return $ mkAnimation dur $ do
-    t <- getSignal signalLinear
+  return $ mkAnimation dur $ \t ->
     let key = round (t * fromIntegral (frames-1))
-    emit $ frozen V.! key
+    in frozen V.! key
+
+polyShapesToBody :: Space -> [PolyShape] -> IO Body
+polyShapesToBody space poly = do
+    polygonsToBody space (map (map toVect) $ plDecompose poly)
+  where
+    toVect (V2 x y) = Vect x y
+
+polygonsToBody :: Space -> [[Vect]] -> IO Body
+polygonsToBody space polygons = do
+  plBody <- bodyNew 0 0
+  spaceAddBody space plBody
+
+  forM_ polygons $ \vects -> do
+    polyShape <- polyShapeNewRaw plBody vects 0.00
+    shapeDensity polyShape $= 1
+    spaceAddShape space polyShape
+    shapeFriction polyShape $= 0.7
+  return plBody
+
+spaceFreeRecursive :: Space -> IO ()
+spaceFreeRecursive space = do
+  spaceEachBody space (\body _ -> bodyFree body) nullPtr
+  spaceEachShape space (\shape _ -> shapeFree shape) nullPtr
+  spaceFree space

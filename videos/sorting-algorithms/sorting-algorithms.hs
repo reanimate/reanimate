@@ -1,63 +1,66 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-13.14 runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards   #-}
 module Main (main) where
 
-import           Control.Lens ()
+import           Control.Lens          ()
 
-import           Graphics.SvgTree (Number(..), Tree)
-import           Reanimate.Driver (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate.Monad
-import           Reanimate.Svg
-import           Reanimate.Signal
-import           Reanimate.ColorMap
 import           Codec.Picture.Types
+import           Data.Fixed
+import           Control.Monad
+import           Data.List
+import qualified Data.Text             as T
+import qualified Geom2D.CubicBezier    as Bezier
+import           Graphics.SvgTree      (Number (..), Tree)
 import           Numeric
-import qualified Data.Text as T
-import qualified Geom2D.CubicBezier          as Bezier
-import Data.Fixed
-import System.Random.Shuffle
-import System.Random
-import Data.List
+import           Reanimate.Animation
+import           Reanimate.ColorMap
+import           Reanimate.Driver      (reanimate)
+import           Reanimate.LaTeX
+import           Reanimate.Signal
+import           Reanimate.Svg
+import           Reanimate.Constants
+import           Reanimate.Scene
+import           System.Random
+import           System.Random.Shuffle
+import qualified Data.Vector as V
+import qualified Data.Vector.Mutable as V
 
 fixed :: Tree -> Animation -> Animation
-fixed svg ani = mkAnimation 0 (emit svg) `sim` ani
+fixed svg ani = animate (const svg) `parA` ani
 
-digitWidth = 25
+digitWidth = screenWidth/10
 digitCount = 10
 
 main :: IO ()
-main = reanimate $ fixed bg $ pauseAtEnd 1 $
-    mkAnimation 5 $ do
-      s <- getSignal $ signalLinear
-      emit $ withFillColor "white" $ translate (negate $ digitWidth*digitCount/2) 0 $
+main = reanimate $ fixed bg $ pauseAtEnd 1 $ sceneAnimation (simpleSort lst)
+    -- mkAnimation 5 $ \t ->
+    --   withFillColor "white" $ translate (negate $ digitWidth*digitCount/2) 0 $
         -- sortingTransition (zip [9,0,1,2,3,4,5,6,8,7] squares) s
         -- sortingTransition (zip [9,0,1,2,3,4,5,6,8,7] digits) s
         -- sortingTransition (zip [1,0,2,3,4,5,6,7,8,9] digiSquares) s
         -- jumpTransition (zip [1,0,2,3,4,5,6,7,8,9] digiSquares) s
-        renderSortElements (mkJumpSorted lst) s
+        -- renderSortElements (mkJumpSorted lst) t
+
   where
     seed = 0xDEADBEEF
     lst = shuffle' (zip [0..] digiSquares) 10 (mkStdGen seed)
     bg = mkBackground "black"
     msg = "0 1 2 3 4 5 6 7 8 9"
     digits =
-      map (withStrokeColor "black" . withStrokeWidth (Num 0.2)) $
-      map (lowerTransformations . scale 3 . pathify . center . latex . T.pack . show) [0..9]
+      map (withStrokeColor "black" . withStrokeWidth 0) $
+      map (lowerTransformations . scale 1 . pathify . center . latex . T.pack . show) [0..9]
     squares = map center [ withFillColorPixel (promotePixel $ viridis (n/9)) $
-      mkRect (Num $ digitWidth+0.2) (Num digitWidth) | n <- [0..9]]
+      mkRect (digitWidth*1.00) digitWidth | n <- [0..9]]
 
     digiSquares = zipWith (\a b -> mkGroup [a,b]) squares digits
 
-    -- msg = "Eve"
     glyphs = lowerTransformations $ scale 3 $ pathify $ center $ latexAlign msg
-    fillText = mkAnimation 1 $ do
-      s <- getSignal signalLinear
-      sat <- getSignal $ signalFromTo 0 0.7 signalLinear
-      emit $ withFillColor "white" $ withStrokeColor "white" $ withStrokeWidth (Num $ 0.4 * (1-s)) $
-        withFillOpacity s glyphs
+    fillText = mkAnimation 1 $ \t ->
+      let sat = fromToS 0 0.7 t in
+      withFillColor "white" $ withStrokeColor "white" $ withStrokeWidth (0.4 * (1-t)) $
+        withFillOpacity t glyphs
         -- withSubglyphs [0] (withFillColorPixel $ toRGBString sat 0.0) $
         -- withSubglyphs [1] (withFillColorPixel $ toRGBString sat 0.1) $
         -- withSubglyphs [2] (withFillColorPixel $ toRGBString sat 0.2) $
@@ -69,22 +72,20 @@ main = reanimate $ fixed bg $ pauseAtEnd 1 $
         -- withSubglyphs [8] (withFillColorPixel $ toRGBString sat 0.8) $
         -- withSubglyphs [9] (withFillColorPixel $ toRGBString sat 0.9) $
         -- glyphs
-    drawText = mkAnimation 2 $ do
-      s <- getSignal signalLinear
-      emit $
-        withStrokeColor "white" $ withFillOpacity 0 $ withStrokeWidth (Num 0.4) $
-          partialSvg s glyphs
+    drawText = mkAnimation 2 $ \t ->
+      withStrokeColor "white" $ withFillOpacity 0 $ withStrokeWidth 0.4 $
+        partialSvg t glyphs
 
 data Direction = Up | Down | Sideways
 type Delay = Double
 type Position = Int
 data SortElement = SortElement
-  { sortElementDirection :: Direction
-  , sortElementStartTime :: Double
-  , sortElementDuration   :: Double
+  { sortElementDirection     :: Direction
+  , sortElementStartTime     :: Double
+  , sortElementDuration      :: Double
   , sortElementStartPosition :: Position
-  , sortElementEndPosition :: Position
-  , sortElementTree :: Tree }
+  , sortElementEndPosition   :: Position
+  , sortElementTree          :: Tree }
 
 
 mkJumpSorted :: [(Int, Tree)] -> [SortElement]
@@ -100,7 +101,7 @@ mkJumpSorted = fixParameters . worker Up . zip [0..]
       , sortElementEndPosition = target
       , sortElementTree = elt
       } : worker (flip dir) (yoink target rest)
-    flip Up = Down
+    flip Up   = Down
     flip Down = Up
 
 -- 10
@@ -146,19 +147,19 @@ mkSorted lst =
 renderSortElement :: SortElement -> Double -> Tree
 renderSortElement SortElement{..} t
   | t < sortElementStartTime =
-    translate (fromIntegral sortElementStartPosition * digitWidth) 0 sortElementTree
+    translate (fromIntegral sortElementStartPosition * digitWidth + digitWidth/2) 0 sortElementTree
   | t > sortElementStartTime + sortElementDuration =
-    translate (fromIntegral sortElementEndPosition * digitWidth) 0 sortElementTree
+    translate (fromIntegral sortElementEndPosition * digitWidth + digitWidth/2) 0 sortElementTree
   | otherwise =
-    let pos = signalCurve 2 $ (t - sortElementStartTime) / sortElementDuration
+    let pos = curveS 2 $ (t - sortElementStartTime) / sortElementDuration
         from = sortElementStartPosition
         to = sortElementEndPosition
         linear = fromIntegral from + (fromIntegral (to-from))*pos
         y = case sortElementDirection of
-               Down -> (sin (pos*pi) * digitWidth)
-               Up   -> negate (sin (pos*pi) * digitWidth)
+               Down     -> (sin (pos*pi) * digitWidth)
+               Up       -> negate (sin (pos*pi) * digitWidth)
                Sideways -> 0 in
-    translate (linear * digitWidth) y sortElementTree
+    translate (linear * digitWidth + digitWidth/2) y sortElementTree
 
 renderSortElements :: [SortElement] -> Double -> Tree
 renderSortElements elts t =
@@ -219,3 +220,32 @@ sortingTransition elts s = mkGroup
           let next = from + signum (to-from)
               (target,_) = elts !! next
           in signum (next-target) == signum (from-to) && canMoveDirectly next to
+
+simpleSort :: [(Int, Tree)] -> Scene s ()
+simpleSort lst = do
+  objs <- replicateM 10 newObject
+  forM_ (zip [0..] lst) $ \(i, (nth, t)) -> do
+    withObject (objs!!nth) $
+      fork $ playZ i $ animate $ const $
+        translate (-digitWidth*5 + fromIntegral i*digitWidth + digitWidth/2) 0 t
+
+  wait 1
+
+
+  let worker _ [] = return ()
+      worker dir ((i, (nth,t)):rest) | i == nth =
+        worker dir rest
+      worker dir ((i, (nth,t)):rest) = do
+        z <- round <$> queryNow
+        let obj = objs!!nth
+            fromX = fromIntegral (i-5) * digitWidth + digitWidth/2
+            toX = fromIntegral (nth-5) * digitWidth + digitWidth/2
+        withObject obj $
+          fork $ playZ (10+z) $ signalA (curveS 2) $ animate $ \time ->
+            translate (fromToS fromX toX time) (sin (time*pi)*digitWidth*dir) t
+        wait 0.5
+        worker (negate dir) $ yoink nth rest
+
+  waitAll $ worker 1 (zip [0..] lst)
+
+  forM_ objs dropObject

@@ -7,6 +7,7 @@
 {-# LANGUAGE TypeFamilies          #-}
 module Reanimate.Examples where
 
+{-
 import           Control.Lens                  ()
 import qualified Data.Map                      as M
 import           Graphics.SvgTree              as S hiding (circle, width)
@@ -22,6 +23,7 @@ import           Reanimate.Svg
 import           Diagrams.Prelude              (deg, turn, withEnvelope, (@@))
 import qualified Diagrams.Prelude              as D
 import qualified Diagrams.TwoD.Path.LSystem    as D
+-}
 
 {-
 sinewave :: Ani ()
@@ -478,7 +480,7 @@ latex_color = proc () -> do
     svg = scale 10 $ center $ latex "\\LaTeX"
 -}
 
-
+{-
 morph_wave :: Animation
 morph_wave = autoReverse $ mkAnimation 2.5 $ do
     morph <- getSignal signalLinear
@@ -558,3 +560,4 @@ wavyTree = mkAnimation 1 $ do
     tree s =
       D.lSystem gens (s/16 @@ turn) (D.symbols "F") rules
     rules = M.fromList [D.rule 'F' "FF-[->F+F+>F]+[+>F->F->F]"]
+-}

@@ -26,6 +26,8 @@ import           Data.Colour.RGBSpace
 
 -- | Given a number t in the range [0,1], returns the corresponding color from
 --   the “turbo” color scheme by Anton Mikhailov.
+--
+--   <<docs/gifs/doc_turbo.gif>>
 turbo :: Double -> PixelRGB8
 turbo t = PixelRGB8 red green blue
   where
@@ -38,6 +40,8 @@ turbo t = PixelRGB8 red green blue
 -- | Given a number t in the range [0,1], returns the corresponding color from
 --   the “viridis” perceptually-uniform color scheme designed by van der Walt,
 --   Smith and Firing for matplotlib, represented as an RGB string.
+--
+--   <<docs/gifs/doc_viridis.gif>>
 viridis :: Double -> PixelRGB8
 viridis = ramp (colors
   "44015444025645045745055946075a46085c460a5d460b5e470d60470e614710634711644713\
@@ -65,6 +69,8 @@ viridis = ramp (colors
 -- | Given a number t in the range [0,1], returns the corresponding color from
 --   the “magma” perceptually-uniform color scheme designed by van der Walt and
 --   Smith for matplotlib, represented as an RGB string.
+--
+--   <<docs/gifs/doc_magma.gif>>
 magma :: Double -> PixelRGB8
 magma = ramp (colors
   "00000401000501010601010802010902020b02020d03030f0303120404140504160605180605\
@@ -92,6 +98,8 @@ magma = ramp (colors
 -- | Given a number t in the range [0,1], returns the corresponding color from
 --   the “inferno” perceptually-uniform color scheme designed by van der Walt
 --   and Smith for matplotlib, represented as an RGB string.
+--
+--   <<docs/gifs/doc_inferno.gif>>
 inferno :: Double -> PixelRGB8
 inferno = ramp (colors
   "00000401000501010601010802010a02020c02020e0302100403120403140504170604190705\
@@ -119,6 +127,8 @@ inferno = ramp (colors
 -- | Given a number t in the range [0,1], returns the corresponding color from
 --   the “plasma” perceptually-uniform color scheme designed by van der Walt and
 --   Smith for matplotlib, represented as an RGB string.
+--
+--   <<docs/gifs/doc_plasma.gif>>
 plasma :: Double -> PixelRGB8
 plasma = ramp (colors
   "0d088710078813078916078a19068c1b068d1d068e20068f2206902406912605912805922a05\
@@ -145,6 +155,8 @@ plasma = ramp (colors
 
 -- | Given a number t in the range [0,1], returns the corresponding color from
 --   the “sinebow” color scheme by Jim Bumgardner and Charlie Loyd.
+--
+--   <<docs/gifs/doc_sinebow.gif>>
 sinebow :: Double -> PixelRGB8
 sinebow t = PixelRGB8 r g b
   where
@@ -158,6 +170,8 @@ sinebow t = PixelRGB8 r g b
 -- | Given a number t in the range [0,1], returns the corresponding color from
 --   the “cividis” color vision deficiency-optimized color scheme designed by
 --   Nuñez, Anderton, and Renslow, represented as an RGB string.
+--
+--   <<docs/gifs/doc_cividis.gif>>
 cividis :: Double -> PixelRGB8
 cividis t = PixelRGB8 red green blue
   where
@@ -168,6 +182,8 @@ cividis t = PixelRGB8 red green blue
     trunc = fromIntegral . min 255 . max 0
 
 -- | Jet colormap. Used to be the default in matlab. Obsolete.
+--
+--   <<docs/gifs/doc_jet.gif>>
 jet :: Double -> PixelRGB8
 jet t = PixelRGB8 red green blue
   where
@@ -178,22 +194,32 @@ jet t = PixelRGB8 red green blue
     trunc = round . min 255 . max 0 . (*) 255
 
 -- | hsv colormap. Goes from 0 degrees to 360 degrees.
+--
+--   <<docs/gifs/doc_hsv.gif>>
 hsv :: Double -> PixelRGB8
 hsv t = PixelRGB8 (round $ r*255) (round $ g*255) (round $ b*255)
   where
     RGB r g b = HSV.hsv (t * 360) 1 1
 
 -- | Matlab hsv colormap. Goes from 0 degrees to 330 degrees.
+--
+--   <<docs/gifs/doc_hsvMatlab.gif>>
 hsvMatlab :: Double -> PixelRGB8
 hsvMatlab t = PixelRGB8 (round $ r*255) (round $ g*255) (round $ b*255)
   where
     RGB r g b = HSV.hsv (t * 330) 1 1
 
+-- | Greyscale colormap.
+--
+--   <<docs/gifs/doc_greyscale.gif>>
 greyscale :: Double -> PixelRGB8
 greyscale t = PixelRGB8 v v v
   where
     v = round $ t * 255
 
+-- | Parula is the default colormap for matlab.
+--
+--   <<docs/gifs/doc_parula.gif>>
 parula :: Double -> PixelRGB8
 parula = ramp vec
   where
