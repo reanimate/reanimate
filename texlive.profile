@@ -4,7 +4,7 @@
 
 # installation profile at installation time.
 
-selected_scheme full
+selected_scheme scheme-full
 
 TEXDIR $TEX_ROOT
 
