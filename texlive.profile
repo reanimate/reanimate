@@ -4,7 +4,7 @@
 
 # installation profile at installation time.
 
-selected_scheme scheme-medium
+selected_scheme scheme-small
 
 TEXDIR $TEX_ROOT
 
