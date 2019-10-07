@@ -6,19 +6,19 @@
 
 selected_scheme scheme-small
 
-TEXDIR ./texlive/2019
+TEXDIR $TEX_ROOT
 
-TEXMFCONFIG ~/.texlive2019/texmf-config
+TEXMFCONFIG $TEX_ROOT/home/.texlive2019/texmf-config
 
-TEXMFHOME ~/texmf
+TEXMFHOME $TEX_ROOT/home/texmf
 
-TEXMFLOCAL ./texlive/texmf-local
+TEXMFLOCAL $TEX_ROOT/texmf-local
 
-TEXMFSYSCONFIG ./texlive/2019/texmf-config
+TEXMFSYSCONFIG $TEX_ROOT/texmf-config
 
-TEXMFSYSVAR ./texlive/2019/texmf-var
+TEXMFSYSVAR $TEX_ROOT/texmf-var
 
-TEXMFVAR ~/.texlive2019/texmf-var
+TEXMFVAR $TEX_ROOT/home/.texlive2019/texmf-var
 
 binary_win32 1
 
