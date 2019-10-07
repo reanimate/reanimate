@@ -15,17 +15,17 @@ trigger:
 - master
 
 jobs:
-- template: ./.azure/azure-linux-template.yml
-  parameters:
-    name: Linux
-    vmImage: ubuntu-latest
-    os: linux
-
-- template: ./.azure/azure-osx-template.yml
-  parameters:
-    name: macOS
-    vmImage: macOS-10.14
-    os: osx
+# - template: ./.azure/azure-linux-template.yml
+#   parameters:
+#     name: Linux
+#     vmImage: ubuntu-latest
+#     os: linux
+#
+# - template: ./.azure/azure-osx-template.yml
+#   parameters:
+#     name: macOS
+#     vmImage: macOS-10.14
+#     os: osx
 
 - template: ./.azure/azure-windows-template.yml
   parameters:
