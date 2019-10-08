@@ -8,7 +8,9 @@ import           Data.Ord
 import           Data.STRef
 import           Reanimate.Animation
 import           Reanimate.Signal
+import           Reanimate.Effect
 import           Reanimate.Svg.Constructors
+import           Graphics.SvgTree (Tree(None))
 
 type ZIndex = Int
 
@@ -67,7 +69,9 @@ sceneAnimation action =
     return $ anis `parA` mkAnimation dur (\t ->
       mkGroup $
       map fst $
-      sortBy (comparing snd) [ fn (t*dur)  | fn <- genFns::[Time -> (SVG, ZIndex)] ])
+      sortBy (comparing snd)
+      [ spriteRender dur (t*dur)
+      | spriteRender <- genFns ])
   )
 
 fork :: Scene s a -> Scene s a
@@ -216,7 +220,7 @@ simpleParam render def = do
   p <- newParam def
   fromParams $ do
     fn <- paramFn p
-    return $ \t -> (render $ fn t, 0)
+    return $ \_d t -> (render $ fn t, 0)
   return p
 
 data Var s a = Var (STRef s (Time -> a))
@@ -238,26 +242,47 @@ modifyVar (Var ref) fn = do
       then prev t
       else fn (prev t)
 
+tweenVar :: Var s a -> Duration -> (Time -> a -> a) -> Scene s ()
+tweenVar (Var ref) dur fn = do
+  now <- queryNow
+  liftST $ modifySTRef ref $ \prev t ->
+    if t < now
+      then prev t
+      else fn (min dur $ t-now) $ prev t
+
 freezeVar :: Var s a -> ST s (Time -> a)
 freezeVar (Var ref) = readSTRef ref
 
-data Sprite s = Sprite (STRef s (Duration, Duration -> Time -> SVG -> (SVG, ZIndex)))
+data Sprite s = Sprite Time (STRef s (Duration, Duration -> Time -> SVG -> (SVG, ZIndex)))
 
-newSprite :: ST s (Duration -> Time -> SVG) -> Scene s (Sprite s)
+newSprite :: ST s (Time -> Duration -> Time -> SVG) -> Scene s (Sprite s)
 newSprite render = do
   now <- queryNow
-  ref <- liftST $ newSTRef (-1, \d t svg -> (svg, 0))
+  ref <- liftST $ newSTRef (-1, \_d _t svg -> (svg, 0))
   fromParams $ do
     fn <- render
     (spriteDuration, spriteEffect) <- readSTRef ref
-    return $ \d t -> spriteEffect d t (fn d t)
-  return $ Sprite ref
+    return $ \d t ->
+      let realD = (if spriteDuration < 0 then d else spriteDuration)-now
+          realT = t-now in
+      if realT < 0 || realD < realT
+        then (None, 0)
+        else spriteEffect realD realT (fn t realD realT)
+  return $ Sprite now ref
 
 destroySprite :: Sprite s -> Scene s ()
-destroySprite (Sprite ref) = do
+destroySprite (Sprite _ ref) = do
   now <- queryNow
   liftST $ modifySTRef ref $ \(ttl, render) ->
-    (if ttl < 0 then min ttl now else now, render)
+    (if ttl < 0 then now else min ttl now, render)
+
+spriteE :: Sprite s -> Effect -> Scene s ()
+spriteE (Sprite born ref) effect = do
+  now <- queryNow
+  liftST $ modifySTRef ref $ \(ttl, render) ->
+    (ttl, \d t svg ->
+      let (svg', z) = render d t svg
+      in (delayE (now-born) effect d t svg', z))
 
 {-
 data Var s a = Var (STRef s (Time -> a))
