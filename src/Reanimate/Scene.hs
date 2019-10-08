@@ -19,7 +19,7 @@ o # f = f o
 -- [(Time, Animation, ZIndex)]
 -- Map Time [(Animation, ZIndex)]
 type Timeline = [(Time, Animation, ZIndex)]
-type Gen s = ST s (Time -> (SVG, ZIndex))
+type Gen s = ST s (Duration -> Time -> (SVG, ZIndex))
 newtype Scene s a = M { unM :: Time -> ST s (a, Duration, Duration, Timeline, [Gen s]) }
 
 unionTimeline :: Timeline -> Timeline -> Timeline
@@ -182,7 +182,7 @@ paramFn (Param ref) = do
 withParamAt :: Param s a -> Time -> (a -> ST s SVG) -> ST s SVG
 withParamAt = undefined
 
-fromParams :: ST s (Time -> (SVG, ZIndex)) -> Scene s ()
+fromParams :: Gen s -> Scene s ()
 fromParams gen = M $ \_ -> return ((), 0, 0, emptyTimeline, [gen])
 
 setParam :: Param s a -> a -> Scene s ()
@@ -218,3 +218,60 @@ simpleParam render def = do
     fn <- paramFn p
     return $ \t -> (render $ fn t, 0)
   return p
+
+data Var s a = Var (STRef s (Time -> a))
+
+newVar :: a -> Scene s (Var s a)
+newVar def = Var <$> liftST (newSTRef (const def))
+
+readVar :: Var s a -> Scene s a
+readVar (Var ref) = liftST (readSTRef ref) <*> queryNow
+
+writeVar :: Var s a -> a -> Scene s ()
+writeVar var val = modifyVar var (const val)
+
+modifyVar :: Var s a -> (a -> a) -> Scene s ()
+modifyVar (Var ref) fn = do
+  now <- queryNow
+  liftST $ modifySTRef ref $ \prev t ->
+    if t < now
+      then prev t
+      else fn (prev t)
+
+freezeVar :: Var s a -> ST s (Time -> a)
+freezeVar (Var ref) = readSTRef ref
+
+data Sprite s = Sprite (STRef s (Duration, Duration -> Time -> SVG -> (SVG, ZIndex)))
+
+newSprite :: ST s (Duration -> Time -> SVG) -> Scene s (Sprite s)
+newSprite render = do
+  now <- queryNow
+  ref <- liftST $ newSTRef (-1, \d t svg -> (svg, 0))
+  fromParams $ do
+    fn <- render
+    (spriteDuration, spriteEffect) <- readSTRef ref
+    return $ \d t -> spriteEffect d t (fn d t)
+  return $ Sprite ref
+
+destroySprite :: Sprite s -> Scene s ()
+destroySprite (Sprite ref) = do
+  now <- queryNow
+  liftST $ modifySTRef ref $ \(ttl, render) ->
+    (if ttl < 0 then min ttl now else now, render)
+
+{-
+data Var s a = Var (STRef s (Time -> a))
+data Sprite s = Sprite (STRef s (Duration, Duration -> Time -> (SVG, ZIndex)))
+
+newVar :: a -> Scene s (Var s a)
+readVar :: Var s a -> Scene s a
+writeVar :: Var s a -> a -> Scene s ()
+modifyVar :: Var s a -> (a -> a) -> Scene s ()
+freezeVar :: Var s a -> ST s (Time -> a)
+
+newSprite :: ST s (Time -> Time -> SVG) -> Scene s (Sprite s)
+destroySprite :: Sprite s -> Scene s ()
+spriteE :: Sprite s -> Effect -> Scene s ()
+
+newBlock :: Var s Position -> Number -> Scene s (Sprite s)
+-}
