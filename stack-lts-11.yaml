@@ -6,7 +6,7 @@ packages:
 - .
 
 extra-deps:
-- reanimate-svg-0.9.3.0
+- reanimate-svg-0.9.3.1
 - palette-0.3.0.2
 - chiphunk-0.1.2.0
 - diagrams-1.4@sha256:3e36369e84115b900fd9dcb570672a188339a470eb19ca62170775cd835cf8ca
