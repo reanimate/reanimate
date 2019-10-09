@@ -24,6 +24,8 @@ module Reanimate.PolyShape
   , plGroupShapes       -- :: [PolyShape] -> [PolyShapeWithHoles]
   , mergePolyShapeHoles -- :: PolyShapeWithHoles -> PolyShape
   , polyShapeTolerance
+  , plPartial
+  , plGroupTouching
   ) where
 
 import           Chiphunk.Low
@@ -36,7 +38,7 @@ import           Geom2D.CubicBezier  (ClosedPath (..), CubicBezier (..), DPoint,
                                       arcLength, bezierIntersection,
                                       closedPathCurves, closest, colinear,
                                       curvesToClosed, evalBezier, splitBezier,
-                                      union, vectorDistance)
+                                      union, vectorDistance,interpolateVector)
 import           Graphics.SvgTree    (PathCommand (..), RPoint, Tree (..),
                                       defaultSvg, pathDefinition)
 import           Linear.V2
@@ -80,6 +82,35 @@ plFromPolygon :: [RPoint] -> PolyShape
 plFromPolygon = PolyShape . ClosedPath . map worker
   where
     worker (V2 x y) = (Point x y, JoinLine)
+
+plPartial :: Double -> PolyShape -> PolyShape
+plPartial _delta (PolyShape (ClosedPath [])) = PolyShape (ClosedPath [])
+plPartial delta (PolyShape (ClosedPath ((startPoint,startJoin):rest))) =
+    PolyShape $ ClosedPath $
+    (startPoint, startJoin) : map fn rest
+  where
+    fn (newPoint, newJoin) = (interpolateVector startPoint newPoint delta, newJoin)
+
+plGroupTouching :: [PolyShape] -> [[PolyShape]]
+plGroupTouching [] = []
+plGroupTouching pls = worker [polyShapeOrigin (head pls)] pls
+  where
+    worker _ [] = []
+    worker seen shapes =
+      let (touching, notTouching) = partition (isTouching seen) shapes
+      in if null touching
+        then plGroupTouching notTouching
+        else map (changeOrigin seen) touching : worker (seen ++ concatMap plPoints touching) notTouching
+    isTouching pts = any (`elem` pts) . plPoints
+    changeOrigin seen (PolyShape (ClosedPath segments)) = PolyShape $ ClosedPath $ helper [] segments
+      where
+        helper acc [] = reverse acc
+        helper acc lst@((startP,startJ):rest)
+          | startP `elem` seen = lst ++ reverse acc
+          | otherwise = helper ((startP, startJ):acc) rest
+    plPoints :: PolyShape -> [Point Double]
+    plPoints (PolyShape (ClosedPath lst)) =
+      [ p | (p,_) <- lst ]
 
 -- | Deconstruct a polyshape into non-intersecting, convex polygons.
 plDecompose :: [PolyShape] -> [[RPoint]]
