@@ -38,7 +38,7 @@ import           Geom2D.CubicBezier  (ClosedPath (..), CubicBezier (..), DPoint,
                                       arcLength, bezierIntersection,
                                       closedPathCurves, closest, colinear,
                                       curvesToClosed, evalBezier, splitBezier,
-                                      union, vectorDistance,interpolateVector)
+                                      union, vectorDistance,arcLengthParam, bezierSubsegment, reorient, curvesToClosed)
 import           Graphics.SvgTree    (PathCommand (..), RPoint, Tree (..),
                                       defaultSvg, pathDefinition)
 import           Linear.V2
@@ -84,12 +84,23 @@ plFromPolygon = PolyShape . ClosedPath . map worker
     worker (V2 x y) = (Point x y, JoinLine)
 
 plPartial :: Double -> PolyShape -> PolyShape
-plPartial _delta (PolyShape (ClosedPath [])) = PolyShape (ClosedPath [])
-plPartial delta (PolyShape (ClosedPath ((startPoint,startJoin):rest))) =
-    PolyShape $ ClosedPath $
-    (startPoint, startJoin) : map fn rest
+plPartial delta pl | delta >= 1 = pl
+plPartial delta pl = PolyShape $ curvesToClosed (lineOut ++ [joinB] ++ lineIn)
   where
-    fn (newPoint, newJoin) = (interpolateVector startPoint newPoint delta, newJoin)
+    lineOutEnd = cubicC3 (last lineOut)
+    lineInBegin = cubicC0 (head lineIn)
+    joinB = CubicBezier lineOutEnd lineOutEnd lineOutEnd lineInBegin
+    lineOut = takeLen (len*delta/2) $ plCurves pl
+    lineIn =
+      reverse $ map reorient $
+      takeLen (len*delta/2) $ reverse $ map reorient $ plCurves pl
+    len = plLength pl
+    takeLen _ [] = []
+    takeLen l (c:cs) =
+      let cLen = arcLength c 1 polyShapeTolerance in
+      if l < cLen
+        then [bezierSubsegment c 0 (arcLengthParam c l polyShapeTolerance)]
+        else c : takeLen (l-cLen) cs
 
 plGroupTouching :: [PolyShape] -> [[PolyShape]]
 plGroupTouching [] = []
