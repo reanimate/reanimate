@@ -18,7 +18,7 @@ polygonTest = mkAnimation 10 $ \t ->
           renderPolyShapes $
           map plFromPolygon $ plDecompose [iShape]
         decomposedP =
-          renderPolyShapes $ plPartialGroup t $ concat $ plGroupTouching $
+          renderPolyShapes $ map (plPartial' t) $ concat $ plGroupTouching $
           map plFromPolygon $ plDecompose $ [iShape]
     in std $ gridLayout
       [[original, originalP]

@@ -11,6 +11,7 @@ module Reanimate.PolyShape
   , plLineCommands      -- :: PolyShape -> [LineCommand]
 
   , plLength            -- :: PolyShape -> Double
+  , plArea
   , plCurves            -- :: PolyShape -> [CubicBezier Double]
   , isInsideOf          -- :: PolyShape -> PolyShape -> Bool
 
@@ -24,21 +25,23 @@ module Reanimate.PolyShape
   , plGroupShapes       -- :: [PolyShape] -> [PolyShapeWithHoles]
   , mergePolyShapeHoles -- :: PolyShapeWithHoles -> PolyShape
   , polyShapeTolerance
-  , plPartial, plPartialGroup
+  , plPartial, plPartialGroup, plPartial'
   , plGroupTouching
   ) where
 
 import           Chiphunk.Low
 import           Control.Lens        ((&), (.~))
-import           Data.List           (nub, partition, sortBy)
+import           Data.List           (nub, partition, sortBy, minimumBy)
 import           Data.Ord
 import           Debug.Trace
 import           Geom2D.CubicBezier  (ClosedPath (..), CubicBezier (..), DPoint,
                                       FillRule (..), PathJoin (..), Point (..),
-                                      arcLength, bezierIntersection,
+                                      arcLength, arcLengthParam,
+                                      bezierIntersection, bezierSubsegment,
                                       closedPathCurves, closest, colinear,
-                                      curvesToClosed, evalBezier, splitBezier,
-                                      union, vectorDistance,arcLengthParam, bezierSubsegment, reorient, curvesToClosed)
+                                      curvesToClosed, curvesToClosed,
+                                      evalBezier, interpolateVector, reorient,
+                                      splitBezier, union, vectorDistance)
 import           Graphics.SvgTree    (PathCommand (..), RPoint, Tree (..),
                                       defaultSvg, pathDefinition)
 import           Linear.V2
@@ -73,6 +76,11 @@ plLength :: PolyShape -> Double
 plLength = sum . map cubicLength . plCurves
   where
     cubicLength c = arcLength c 1 polyShapeTolerance
+
+plArea :: PolyShape -> Double
+plArea pl = areaForPoly (map toVect $ plPolygonify polyShapeTolerance pl) 0
+  where
+    toVect (Point x y) = Vect x y
 
 -- 1/10th of a pixel if rendered at 2560x1440
 polyShapeTolerance :: Double
@@ -109,7 +117,25 @@ plPartialGroup delta pls =
   where
     maxLen = maximum $ map plLength pls
 
-plGroupTouching :: [PolyShape] -> [[PolyShape]]
+plPartial' :: Double -> ([DPoint], PolyShape) -> PolyShape
+plPartial' delta (seen', PolyShape (ClosedPath lst)) =
+  case lst of
+    []                         -> PolyShape (ClosedPath [])
+    (startP, startJoin) : rest -> PolyShape $ ClosedPath $
+      (startP, startJoin) : worker startP rest
+  where
+    seen = filter (`elem` plPoints) seen'
+    closestSeen pt = minimumBy (comparing (vectorDistance pt)) seen
+    worker _ [] = []
+    worker _ ((newP, newJoin) : rest)
+      | newP `elem` seen = (newP, newJoin) : worker newP rest
+      | otherwise =
+        let newAt = interpolateVector (closestSeen newP) newP delta
+        in (newAt, newJoin) : worker newAt rest
+    plPoints =
+      [ p | (p,_) <- lst ]
+
+plGroupTouching :: [PolyShape] -> [[([DPoint],PolyShape)]]
 plGroupTouching [] = []
 plGroupTouching pls = worker [polyShapeOrigin (head pls)] pls
   where
@@ -118,7 +144,8 @@ plGroupTouching pls = worker [polyShapeOrigin (head pls)] pls
       let (touching, notTouching) = partition (isTouching seen) shapes
       in if null touching
         then plGroupTouching notTouching
-        else map (changeOrigin seen) touching : worker (seen ++ concatMap plPoints touching) notTouching
+        else map ((,)seen) (map (changeOrigin seen) touching) :
+             worker (seen ++ concatMap plPoints touching) notTouching
     isTouching pts = any (`elem` pts) . plPoints
     changeOrigin seen (PolyShape (ClosedPath segments)) = PolyShape $ ClosedPath $ helper [] segments
       where
@@ -151,7 +178,7 @@ decomposePolygon poly =
     toVect (Point x y) = Vect x y
     fromVect (Vect x y) = V2 x y
     adjust [] = []
-    adjust x = if head x == last x then adjust (init x) else x
+    adjust x  = if head x == last x then adjust (init x) else x
 
 plPolygonify :: Double -> PolyShape -> [Point Double]
 plPolygonify tol shape =
