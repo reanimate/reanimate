@@ -24,7 +24,7 @@ module Reanimate.PolyShape
   , plGroupShapes       -- :: [PolyShape] -> [PolyShapeWithHoles]
   , mergePolyShapeHoles -- :: PolyShapeWithHoles -> PolyShape
   , polyShapeTolerance
-  , plPartial
+  , plPartial, plPartialGroup
   , plGroupTouching
   ) where
 
@@ -101,6 +101,13 @@ plPartial delta pl = PolyShape $ curvesToClosed (lineOut ++ [joinB] ++ lineIn)
       if l < cLen
         then [bezierSubsegment c 0 (arcLengthParam c l polyShapeTolerance)]
         else c : takeLen (l-cLen) cs
+
+plPartialGroup :: Double -> [PolyShape] -> [PolyShape]
+plPartialGroup _delta [] = []
+plPartialGroup delta pls =
+    [ plPartial (delta*(maxLen/plLength pl)) pl | pl <- pls ]
+  where
+    maxLen = maximum $ map plLength pls
 
 plGroupTouching :: [PolyShape] -> [[PolyShape]]
 plGroupTouching [] = []
