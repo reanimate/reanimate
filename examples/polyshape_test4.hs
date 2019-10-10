@@ -6,12 +6,10 @@ module Main (main) where
 
 import           Reanimate
 import           Reanimate.PolyShape
-import qualified Geom2D.CubicBezier  as G
-import Control.Monad
 
 polygonTest :: Animation
 polygonTest = mapA std $
-    let shapes = svgToPolyShapes $ center $ scale 3 $ latex "$\\infty$"
+    let shapes = svgToPolyShapes $ center $ scale 6 $ latex "$\\infty$"
         groups =
           plGroupTouching $
           map plFromPolygon $ plDecompose $ shapes
