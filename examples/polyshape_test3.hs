@@ -18,7 +18,7 @@ polygonTest = mkAnimation 10 $ \t ->
           renderPolyShapes $
           map plFromPolygon $ plDecompose [iShape]
         decomposedP =
-          renderPolyShapes $ map (plPartial t) $ concat $ plGroupTouching $
+          renderPolyShapes $ plPartialGroup t $ concat $ plGroupTouching $
           map plFromPolygon $ plDecompose $ [iShape]
     in std $ gridLayout
       [[original, originalP]
@@ -27,7 +27,7 @@ polygonTest = mkAnimation 10 $ \t ->
     std =
       withFillOpacity 1 .
       withFillColor "blue" .
-      -- withStrokeWidth 0.01 .
+      withStrokeWidth 0.02 .
       withStrokeColor "white"
 
 main :: IO ()
