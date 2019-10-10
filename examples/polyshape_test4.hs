@@ -13,10 +13,11 @@ polygonTest = mapA std $
         groups =
           plGroupTouching $
           map plFromPolygon $ plDecompose $ shapes
-        totalLen = sum $ map (maximum . map plLength) groups
-        anis = [ setDuration dur $ animate $ \t -> renderPolyShapes $ plPartialGroup t group
+        -- totalLen = sum $ map (maximum . map (plArea.snd)) groups
+        totalLen = fromIntegral $ length groups
+        anis = [ setDuration dur $ animate $ \t -> renderPolyShapes $ map (plPartial' t) group
                | group <- groups
-               , let groupLen = maximum (map plLength group)
+               , let groupLen = 1 -- maximum (map (plArea.snd) group)
                      dur = groupLen/totalLen * totalT ]
     in foldr andThen (pause 0) anis
   where
