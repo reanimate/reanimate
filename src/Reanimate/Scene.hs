@@ -253,6 +253,12 @@ tweenVar (Var ref) dur fn = do
 freezeVar :: Var s a -> ST s (Time -> a)
 freezeVar (Var ref) = readSTRef ref
 
+findVar :: (a -> Bool) -> [Var s a] -> Scene s (Var s a)
+findVar _cond [] = error "Variable not found."
+findVar cond (v:vs) = do
+  val <- readVar v
+  if cond val then return v else findVar cond vs
+
 data Sprite s = Sprite Time (STRef s (Duration, Duration -> Time -> SVG -> (SVG, ZIndex)))
 
 newSprite :: ST s (Time -> Duration -> Time -> SVG) -> Scene s (Sprite s)

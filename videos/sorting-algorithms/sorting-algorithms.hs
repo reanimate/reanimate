@@ -337,6 +337,56 @@ quicksort_ lst = do
       translate (-digitWidth*5 + i*digitWidth + digitWidth/2)
                 (y*digitWidth) t
 
+quicksort__ :: [(Int, Tree)] -> Scene s ()
+quicksort__ lst = do
+    vars <- mapM newBlock (zip [0..] lst)
+
+    let getNth nth = findVar (\obj -> round (getPos obj) == nth) vars
+        getPivot lo hi = do
+          let middle = lo + (hi-lo) `div` 2
+          getNth middle
+
+    let partition pivot lo hi = do
+          loValP <- getNth lo
+          loVal <- readVar loValP
+          hiValP <- getNth hi
+          hiVal <- readVar hiValP
+          if getKey loVal < getKey pivot
+            then partition pivot (lo+1) hi
+            else if getKey hiVal > getKey pivot
+              then partition pivot lo (hi-1)
+              else if lo >= hi
+                then return hi
+                else do
+                  tweenVar hiValP 1 $ \t (x,y,elt) ->
+                    let s = curveS 2 t in
+                    (fromToS x (getPos loVal) s, y+sin (pi*s), elt)
+                  tweenVar loValP 1 $ \t (x,y,elt) ->
+                    let s = curveS 2 t in
+                    (fromToS x (getPos hiVal) s, y-sin (pi*s), elt)
+                  wait 1
+                  partition pivot (lo+1) (hi-1)
+    let worker lo hi | lo >= hi = return ()
+        worker lo hi = do
+          pivotP <- getPivot lo hi
+          pivot <- readVar pivotP
+          tweenVar pivotP 1 $ \t (x,y,elt) ->
+            let s = curveS 2 t in
+            (x, y-s/2, elt)
+          p <- partition pivot lo hi
+          tweenVar pivotP 1 $ \t (x,y,elt) ->
+            let s = curveS 2 t in
+            (x, y+s/2, elt)
+          fork $ worker lo p
+          fork $ worker (p+1) hi
+    worker 0 (length lst-1)
+  where
+    getPos (x, _, _) = x
+    getKey (_x, _y, (i, _)) = i
+    newBlock (x, (i, elt)) = newVar (x, 0, (i, elt))
+    render (i, y, (_, t)) =
+      translate (-digitWidth*5 + i*digitWidth + digitWidth/2)
+                (y*digitWidth) t
 
 bubbleSort :: [(Int, Tree)] -> Scene s ()
 bubbleSort lst = do
