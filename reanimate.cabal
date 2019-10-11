@@ -13,7 +13,7 @@ category:            Graphics
 synopsis:            Animation library based on SVGs.
 homepage:            https://github.com/Lemmih/reanimate
 build-type:          Simple
-extra-source-files:  ChangeLog.md
+extra-source-files:  ChangeLog.md, examples/*.hs, examples/*.golden
 extra-doc-files:     docs/gifs/*.gif
 
 
