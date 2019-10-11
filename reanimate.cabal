@@ -3,7 +3,7 @@ cabal-version:       1.18
 --  see http://haskell.org/cabal/users-guide/
 
 name:                reanimate
-version:             0.1.8.0
+version:             0.1.9.0
 -- synopsis:
 -- description:
 license:             PublicDomain
