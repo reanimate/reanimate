@@ -38,7 +38,7 @@ main :: IO ()
 main = reanimate $ fixed bg $ pauseAtEnd 1 $
     -- sceneAnimation (bubbleSort lst) `seqA` sceneAnimation (simpleSort lst)
     -- sceneAnimation (simpleSort_ lst)
-    sceneAnimation (quicksort_ lst)
+    sceneAnimation (quicksort__ lst)
     -- mkAnimation 5 $ \t ->
     --   withFillColor "white" $ translate (negate $ digitWidth*digitCount/2) 0 $
         -- sortingTransition (zip [9,0,1,2,3,4,5,6,8,7] squares) s
@@ -340,6 +340,10 @@ quicksort_ lst = do
 quicksort__ :: [(Int, Tree)] -> Scene s ()
 quicksort__ lst = do
     vars <- mapM newBlock (zip [0..] lst)
+    forM_ vars $ \var -> newSprite $ do
+      varT <- freezeVar var
+      return $ \realT _d _t ->
+        render (varT realT)
 
     let getNth nth = findVar (\obj -> round (getPos obj) == nth) vars
         getPivot lo hi = do
@@ -366,19 +370,48 @@ quicksort__ lst = do
                     (fromToS x (getPos hiVal) s, y-sin (pi*s), elt)
                   wait 1
                   partition pivot (lo+1) (hi-1)
+    let preshuffle lo hi = do
+          let middle = lo + (hi-lo) `div` 2
+              targets = nub [lo, middle, hi]
+          selected <- sortBy (comparing getKey) <$> (mapM readVar =<< mapM getNth targets)
+          let toMove = [ (target, origX) | (target, origX) <- zip selected targets]
+          unless (null toMove) $ do
+            forM_ toMove $ \(target,_) -> do
+              var <- getNth (round (getPos target))
+              tweenVar var 1 $ \t (x,y,elt) ->
+                let s = curveS 2 t in
+                (x, y+s/2, elt)
+            wait 1
+            forM_ toMove $ \(target,origX) ->
+              when (round (getPos target) /= origX) $ do
+                var <- getNth (round (getPos target))
+                tweenVar var 1 $ \t (x,y,elt) ->
+                  let s = curveS 2 t in
+                  (fromToS x (fromIntegral origX) s, y+sin (pi*s)/2, elt)
+            forM_ toMove $ \(target,_) -> do
+              var <- getNth (round (getPos target))
+              tweenVar var 1 $ \t (x,y,elt) ->
+                let s = curveS 2 t in
+                (x, y-s/2, elt)
+            wait 1
     let worker lo hi | lo >= hi = return ()
+        worker lo hi | hi-lo <= 2 =
+          preshuffle lo hi
         worker lo hi = do
+          preshuffle lo hi
           pivotP <- getPivot lo hi
           pivot <- readVar pivotP
           tweenVar pivotP 1 $ \t (x,y,elt) ->
             let s = curveS 2 t in
             (x, y-s/2, elt)
+          wait 1
           p <- partition pivot lo hi
           tweenVar pivotP 1 $ \t (x,y,elt) ->
             let s = curveS 2 t in
             (x, y+s/2, elt)
-          fork $ worker lo p
-          fork $ worker (p+1) hi
+          wait 1
+          worker lo (p-1)
+          worker (p+1) hi
     worker 0 (length lst-1)
   where
     getPos (x, _, _) = x
