@@ -12,7 +12,6 @@ import qualified Data.Text         as T
 import qualified Data.Text.IO      as T
 import           Graphics.SvgTree  (Tree (..))
 import           Reanimate.Cache
-import           Reanimate.Memo
 import           Reanimate.Misc
 import           Reanimate.Raster
 import           Reanimate.Svg.Constructors
@@ -21,7 +20,7 @@ import           System.IO.Unsafe  (unsafePerformIO)
 
 povrayRaw :: [String] -> Text -> Tree
 povrayRaw args script =
-  memo [Key mkPovrayImage, KeyPrim args, KeyPrim script]
+  -- memo [Key mkPovrayImage, KeyPrim args, KeyPrim script]
   (unsafePerformIO $ mkPovrayImage args script)
 
 povray :: [String] -> Text -> Tree
@@ -41,7 +40,7 @@ mkPovrayImage args script = cacheDiskKey key $ do
     T.writeFile pov_file script
     ret <- runCmd_ exec (args ++ ["-D","+UA", pov_file, "+o"++out])
     case ret of
-      Left{} -> error "povray went wrong"
+      Left err -> error $ "povray went wrong:\n" ++ err
       Right{} -> do
         png <- B.readFile out
         case decodePng png of
