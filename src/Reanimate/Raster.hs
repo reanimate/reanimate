@@ -3,11 +3,12 @@ module Reanimate.Raster
   , embedDynamicImage
   , embedPng
   , raster
+  , svgAsPngFile
   ) where
 
 import           Codec.Picture
 import           Codec.Picture.Types         (dynamicMap)
-import           Control.Lens
+import           Control.Lens ((.~),(&))
 import qualified Data.ByteString             as B
 import qualified Data.ByteString.Base64.Lazy as Base64
 import qualified Data.ByteString.Lazy.Char8  as LBS
@@ -18,8 +19,8 @@ import           Reanimate.Misc
 import           Reanimate.Animation
 import           Reanimate.Svg.Constructors
 import           System.FilePath
-import           System.IO
-import           System.IO.Temp
+import           System.Directory
+import           Data.Hashable
 import           System.IO.Unsafe
 
 
@@ -53,18 +54,33 @@ embedDynamicImage img = embedPng width height imgData
         Right dat -> dat
 
 raster :: Tree -> DynamicImage
-raster svg = unsafePerformIO $
-    withSystemTempFile "reanimate.svg" $ \tmpFile handle -> do
-      let target = replaceExtension tmpFile "png"
-      -- ffmpeg <- requireExecutable "ffmpeg"
-      convert <- requireExecutable "convert"
-      hPutStr handle $ renderSvg (Just $ Num width) (Just $ Num height) svg
-      hClose handle
-      runCmd convert [ tmpFile, target ]
-      png <- B.readFile target
-      case decodePng png of
-        Left{}    -> error "bad image"
-        Right img -> return img
+raster svg = unsafePerformIO $ do
+    png <- B.readFile (svgAsPngFile svg)
+    case decodePng png of
+      Left{}    -> error "bad image"
+      Right img -> return img
+
+-- imageAsFile :: DynamicImage -> FilePath
+-- imageAsFile img
+
+svgAsPngFile :: Tree -> FilePath
+svgAsPngFile svg = unsafePerformIO $ do
+    root <- getXdgDirectory XdgCache "reanimate"
+    createDirectoryIfMissing True root
+    let svgPath = root </> show (hash rendered) <.> "svg"
+        pngPath = replaceExtension svgPath "png"
+    hit <- doesFileExist pngPath
+    if hit
+      then return pngPath
+      else do
+        -- ffmpeg <- requireExecutable "ffmpeg"
+        -- convert <- requireExecutable "convert"
+        inkscape <- requireExecutable "inkscape"
+        writeFile svgPath rendered
+        -- runCmd convert [ "-background", "none", "-antialias", svgPath, pngPath ]
+        runCmd inkscape [ svgPath, "--export-png=" ++ pngPath, "--without-gui" ]
+        return pngPath
   where
+    rendered = renderSvg (Just $ Num width) (Just $ Num height) svg
     width = 2560
     height = width * 9 / 16
