@@ -264,3 +264,15 @@ freezeAtPercentage frac (Animation d genFrame) =
 --   <<docs/gifs/doc_signalA.gif>>
 signalA :: Signal -> Animation -> Animation
 signalA fn (Animation d gen) = Animation d $ gen . fn
+
+takeA :: Double -> Animation -> Animation
+takeA len (Animation d gen) = Animation len' $ \t ->
+    gen (t * len'/d)
+  where
+    len' = min len d
+
+dropA :: Double -> Animation -> Animation
+dropA len (Animation d gen) = Animation len' $ \t ->
+    gen (t * len'/d + len/d)
+  where
+    len' = max (d-len) 0

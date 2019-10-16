@@ -28,8 +28,10 @@ requireExecutable exec = do
 
 runCmd :: FilePath -> [String] -> IO ()
 runCmd exec args = do
-  _ <- runCmd_ exec args
-  return ()
+  ret <- runCmd_ exec args
+  case ret of
+    Left err -> error $ "exec " ++ exec ++ show args ++ " failed:\n" ++ err
+    Right{} -> return ()
 
 runCmd_ :: FilePath -> [String] -> IO (Either String String)
 runCmd_ exec args = do
