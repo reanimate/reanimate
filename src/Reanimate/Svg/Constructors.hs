@@ -180,3 +180,10 @@ gridLayout rows = mkGroup
   where
     rowSep = screenHeight / fromIntegral (nRows+1)
     nRows = length rows
+
+mkText :: T.Text -> Tree
+mkText str =
+  TextTree Nothing $ defaultSvg
+    & textRoot .~ span
+  where
+    span = defaultSvg & spanContent .~ [SpanText str]
