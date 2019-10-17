@@ -18,8 +18,12 @@ import           Reanimate.Svg
 {- SCRIPT
 
 Some ideas lend themselves well to be illustrated. Take spheres, for
-example. Did you know that the surface area of a sphere is exactly 4 times the
+example: It just so happens that the surface area of a sphere is exactly 4 times the
 area of a circle with the same radius.
+
+Now, this video is not about spheres, circles or math. Rather it is about the animation technology
+that created it. Unlike most other YouTube videos, all the videos on this channel were written as
+code and are open source. 
 
 -}
 
