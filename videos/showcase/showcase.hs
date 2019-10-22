@@ -21,12 +21,26 @@ Some ideas lend themselves well to be illustrated. Take spheres, for
 example: It just so happens that the surface of a sphere is exactly 4 times the
 area of a circle with the same radius.
 
-Now, this relationship could be, and already have been, visually explored in mucher greater dept so
+Now, this relationship has already been visually explored by others in mucher greater dept so
 I'll leave it at this.
-But there are countless other ideas and concepts that deserve to be illustrated yet haven't.
-I want to remedy this, in part, by animating ideas I find interesting, but also, and perhaps more
-importantly, by encouraging you to make your own animations. In the description of this video there
-is a link to
+But there are countless other ideas and concepts that deserve to be illustrated yet have not.
+I want to remedy this, in part, by animating ideas I find interesting, but also
+by encouraging you to make your own animations.
+
+Each animation on this channel is open-source and the source files are linked
+in the description. The animations are created with a library called 'reanimate'
+which builds on 3 primary components, and glues them together using SVG images
+as an intermediate representation.
+The first component is LaTeX: Used primarily for typesetting equations.
+The second component is raytracing: Raytracing is inherently a raster graphics
+technique but it can be combined with vector graphics with mathematical, pixel-perfect
+precision when scenes are described programmatically.
+The third component is vectorization: Turning pixel data into vector graphics
+opens a whole new world of image manipulations.
+
+Everything is held together by the purely functional language Haskell. Haskell
+is particularlly well suited for this task since animations are inherently
+immutable.
 
 
 
