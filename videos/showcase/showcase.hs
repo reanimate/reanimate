@@ -21,7 +21,7 @@ Some ideas lend themselves well to be illustrated. Take spheres, for
 example: It just so happens that the surface of a sphere is exactly 4 times the
 area of a circle with the same radius.
 
-Now, this relationship has already been visually explored by others in mucher greater dept so
+Now, this relationship has already been visually explored by others in mucher greater detail so
 I'll leave it at this.
 But there are countless other ideas and concepts that deserve to be illustrated yet have not.
 I want to remedy this, in part, by animating ideas I find interesting, but also
