@@ -17,31 +17,33 @@ import           Reanimate.Svg
 
 {- SCRIPT
 
-Some ideas lend themselves well to be illustrated. Take spheres, for
-example: It just so happens that the surface of a sphere is exactly 4 times the
-area of a circle with the same radius.
+Some ideas lend themselves well to be illustrated. Take spheres, for example: It
+just so happens that the surface of a sphere is exactly 4 times the area of a
+circle with the same radius.
 
-Now, this relationship has already been visually explored by others in mucher greater detail so
-I'll leave it at this.
-But there are countless other ideas and concepts that deserve to be illustrated yet have not.
-I want to remedy this, in part, by animating ideas I find interesting, but also
-by encouraging you to make your own animations.
+Now, this relationship has already been visually explored by others in mucher
+greater detail so I'll leave it at this. But there are countless other ideas and
+concepts that deserve to be illustrated yet have not. I want to remedy this, in
+part, by animating ideas I find interesting, but also by encouraging you to make
+your own animations.
 
-Each animation on this channel is open-source and the source files are linked
-in the description. The animations are created with a library called 'reanimate'
-which builds on 3 primary components, and glues them together using SVG images
-as an intermediate representation.
-The first component is LaTeX: Used primarily for typesetting equations.
-The second component is raytracing: Raytracing is inherently a raster graphics
-technique but it can be combined with vector graphics with mathematical, pixel-perfect
-precision when scenes are described programmatically.
-The third component is vectorization: Turning pixel data into vector graphics
-opens a whole new world of image manipulations.
+Every video, including this one, will be open-source with the source files
+linked in the description. If any of the graphics pique your interest then
+please download the code and play with it. The animations are created with a
+library called 'reanimate' which, at its core, is a set of tools for generating
+individual frames as SVG images. Layered on top of this core are external
+components such as:
+
+ * LaTeX, for typesetting equations,
+ * a tracer, for turning pixel data into vector graphics,
+ * and a raytracer, for generating 3D graphics,
+
+Raytracing is inherently a pixel-based graphics technique but, with a bit of math,
+it and vector graphics can be merged with pixel-perfect precision.
 
 Everything is held together by the purely functional language Haskell. Haskell
 is particularlly well suited for this task since animations are inherently
 immutable.
-
 
 
 
