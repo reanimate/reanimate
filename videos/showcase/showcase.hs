@@ -35,7 +35,7 @@ individual frames as SVG images. Layered on top of this core are external
 components such as:
 
  * LaTeX, for typesetting equations,
- * a tracer, for turning pixel data into vector graphics,
+ * a bitmap tracer, for turning pixel data into vector graphics,
  * and a raytracer, for generating 3D graphics,
 
 Raytracing is inherently a pixel-based graphics technique but, with a bit of math,
@@ -68,6 +68,10 @@ main = reanimate $ sceneAnimation $ do
     # repeatA 10
     # applyE (overBeginning 2 $ constE $ withGroupOpacity 0)
     # applyE (delayE 2 $ overBeginning 5 fadeInE)
+
+
+introSVG :: Animation
+introSVG = undefined
 
 drawSphere :: Animation
 drawSphere = animate $ \t ->

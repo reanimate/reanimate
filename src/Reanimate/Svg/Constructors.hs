@@ -184,6 +184,6 @@ gridLayout rows = mkGroup
 mkText :: T.Text -> Tree
 mkText str =
   TextTree Nothing $ defaultSvg
-    & textRoot .~ span
+    & textRoot .~ span_
   where
-    span = defaultSvg & spanContent .~ [SpanText str]
+    span_ = defaultSvg & spanContent .~ [SpanText str]
