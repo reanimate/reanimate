@@ -27,7 +27,7 @@ concepts that deserve to be illustrated yet have not. I want to remedy this, in
 part, by animating ideas I find interesting, but also by encouraging you to make
 your own animations.
 
-Every video, including this one, will be open-source with the source files
+Every video on this channel, including this one, will be open-source with the source files
 linked in the description. If any of the graphics pique your interest then
 please download the code and play with it. The animations are created with a
 library called 'reanimate' which, at its core, is a set of tools for generating
@@ -39,7 +39,7 @@ components such as:
  * and a raytracer, for generating 3D graphics,
 
 Raytracing is inherently a pixel-based graphics technique but, with a bit of math,
-it and vector graphics can be merged with pixel-perfect precision.
+it and vector graphics can be overlayed with pixel-perfect precision.
 
 Everything is held together by the purely functional language Haskell. Haskell
 is particularlly well suited for this task since animations are inherently
