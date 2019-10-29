@@ -74,7 +74,7 @@ library
                       Reanimate.Driver.Server
                       Reanimate.Driver.Compile
                       Paths_reanimate
-  build-depends:       base >=4.10 && <4.13,
+  build-depends:       base >=4.10 && <5,
                        time, text, filepath, process, directory,
                        containers, reanimate-svg >= 0.9.3.1, xml, bytestring, lens, linear, mtl, matrix,
                        JuicyPixels, attoparsec, parallel, diagrams, diagrams-svg,
