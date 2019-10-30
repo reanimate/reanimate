@@ -51,7 +51,7 @@ library
                       Reanimate.Svg.Constructors
                       Reanimate.Svg.BoundingBox
                       Reanimate.Svg.LineCommand
-                      Reanimate.Diagrams
+                      -- Reanimate.Diagrams
                       Reanimate.Transform
                       Reanimate.Driver
                       Reanimate.Misc
@@ -77,9 +77,8 @@ library
   build-depends:       base >=4.10 && <5,
                        time, text, filepath, process, directory,
                        containers, reanimate-svg >= 0.9.3.1, xml, bytestring, lens, linear, mtl, matrix,
-                       JuicyPixels, attoparsec, parallel, diagrams, diagrams-svg,
-                       diagrams-core, diagrams-lib, diagrams-contrib,
-                       svg-builder, cubicbezier, palette, websockets,
+                       JuicyPixels, attoparsec, parallel,
+                       svg-builder, cubicbezier, websockets,
                        hashable, fsnotify, open-browser, random-shuffle, base64-bytestring,
                        vector, colour, cassava, ansi-wl-pprint, here, temporary,
                        optparse-applicative, chiphunk >= 0.1.2.0

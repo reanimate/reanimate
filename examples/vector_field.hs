@@ -4,6 +4,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Main (main) where
 
+main :: IO ()
+main = return ()
+{-
 import           Diagrams.Prelude              hiding (Animation, boundingBox,
                                                 center, circle, duration,
                                                 fontSize, rotate, scale,
@@ -55,3 +58,5 @@ example n = field
 
     arrows = map arrowAtPoint locs
     field   = position $ zip points arrows
+-}
+
