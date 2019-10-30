@@ -9,9 +9,10 @@ module Reanimate.Driver.CLI
   ) where
 
 import           Data.Char
-import           Data.Monoid         ((<>))
+import           Data.Monoid
 import           Options.Applicative
 import           Reanimate.Render    (Format (..), Width, Height, FPS)
+import           Prelude
 
 data Options = Options
   { optsCommand :: Command
