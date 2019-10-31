@@ -4,10 +4,9 @@ module Reanimate.Svg.Unuse
   , embedDocument
   ) where
 
-import           Control.Lens                 ((%~), (&), (.~), (^.),(?~))
-import qualified Data.Map                     as Map
-import           Graphics.SvgTree             hiding (height, line, path, use,
-                                               width)
+import           Control.Lens               ((%~), (&), (.~), (?~), (^.))
+import qualified Data.Map                   as Map
+import           Graphics.SvgTree           hiding (line, path, use)
 import           Reanimate.Constants
 import           Reanimate.Svg.Constructors
 
@@ -54,4 +53,5 @@ embedDocument doc =
   withFillOpacity 1 $
   withStrokeWidth 0 $
   flipYAxis $
-  SvgTree doc
+  SvgTree $ doc & width .~ Nothing
+                & height .~ Nothing

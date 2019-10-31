@@ -5,14 +5,22 @@
 module Main (main) where
 
 import           Codec.Picture
+import           Control.Lens             ((^.))
+import           Control.Monad
+import           Data.Fixed
+import           Data.Maybe
+import           Data.Monoid
 import           Data.String.Here
-import           Data.Text           (Text)
+import           Data.Text                (Text)
+import           Graphics.SvgTree         (Number (..), strokeWidth, toUserUnit)
 import           Reanimate
 import           Reanimate.Animation
+import           Reanimate.Builtin.Images
 import           Reanimate.Effect
 import           Reanimate.Povray
-import           Reanimate.Signal
 import           Reanimate.Raster
+import           Reanimate.Scene
+import           Reanimate.Signal
 import           Reanimate.Svg
 
 {- SCRIPT
@@ -51,7 +59,13 @@ immutable.
 -}
 
 main :: IO ()
-main = reanimate $ sceneAnimation $ do
+main = reanimate $ introSVG
+
+playbackTest :: Animation
+playbackTest = setDuration 10 feat3D
+
+sphereIntro :: Animation
+sphereIntro = sceneAnimation $ do
   play $ drawSphere
     # setDuration 20
     # pauseAtEnd 5
@@ -70,8 +84,120 @@ main = reanimate $ sceneAnimation $ do
     # applyE (delayE 2 $ overBeginning 5 fadeInE)
 
 
+mkFeatSprite :: Double -> Double -> Animation
+             -> Scene s (Var s Double, Var s Double, Sprite s)
+mkFeatSprite xPos yPos ani = do
+  spriteAt <- newVar 0
+  spriteTMod <- newVar 0
+  sprite <- newSprite $ do
+    genAt <- freezeVar spriteAt
+    genT <- freezeVar spriteTMod
+    return $ \real_t d t ->
+      let i = 1-genAt real_t in
+      translate (xPos*i) (yPos*i) $
+      scale (1+0.5*genAt real_t) $
+      frameAtT (((t+genT real_t)/d) `mod'` 1) ani
+  return (spriteAt, spriteTMod, sprite)
+
+featSVG :: Animation
+featSVG = animate $ const $ scale 0.4 $ svgLogo
+
+feat3D :: Animation
+feat3D = rotateSphere
+  # mapA (scale 0.5)
+  # repeatA 10
+
+frameAtT :: Double -> Animation -> SVG
+frameAtT t (Animation d f) = f t
+
+featLaTeX :: Animation
+featLaTeX = animate $ \t ->
+    translate 0 0.5 $
+    mkGroup
+    [ scale 1.5 $
+      center $
+      withFillColor "white" $
+      latex "\\LaTeX"
+    , frameAtT t $
+      repeatA 3 $ drawAnimation $
+      withStrokeColor "white" $
+      withFillColor "white" $
+      withStrokeWidth 0.01 $
+      translate 0 (-1.5) $
+      scale 0.5 $
+      center $
+      latexAlign "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
+    ]
+
+featWireSphere :: Animation
+featWireSphere = rotateWireSphere
+  # mapA (scale 0.5)
+  # reverseA
+  # repeatA 10
+
 introSVG :: Animation
-introSVG = undefined
+introSVG = sceneAnimation $ do
+  fork $ play $ animate $ const $
+    mkBackground "black"
+  -- Title
+  fork $ play $ animate $ const $
+    translate 0 3.5 $
+    center $
+    withFillColor "white" $
+    latex "reanimate"
+  let tweenFeat var varT initWait dur = do
+        wait initWait
+        tweenVar var 1 $ \t i -> fromToS i 1 (curveS 2 t)
+        tweenVar varT 1 $ \t i -> fromToS i 1 (curveS 2 t)
+        wait 1
+        tweenVar varT dur $ \t i -> fromToS i (1+dur) (t/dur)
+        wait dur
+        tweenVar var 1 $ \t i -> fromToS i 0 (curveS 2 t)
+        tweenVar varT dur $ \t i -> fromToS i (1+dur+1) $ curveS 2 (t/dur)
+        wait 1
+  -- SVG
+  (svgAt, svgT, svgS) <- mkFeatSprite (-5.5) (1.5) featSVG
+  fork $ tweenFeat svgAt svgT svgHighlight svgHighlightDur
+  -- LaTeX
+  (latexAt, latexT, latexS) <- mkFeatSprite (5.5) (1.5) featLaTeX
+  fork $ tweenFeat latexAt latexT latexHighlight latexHighlightDur
+  -- Tracing
+  (traceAt, traceT, traceS) <- mkFeatSprite (-5.5) (-2.5) featWireSphere
+  fork $ tweenFeat traceAt traceT traceHighlight traceHighlightDur
+  -- Raytracing
+  (rayAt, rayT, rayS) <- mkFeatSprite (5.5) (-2.5) feat3D
+  fork $ tweenFeat rayAt rayT rayHighlight rayHighlightDur
+  wait $ rayHighlight + rayHighlightDur + 2 + 10
+  where
+    svgHighlight = 1
+    svgHighlightDur = 3
+    latexHighlight = svgHighlight+svgHighlightDur+2
+    latexHighlightDur = 3
+    traceHighlight = latexHighlight+latexHighlightDur+2
+    traceHighlightDur = 3
+    rayHighlight = traceHighlight+traceHighlightDur+2
+    rayHighlightDur = 3
+
+drawAnimation :: SVG -> Animation
+drawAnimation = drawAnimation' 0.5 0.1
+
+drawAnimation' :: Double -> Double -> SVG -> Animation
+drawAnimation' fillDur step svg = setDuration 1 $ sceneAnimation $ do
+  forM_ (zip [0..] $ svgGlyphs svg) $ \(n, (fn, attr, tree)) -> do
+    let sWidth =
+          case toUserUnit defaultDPI <$> getLast (attr ^. strokeWidth) of
+            Just (Num d) -> d
+            _            -> defaultStrokeWidth
+    fork $ play $ mapA fn $ (animate (\t -> withFillOpacity 0 $ partialSvg t tree)
+      # pauseAtBeginning (n*step)
+      # applyE (overEnding fillDur $ fadeLineOutE sWidth))
+    fork $ do
+      wait (n*step+(1-fillDur))
+      play $ animate (\t -> withStrokeWidth 0 $ fn $ withFillOpacity t tree)
+        # setDuration fillDur
+        # pauseAtEnd ((len-n)*step)
+  where
+    len = fromIntegral $ length $ svgGlyphs svg
 
 drawSphere :: Animation
 drawSphere = animate $ \t ->
@@ -95,7 +221,7 @@ rotateWireSphere = animate $ \t ->
     lowerTransformations $
     flipYAxis $
     translate (-screenWidth/2) (-screenHeight/2) $
-    scale 0.00625 $
+    scale (screenWidth/2560) $
     mkPath $ extractPath $
     vectorize_ ["-i"] $
     povraySlow' [] (script (svgAsPngFile texture) (t*360/10))

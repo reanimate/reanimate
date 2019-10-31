@@ -3,9 +3,11 @@ module Reanimate.Povray
   ( povray
   , povrayQuick
   , povraySlow
+  , povrayExtreme
   , povray'
   , povrayQuick'
   , povraySlow'
+  , povrayExtreme'
   ) where
 
 import           Codec.Picture.Png
@@ -47,6 +49,12 @@ povraySlow args = povrayRaw (["+H1440","+W2560", "+A"] ++ args)
 
 povraySlow' :: [String] -> Text -> FilePath
 povraySlow' args = povrayRaw' (["+H1440","+W2560", "+A"] ++ args)
+
+povrayExtreme :: [String] -> Text -> Tree
+povrayExtreme args = povrayRaw (["+H2160","+W3840", "+A"] ++ args)
+
+povrayExtreme' :: [String] -> Text -> FilePath
+povrayExtreme' args = povrayRaw' (["+H2160","+W3840", "+A"] ++ args)
 
 mkPovrayImage :: [String] -> Text -> IO Tree
 mkPovrayImage args script = do
