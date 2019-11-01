@@ -3,6 +3,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
+main :: IO ()
+main = return ()
+
+{-
 import           Diagrams.Prelude              hiding (Animation, boundingBox,
                                                 center, circle, duration,
                                                 fontSize, rotate, scale,
@@ -55,3 +59,5 @@ main = reanimate $ playThenReverseA $ mkAnimation 5 $ \t ->
 
         rightAngleSquare :: SvgDiagram
         rightAngleSquare = square 0.1 # alignBL # D.rotate (signedAngleBetween tangentVector unitX)
+-}
+

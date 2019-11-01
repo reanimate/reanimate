@@ -3,6 +3,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
+main :: IO ()
+main = return ()
+
+{-
 import qualified Data.Colour.Palette.BrewerSet as D
 import           Diagrams.Prelude              hiding (Animation, boundingBox,
                                                 center, circle, duration,
@@ -40,3 +44,5 @@ main = reanimate $ mkAnimation 10 $ \t ->
     sunflower n = frame 4 $ position $ take n $ zip mkCoords florets
       where
         florets = [ floret (sqrt (fromIntegral i)) | i <- [1::Int ..]]
+-}
+

@@ -6,8 +6,8 @@ module Reanimate.Raster
   , svgAsPngFile
   ) where
 
+import           Codec.Picture.Types
 import           Codec.Picture
-import           Codec.Picture.Types         (dynamicMap)
 import           Control.Lens ((.~),(&))
 import qualified Data.ByteString             as B
 import qualified Data.ByteString.Base64.Lazy as Base64
