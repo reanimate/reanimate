@@ -59,19 +59,25 @@ immutable.
 -}
 
 main :: IO ()
-main = reanimate $ introSVG
+main = reanimate $ animate (const $ mkBackground "black") `parA`
+  -- animate $ const $ checker 10 10
+  -- rotateSphere
+  -- rotateWireSphere
+  sphereIntro
+  -- introSVG
+  -- mapA (scale 2) $ setDuration 20 featLaTeX
 
 playbackTest :: Animation
 playbackTest = setDuration 10 feat3D
 
 sphereIntro :: Animation
 sphereIntro = sceneAnimation $ do
-  play $ drawSphere
-    # setDuration 20
-    # pauseAtEnd 5
-  play $ rotateWireSphere
-    # setDuration 2
-    # signalA (powerS 2)
+  -- play $ drawSphere
+  --   # setDuration 15
+  --   # pauseAtEnd 2
+  -- play $ rotateWireSphere
+  --   # setDuration 2
+  --   # signalA (powerS 2)
   fork $ play $ rotateWireSphere
     # setDuration 1
     # repeatA 10
@@ -79,10 +85,54 @@ sphereIntro = sceneAnimation $ do
     # applyE (delayE 2 fadeOutE)
   fork $ play $ rotateSphere
     # setDuration 1
-    # repeatA 10
+    # repeatA 15
     # applyE (overBeginning 2 $ constE $ withGroupOpacity 0)
     # applyE (delayE 2 $ overBeginning 5 fadeInE)
-
+  wait 7
+  playZ 1 $ setDuration 3 $ animate $ \t ->
+    partialSvg t $
+    withFillOpacity 0 $
+    rotate 180 $
+    pathify $
+    circ
+  -- playZ 1 $ pauseAtEnd 2 $ setDuration 1 $ animate $ \t ->
+  --   withFillOpacity t $
+  --   circ
+  let scaleFactor = 0.05
+  fork $ playZ 1 $ pauseAtEnd 2 $ setDuration 1 $ animate $ \t ->
+    let p = curveS 3 t in
+    withFillOpacity p $
+    translate (1*p) (2*p) $
+    scale (1-scaleFactor*p) $
+    circ
+  fork $ playZ 1 $ pauseAtEnd 2 $ setDuration 1 $ animate $ \t ->
+    let p = curveS 3 t in
+    withFillOpacity p $
+    translate (1*p) (-2*p) $
+    scale (1-scaleFactor*p) $
+    circ
+  fork $ playZ 1 $ pauseAtEnd 2 $ setDuration 1 $ animate $ \t ->
+    let p = curveS 3 t in
+    withFillOpacity p $
+    translate (5*p) (2*p) $
+    scale (1-scaleFactor*p) $
+    circ
+  fork $ playZ 1 $ pauseAtEnd 2 $ setDuration 1 $ animate $ \t ->
+    let p = curveS 3 t in
+    withFillOpacity p $
+    translate (5*p) (-2*p) $
+    scale (1-scaleFactor*p) $
+    circ
+  where
+    circ =
+      withFillColor "blue" $
+      withStrokeColor "white" $
+      mkCircle 2
+    circEq = mkGroup
+      [ circ
+      , withFillColor "white" $
+        scale 0.5 $
+        center $ latexAlign "A=\\pi r^2"]
 
 mkFeatSprite :: Double -> Double -> Animation
              -> Scene s (Var s Double, Var s Double, Sprite s)
@@ -119,15 +169,37 @@ featLaTeX = animate $ \t ->
       withFillColor "white" $
       latex "\\LaTeX"
     , frameAtT t $
-      repeatA 3 $ drawAnimation $
+      fadeTransitions 0.2 $ map mkEQ [eq1, eq3, eq4, eq5]
+    ]
+  where
+    eq1 = "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
+    eq2 = "e=mc^2"
+    -- eq3 = "\\int_{a}^{b}f'(x)dx=f(b)-f(a)"
+    eq3 = "\\Delta \\times E=- \\frac{\\partial B}{\\partial t}"
+    eq4 = "\\frac{d}{dt}(\\frac{\\partial L}{\\partial \\dot{q}}) = \\frac{\\partial L}{\\partial q}"
+    eq5 = "\\vec{E} = \\frac{\\sigma}{2\\epsilon_0}\\hat{n}"
+    mkEQ txt =
+      drawAnimation $
       withStrokeColor "white" $
       withFillColor "white" $
       withStrokeWidth 0.01 $
       translate 0 (-1.5) $
       scale 0.5 $
       center $
-      latexAlign "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
-    ]
+      latexAlign txt
+
+fadeTransition :: Double -> Animation -> Animation -> Animation
+fadeTransition overlap a b =
+  (a
+  # pauseAtEnd overlap
+  # applyE (overEnding overlap $ fadeOutE)
+  ) `seqA` (
+  b
+  # applyE (overBeginning overlap $ fadeInE)
+  )
+
+fadeTransitions :: Double -> [Animation] -> Animation
+fadeTransitions overlap = foldl (fadeTransition overlap) (pause 0)
 
 featWireSphere :: Animation
 featWireSphere = rotateWireSphere
@@ -140,13 +212,27 @@ introSVG = sceneAnimation $ do
   fork $ play $ animate $ const $
     mkBackground "black"
   -- Title
-  fork $ play $ animate $ const $
-    translate 0 3.5 $
-    center $
-    withFillColor "white" $
-    latex "reanimate"
-  let tweenFeat var varT initWait dur = do
+  title <- newSprite $ do
+    return $ \_ _d _t ->
+      translate 0 3.5 $
+      center $
+      withFillColor "white" $
+      latex "reanimate"
+  spriteZ title 2
+  -- Shading
+  shadeOpacity <- newVar 0
+  shade <- newSprite $ do
+    opacity <- freezeVar shadeOpacity
+    return $ \real_t d t ->
+      withFillOpacity (0.8 * opacity real_t) $
+      withFillColor "black" $
+      mkRect screenWidth screenHeight
+  spriteZ shade 1
+  -- Modifier
+  let tweenFeat sp var varT initWait dur = do
         wait initWait
+        spriteZ sp 2
+        tweenVar shadeOpacity 1 $ \t i -> fromToS i 1 (curveS 2 t)
         tweenVar var 1 $ \t i -> fromToS i 1 (curveS 2 t)
         tweenVar varT 1 $ \t i -> fromToS i 1 (curveS 2 t)
         wait 1
@@ -154,20 +240,24 @@ introSVG = sceneAnimation $ do
         wait dur
         tweenVar var 1 $ \t i -> fromToS i 0 (curveS 2 t)
         tweenVar varT dur $ \t i -> fromToS i (1+dur+1) $ curveS 2 (t/dur)
+        tweenVar shadeOpacity 1 $ \t i -> fromToS i 0 (curveS 2 t)
         wait 1
+        spriteZ sp 0
   -- SVG
   (svgAt, svgT, svgS) <- mkFeatSprite (-5.5) (1.5) featSVG
-  fork $ tweenFeat svgAt svgT svgHighlight svgHighlightDur
+  fork $ tweenFeat svgS svgAt svgT svgHighlight svgHighlightDur
   -- LaTeX
   (latexAt, latexT, latexS) <- mkFeatSprite (5.5) (1.5) featLaTeX
-  fork $ tweenFeat latexAt latexT latexHighlight latexHighlightDur
+  fork $ tweenFeat latexS latexAt latexT latexHighlight latexHighlightDur
   -- Tracing
   (traceAt, traceT, traceS) <- mkFeatSprite (-5.5) (-2.5) featWireSphere
-  fork $ tweenFeat traceAt traceT traceHighlight traceHighlightDur
+  fork $ tweenFeat traceS traceAt traceT traceHighlight traceHighlightDur
   -- Raytracing
   (rayAt, rayT, rayS) <- mkFeatSprite (5.5) (-2.5) feat3D
-  fork $ tweenFeat rayAt rayT rayHighlight rayHighlightDur
+  fork $ tweenFeat rayS rayAt rayT rayHighlight rayHighlightDur
+  -- wait
   wait $ rayHighlight + rayHighlightDur + 2 + 10
+  return ()
   where
     svgHighlight = 1
     svgHighlightDur = 3
@@ -179,23 +269,27 @@ introSVG = sceneAnimation $ do
     rayHighlightDur = 3
 
 drawAnimation :: SVG -> Animation
-drawAnimation = drawAnimation' 0.5 0.1
+drawAnimation = drawAnimation' 0.5 0.3
 
 drawAnimation' :: Double -> Double -> SVG -> Animation
-drawAnimation' fillDur step svg = setDuration 1 $ sceneAnimation $ do
+drawAnimation' fillDur step svg = sceneAnimation $ do
   forM_ (zip [0..] $ svgGlyphs svg) $ \(n, (fn, attr, tree)) -> do
     let sWidth =
           case toUserUnit defaultDPI <$> getLast (attr ^. strokeWidth) of
             Just (Num d) -> d
             _            -> defaultStrokeWidth
-    fork $ play $ mapA fn $ (animate (\t -> withFillOpacity 0 $ partialSvg t tree)
-      # pauseAtBeginning (n*step)
-      # applyE (overEnding fillDur $ fadeLineOutE sWidth))
+    fork $ do
+      wait (n*step)
+      play $ mapA fn $ (animate (\t -> withFillOpacity 0 $ partialSvg t tree)
+        # applyE (overEnding fillDur $ fadeLineOutE sWidth))
     fork $ do
       wait (n*step+(1-fillDur))
-      play $ animate (\t -> withStrokeWidth 0 $ fn $ withFillOpacity t tree)
-        # setDuration fillDur
-        # pauseAtEnd ((len-n)*step)
+      newSprite $ do
+        return $ \_real_t d t ->
+          withStrokeWidth 0 $ fn $ withFillOpacity (min 1 $ t/fillDur) tree
+      -- play $ animate (\t -> withStrokeWidth 0 $ fn $ withFillOpacity t tree)
+      --   # setDuration fillDur
+      --   # pauseAtEnd ((len-n)*step)
   where
     len = fromIntegral $ length $ svgGlyphs svg
 
@@ -292,17 +386,18 @@ checker w h =
   withStrokeColor "white" $
   withStrokeWidth 0.1 $
   mkGroup
-  [ withFillOpacity 0.8 $ mkBackground "blue"
+  [ withStrokeWidth 0 $
+    withFillOpacity 0.8 $ mkBackground "blue"
   , mkGroup
-    [ translate (stepX*x-offsetX) 0 $
-      mkLine (0, -screenHeight) (0, screenHeight)
+    [ translate (stepX*x-offsetX + stepX/2) 0 $
+      mkLine (0, -screenHeight/2*0.9) (0, screenHeight/2*0.9)
     | x <- map fromIntegral [0..w-1]
     ]
   ,
     mkGroup
     [ translate 0 (stepY*y-offsetY) $
-      mkLine (-screenWidth, 0) (screenWidth, 0)
-    | y <- map fromIntegral [0..h-1]
+      mkLine (-screenWidth/2, 0) (screenWidth/2, 0)
+    | y <- map fromIntegral [0..h]
     ]
   ]
   where
