@@ -32,6 +32,7 @@ data-files:           viewer/build/*.js
                       data/CIExyz.csv
                       data/CIE_XYZ.csv
                       data/cone_sensitivity_lms.csv
+                      data/*.svg
 
 Source-Repository head
     Type:      git
@@ -68,6 +69,7 @@ library
                       Reanimate.Chiphunk
                       Reanimate.PolyShape
                       Reanimate.Builtin.Documentation
+                      Reanimate.Builtin.Images
   other-modules:      Reanimate.Cache
                       Reanimate.Driver.Check
                       Reanimate.Driver.CLI
@@ -76,7 +78,7 @@ library
                       Paths_reanimate
   build-depends:       base >=4.10 && <5,
                        time, text, filepath, process, directory,
-                       containers, reanimate-svg >= 0.9.3.1, xml, bytestring, lens, linear, mtl, matrix,
+                       containers, reanimate-svg >= 0.9.4.0, xml, bytestring, lens, linear, mtl, matrix,
                        JuicyPixels, attoparsec, parallel,
                        cubicbezier, websockets,
                        hashable, fsnotify, open-browser, random-shuffle, base64-bytestring,

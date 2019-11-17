@@ -2,7 +2,6 @@ module Reanimate.Animation where
 
 import           Control.Arrow              ()
 import           Data.Fixed                 (mod')
-import qualified Data.Map                   as M
 import           Graphics.SvgTree           (Alignment (..), Document (..),
                                              Number (..),
                                              PreserveAspectRatio (..),
@@ -148,7 +147,6 @@ renderSvg w h t = ppDocument doc
       , _width = w
       , _height = h
       , _elements = [withStrokeWidth defaultStrokeWidth $ scaleXY 1 (-1) t]
-      , _definitions = M.empty
       , _description = ""
       , _documentLocation = ""
       , _documentAspectRatio = PreserveAspectRatio False AlignNone Nothing
@@ -264,3 +262,15 @@ freezeAtPercentage frac (Animation d genFrame) =
 --   <<docs/gifs/doc_signalA.gif>>
 signalA :: Signal -> Animation -> Animation
 signalA fn (Animation d gen) = Animation d $ gen . fn
+
+takeA :: Double -> Animation -> Animation
+takeA len (Animation d gen) = Animation len' $ \t ->
+    gen (t * len'/d)
+  where
+    len' = min len d
+
+dropA :: Double -> Animation -> Animation
+dropA len (Animation d gen) = Animation len' $ \t ->
+    gen (t * len'/d + len/d)
+  where
+    len' = max (d-len) 0

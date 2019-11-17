@@ -86,6 +86,9 @@ mkColor name =
 withStrokeColor :: String -> Tree -> Tree
 withStrokeColor color = strokeColor .~ pure (mkColor color)
 
+withStrokeColorPixel :: PixelRGBA8 -> Tree -> Tree
+withStrokeColorPixel color = strokeColor .~ pure (ColorRef color)
+
 withStrokeLineJoin :: LineJoin -> Tree -> Tree
 withStrokeLineJoin ljoin = strokeLineJoin .~ pure ljoin
 
@@ -180,3 +183,10 @@ gridLayout rows = mkGroup
   where
     rowSep = screenHeight / fromIntegral (nRows+1)
     nRows = length rows
+
+mkText :: T.Text -> Tree
+mkText str =
+  TextTree Nothing $ defaultSvg
+    & textRoot .~ span_
+  where
+    span_ = defaultSvg & spanContent .~ [SpanText str]

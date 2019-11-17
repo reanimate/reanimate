@@ -1,18 +1,17 @@
 module Reanimate.Svg.Unuse
   ( replaceUses
   , unbox
+  , embedDocument
   ) where
 
-import           Control.Lens                 ((%~), (&), (.~), (^.),(?~))
-import qualified Data.Map                     as Map
-import           Graphics.SvgTree             hiding (height, line, path, use,
-                                               width)
+import           Control.Lens               ((%~), (&), (.~), (?~), (^.))
+import qualified Data.Map                   as Map
+import           Graphics.SvgTree           hiding (line, path, use)
 import           Reanimate.Constants
 import           Reanimate.Svg.Constructors
 
 replaceUses :: Document -> Document
 replaceUses doc = doc & elements %~ map (mapTree replace)
-                      & definitions .~ Map.empty
   where
     replaceDefinition PathTree{} = None
     replaceDefinition t          = t
@@ -32,8 +31,7 @@ replaceUses doc = doc & elements %~ map (mapTree replace)
         (Num a, Num b) -> Translate a b
         _              -> TransformUnknown
     docTree = mkGroup (doc^.elements)
-    idMap = foldTree updMap Map.empty docTree `Map.union`
-            (doc^.definitions)
+    idMap = foldTree updMap Map.empty docTree
     updMap m tree =
       case tree^.attrId of
         Nothing  -> m
@@ -48,3 +46,12 @@ unbox doc@Document{_viewBox = Just (minx, minw, _width, _height)} =
 unbox doc =
   GroupTree $ defaultSvg
     & groupChildren .~ doc^.elements
+
+embedDocument :: Document -> Tree
+embedDocument doc =
+  translate (-screenWidth/2) (screenHeight/2) $
+  withFillOpacity 1 $
+  withStrokeWidth 0 $
+  flipYAxis $
+  SvgTree $ doc & width .~ Nothing
+                & height .~ Nothing
