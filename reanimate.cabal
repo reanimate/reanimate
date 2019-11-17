@@ -52,7 +52,7 @@ library
                       Reanimate.Svg.Constructors
                       Reanimate.Svg.BoundingBox
                       Reanimate.Svg.LineCommand
-                      Reanimate.Diagrams
+                      -- Reanimate.Diagrams
                       Reanimate.Transform
                       Reanimate.Driver
                       Reanimate.Misc
@@ -76,15 +76,14 @@ library
                       Reanimate.Driver.Server
                       Reanimate.Driver.Compile
                       Paths_reanimate
-  build-depends:       base >=4.10 && <4.13,
+  build-depends:       base >=4.10 && <5,
                        time, text, filepath, process, directory,
                        containers, reanimate-svg >= 0.9.4.0, xml, bytestring, lens, linear, mtl, matrix,
-                       JuicyPixels, attoparsec, parallel, diagrams, diagrams-svg,
-                       diagrams-core, diagrams-lib, diagrams-contrib,
-                       svg-builder, cubicbezier, palette, websockets,
+                       JuicyPixels, attoparsec, parallel,
+                       cubicbezier, websockets,
                        hashable, fsnotify, open-browser, random-shuffle, base64-bytestring,
                        vector, colour, cassava, ansi-wl-pprint, here, temporary,
-                       optparse-applicative, chiphunk >= 0.1.2.0
+                       optparse-applicative, chiphunk >= 0.1.2.1
   ghc-options: -Wall
 
 test-suite spec

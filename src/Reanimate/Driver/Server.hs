@@ -4,9 +4,7 @@ module Reanimate.Driver.Server
   , findOwnSource
   ) where
 
-import           Control.Concurrent      (forkIO, killThread, modifyMVar_,
-                                          newEmptyMVar, putMVar, takeMVar,
-                                          threadDelay)
+import           Control.Concurrent      (forkIO, killThread, threadDelay)
 import           Control.Concurrent.MVar
 import           Control.Exception       (SomeException, catch, finally)
 import           Control.Monad
