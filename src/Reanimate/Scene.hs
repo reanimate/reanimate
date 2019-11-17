@@ -290,6 +290,14 @@ spriteE (Sprite born ref) effect = do
       let (svg', z) = render d t svg
       in (delayE (now-born) effect d t svg', z))
 
+spriteZ :: Sprite s -> ZIndex -> Scene s ()
+spriteZ (Sprite born ref) zindex = do
+  now <- queryNow
+  liftST $ modifySTRef ref $ \(ttl, render) ->
+    (ttl, \d t svg ->
+      let (svg', z) = render d t svg
+      in (svg', if t < now-born then z else zindex))
+
 {-
 data Var s a = Var (STRef s (Time -> a))
 data Sprite s = Sprite (STRef s (Duration, Duration -> Time -> (SVG, ZIndex)))

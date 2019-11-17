@@ -86,6 +86,9 @@ mkColor name =
 withStrokeColor :: String -> Tree -> Tree
 withStrokeColor color = strokeColor .~ pure (mkColor color)
 
+withStrokeColorPixel :: PixelRGBA8 -> Tree -> Tree
+withStrokeColorPixel color = strokeColor .~ pure (ColorRef color)
+
 withStrokeLineJoin :: LineJoin -> Tree -> Tree
 withStrokeLineJoin ljoin = strokeLineJoin .~ pure ljoin
 
