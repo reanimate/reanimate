@@ -12,54 +12,12 @@ packages:
   original:
     hackage: reanimate-svg-0.9.4.0
 - completed:
-    hackage: palette-0.3.0.2@sha256:50e210b7d21a0c394a6d672cc3c6d3bffcfa1be07419d72b99e68cfb65d6ca3c,1485
-    pantry-tree:
-      size: 6342
-      sha256: 9285e95a5701636961e83ed2036cca52a6b66e5ea809500ed6b845bc920f2791
-  original:
-    hackage: palette-0.3.0.2
-- completed:
-    hackage: chiphunk-0.1.2.0@sha256:bd129c91033140cb5ad9cc3c446baccdc377a17214026c79c9705c7d886e54cb,4619
+    hackage: chiphunk-0.1.2.1@sha256:1e17e0e3d2fc91317e2cfcb8fd9f7add4a5038d76a4ae6b444641c0a2adec881,4619
     pantry-tree:
       size: 6333
-      sha256: 155b48a7a4ecd4a36b853445b27acec55ebe1247f206cf719613fee43a1a4d7b
+      sha256: 505d40929bd792b8003c0d03ec93d99ecba5e7927fbc6193824c0dab92c54dec
   original:
-    hackage: chiphunk-0.1.2.0
-- completed:
-    hackage: diagrams-1.4@sha256:3e36369e84115b900fd9dcb570672a188339a470eb19ca62170775cd835cf8ca,5483
-    pantry-tree:
-      size: 208
-      sha256: 8f2ea432c67f4711446942e032be53ed7dc49c1b1dd7d26ff71fbd4d05a02c4d
-  original:
-    hackage: diagrams-1.4@sha256:3e36369e84115b900fd9dcb570672a188339a470eb19ca62170775cd835cf8ca
-- completed:
-    hackage: diagrams-contrib-1.4.3@sha256:bcfa6c85f8c33b8c48c3a61b7216afdebd51cd793c50da3a2dd358827d25fc76,4693
-    pantry-tree:
-      size: 10858
-      sha256: cadfa25f496761b205a0583bef05ebe84003a64c2d66f86f64ba1f05a79ab916
-  original:
-    hackage: diagrams-contrib-1.4.3@sha256:bcfa6c85f8c33b8c48c3a61b7216afdebd51cd793c50da3a2dd358827d25fc76
-- completed:
-    hackage: diagrams-core-1.4.1.1@sha256:6ef6b17785d77997c481eb085570e21b6a00cc91d086fbf49490504130ebc7d1,2999
-    pantry-tree:
-      size: 2018
-      sha256: 1a28c53443667f0a0cf43224e935257973ee234d721e8d2a49a41ab8d8a97a35
-  original:
-    hackage: diagrams-core-1.4.1.1@sha256:6ef6b17785d77997c481eb085570e21b6a00cc91d086fbf49490504130ebc7d1
-- completed:
-    hackage: diagrams-lib-1.4.2.3@sha256:47af9bd9249f16e164a0ba014dcc0aaf47a787b5d3ff78a1bf38ed80f5a5c13e,8114
-    pantry-tree:
-      size: 11529
-      sha256: 5520075cab7bcccdbc35f55318a44792df58399a9a085a577d1229ece040770a
-  original:
-    hackage: diagrams-lib-1.4.2.3@sha256:47af9bd9249f16e164a0ba014dcc0aaf47a787b5d3ff78a1bf38ed80f5a5c13e
-- completed:
-    hackage: diagrams-svg-1.4.2@sha256:1b0b473c9825f6abda5b1551376dc5c4adcc995cc1705324231c32a57a415697,3197
-    pantry-tree:
-      size: 475
-      sha256: 2ca5139bf68f3a5bce17f48d964e6067c168c3b1d164b8d61537b8d6bf17df06
-  original:
-    hackage: diagrams-svg-1.4.2@sha256:1b0b473c9825f6abda5b1551376dc5c4adcc995cc1705324231c32a57a415697
+    hackage: chiphunk-0.1.2.1
 - completed:
     hackage: cubicbezier-0.6.0.6@sha256:2191ff47144d9a13a2784651a33d340cd31be1926a6c188925143103eb3c8db3,2243
     pantry-tree:
@@ -67,27 +25,6 @@ packages:
       sha256: 1a6e3a16c3d33c8baac53b4345b29695ff90cf2b559cfed349ab1bc454949632
   original:
     hackage: cubicbezier-0.6.0.6@sha256:2191ff47144d9a13a2784651a33d340cd31be1926a6c188925143103eb3c8db3
-- completed:
-    hackage: diagrams-solve-0.1.1@sha256:ad04ac1c1b1071f906a9879de00997bd543cc0a46c83c3a38199a87702674afa,1699
-    pantry-tree:
-      size: 469
-      sha256: 1f224951aa3f7ca9e0ec693d9aff30b58368a44aaa83c7764b5f9fe9acf3822e
-  original:
-    hackage: diagrams-solve-0.1.1@sha256:ad04ac1c1b1071f906a9879de00997bd543cc0a46c83c3a38199a87702674afa
-- completed:
-    hackage: dual-tree-0.2.2@sha256:b04a53694ad1e8c34f9e2f2b96cd6c3ae59d782caba14b6d523d6205436e1165,2908
-    pantry-tree:
-      size: 387
-      sha256: cad942894995e1c47d4c931562083d93764b5e46b676751038810f92c6b6f360
-  original:
-    hackage: dual-tree-0.2.2@sha256:b04a53694ad1e8c34f9e2f2b96cd6c3ae59d782caba14b6d523d6205436e1165
-- completed:
-    hackage: mfsolve-0.3.2.0@sha256:19ce2822b8d3cf906e983a237341698349dcef49d873b1b03d141276b4b0e8dc,1155
-    pantry-tree:
-      size: 262
-      sha256: 194ef83e8a4008c156a76b87fcda74dd3ea5ca3274d3a01b63ca62bd5d8228a2
-  original:
-    hackage: mfsolve-0.3.2.0@sha256:19ce2822b8d3cf906e983a237341698349dcef49d873b1b03d141276b4b0e8dc
 - completed:
     hackage: fast-math-1.0.2@sha256:91181eb836e54413cc5a841e797c42b2264954e893ea530b6fc4da0dccf6a8b7,1387
     pantry-tree:
