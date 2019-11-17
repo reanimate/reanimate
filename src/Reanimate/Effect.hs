@@ -38,6 +38,12 @@ fadeInE d t = withGroupOpacity (t/d)
 fadeOutE :: Effect
 fadeOutE = reverseE fadeInE
 
+fadeLineInE :: Double -> Effect
+fadeLineInE w d t = withStrokeWidth (w*(t/d))
+
+fadeLineOutE :: Double -> Effect
+fadeLineOutE = reverseE . fadeLineInE
+
 drawInE :: Effect
 drawInE d t = withFillOpacity 0 . partialSvg (t/d) . pathify
 
@@ -48,3 +54,6 @@ fillInE :: Effect
 fillInE d t = withFillOpacity f
   where
     f = t/d
+
+scaleE :: Double -> Effect
+scaleE target d t = scale (1 + (target-1) * t/d)

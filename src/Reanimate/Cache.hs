@@ -1,27 +1,43 @@
 module Reanimate.Cache
-  ( cacheMem
+  ( cacheFile -- :: FilePath -> (FilePath -> IO ()) -> IO FilePath
+  , cacheMem
   , cacheDisk
   , cacheDiskSvg
   , cacheDiskKey
   , cacheDiskLines
   ) where
 
+import           Control.Monad       (unless)
 import           Data.Hashable
 import           Data.IORef
-import           Data.Map           (Map)
-import qualified Data.Map           as Map
-import           Data.Text          (Text)
-import qualified Data.Text          as T
-import qualified Data.Text.IO       as T
-import           Graphics.SvgTree   (Tree (..), unparse)
-import           Reanimate.Animation    (renderTree)
+import           Data.Map            (Map)
+import qualified Data.Map            as Map
+import           Data.Text           (Text)
+import qualified Data.Text           as T
+import qualified Data.Text.IO        as T
+import           Graphics.SvgTree    (Tree (..), unparse)
+import           Reanimate.Animation (renderTree)
 import           System.Directory
 import           System.FilePath
 import           System.IO
+import           Control.Exception
 import           System.IO.Unsafe
-import           Text.XML.Light     (Content (..), parseXML)
+import           Text.XML.Light      (Content (..), parseXML)
+import System.IO.Temp
 
 -- Memory cache and disk cache
+
+cacheFile :: FilePath -> (FilePath -> IO ()) -> IO FilePath
+cacheFile template gen = do
+    root <- getXdgDirectory XdgCache "reanimate"
+    createDirectoryIfMissing True root
+    let path = root </> template
+    hit <- doesFileExist path
+    unless hit $ withSystemTempFile template $ \tmp h -> do
+      hClose h
+      gen tmp
+      renameFile tmp path
+    evaluate path
 
 cacheDisk :: (T.Text -> Maybe a) -> (a -> T.Text) -> (Text -> IO a) -> (Text -> IO a)
 cacheDisk parse render gen key = do

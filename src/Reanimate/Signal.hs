@@ -4,6 +4,7 @@ module Reanimate.Signal
   , fromToS
   , reverseS
   , curveS
+  , powerS
   , bellS
   , oscillateS
   , fromListS
@@ -64,6 +65,9 @@ curveS steepness s =
   if s < 0.5
     then 0.5 * (2*s)**steepness
     else 1-0.5 * (2 - 2*s)**steepness
+
+powerS :: Double -> Signal
+powerS steepness s = s**steepness
 
 -- | Oscillate signal.
 --
