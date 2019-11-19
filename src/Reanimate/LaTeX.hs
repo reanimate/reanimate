@@ -24,8 +24,11 @@ import           System.IO.Unsafe  (unsafePerformIO)
 --
 --   <<docs/gifs/doc_latex.gif>>
 latex :: T.Text -> Tree
-latex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) latexToSVG)
-  ("% plain latex\n" <> tex)
+latex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG exec args)) script
+  where
+    exec = "latex"
+    args = []
+    script = mkTexScript exec args [] tex
 
 -- | Invoke xelatex and import the result as an SVG object. SVG objects are
 --   cached to improve performance. Xelatex has support for non-western scripts.
@@ -36,8 +39,12 @@ latex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) latexToSVG)
 --
 --   <<docs/gifs/doc_xelatex.gif>>
 xelatex :: Text -> Tree
-xelatex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) xelatexToSVG)
-  ("% xelatex\n" <> tex)
+xelatex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG exec args)) script
+  where
+    exec = "xelatex"
+    args = ["-no-pdf"]
+    headers = ["\\usepackage[UTF8]{ctex}"]
+    script = mkTexScript exec args headers tex
 
 -- | Invoke latex and import the result as an SVG object. SVG objects are
 --   cached to improve performance. This wraps the TeX code in an 'align*'
@@ -54,40 +61,16 @@ latexAlign tex = latex $ T.unlines ["\\begin{align*}", tex, "\\end{align*}"]
 postprocess :: Tree -> Tree
 postprocess = lowerTransformations . scaleXY 1 (-1) . scale 0.1 . pathify
 
-latexToSVG :: Text -> IO Tree
-latexToSVG tex = handle (\(_::SomeException) -> return (failedSvg tex)) $ do
-  latexBin <- requireExecutable "latex"
+-- executable, arguments, header, tex
+latexToSVG :: String -> [String] -> Text -> IO Tree
+latexToSVG latexExec latexArgs tex = handle (\(_::SomeException) -> return (failedSvg tex)) $ do
+  latexBin <- requireExecutable latexExec
   dvisvgm <- requireExecutable "dvisvgm"
   withTempDir $ \tmp_dir -> withTempFile "tex" $ \tex_file -> withTempFile "svg" $ \svg_file -> do
     let dvi_file = tmp_dir </> replaceExtension (takeFileName tex_file) "dvi"
-    writeFile tex_file tex_document
-    appendFile tex_file tex_prologue
-    T.appendFile tex_file tex
-    appendFile tex_file tex_epilogue
-    runCmd latexBin ["-interaction=batchmode", "-halt-on-error", "-output-directory="++tmp_dir, tex_file]
+    T.writeFile tex_file tex
+    runCmd latexBin (latexArgs ++ ["-interaction=batchmode", "-halt-on-error", "-output-directory="++tmp_dir, tex_file])
     runCmd dvisvgm [ dvi_file, "--precision=5"
-                   , "--exact"    -- better bboxes.
-                   -- , "--bbox=1,1" -- increase bbox size.
-                   , "--no-fonts" -- use glyphs instead of fonts.
-                   ,"--verbosity=0", "-o",svg_file]
-    svg_data <- B.readFile svg_file
-    case parseSvgFile svg_file svg_data of
-      Nothing  -> error "Malformed svg"
-      Just svg -> return $ postprocess $ unbox $ replaceUses svg
-
-xelatexToSVG :: Text -> IO Tree
-xelatexToSVG tex = handle (\(_::SomeException) -> return (failedSvg tex)) $ do
-  xetexBin <- requireExecutable "xelatex"
-  dvisvgm <- requireExecutable "dvisvgm"
-  withTempDir $ \tmp_dir -> withTempFile "tex" $ \tex_file -> withTempFile "svg" $ \svg_file -> do
-    let dvi_file = tmp_dir </> replaceExtension (takeFileName tex_file) "xdv"
-    writeFile tex_file tex_document
-    appendFile tex_file tex_xelatex
-    appendFile tex_file tex_prologue
-    T.appendFile tex_file tex
-    appendFile tex_file tex_epilogue
-    runCmd xetexBin ["-no-pdf", "-interaction=batchmode", "-halt-on-error", "-output-directory="++tmp_dir, tex_file]
-    runCmd dvisvgm [ dvi_file
                    , "--exact"    -- better bboxes.
                    -- , "--bbox=1,1" -- increase bbox size.
                    , "--no-fonts" -- use glyphs instead of fonts.
@@ -102,35 +85,33 @@ failedSvg _tex = defaultSvg
   -- text_ [ font_size_ "20"
   --       , fill_ "white"] (toHtml $ "bad latex: "++tex)
 
-tex_document :: String
-tex_document = "\\documentclass[preview]{standalone}\n"
+mkTexScript :: String -> [String] -> [Text] -> Text -> Text
+mkTexScript latexExec latexArgs texHeaders tex = T.unlines $
+  [ "% " <> T.pack (unwords (latexExec:latexArgs))
+  , "\\documentclass[preview]{standalone}"
+  , "\\usepackage{amsmath}"
+  ] ++ texHeaders ++
+  [ "\\usepackage[english]{babel}"
+  , "\\linespread{1}"
+  , "\\begin{document}"
+  , tex
+  , "\\end{document}" ]
 
-tex_xelatex :: String
-tex_xelatex =
-  "\\usepackage[UTF8]{ctex}\n"
+{- Packages used by manim.
 
-tex_prologue :: String
-tex_prologue =
-  "\\usepackage[english]{babel}\n\
-  \\\usepackage{amsmath}\n\
-  \\\usepackage{amssymb}\n\
-  \\\usepackage{dsfont}\n\
-  \\\usepackage{setspace}\n\
-  \\\usepackage{relsize}\n\
-  \\\usepackage{textcomp}\n\
-  \\\usepackage{mathrsfs}\n\
-  \\\usepackage{calligra}\n\
-  \\\usepackage{wasysym}\n\
-  \\\usepackage{ragged2e}\n\
-  \\\usepackage{physics}\n\
-  \\\usepackage{xcolor}\n\
-  \\\usepackage{textcomp}\n\
-  \\\usepackage{xfrac}\n\
-  \\\usepackage{microtype}\n\
-  \\\linespread{1}\n\
-  \\\begin{document}\n"
-
-tex_epilogue :: String
-tex_epilogue =
-  "\n\
-  \\\end{document}"
+\\\usepackage{amsmath}\n\
+\\\usepackage{amssymb}\n\
+\\\usepackage{dsfont}\n\
+\\\usepackage{setspace}\n\
+\\\usepackage{relsize}\n\
+\\\usepackage{textcomp}\n\
+\\\usepackage{mathrsfs}\n\
+\\\usepackage{calligra}\n\
+\\\usepackage{wasysym}\n\
+\\\usepackage{ragged2e}\n\
+\\\usepackage{physics}\n\
+\\\usepackage{xcolor}\n\
+\\\usepackage{textcomp}\n\
+\\\usepackage{xfrac}\n\
+\\\usepackage{microtype}\n\
+-}
