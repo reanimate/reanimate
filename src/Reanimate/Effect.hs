@@ -57,3 +57,6 @@ fillInE d t = withFillOpacity f
 
 scaleE :: Double -> Effect
 scaleE target d t = scale (1 + (target-1) * t/d)
+
+translateE :: Double -> Double -> Effect
+translateE x y d t = translate (x * t/d) (y * t/d)

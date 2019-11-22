@@ -83,12 +83,26 @@ sphereIntro = sceneAnimation $ do
     # repeatA 10
     # takeA (2+5)
     # applyE (delayE 2 fadeOutE)
-  fork $ play $ rotateSphere
-    # setDuration 1
-    # repeatA 15
-    # applyE (overBeginning 2 $ constE $ withGroupOpacity 0)
-    # applyE (delayE 2 $ overBeginning 5 fadeInE)
-  wait 7
+  sphereX <- newVar 0
+  sphereS <- newSpriteA $
+    rotateSphere # repeatA (5+3+1+2)
+  -- sphereS <- newSprite $ do
+  --   -- xValue <- freezeVar sphereX
+  --   let a = rotateSphere # setDuration 1 # repeatA (5+3+1+2)
+  --   return $ \real_t d t ->
+  --     -- translate (xValue real_t) 0 $
+  --     frameAt t a
+  applyVar sphereX sphereS (\xValue -> translate xValue 0)
+
+  spriteE sphereS (overBeginning 1 $ constE $ withGroupOpacity 0)
+  spriteE sphereS (delayE 1 $ overBeginning 2 fadeInE)
+  -- fork $ play $ rotateSphere
+  --   # setDuration 1
+  --   # repeatA (5+3+1+2)
+  --   # applyE (overBeginning 1 $ constE $ withGroupOpacity 0)
+  --   # applyE (delayE 1 $ overBeginning 2 fadeInE)
+  --   # applyE (delayE 8 $ translateE (-3) 0)
+  wait 5
   playZ 1 $ setDuration 3 $ animate $ \t ->
     partialSvg t $
     withFillOpacity 0 $
@@ -99,6 +113,7 @@ sphereIntro = sceneAnimation $ do
   --   withFillOpacity t $
   --   circ
   let scaleFactor = 0.05
+  tweenVar sphereX 1 $ \t x -> fromToS x (-3) (curveS 3 t)
   fork $ playZ 1 $ pauseAtEnd 2 $ setDuration 1 $ animate $ \t ->
     let p = curveS 3 t in
     withFillOpacity p $
