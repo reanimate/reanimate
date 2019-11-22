@@ -259,21 +259,44 @@ findVar cond (v:vs) = do
   val <- readVar v
   if cond val then return v else findVar cond vs
 
-data Sprite s = Sprite Time (STRef s (Duration, Duration -> Time -> SVG -> (SVG, ZIndex)))
+applyVar :: Var s a -> Sprite s -> (a -> SVG -> SVG) -> Scene s ()
+applyVar var sprite fn = do
+  spriteModify sprite $ do
+    varFn <- freezeVar var
+    return $ \absT _relD _relT (svg, zindex) ->
+      (fn (varFn absT) svg, zindex)
+
+data Sprite s = Sprite Time (STRef s (Duration, ST s (Duration -> Time -> SVG -> (SVG, ZIndex))))
 
 newSprite :: ST s (Time -> Duration -> Time -> SVG) -> Scene s (Sprite s)
 newSprite render = do
   now <- queryNow
-  ref <- liftST $ newSTRef (-1, \_d _t svg -> (svg, 0))
+  ref <- liftST $ newSTRef (-1, return $ \_d _t svg -> (svg, 0))
   fromParams $ do
     fn <- render
-    (spriteDuration, spriteEffect) <- readSTRef ref
-    return $ \d t ->
-      let realD = (if spriteDuration < 0 then d else spriteDuration)-now
-          realT = t-now in
-      if realT < 0 || realD < realT
+    (spriteDuration, spriteEffectGen) <- readSTRef ref
+    spriteEffect <- spriteEffectGen
+    return $ \d absT ->
+      let relD = (if spriteDuration < 0 then d else spriteDuration)-now
+          relT = absT-now in
+      if relT < 0 || relD < relT
         then (None, 0)
-        else spriteEffect realD realT (fn t realD realT)
+        else spriteEffect relD relT (fn absT relD relT)
+  return $ Sprite now ref
+
+newSpriteA :: Animation -> Scene s (Sprite s)
+newSpriteA (Animation _ gen) = do
+  now <- queryNow
+  ref <- liftST $ newSTRef (-1, return $ \_d _t svg -> (svg, 0))
+  fromParams $ do
+    (spriteDuration, spriteEffectGen) <- readSTRef ref
+    spriteEffect <- spriteEffectGen
+    return $ \d absT ->
+      let relD = (if spriteDuration < 0 then d else spriteDuration)-now
+          relT = absT-now in
+      if relT < 0 || relT > relD
+        then (None, 0)
+        else spriteEffect relD relT (gen (relT/relD))
   return $ Sprite now ref
 
 destroySprite :: Sprite s -> Scene s ()
@@ -282,21 +305,35 @@ destroySprite (Sprite _ ref) = do
   liftST $ modifySTRef ref $ \(ttl, render) ->
     (if ttl < 0 then now else min ttl now, render)
 
+spriteModify :: Sprite s -> ST s (Time -> Duration -> Time -> (SVG, ZIndex) -> (SVG, ZIndex)) -> Scene s ()
+spriteModify (Sprite born ref) modFn =
+  liftST $ modifySTRef ref $ \(ttl, renderGen) ->
+    (ttl, do
+      render <- renderGen
+      modRender <- modFn
+      return $ \relD relT ->
+        let absT = relT + born
+        in modRender absT relD relT . render relD relT)
+
 spriteE :: Sprite s -> Effect -> Scene s ()
 spriteE (Sprite born ref) effect = do
   now <- queryNow
-  liftST $ modifySTRef ref $ \(ttl, render) ->
-    (ttl, \d t svg ->
-      let (svg', z) = render d t svg
-      in (delayE (now-born) effect d t svg', z))
+  liftST $ modifySTRef ref $ \(ttl, renderGen) ->
+    (ttl, do
+      render <- renderGen
+      return $ \d t svg ->
+        let (svg', z) = render d t svg
+        in (delayE (now-born) effect d t svg', z))
 
 spriteZ :: Sprite s -> ZIndex -> Scene s ()
 spriteZ (Sprite born ref) zindex = do
   now <- queryNow
-  liftST $ modifySTRef ref $ \(ttl, render) ->
-    (ttl, \d t svg ->
-      let (svg', z) = render d t svg
-      in (svg', if t < now-born then z else zindex))
+  liftST $ modifySTRef ref $ \(ttl, renderGen) ->
+    (ttl, do
+      render <- renderGen
+      return $ \d t svg ->
+        let (svg', z) = render d t svg
+        in (svg', if t < now-born then z else zindex))
 
 {-
 data Var s a = Var (STRef s (Time -> a))
