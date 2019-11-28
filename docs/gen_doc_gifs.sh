@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 ROOT=`stack path --project-root`
 
-TINY='^(doc_turbo|doc_viridis|doc_magma|doc_inferno|doc_plasma|doc_sinebow|doc_cividis|doc_jet|doc_hsv|doc_hsvMatlab|doc_greyscale|doc_parula)$'
+TINY='^(doc_turbo|doc_viridis|doc_magma|doc_inferno|doc_plasma|doc_sinebow|doc_cividis|doc_jet|
+        doc_hsv|doc_hsvMatlab|doc_greyscale|doc_parula|doc_rgbComponents|doc_hsvComponents)$'
 
 for src in $ROOT/examples/doc_*.hs; do
   BASE=`basename $src .hs`
