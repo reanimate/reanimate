@@ -14,6 +14,9 @@ data ColorComponents = ColorComponents
   { colorUnpack :: Colour Double -> (Double, Double, Double)
   , colorPack :: Double -> Double -> Double -> Colour Double }
 
+-- | > interpolate rgbComponents yellow blue
+--
+--   <<docs/gifs/doc_rgbComponents.gif>>
 rgbComponents :: ColorComponents
 rgbComponents = ColorComponents rgbUnpack sRGB
   where
@@ -22,21 +25,33 @@ rgbComponents = ColorComponents rgbUnpack sRGB
       case toSRGB c of
         RGB r g b -> (r,g,b)
 
+-- | > interpolate hsvComponents yellow blue
+--
+--   <<docs/gifs/doc_hsvComponents.gif>>
 hsvComponents :: ColorComponents
 hsvComponents = ColorComponents unpack pack
   where
     unpack = hsvView.toSRGB
     pack a b c = uncurryRGB sRGB $ hsv a b c
 
+-- | > interpolate labComponents yellow blue
+--
+--   <<docs/gifs/doc_labComponents.gif>>
 labComponents :: ColorComponents
 labComponents = ColorComponents unpack pack
   where
     unpack = cieLABView d65
     pack = cieLAB d65
 
+-- | > interpolate xyzComponents yellow blue
+--
+--   <<docs/gifs/doc_xyzComponents.gif>>
 xyzComponents :: ColorComponents
 xyzComponents = ColorComponents cieXYZView cieXYZ
 
+-- | > interpolate lchComponents yellow blue
+--
+--   <<docs/gifs/doc_lchComponents.gif>>
 lchComponents :: ColorComponents
 lchComponents = ColorComponents unpack pack
   where
