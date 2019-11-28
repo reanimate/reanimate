@@ -26,6 +26,7 @@ checkEnvironment = do
     runCheck "Has XeLaTeX" hasXeLaTeX
     runCheck "Has dvisvgm" hasDvisvgm
     runCheck "Has povray" hasPovray
+    runCheck "Has blender" hasBlender
     runCheck ("Has LaTeX package '"++ "babel" ++ "'") $ hasTeXPackage "latex"
       "[english]{babel}"
     forM_ latexPackages $ \pkg ->
@@ -85,6 +86,16 @@ hasFFmpeg = do
   where
     minVersion = Version [4,1,3] []
 
+hasBlender :: IO (Either String String)
+hasBlender = do
+  mbVersion <- blenderVersion
+  return $ case mbVersion of
+    Nothing                   -> Left "no"
+    Just vs | vs < minVersion -> Left $ "too old: " ++ showVersion vs ++ " < " ++ showVersion minVersion
+            | otherwise       -> Right (showVersion vs)
+  where
+    minVersion = Version [2,80] []
+
 ffmpegVersion :: IO (Maybe Version)
 ffmpegVersion = do
   mbPath <- findExecutable "ffmpeg"
@@ -104,6 +115,25 @@ ffmpegVersion = do
     parseVS vs = listToMaybe $ reverse
       [ v | (v, _) <- readP_to_S parseVersion vs ]
 
+
+blenderVersion :: IO (Maybe Version)
+blenderVersion = do
+  mbPath <- findExecutable "blender"
+  case mbPath of
+    Nothing -> return Nothing
+    Just path -> do
+      ret <- runCmd_ path ["--version"]
+      case ret of
+        Left{} -> return $ Just noVersion
+        Right out ->
+          case take 2 (words out) of
+            ["Blender", vs] ->
+              return $ Just $ fromMaybe noVersion $ parseVS vs
+            _ -> return $ Just noVersion
+  where
+    noVersion = Version [] []
+    parseVS vs = listToMaybe $ reverse
+      [ v | (v, _) <- readP_to_S parseVersion vs ]
 
 hasTeXPackage :: FilePath -> String -> IO (Either String String)
 hasTeXPackage exec pkg = handle (\(_::SomeException) -> return $ Left "n/a") $
