@@ -63,6 +63,7 @@ library
                       Reanimate.Memo
                       Reanimate.Scene
                       Reanimate.Povray
+                      Reanimate.Blender
                       Reanimate.Effect
                       Reanimate.Builtin.TernaryPlot
                       Reanimate.Constants
