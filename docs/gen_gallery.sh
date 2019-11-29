@@ -2,7 +2,7 @@
 
 ROOT=`stack path --project-root`
 EXAMPLES='boundingbox colormaps goo latex_basic latex_color latex_draw
-          latex_wheel raster sphere sunflower tangent_and_normal vector_field'
+          latex_wheel raster sphere blender_default_cube'
 
 WIDTH=640
 HEIGHT=$((WIDTH*9/16))
@@ -10,7 +10,7 @@ FPS=30
 
 SRC_DIR=$ROOT/examples
 DST_DIR=$ROOT/docs/rendered
-OPTS='--fps $FPS --width $WIDTH --height $HEIGHT'
+OPTS="--fps $FPS --width $WIDTH --height $HEIGHT"
 
 cat << EOF > $ROOT/docs/gallery.md
 # Gallery
@@ -37,8 +37,8 @@ for e in $EXAMPLES; do
 
 EOF
 
-  SRC_FILE=./$SRC_DIR/$e.hs
-  DST_FILE=./$DST_DIR/$e.mp4
+  SRC_FILE=$SRC_DIR/$e.hs
+  DST_FILE=$DST_DIR/$e.mp4
   if [[ "$SRC_FILE" -nt "$DST_FILE" ]]; then
     stack $SRC_FILE render --compile -o $DST_FILE $OPTS
   fi
