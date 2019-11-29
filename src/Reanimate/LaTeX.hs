@@ -24,7 +24,7 @@ import           System.IO.Unsafe  (unsafePerformIO)
 --
 --   <<docs/gifs/doc_latex.gif>>
 latex :: T.Text -> Tree
-latex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG exec args)) script
+latex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG "dvi" exec args)) script
   where
     exec = "latex"
     args = []
@@ -39,7 +39,7 @@ latex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG exec args))
 --
 --   <<docs/gifs/doc_xelatex.gif>>
 xelatex :: Text -> Tree
-xelatex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG exec args)) script
+xelatex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG "xdv" exec args)) script
   where
     exec = "xelatex"
     args = ["-no-pdf"]
@@ -62,12 +62,12 @@ postprocess :: Tree -> Tree
 postprocess = lowerTransformations . scaleXY 1 (-1) . scale 0.1 . pathify
 
 -- executable, arguments, header, tex
-latexToSVG :: String -> [String] -> Text -> IO Tree
-latexToSVG latexExec latexArgs tex = handle (\(_::SomeException) -> return (failedSvg tex)) $ do
+latexToSVG :: String -> String -> [String] -> Text -> IO Tree
+latexToSVG dviExt latexExec latexArgs tex = handle (\(_::SomeException) -> return (failedSvg tex)) $ do
   latexBin <- requireExecutable latexExec
   dvisvgm <- requireExecutable "dvisvgm"
   withTempDir $ \tmp_dir -> withTempFile "tex" $ \tex_file -> withTempFile "svg" $ \svg_file -> do
-    let dvi_file = tmp_dir </> replaceExtension (takeFileName tex_file) "dvi"
+    let dvi_file = tmp_dir </> replaceExtension (takeFileName tex_file) dviExt
     T.writeFile tex_file tex
     runCmd latexBin (latexArgs ++ ["-interaction=batchmode", "-halt-on-error", "-output-directory="++tmp_dir, tex_file])
     runCmd dvisvgm [ dvi_file, "--precision=5"
