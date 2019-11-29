@@ -164,6 +164,13 @@ mkLinePath ((startX, startY):rest) =
     cmds = [ MoveTo OriginAbsolute [V2 startX startY]
            , LineTo OriginAbsolute [ V2 x y | (x, y) <- rest ] ]
 
+-- | Rectangle with a uniform color and the same size as the screen.
+--
+--   Example:
+--
+--   > animate $ const $ mkBackground "yellow"
+--
+--   <<docs/gifs/doc_mkBackground.gif>>
 mkBackground :: String -> Tree
 mkBackground color = withFillColor color $ mkRect screenWidth screenHeight
 
@@ -184,9 +191,20 @@ gridLayout rows = mkGroup
     rowSep = screenHeight / fromIntegral (nRows+1)
     nRows = length rows
 
+-- | Insert a native text object anchored at the middle.
+--
+--   Example:
+--
+--   > mkAnimation 2 $ \t -> scale 2 $ withStrokeWidth 0.05 $ mkText (T.take (round $ t*15) "text")
+--
+--   <<docs/gifs/doc_mkText.gif>>
 mkText :: T.Text -> Tree
 mkText str =
+  flipYAxis $
   TextTree Nothing $ defaultSvg
     & textRoot .~ span_
+    & textAnchor .~ pure (TextAnchorMiddle)
+    & fontSize .~ pure (Num 2)
   where
     span_ = defaultSvg & spanContent .~ [SpanText str]
+
