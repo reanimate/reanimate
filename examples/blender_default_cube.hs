@@ -15,9 +15,7 @@ main = reanimate $ mkAnimation 5 $ \t ->
   [ mkBackground "black"
   , blender (script s)
   , withFillColor "white" $
-    translate (-4.5) 2 $
-    scale 0.1 $
-    flipYAxis $
+    translate 0 2 $
     mkText "default cube"
   ]
   where
