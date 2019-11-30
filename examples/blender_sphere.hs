@@ -5,12 +5,10 @@
 module Main (main) where
 
 import           Data.String.Here
+import qualified Data.Text         as T
 import           Reanimate
 import           Reanimate.Blender
 import           Reanimate.Raster
-import           System.FilePath
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
 
 main :: IO ()
 main = reanimate $ mkAnimation 5 $ \t ->
@@ -20,6 +18,7 @@ main = reanimate $ mkAnimation 5 $ \t ->
     , blender (script s)
     ]
 
+texture :: FilePath
 texture = svgAsPngFile (mkGroup
   [ checker 10 10
   , withFillColor "red" $
