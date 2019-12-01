@@ -351,3 +351,23 @@ spriteE :: Sprite s -> Effect -> Scene s ()
 
 newBlock :: Var s Position -> Number -> Scene s (Sprite s)
 -}
+
+
+-- FIXME: Move this somewhere more appropriate
+transition :: Effect
+           -> Effect
+           -> Double
+           -> Animation
+           -> Animation
+           -> Animation
+transition tIn tOut tT a b = sceneAnimation $ do
+  fork $ play $ a
+    # applyE (overEnding tT $ tOut)
+  wait (duration a - tT)
+  play $ b
+    # applyE (overBeginning tT $ tIn)
+
+transitions :: Effect -> Effect -> Double -> [Animation] -> Animation
+transitions _ _ _ [] = pause 0
+transitions tIn tOut tT (x:xs) =
+  foldl (transition tIn tOut tT) x xs
