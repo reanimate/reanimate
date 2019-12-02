@@ -4,12 +4,18 @@ Reanimate is a library for programmatically generating animations with a twist
 towards mathematics / vector drawings. A lot of inspiration was drawn from
 3b1b's manim library.
 
-
+Reanimate aims at being a batteries-included way of gluing together different technologies: SVG as a universal image format, LaTeX for typesetting, ffmpeg for video encoding, inkscape/imagemagick for rasterization, potrace for vectorization, blender/povray for 3D graphics, and Haskell for scripting.
 
 ## Scalable Vector Graphics
 
-SVG images are the primitive building blocks in Reanimate. They are the universal
-image format used to glue together animations.
+Movies consists of a sequence of frames and, in reanimate, these frames are SVG images. SVGs can easily reference raster images, includes a set of drawing primitives, and offers image advanced manipulation through filter effects.
+Since SVGs are plain-text documents, tools can be written to analyse and modify images. For example, reanimate includes code for applying 2D physics to shapes in SVG images.
+
+SVG features, as demonstrated in the below animation:
+
+ * Drawing primitives: Circles, rectangles, lines, external images, paths, text.
+ * Drawing attributes: Rotation, position, color, line-width.
+ * Filter effects: Blur and blob.
 
 TODO: Add advanced SVG features: blurs, blobs, etc.
 
