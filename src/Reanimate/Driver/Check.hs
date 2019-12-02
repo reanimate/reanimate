@@ -39,20 +39,21 @@ checkEnvironment = do
     latexPackages =
       ["preview"
       ,"amsmath"
-      ,"amssymb"
-      ,"dsfont"
-      ,"setspace"
-      ,"relsize"
-      ,"textcomp"
-      ,"mathrsfs"
-      ,"calligra"
-      ,"wasysym"
-      ,"ragged2e"
-      ,"physics"
-      ,"xcolor"
-      ,"textcomp"
-      ,"xfrac"
-      ,"microtype"]
+      --,"amssymb"
+      --,"dsfont"
+      --,"setspace"
+      --,"relsize"
+      --,"textcomp"
+      --,"mathrsfs"
+      --,"calligra"
+      --,"wasysym"
+      --,"ragged2e"
+      --,"physics"
+      --,"xcolor"
+      --,"textcomp"
+      --,"xfrac"
+      --,"microtype"
+      ]
     xelatexPackages =
       ["ctex"]
     runCheck msg fn = do
