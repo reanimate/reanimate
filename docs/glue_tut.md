@@ -15,9 +15,7 @@ SVG features, as demonstrated in the below animation:
 
  * Drawing primitives: Circles, rectangles, lines, external images, paths, text.
  * Drawing attributes: Rotation, position, color, line-width.
- * Filter effects: Blur and blob.
-
-TODO: Add advanced SVG features: blurs, blobs, etc.
+ * Filter effects: Blur and blob (merging shapes).
 
 <details>
   <summary>Toggle source code.</summary>
