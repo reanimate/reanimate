@@ -12,8 +12,8 @@ import           Graphics.SvgTree hiding (Text)
 import Control.Lens
 import Codec.Picture
 
-bgColor :: String
-bgColor = "white"
+bgColor :: PixelRGBA8
+bgColor = PixelRGBA8 252 252 252 0xFF
 
 framePause :: Double
 framePause = 3
@@ -25,7 +25,7 @@ main :: IO ()
 main = reanimate $ bg `parA` transitions fadeInE fadeOutE transitionTime
       [comp1, comp2, comp3, comp4, comp5, comp6, comp7, setDuration transitionTime comp1]
   where
-    bg = animate $ const $ mkBackgroundPixel $ PixelRGBA8 252 252 252 0xFF -- bgColor
+    bg = animate $ const $ mkBackgroundPixel bgColor
     comp1 = svgComponent "Circles" (mkCircle 2)
     comp2 = svgComponent "Rects" (mkRect 4 3)
     comp3 = svgComponent "Lines" (mkLine (-2,0) (2,0))
@@ -61,7 +61,6 @@ mkBlur = mkGroup
       & filterRef .~ pure (Ref "blur")
     ]
   where
-    sharpness = 10 :: Integer
     dev = 0.2
     radius = 2
     circ = mkCircle radius
