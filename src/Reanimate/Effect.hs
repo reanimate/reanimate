@@ -60,3 +60,6 @@ scaleE target d t = scale (1 + (target-1) * t/d)
 
 translateE :: Double -> Double -> Effect
 translateE x y d t = translate (x * t/d) (y * t/d)
+
+aroundCenterE :: Effect -> Effect
+aroundCenterE e d t = aroundCenter (e d t)

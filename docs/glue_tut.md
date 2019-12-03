@@ -105,6 +105,19 @@ TODO: Show that LaTeX is a provider of SVG graphics. It has the type
       'latex :: Text -> SVG'. Caching is automatic and it plays well with
       other SVG functions (partialSvg, center, etc).
 
+
+<details>
+  <summary>Toggle source code.</summary>
+  <pre><code class="haskell">
+  {!examples/tut_glue_latex.hs!}
+  </code></pre>
+</details>
+<br/>
+<video width="640" height="360" autoplay loop>
+  <source src="../rendered/tut_glue_latex.mp4">
+  <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_latex.mp4">
+</video>
+
 ## Pillar III: potrace
 
 ## Pillar IV: Povray
