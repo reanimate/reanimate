@@ -28,8 +28,16 @@ rotateAround a (V2 x y) = withTransformations [Rotate a (Just (x,y))]
 
 rotateAroundCenter :: Double -> Tree -> Tree
 rotateAroundCenter a t =
-    rotateAround a (V2 (x+w/h) (y+h/2)) t
+    rotateAround a (V2 (x+w/2) (y+h/2)) t
   where
+    (x,y,w,h) = boundingBox t
+
+aroundCenter :: (Tree -> Tree) -> Tree -> Tree
+aroundCenter fn t =
+    translate (-offsetX) (-offsetY) $ fn $ translate offsetX offsetY t
+  where
+    offsetX = -x-w/2
+    offsetY = -y-h/2
     (x,y,w,h) = boundingBox t
 
 scale :: Double -> Tree -> Tree
@@ -207,4 +215,3 @@ mkText str =
     & fontSize .~ pure (Num 2)
   where
     span_ = defaultSvg & spanContent .~ [SpanText str]
-

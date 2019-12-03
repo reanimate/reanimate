@@ -66,7 +66,7 @@ sceneAnimation action =
                   | (startT, a, z) <- tl
                   ]
     genFns <- sequence gens
-    return $ anis `parA` mkAnimation dur (\t ->
+    return $ anis `parDropA` mkAnimation dur (\t ->
       mkGroup $
       map fst $
       sortBy (comparing snd)
