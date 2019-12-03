@@ -9,9 +9,7 @@ import           Control.Lens          ((^.))
 import           Control.Monad
 import           Data.Monoid
 import           Graphics.SvgTree
-import           Linear.V2
 import           Reanimate
-import           Reanimate.Animation
 import           Reanimate.Effect
 import           Reanimate.Scene
 import           System.Random
@@ -82,11 +80,10 @@ drawAnimation' mbSeed fillDur step svg = sceneAnimation $ do
     fork $ do
       wait (n*step+(1-fillDur))
       newSprite $ do
-        return $ \_real_t d t ->
+        return $ \_real_t _d t ->
           withStrokeWidth 0 $ fn $ withFillOpacity (min 1 $ t/fillDur) tree
   where
     shuf lst =
       case mbSeed of
         Nothing -> lst
         Just seed -> shuffle' lst (length lst) (mkStdGen seed)
-    len = fromIntegral $ length $ svgGlyphs svg
