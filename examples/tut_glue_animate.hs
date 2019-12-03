@@ -10,8 +10,8 @@ import           Reanimate.Animation
 import           Reanimate.Effect
 import           Reanimate.Scene
 
-bgColor :: String
-bgColor = "white"
+bgColor :: PixelRGBA8
+bgColor = PixelRGBA8 252 252 252 0xFF
 
 segmentDuration :: Double
 segmentDuration = 3
@@ -25,7 +25,7 @@ main = reanimate $ bg `parA`
     [animateCircleR, animateCircleP, animateRectR, animateColor
     ,signalA (constantS 0) $ setDuration transitionTime animateCircleR]
   where
-    bg = animate $ const $ mkBackground bgColor
+    bg = animate $ const $ mkBackgroundPixel bgColor
 
 animateCircleR :: Animation
 animateCircleR = mkSegment "radius" $ \t -> mkCircle (t*2)
