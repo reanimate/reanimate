@@ -7,7 +7,6 @@ module Main (main) where
 import           Chiphunk.Low
 import           Codec.Picture       (PixelRGBA8 (..))
 import           Control.Monad       (forM_)
-import           Graphics.SvgTree    (Tree)
 import           Linear.V2           (V2 (..))
 import           Reanimate
 import           Reanimate.Chiphunk
