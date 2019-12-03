@@ -3,7 +3,7 @@
 ROOT=`stack path --project-root`
 EXAMPLES='boundingbox colormaps goo latex_basic latex_color latex_draw
           latex_wheel raster sphere blender_default_cube
-          tut_glue_svg tut_glue_animate'
+          tut_glue_svg tut_glue_animate tut_glue_keyframe tut_glue_fourier'
 
 WIDTH=640
 HEIGHT=$((WIDTH*9/16))

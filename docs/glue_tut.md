@@ -25,11 +25,13 @@ SVG features, as demonstrated in the below animation:
 </details>
 <br/>
 <video width="640" height="360" autoplay loop>
-  <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_svg.mp4">
   <source src="../rendered/tut_glue_svg.mp4">
+  <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_svg.mp4">
 </video>
 
-## Animation = Time 🡢 SVG
+## Animation = Time ➞ SVG
+
+Animations can be defined as SVG images over time (plus a bit of bookkeeping such as their duration). With this approach, the time variable can determine SVG properties such as radius, path lengths, rotation, and color. Reanimate ships with a bunch of combinators for composing and arranging animations.
 
 <details>
   <summary>Toggle source code.</summary>
@@ -39,27 +41,59 @@ SVG features, as demonstrated in the below animation:
 </details>
 <br/>
 <video width="640" height="360" autoplay loop>
-  <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_animate.mp4">
   <source src="../rendered/tut_glue_animate.mp4">
+  <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_animate.mp4">
 </video>
+
+Reanimate is not an opinionated framework, though, and also offers a more traditional keyframing tools. The example below uses an imperative API to schedule the various sub animations, transitions, and effects.
+
+<details>
+  <summary>Toggle source code.</summary>
+  <pre><code class="haskell">
+  {!examples/tut_glue_keyframe.hs!}
+  </code></pre>
+</details>
+<br/>
+<video width="640" height="360" autoplay loop>
+  <source src="../rendered/tut_glue_keyframe.mp4">
+  <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_keyframe.mp4">
+</video>
+
 
 ## Pillar I: Haskell
 
-TODO: Write about fourier drawings. About how advanced math is doable with Haskell.
+A large part of Reanimate's expressive power comes from using Haskell as the scripting language. Haskell tends to favor expressiveness and correctness over raw performance and that is exactly what is needed from a glue language. All the heavy-lifting of rendering frames and encoding videos is handled by external tools and Reanimate merely needs to concern itself with finding intuitive ways of describing animations.
 
-## Pillar II: Libraries
+The following examples shows how something as seemingly complicated as fourier series can be expressed and animated in Haskell. Most noteworthy is the layered structure of the code:
+
+ 1. The first layer handles the mathematics of fourier series without worrying about graphics or how properties should be animated,
+ 2. the second layer describes how to draw a single frame given the length of the fourier series and the degree of rotation,
+ 3. the third layer deals with time: order of animations, durations, number of rotations, transition timing functions, pauses, etc.
+
+<details>
+  <summary>Toggle source code.</summary>
+  <pre><code class="haskell">
+  {!examples/tut_glue_fourier.hs!}
+  </code></pre>
+</details>
+<br/>
+<video width="640" height="360" autoplay loop>
+  <source src="../rendered/tut_glue_fourier.mp4">
+  <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_fourier.mp4">
+</video>
+
 
 TODO: Write about how lots of libraries are available for Haskell. Use chiphunk
       as an example. Show SVG primitives with 2D physics.
 
-## Pillar III: LaTeX
+## Pillar II: LaTeX
 
 TODO: Show that LaTeX is a provider of SVG graphics. It has the type
       'latex :: Text -> SVG'. Caching is automatic and it plays well with
       other SVG functions (partialSvg, center, etc).
 
-## Pillar IV: potrace
+## Pillar III: potrace
 
-## Pillar V: Povray
+## Pillar IV: Povray
 
-## Pillar VI: Blender
+## Pillar V: Blender
