@@ -86,6 +86,19 @@ The following examples shows how something as seemingly complicated as fourier s
 TODO: Write about how lots of libraries are available for Haskell. Use chiphunk
       as an example. Show SVG primitives with 2D physics.
 
+<details>
+  <summary>Toggle source code.</summary>
+  <pre><code class="haskell">
+  {!examples/tut_glue_physics.hs!}
+  </code></pre>
+</details>
+<br/>
+<video width="640" height="360" autoplay loop>
+  <source src="../rendered/tut_glue_physics.mp4">
+  <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_physics.mp4">
+</video>
+
+
 ## Pillar II: LaTeX
 
 TODO: Show that LaTeX is a provider of SVG graphics. It has the type

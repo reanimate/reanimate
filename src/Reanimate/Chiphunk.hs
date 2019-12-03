@@ -87,6 +87,7 @@ polygonsToBody space polygons = do
     shapeDensity polyShape $= 1
     spaceAddShape space polyShape
     shapeFriction polyShape $= 0.7
+    shapeElasticity polyShape $= 0.5
   return plBody
 
 spaceFreeRecursive :: Space -> IO ()
