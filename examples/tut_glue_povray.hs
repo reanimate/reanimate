@@ -5,7 +5,7 @@
 module Main (main) where
 
 import           Reanimate
-import           Reanimate.Povray
+--import           Reanimate.Povray
 import           Reanimate.Raster
 import           Data.String.Here
 import Data.Text (Text)
