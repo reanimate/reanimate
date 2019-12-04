@@ -82,9 +82,7 @@ The following examples shows how something as seemingly complicated as fourier s
   <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_fourier.mp4">
 </video>
 
-
-TODO: Write about how lots of libraries are available for Haskell. Use chiphunk
-      as an example. Show SVG primitives with 2D physics.
+Scripting in Haskell also gives access to the extensive body of code libraries. There are Haskell libraries for syntax highlighting, font manipulation, and much, much more. In the spirit of being a batteries-included framework, Reanimate ships with a built-in 2D physics library, called Chipmunk2D. The example below demonstrates how SVG shapes can be generated with LaTeX and then nearly effortlessly used in a physics simulation.
 
 <details>
   <summary>Toggle source code.</summary>
@@ -101,10 +99,12 @@ TODO: Write about how lots of libraries are available for Haskell. Use chiphunk
 
 ## Pillar II: LaTeX
 
-TODO: Show that LaTeX is a provider of SVG graphics. It has the type
-      'latex :: Text -> SVG'. Caching is automatic and it plays well with
-      other SVG functions (partialSvg, center, etc).
 
+LaTeX is a widely used system for typesetting equations and documents. It is most commonly used by writing TeX documents which are then converted to pdfs. However, since the output of LaTeX is natively vector graphics, it is trivial to get SVG documents instead of pdfs. Armed with this knowledge, Reanimate offers a simple yet powerful function: `latex :: Text -> SVG`
+
+The `latex` function takes a snippet of TeX code, passes it through the LaTeX system, and converts the result to an SVG image. Furthermore, since the result is entirely determined by the TeX code, caching is used to hide the overhead of invoking LaTeX. 
+
+The resulting SVGs can be manipulated just like any other. The below examples illustrates how different effects can be applied to different glyphs in the equation.
 
 <details>
   <summary>Toggle source code.</summary>
@@ -120,6 +120,13 @@ TODO: Show that LaTeX is a provider of SVG graphics. It has the type
 
 ## Pillar III: potrace
 
-## Pillar IV: Povray
+## Pillar IV: povray
+
+TODO: Draw text and animate shapes, zoom out so it looks like a piece of paper (still animated), draw circle, fade in rotating sphere.
 
 ## Pillar V: Blender
+
+TODO: Crumble SVG animation.
+
+TODO: Morph SVG animation into sphere.
+
