@@ -5,24 +5,29 @@
 module Main (main) where
 
 import           Reanimate
---import           Reanimate.Povray
+import           Reanimate.Povray
 import           Reanimate.Raster
 import           Data.String.Here
 import Data.Text (Text)
 
 main :: IO ()
-main = reanimate $ mkAnimation 5 $ \t ->
-    let s = fromToS 1 4 t in
+main = reanimate $ mkAnimation 10 $ \t ->
+    let s = 4 in -- fromToS 1 4 t in
+    let rot = fromToS 0 (360) t in
     mkGroup
     [ mkBackground "black"
-    , povray [] (script (svgAsPngFile texture) s) ]
+    , povrayExtreme [] (script (svgAsPngFile (texture t)) s rot)
+    --, texture
+    ]
   where
 
-texture :: SVG
-texture = checker 10 10
+texture :: Double -> SVG
+texture t = mkGroup
+  [ checker 10 10
+  , withFillColor "red" $ mkCircle (t*10) ]
 
-script :: FilePath -> Double -> Text
-script png s = [iTrim|
+script :: FilePath -> Double -> Double -> Text
+script png s rot = [iTrim|
 //EXAMPLE OF SPHERE
 
 //Files with predefined colors and textures
@@ -40,11 +45,14 @@ camera {
   //orthographic
   perspective
   // angle 50
-  location <0,-${max 0 (((s**1.5)-1)/16)},-3>
+  //location <0,-${max 0 (((s**1.5)-1)/16)},-9>
+  location <0,-${max 0 (((s**1.5)-1))},-22>
+  //translate <0,-${max 0 (((s**1.5)-1))},-20>
+  //translate <0,0,-20>
   look_at  <0,0,0>
   //right x*image_width/image_height
-  up <0,9,0>
-  right <16,0,0>
+  //up <0,9,0>
+  //right <16,0,0>
 }
 
 
@@ -60,15 +68,17 @@ background { color rgbt <0, 0, 0, 1> } // transparent
 polygon {
   4,
   //<-9, -4.5>, <-9, 4.5>, <9, 4.5>, <9, -4.5>
-  <0, 0>, <0, 1>, <1.777, 1>, <1.777, 0>
+  <0, 0>, <0, 1>, <1, 1>, <1, 0>
   texture {
     //pigment{ color rgb <0,0,1> }
     pigment{
       image_map{ png ${png} }
     }
   }
+  scale <16/9,1,1>
   translate <-1.777/2,-0.5>
   scale 9
+  rotate <0,0,${rot}>
 }
 
              |]
@@ -98,4 +108,3 @@ checker w h =
     stepY = screenHeight/fromIntegral h
     offsetX = screenWidth/2
     offsetY = screenHeight/2
-
