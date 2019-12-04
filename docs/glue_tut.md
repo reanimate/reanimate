@@ -118,15 +118,16 @@ The resulting SVGs can be manipulated just like any other. The below examples il
   <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_latex.mp4">
 </video>
 
-## Pillar III: potrace
-
-## Pillar IV: povray
+## Pillar III: povray
 
 TODO: Draw text and animate shapes, zoom out so it looks like a piece of paper (still animated), draw circle, fade in rotating sphere.
 
-## Pillar V: Blender
+## Pillar IV: Blender
 
 TODO: Crumble SVG animation.
 
 TODO: Morph SVG animation into sphere.
+
+## Pillar V: potrace
+
 
