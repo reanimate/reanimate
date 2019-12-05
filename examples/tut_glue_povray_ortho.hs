@@ -34,7 +34,7 @@ main = reanimate $ parA bg $ sceneAnimation $ do
       getZ <- freezeVar zRot
       return $ \real_t dur t ->
         povraySlow [] $
-        script (svgAsPngFile (texture (t/dur))) (getX real_t) (getY real_t) (getZ real_t) 
+        script (svgAsPngFile (texture (t/dur))) (getX real_t) (getY real_t) (getZ real_t)
     wait 2
     let tDuration = 20
     tweenVar yRot tDuration (\t v -> fromToS v (v+180) $ curveS 2 (t/tDuration))
@@ -52,7 +52,7 @@ main = reanimate $ parA bg $ sceneAnimation $ do
 
 texture :: Double -> SVG
 texture t = mkGroup
-  [ checker 10 10
+  [ checker 20 20
   , frameAt (t*duration latexExample) latexExample
   ]
 
@@ -97,12 +97,11 @@ sphere {
 
 checker :: Int -> Int -> SVG
 checker w h =
-  withFillColor "white" $
-  withStrokeColor "white" $
-  withStrokeWidth 0.1 $
+  withStrokeColor "lightblue" $
+  withStrokeWidth (defaultStrokeWidth/2) $
   mkGroup
   [ withStrokeWidth 0 $
-    withFillOpacity 0.7 $ mkBackground "blue"
+    withFillOpacity 0.8 $ mkBackground "white"
   , mkGroup
     [ translate (stepX*x-offsetX + stepX/2) 0 $
       mkLine (0, -screenHeight/2*0.9) (0, screenHeight/2*0.9)
@@ -200,4 +199,3 @@ drawAnimation' mbSeed fillDur step svg = sceneAnimation $ do
       case mbSeed of
         Nothing -> lst
         Just seed -> shuffle' lst (length lst) (mkStdGen seed)
-
