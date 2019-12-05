@@ -33,7 +33,7 @@ main = reanimate $ parA bg $ sceneAnimation $ do
       getZ <- freezeVar zRot
       return $ \real_t dur t ->
         povraySlow [] $
-        script (svgAsPngFile (texture (t/dur))) (transZ real_t) (getX real_t) (getZ real_t) 
+        script (svgAsPngFile (texture (t/dur))) (transZ real_t) (getX real_t) (getZ real_t)
     wait 2
     tweenVar zPos 9 (\t v -> fromToS v 8 (t/9))
     tweenVar xRot 9 (\t v -> fromToS v 360 $ curveS 2 (t/9))
@@ -45,9 +45,7 @@ main = reanimate $ parA bg $ sceneAnimation $ do
     bg = animate $ const $ mkBackgroundPixel $ PixelRGBA8 252 252 252 0xFF
 
 texture :: Double -> SVG
-texture t = mkGroup
-  [ checker 10 10
-  , frameAt (t*duration latexExample) latexExample ]
+texture t = frameAt (t*duration latexExample) latexExample
 
 script :: FilePath -> Double -> Double -> Double -> Text
 script png transZ rotX rotZ = [iTrim|
@@ -83,32 +81,6 @@ polygon {
 }
 |]
 
-checker :: Int -> Int -> SVG
-checker w h =
-  withFillColor "white" $
-  withStrokeColor "white" $
-  withStrokeWidth 0.1 $
-  mkGroup
-  [ withStrokeWidth 0 $
-    withFillOpacity 1 $ mkBackground "blue"
-  , mkGroup
-    [ translate (stepX*x-offsetX + stepX/2) 0 $
-      mkLine (0, -screenHeight/2*0.9) (0, screenHeight/2*0.9)
-    | x <- map fromIntegral [0..w-1]
-    ]
-  ,
-    mkGroup
-    [ translate 0 (stepY*y-offsetY) $
-      mkLine (-screenWidth/2, 0) (screenWidth/2, 0)
-    | y <- map fromIntegral [0..h]
-    ]
-  ]
-  where
-    stepX = screenWidth/fromIntegral w
-    stepY = screenHeight/fromIntegral h
-    offsetX = screenWidth/2
-    offsetY = screenHeight/2
-    
 
 -----------------------------------
 -- COPIED FROM tut_glue_latex.hs --
