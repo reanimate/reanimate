@@ -1,26 +1,25 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE QuasiQuotes       #-}
 module Main (main) where
 
+import           Codec.Picture
+import           Codec.Picture.Types
+import           Control.Lens          ((^.))
+import           Control.Monad
+import           Data.Monoid
+import           Data.String.Here
+import           Data.Text             (Text)
+import           Graphics.SvgTree      hiding (Text)
 import           Reanimate
-import           Reanimate.Scene
 import           Reanimate.Animation
+import           Reanimate.Effect
 import           Reanimate.Povray
 import           Reanimate.Raster
-import           Data.String.Here
-import Data.Text (Text)
-import Codec.Picture
-import           Reanimate.Effect
 import           Reanimate.Scene
 import           System.Random
 import           System.Random.Shuffle
-import           Graphics.SvgTree hiding (Text)
-import           Control.Lens          ((^.))
-import           Control.Monad
-import           Codec.Picture.Types
-import           Data.Monoid
 
 
 main :: IO ()
@@ -28,7 +27,7 @@ main = reanimate $ parA bg $ sceneAnimation $ do
     xRot <- newVar (-30)
     yRot <- newVar 180
     zRot <- newVar 0
-    s <- newSprite $ do
+    _ <- newSprite $ do
       getX <- freezeVar xRot
       getY <- freezeVar yRot
       getZ <- freezeVar zRot
@@ -153,7 +152,6 @@ latexExample = sceneAnimation $ do
       withStrokeColor "black" svg
     svg = lowerTransformations $ simplify $ scale 2 $ center $
       latexAlign "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
-    bg = animate $ const $ mkBackgroundPixel (PixelRGBA8 252 252 252 0xFF)
     shuffleList lst = shuffle' lst (length lst) (mkStdGen 0xdeadbeef)
 
 highlightE :: Effect
@@ -197,5 +195,5 @@ drawAnimation' mbSeed fillDur step svg = sceneAnimation $ do
   where
     shuf lst =
       case mbSeed of
-        Nothing -> lst
+        Nothing   -> lst
         Just seed -> shuffle' lst (length lst) (mkStdGen seed)

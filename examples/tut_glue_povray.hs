@@ -1,25 +1,25 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE QuasiQuotes       #-}
 module Main (main) where
 
+import           Codec.Picture
+import           Codec.Picture.Types
+import           Control.Lens          ((^.))
+import           Control.Monad
+import           Data.Monoid
+import           Data.String.Here
+import           Data.Text             (Text)
+import           Graphics.SvgTree      hiding (Text)
 import           Reanimate
-import           Reanimate.Scene
 import           Reanimate.Animation
+import           Reanimate.Effect
 import           Reanimate.Povray
 import           Reanimate.Raster
-import           Reanimate.Effect
-import           Data.String.Here
-import           Graphics.SvgTree hiding (Text)
-import Data.Text (Text)
-import Codec.Picture
+import           Reanimate.Scene
 import           System.Random
 import           System.Random.Shuffle
-import           Control.Lens          ((^.))
-import           Data.Monoid
-import           Control.Monad
-import           Codec.Picture.Types
 
 
 main :: IO ()
@@ -27,7 +27,7 @@ main = reanimate $ parA bg $ sceneAnimation $ do
     zPos <- newVar 0
     xRot <- newVar 0
     zRot <- newVar 0
-    s <- newSprite $ do
+    _ <- newSprite $ do
       transZ <- freezeVar zPos
       getX <- freezeVar xRot
       getZ <- freezeVar zRot
@@ -156,5 +156,5 @@ drawAnimation' mbSeed fillDur step svg = sceneAnimation $ do
   where
     shuf lst =
       case mbSeed of
-        Nothing -> lst
+        Nothing   -> lst
         Just seed -> shuffle' lst (length lst) (mkStdGen seed)
