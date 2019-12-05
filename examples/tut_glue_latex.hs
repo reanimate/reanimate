@@ -16,7 +16,12 @@ import           System.Random
 import           System.Random.Shuffle
 
 main :: IO ()
-main = reanimate $ parA bg $ sceneAnimation $ do
+main = reanimate $ parA bg latexExample
+  where
+    bg = animate $ const $ mkBackgroundPixel (PixelRGBA8 252 252 252 0xFF)
+
+latexExample :: Animation
+latexExample = sceneAnimation $ do
     -- Draw equation
     play $ drawAnimation strokedSvg
     sprites <- forM glyphs $ \(fn, _, elt) ->
@@ -41,7 +46,6 @@ main = reanimate $ parA bg $ sceneAnimation $ do
       withStrokeColor "black" svg
     svg = lowerTransformations $ simplify $ scale 2 $ center $
       latexAlign "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
-    bg = animate $ const $ mkBackgroundPixel (PixelRGBA8 252 252 252 0xFF)
     shuffleList lst = shuffle' lst (length lst) (mkStdGen 0xdeadbeef)
 
 highlightE :: Effect
