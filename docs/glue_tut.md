@@ -82,7 +82,7 @@ The following examples shows how something as seemingly complicated as fourier s
   <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_fourier.mp4">
 </video>
 
-Scripting in Haskell also gives access to the extensive body of code libraries. There are Haskell libraries for syntax highlighting, font manipulation, and much, much more. In the spirit of being a batteries-included framework, Reanimate ships with a built-in 2D physics library, called Chipmunk2D. The example below demonstrates how SVG shapes can be generated with LaTeX and then nearly effortlessly used in a physics simulation.
+Scripting in Haskell also gives access to the extensive body of code libraries. There are Haskell libraries for syntax highlighting, font manipulation, and much, much more. In the spirit of being a batteries-included framework, Reanimate ships with a built-in 2D physics library, called Chipmunk2D. The example below demonstrates how SVG shapes can be used nearly effortlessly in a physics simulation.
 
 <details>
   <summary>Toggle source code.</summary>
@@ -120,7 +120,34 @@ The resulting SVGs can be manipulated just like any other. The below examples il
 
 ## Pillar III: povray
 
-TODO: Draw text and animate shapes, zoom out so it looks like a piece of paper (still animated), draw circle, fade in rotating sphere.
+TODO: Draw text and animate shapes, zoom out so it looks like a piece of paper (still animated).
+
+<details>
+  <summary>Toggle source code.</summary>
+  <pre><code class="haskell">
+  {!examples/tut_glue_povray.hs!}
+  </code></pre>
+</details>
+<br/>
+<video width="640" height="360" autoplay loop>
+  <source src="../rendered/tut_glue_povray.mp4">
+  <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_povray.mp4">
+</video>
+
+TODO: Talk about orthographic projection. Draw circle, fade in rotating sphere.
+
+<details>
+  <summary>Toggle source code.</summary>
+  <pre><code class="haskell">
+  {!examples/tut_glue_povray_ortho.hs!}
+  </code></pre>
+</details>
+<br/>
+<video width="640" height="360" autoplay loop>
+  <source src="../rendered/tut_glue_povray_ortho.mp4">
+  <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_povray_ortho.mp4">
+</video>
+
 
 ## Pillar IV: Blender
 
