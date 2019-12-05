@@ -12,19 +12,21 @@ import Data.Text (Text)
 
 main :: IO ()
 main = reanimate $ mkAnimation 10 $ \t ->
-    let s = 4 in -- fromToS 1 4 t in
+    let s = fromToS 0 4 t in
     let rot = fromToS 0 (360) t in
     mkGroup
     [ mkBackground "black"
-    , povrayExtreme [] (script (svgAsPngFile (texture t)) s rot)
-    --, texture
+    , povraySlow [] (script (svgAsPngFile (texture $ oscillateS t)) s rot)
+    -- , texture $ oscillateS t
     ]
   where
 
 texture :: Double -> SVG
 texture t = mkGroup
   [ checker 10 10
-  , withFillColor "red" $ mkCircle (t*10) ]
+  , translate (screenWidth/2) 0 $
+    translate (-screenWidth*t) 0 $
+    withFillColor "red" $ mkCircle 3 ]
 
 script :: FilePath -> Double -> Double -> Text
 script png s rot = [iTrim|
@@ -42,17 +44,12 @@ script png s rot = [iTrim|
 
 //Place the camera
 camera {
-  //orthographic
   perspective
-  // angle 50
-  //location <0,-${max 0 (((s**1.5)-1)/16)},-9>
-  location <0,-${max 0 (((s**1.5)-1))},-22>
-  //translate <0,-${max 0 (((s**1.5)-1))},-20>
-  //translate <0,0,-20>
+  //location <0,0,-9-${s*2}>
+  location <0,0,-9>
   look_at  <0,0,0>
-  //right x*image_width/image_height
-  //up <0,9,0>
-  //right <16,0,0>
+  up y
+  right x*16/9
 }
 
 
@@ -70,15 +67,15 @@ polygon {
   //<-9, -4.5>, <-9, 4.5>, <9, 4.5>, <9, -4.5>
   <0, 0>, <0, 1>, <1, 1>, <1, 0>
   texture {
-    //pigment{ color rgb <0,0,1> }
+    //pigment{ color rgb <0,1,0> }
     pigment{
       image_map{ png ${png} }
     }
   }
-  scale <16/9,1,1>
-  translate <-1.777/2,-0.5>
-  scale 9
-  rotate <0,0,${rot}>
+  translate <-1/2,-1/2>
+  scale <16,9>
+  rotate <0,${rot},${rot}>
+  translate <0,0,${s*2}>
 }
 
              |]
