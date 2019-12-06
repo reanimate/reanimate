@@ -5,22 +5,13 @@
 module Main (main) where
 
 import           Codec.Picture
-import           Codec.Picture.Types
-import           Control.Lens          ((^.))
 import           Control.Monad
-import           Data.Monoid
 import           Data.String.Here
 import           Data.Text             (Text)
-import           Graphics.SvgTree      hiding (Text)
 import           Reanimate
-import           Reanimate.Animation
-import           Reanimate.Effect
 import           Reanimate.Povray
 import           Reanimate.Raster
 import           Reanimate.Scene
-import           System.Random
-import           System.Random.Shuffle
-
 
 main :: IO ()
 main = reanimate $ parA bg $ sceneAnimation $ do
@@ -36,7 +27,7 @@ main = reanimate $ parA bg $ sceneAnimation $ do
     wf <- newSprite $ do
       getX <- freezeVar xRot
       getY <- freezeVar yRot
-      return $ \real_t dur t ->
+      return $ \real_t _dur _t ->
         wireframe (getX real_t) (getY real_t)
     --wait 2
     tweenVar yRot spinDur (\t v -> fromToS v (v+60*3) $ curveS 2 (t/spinDur))
