@@ -102,7 +102,7 @@ Scripting in Haskell also gives access to the extensive body of code libraries. 
 
 LaTeX is a widely used system for typesetting equations and documents. It is most commonly used by writing TeX documents which are then converted to pdfs. However, since the output of LaTeX is natively vector graphics, it is trivial to get SVG documents instead of pdfs. Armed with this knowledge, Reanimate offers a simple yet powerful function: `latex :: Text -> SVG`
 
-The `latex` function takes a snippet of TeX code, passes it through the LaTeX system, and converts the result to an SVG image. Furthermore, since the result is entirely determined by the TeX code, caching is used to hide the overhead of invoking LaTeX. 
+The `latex` function takes a snippet of TeX code, passes it through the LaTeX system, and converts the result to an SVG image. Furthermore, since the result is entirely determined by the TeX code, caching is used to hide the overhead of invoking LaTeX.
 
 The resulting SVGs can be manipulated just like any other. The below examples illustrates how different effects can be applied to different glyphs in the equation.
 
@@ -158,4 +158,14 @@ TODO: Morph SVG animation into sphere.
 
 ## Pillar V: potrace
 
-
+<details>
+  <summary>Toggle source code.</summary>
+  <pre><code class="haskell">
+  {!examples/tut_glue_potrace.hs!}
+  </code></pre>
+</details>
+<br/>
+<video width="640" height="360" autoplay loop>
+  <source src="../rendered/tut_glue_potrace.mp4">
+  <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_potrace.mp4">
+</video>

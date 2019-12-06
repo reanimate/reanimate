@@ -24,30 +24,55 @@ import           System.Random.Shuffle
 
 main :: IO ()
 main = reanimate $ parA bg $ sceneAnimation $ do
+    play $ mkAnimation drawDuration $ \t -> partialSvg t (wireframe (-45) 220)
     xRot <- newVar (-45)
     yRot <- newVar 220
-    _ <- newSprite $ do
+    -- _ <- newSprite $ do
+    --   getX <- freezeVar xRot
+    --   getY <- freezeVar yRot
+    --   return $ \real_t dur t ->
+    --     povraySlow [] $
+    --     script (svgAsPngFile (texture (t/dur))) (getX real_t) (getY real_t) 0
+    wf <- newSprite $ do
       getX <- freezeVar xRot
       getY <- freezeVar yRot
       return $ \real_t dur t ->
-        povray [] $
-        script (svgAsPngFile (texture (t/dur))) (getX real_t) (getY real_t) 0
+        wireframe (getX real_t) (getY real_t)
     --wait 2
-    let tDuration = 3
-    tweenVar yRot tDuration (\t v -> fromToS v (v+180) $ curveS 2 (t/tDuration))
-    tweenVar xRot (tDuration/2) (\t v -> fromToS v (v+90) $ curveS 2 (t/(tDuration/2)))
-    fork $ do
-      wait (tDuration/2)
-      tweenVar xRot (tDuration/2) (\t v -> fromToS v (v-90) $ curveS 2 (t/(tDuration/2)))
-    wait tDuration
+    tweenVar yRot spinDur (\t v -> fromToS v (v+60*3) $ curveS 2 (t/spinDur))
+    replicateM_ wobbles $ do
+      tweenVar xRot (wobbleDur/2) (\t v -> fromToS v (v+90) $ curveS 2 (t/(wobbleDur/2)))
+      fork $ do
+        wait (wobbleDur/2)
+        tweenVar xRot (wobbleDur/2) (\t v -> fromToS v (v-90) $ curveS 2 (t/(wobbleDur/2)))
+      wait wobbleDur
     --wait 2
+    destroySprite wf
+    play $ mkAnimation drawDuration (\t -> partialSvg t (wireframe (-45) 220))
+      # reverseA
   where
+    drawDuration = 10
+    wobbles = 3
+    wobbleDur = 3
+    spinDur = fromIntegral wobbles * wobbleDur
     bg = animate $ const $ mkBackgroundPixel $ PixelRGBA8 252 252 252 0xFF
 
-texture :: Double -> SVG
-texture t = mkGroup
-  [ checker 20 20
-  ]
+wireframe :: Double -> Double -> SVG
+wireframe rotX rotY =
+  withStrokeColor "black" $
+  withStrokeWidth (defaultStrokeWidth*0.2) $
+  withFillOpacity 0 $
+  lowerTransformations $
+  flipYAxis $
+  translate (-screenWidth/2) (-screenHeight/2) $
+  scale (screenWidth/2560) $
+  mkPath $ extractPath $
+  vectorize_ ["-t","100"] $
+  povraySlow' [] $
+  script (svgAsPngFile texture) rotX rotY 0
+
+texture :: SVG
+texture = checker 10 10
 
 script :: FilePath -> Double -> Double -> Double -> Text
 script png rotX rotY rotZ = [iTrim|
@@ -119,5 +144,3 @@ checker w h =
     stepY = screenHeight/fromIntegral h
     offsetX = screenWidth/2
     offsetY = screenHeight/2
-
-
