@@ -120,7 +120,7 @@ The resulting SVGs can be manipulated just like any other. The below examples il
 
 ## Pillar III: povray
 
-TODO: Draw text and animate shapes, zoom out so it looks like a piece of paper (still animated).
+Although incredibly expressive, SVGs are strictly limited to 2D graphics. This limitation can be overcome with a 3D renderer such as povray: povray is a nearly 30 year-old raytracer with a relatively small but solid set of features. Reanimate offers convenient functions for importing povray scenes as well as exporting animations to be used as textures. In the video below, the LaTeX animation is projected upon a plane which is then rotated and translated in 3D space. A key thing to note is that both the 2D and 3D elements are managed entirely through code.
 
 <details>
   <summary>Toggle source code.</summary>
@@ -134,7 +134,8 @@ TODO: Draw text and animate shapes, zoom out so it looks like a piece of paper (
   <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_povray.mp4">
 </video>
 
-TODO: Talk about orthographic projection. Draw circle, fade in rotating sphere.
+
+The video above uses a perspective camera, ie. objects further away appears to be smaller. This gives the appearance of three dimensions but it also makes it difficult to interlace SVG objects and 3D objects with pixel-perfect precision. For example, aligning a cube and a square requires the exact position of the pinhole camera. All of this can be dramatically simplified with an orthographic projection where 'x' an 'y' coordinates in 3D space always map to the same 'x' and 'y' coordinates on the screen. Shapes lose their perspective but in many cases, especially when illustrating mathematical concepts, drawing "idealized" shapes is perfectly fine. The video below shows an orthographic projection of a sphere. The sphere (3D shape) could be completely eclipsed by a circle (2D shape) of the same radius with pixel-perfection.
 
 <details>
   <summary>Toggle source code.</summary>

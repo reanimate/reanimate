@@ -35,17 +35,14 @@ main = reanimate $ parA bg $ sceneAnimation $ do
         povraySlow [] $
         script (svgAsPngFile (texture (t/dur))) (getX real_t) (getY real_t) (getZ real_t)
     wait 2
-    let tDuration = 20
+    let tDuration = 10
     tweenVar yRot tDuration (\t v -> fromToS v (v+180) $ curveS 2 (t/tDuration))
     tweenVar xRot (tDuration/2) (\t v -> fromToS v (v+60) $ curveS 2 (t/(tDuration/2)))
     fork $ do
       wait (tDuration/2)
       tweenVar xRot (tDuration/2) (\t v -> fromToS v (v-60) $ curveS 2 (t/(tDuration/2)))
-    --tweenVar zRot 9 (\t v -> fromToS v 360 $ curveS 2 (t/9))
     wait tDuration
     wait 2
-    --tweenVar zPos 2 (\t v -> fromToS v 0 $ curveS 3 (t/2))
-    --wait 2
   where
     bg = animate $ const $ mkBackgroundPixel $ PixelRGBA8 252 252 252 0xFF
 
@@ -67,8 +64,8 @@ camera {
   orthographic
   location <0,0,-10>
   look_at  <0,0,0>
-  up <0,9,0>
-  right <16,0,0>
+  up y*9
+  right x*16
 }
 
 
