@@ -22,7 +22,7 @@ import           Data.Monoid
 import           Codec.Picture.Types
 
 main :: IO ()
-main = seq texture $ reanimate $ parA bg $ sceneAnimation $ do
+main = seq texture $ reanimate $ pauseAtEnd 1 $ parA bg $ sceneAnimation $ do
     bend <- newVar 0
     trans <- newVar 0
     rotX <- newVar 0
@@ -34,6 +34,7 @@ main = seq texture $ reanimate $ parA bg $ sceneAnimation $ do
       getRotY <- freezeVar rotY
       return $ \real_t dur t -> seq (texture (t/dur)) $
         blender (script (texture (t/dur)) (getBend real_t) (getTrans real_t) (getRotX real_t) (getRotY real_t))
+    wait 2
     tweenVar trans 5 (\t v -> fromToS v (-2) $ curveS 2 (t/5))
     tweenVar bend 5 (\t v -> fromToS v 1 $ curveS 2 (t/5))
     tweenVar rotY 15 (\t v -> fromToS v (pi*2*2) $ curveS 2 (t/15))
@@ -48,8 +49,9 @@ main = seq texture $ reanimate $ parA bg $ sceneAnimation $ do
     wait 4
     -- tweenVar trans 1 (\t v -> fromToS v 0 $ curveS 2 t)
     wait 1
+    wait 2
   where
-    bg = animate $ const $ mkBackground "grey"
+    bg = animate $ const $ mkBackgroundPixel (PixelRGBA8 252 252 252 0xFF)
 
 texture :: Double -> FilePath
 texture t = svgAsPngFile $ mkGroup
@@ -119,9 +121,9 @@ bendAround.deform_axis = 'Z'
 bendAround.factor = -math.pi*2*x
 
 bpy.context.view_layer.objects.active = plane
-#print(bpy.ops.object.modifier_apply(modifier='Subsurf'))
-#print(bpy.ops.object.modifier_apply(modifier='Bend up'))
-#print(bpy.ops.object.modifier_apply(modifier='Bend around'))
+bpy.ops.object.modifier_apply(modifier='Subsurf')
+bpy.ops.object.modifier_apply(modifier='Bend up')
+bpy.ops.object.modifier_apply(modifier='Bend around')
 
 bpy.ops.object.select_all(action='DESELECT')
 plane.select_set(True);
@@ -133,8 +135,8 @@ plane.rotation_euler = (0, ${rotY}, 0)
 
 scn = bpy.context.scene
 
-scn.render.engine = 'CYCLES'
-scn.render.resolution_percentage = 10
+#scn.render.engine = 'CYCLES'
+#scn.render.resolution_percentage = 10
 
 scn.render.film_transparent = True
 
@@ -147,7 +149,7 @@ checker w h =
   withStrokeWidth (defaultStrokeWidth/2) $
   mkGroup
   [ withStrokeWidth 0 $
-    withFillOpacity 0.8 $ mkBackground "white"
+    withFillOpacity 1 $ mkBackground "grey"
   , mkGroup
     [ translate (stepX*x-offsetX + stepX/2) 0 $
       mkLine (0, -screenHeight/2*0.9) (0, screenHeight/2*0.9)
@@ -244,4 +246,3 @@ drawAnimation' mbSeed fillDur step svg = sceneAnimation $ do
       case mbSeed of
         Nothing   -> lst
         Just seed -> shuffle' lst (length lst) (mkStdGen seed)
-
