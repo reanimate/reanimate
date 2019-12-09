@@ -29,13 +29,16 @@ main = reanimate $ parA bg $ sceneAnimation $ do
 fourierA :: (Double -> Double) -> Animation
 fourierA genPhi = animate $ \t ->
     let circles = setFourierLength (t*piFourierLen) piFourier
+        coeffs = fourierCoefficients $ rotateFourier (genPhi t) circles
     in mkGroup
-    [ drawCircles $ fourierCoefficients $ rotateFourier (genPhi t) circles
+    [ drawCircles coeffs
     , withStrokeColor "green" $
       withStrokeLineJoin JoinRound $
       withFillOpacity 0 $
       withStrokeWidth (defaultStrokeWidth*2) $
       mkLinePath $ mkFourierOutline circles
+    , let x :+ y = sum coeffs in
+      translate x y $ withFillColor "red" $ mkCircle (defaultStrokeWidth*3)
     ]
 
 drawCircles :: [Complex Double] -> SVG
@@ -49,7 +52,7 @@ drawCircles' circles = mkGroup
     , withStrokeColor "black" $
       withStrokeLineJoin JoinRound $
       withFillOpacity 0 $
-      mkLinePath [ (x, y) | x :+ y <- scanl (+) 0 circles ] ]
+      mkLinePath [ (x, y) | x :+ y <- scanl (+) 0 circles ]]
   where
     worker [] = None
     worker (x :+ y : rest) =
@@ -65,7 +68,8 @@ data Fourier = Fourier {fourierCoefficients :: [Complex Double]}
 
 piFourier :: Fourier
 piFourier = mkFourier $ lineToPoints 500 $
-  toLineCommands $ extractPath $ scale 15 $ center $ latexAlign "\\pi"
+  toLineCommands $ extractPath $ scale 15 $
+  center $ latexAlign "\\pi"
 
 piFourierLen :: Double
 piFourierLen = sum $ map magnitude $ drop 1 $ take 500 $ fourierCoefficients piFourier
@@ -119,4 +123,3 @@ mkFourierOutline fourier =
     ]
   where
     granularity = 500
-
