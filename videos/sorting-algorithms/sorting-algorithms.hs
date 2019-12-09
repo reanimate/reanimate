@@ -267,7 +267,7 @@ simpleSort_ lst = do
           worker dir rest
         worker dir ((i, (nth,t)):rest) = do
           z <- round <$> queryNow
-          fork $ tweenParam (params!!i) 1 $ \t (x,y,elt) ->
+          fork $ tweenVar (params!!i) 1 $ \t (x,y,elt) ->
             let s = curveS 2 t in
             (fromToS x (fromIntegral nth) s, y+sin (pi*s )*dir, elt)
           wait 0.5
@@ -289,9 +289,9 @@ quicksort_ lst = do
 
     let partition pivot lo hi = do
           loValP <- liftST (V.read params lo)
-          loVal <- readParam loValP
+          loVal <- readVar loValP
           hiValP <- liftST (V.read params hi)
-          hiVal <- readParam hiValP
+          hiVal <- readVar hiValP
           if getKey loVal < getKey pivot
             then partition pivot (lo+1) hi
             else if getKey hiVal > getKey pivot
@@ -301,10 +301,10 @@ quicksort_ lst = do
                 else do
                   liftST $ V.write params lo hiValP
                   liftST $ V.write params hi loValP
-                  fork $ tweenParam hiValP 1 $ \t (x,y,elt) ->
+                  fork $ tweenVar hiValP 1 $ \t (x,y,elt) ->
                     let s = curveS 2 t in
                     (fromToS x (getPos loVal) s, y+sin (pi*s), elt)
-                  fork $ tweenParam loValP 1 $ \t (x,y,elt) ->
+                  fork $ tweenVar loValP 1 $ \t (x,y,elt) ->
                     let s = curveS 2 t in
                     (fromToS x (getPos hiVal) s, y-sin (pi*s), elt)
                   wait 1
@@ -312,12 +312,12 @@ quicksort_ lst = do
     let worker lo hi | lo >= hi = return ()
         worker lo hi = do
           pivotP <- getPivot params lo hi
-          pivot <- readParam pivotP
-          tweenParam pivotP 1 $ \t (x,y,elt) ->
+          pivot <- readVar pivotP
+          tweenVar pivotP 1 $ \t (x,y,elt) ->
             let s = curveS 2 t in
             (x, y-s/2, elt)
           p <- partition pivot lo hi
-          tweenParam pivotP 1 $ \t (x,y,elt) ->
+          tweenVar pivotP 1 $ \t (x,y,elt) ->
             let s = curveS 2 t in
             (x, y+s/2, elt)
           fork $ worker lo p
@@ -328,7 +328,7 @@ quicksort_ lst = do
       let middle = lo + (hi-lo) `div` 2
           indices = filter (< hi) $ filter (>= lo) [middle-1,middle,middle+1]
       selected <- forM indices $ \idx -> liftST (V.read params idx)
-      keys <- mapM readParam selected
+      keys <- mapM readVar selected
       return $ head $ drop (length indices `div` 2) $ map snd $ sortBy (comparing fst) $ zip (map getKey keys) selected
     getPos (x, _, _) = x
     getKey (_x, _y, (i, _)) = i

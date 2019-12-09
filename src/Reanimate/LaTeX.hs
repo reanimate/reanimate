@@ -12,6 +12,7 @@ import           Graphics.SvgTree  (Tree (..), defaultSvg, parseSvgFile)
 import           Reanimate.Cache
 import           Reanimate.Misc
 import           Reanimate.Svg
+import           Reanimate.Parameters
 import           System.FilePath   (replaceExtension, takeFileName, (</>))
 import           System.IO.Unsafe  (unsafePerformIO)
 
@@ -24,6 +25,7 @@ import           System.IO.Unsafe  (unsafePerformIO)
 --
 --   <<docs/gifs/doc_latex.gif>>
 latex :: T.Text -> Tree
+latex tex | pNoExternals = mkText tex
 latex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG "dvi" exec args)) script
   where
     exec = "latex"
@@ -39,6 +41,7 @@ latex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG "dvi" exec 
 --
 --   <<docs/gifs/doc_xelatex.gif>>
 xelatex :: Text -> Tree
+xelatex tex | pNoExternals = mkText tex
 xelatex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG "xdv" exec args)) script
   where
     exec = "xelatex"

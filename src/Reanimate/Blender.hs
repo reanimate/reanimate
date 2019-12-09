@@ -13,12 +13,14 @@ import           Graphics.SvgTree           (Tree (..))
 import           Reanimate.Cache
 import           Reanimate.Misc
 import           Reanimate.Raster
+import           Reanimate.Parameters
+import           Reanimate.Animation
 import           Reanimate.Svg.Constructors
 import           System.FilePath            (replaceExtension, (<.>))
 import           System.IO.Unsafe           (unsafePerformIO)
 import           Data.Hashable
 
-blender :: Text -> Tree
+blender :: Text -> SVG
 blender script =
   (unsafePerformIO $ mkBlenderImage script)
 
@@ -27,6 +29,7 @@ blender' script =
   (unsafePerformIO $ mkBlenderImage' script)
 
 mkBlenderImage :: Text -> IO Tree
+mkBlenderImage script | pNoExternals = pure $ mkText script
 mkBlenderImage script = do
     png <- B.readFile =<< mkBlenderImage' script
     case decodePng png of
@@ -34,6 +37,7 @@ mkBlenderImage script = do
       Right img -> return $ center $ scaleToSize 16 9 $ embedDynamicImage img
 
 mkBlenderImage' :: Text -> IO FilePath
+mkBlenderImage' _ | pNoExternals = pure "/blender/has/been/disabled"
 mkBlenderImage' script = cacheFile template $ \target -> do
     exec <- requireExecutable "blender"
     let py_file = replaceExtension target "py"
