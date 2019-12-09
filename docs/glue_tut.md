@@ -24,7 +24,7 @@ SVG features, as demonstrated in the below animation:
   </code></pre>
 </details>
 <br/>
-<video width="640" height="360" autoplay loop>
+<video width="640" height="360" muted autoplay loop>
   <source src="../rendered/tut_glue_svg.mp4">
   <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_svg.mp4">
 </video>
@@ -40,7 +40,7 @@ Animations can be defined as SVG images over time (plus a bit of bookkeeping suc
   </code></pre>
 </details>
 <br/>
-<video width="640" height="360" autoplay loop>
+<video width="640" height="360" muted autoplay loop>
   <source src="../rendered/tut_glue_animate.mp4">
   <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_animate.mp4">
 </video>
@@ -54,7 +54,7 @@ Reanimate is not an opinionated framework, though, and also offers a more tradit
   </code></pre>
 </details>
 <br/>
-<video width="640" height="360" autoplay loop>
+<video width="640" height="360" muted autoplay loop>
   <source src="../rendered/tut_glue_keyframe.mp4">
   <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_keyframe.mp4">
 </video>
@@ -77,7 +77,7 @@ The following examples shows how something as seemingly complicated as fourier s
   </code></pre>
 </details>
 <br/>
-<video width="640" height="360" autoplay loop>
+<video width="640" height="360" muted autoplay loop>
   <source src="../rendered/tut_glue_fourier.mp4">
   <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_fourier.mp4">
 </video>
@@ -91,7 +91,7 @@ Scripting in Haskell also gives access to the extensive body of code libraries. 
   </code></pre>
 </details>
 <br/>
-<video width="640" height="360" autoplay loop>
+<video width="640" height="360" muted autoplay loop>
   <source src="../rendered/tut_glue_physics.mp4">
   <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_physics.mp4">
 </video>
@@ -113,7 +113,7 @@ The resulting SVGs can be manipulated just like any other. The below examples il
   </code></pre>
 </details>
 <br/>
-<video width="640" height="360" autoplay loop>
+<video width="640" height="360" muted autoplay loop>
   <source src="../rendered/tut_glue_latex.mp4">
   <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_latex.mp4">
 </video>
@@ -129,7 +129,7 @@ Although incredibly expressive, SVGs are strictly limited to 2D graphics. This l
   </code></pre>
 </details>
 <br/>
-<video width="640" height="360" autoplay loop>
+<video width="640" height="360" muted autoplay loop>
   <source src="../rendered/tut_glue_povray.mp4">
   <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_povray.mp4">
 </video>
@@ -144,7 +144,7 @@ The video above uses a perspective camera, ie. objects further away appears to b
   </code></pre>
 </details>
 <br/>
-<video width="640" height="360" autoplay loop>
+<video width="640" height="360" muted autoplay loop>
   <source src="../rendered/tut_glue_povray_ortho.mp4">
   <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_povray_ortho.mp4">
 </video>
@@ -163,7 +163,7 @@ The example below uses built-in modifiers to bend a plane into a sphere and is r
   </code></pre>
 </details>
 <br/>
-<video width="640" height="360" autoplay loop>
+<video width="640" height="360" muted autoplay loop>
   <source src="../rendered/tut_glue_blender.mp4">
   <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_blender.mp4">
 </video>
@@ -179,7 +179,7 @@ The example below uses built-in modifiers to bend a plane into a sphere and is r
   </code></pre>
 </details>
 <br/>
-<video width="640" height="360" autoplay loop>
+<video width="640" height="360" muted autoplay loop>
   <source src="../rendered/tut_glue_potrace.mp4">
   <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/tut_glue_potrace.mp4">
 </video>
