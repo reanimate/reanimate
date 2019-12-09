@@ -32,7 +32,7 @@ for e in $EXAMPLES; do
   </code></pre>
 </details>
 <br/>
-<video width="$WIDTH" height="$HEIGHT" autoplay loop>
+<video width="$WIDTH" height="$HEIGHT" muted autoplay loop>
   <source src="https://github.com/Lemmih/reanimate/raw/master/docs/rendered/$e.mp4">
 </video>
 
