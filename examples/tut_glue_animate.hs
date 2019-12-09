@@ -3,12 +3,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main(main) where
 
+import           Reanimate
+
 import           Codec.Picture.Types
 import           Data.Text           (Text)
-import           Reanimate
-import           Reanimate.Animation
-import           Reanimate.Effect
-import           Reanimate.Scene
 
 bgColor :: PixelRGBA8
 bgColor = PixelRGBA8 252 252 252 0xFF

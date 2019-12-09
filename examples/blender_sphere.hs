@@ -7,8 +7,6 @@ module Main (main) where
 import           Data.String.Here
 import qualified Data.Text         as T
 import           Reanimate
-import           Reanimate.Blender
-import           Reanimate.Raster
 
 main :: IO ()
 main = reanimate $ mkAnimation 5 $ \t ->
