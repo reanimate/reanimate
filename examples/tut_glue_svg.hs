@@ -3,14 +3,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import           Data.Text                (Text)
 import           Reanimate
 import           Reanimate.Builtin.Images
-import           Reanimate.Effect
-import           Reanimate.Scene
-import           Graphics.SvgTree hiding (Text)
-import Control.Lens
-import Codec.Picture
+
+import           Codec.Picture
+import           Control.Lens
+import           Data.Text                (Text)
+import           Graphics.SvgTree         hiding (Text)
 
 bgColor :: PixelRGBA8
 bgColor = PixelRGBA8 252 252 252 0xFF
@@ -101,4 +100,3 @@ mkBlob =
 
 mkFilter :: String -> [FilterElement] -> Filter
 mkFilter ident fe = defaultSvg & filterChildren .~ fe & attrId .~ Just ident
-

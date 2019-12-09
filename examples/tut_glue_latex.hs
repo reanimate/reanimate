@@ -3,15 +3,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
+import           Reanimate
+
 import           Codec.Picture
 import           Codec.Picture.Types
 import           Control.Lens          ((^.))
 import           Control.Monad
 import           Data.Monoid
 import           Graphics.SvgTree
-import           Reanimate
-import           Reanimate.Effect
-import           Reanimate.Scene
 import           System.Random
 import           System.Random.Shuffle
 
@@ -89,5 +88,5 @@ drawAnimation' mbSeed fillDur step svg = sceneAnimation $ do
   where
     shuf lst =
       case mbSeed of
-        Nothing -> lst
+        Nothing   -> lst
         Just seed -> shuffle' lst (length lst) (mkStdGen seed)

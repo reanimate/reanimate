@@ -2,24 +2,19 @@
 -- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
-{-# LANGUAGE BangPatterns       #-}
 module Main (main) where
 
-import           Data.String.Here
-import qualified Data.Text         as T
 import           Reanimate
-import           Reanimate.Blender
-import           Reanimate.Raster
-import           Reanimate.Scene
-import           Reanimate.Animation
-import           Reanimate.Effect
-import Graphics.SvgTree
-import           System.Random
-import           System.Random.Shuffle
+
+import           Codec.Picture.Types
 import           Control.Lens          ((^.))
 import           Control.Monad
 import           Data.Monoid
-import           Codec.Picture.Types
+import           Data.String.Here
+import qualified Data.Text             as T
+import           Graphics.SvgTree
+import           System.Random
+import           System.Random.Shuffle
 
 main :: IO ()
 main = seq texture $ reanimate $ pauseAtEnd 1 $ parA bg $ sceneAnimation $ do

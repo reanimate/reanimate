@@ -26,10 +26,12 @@ module Reanimate
     reanimate,
     -- * Animations
     SVG,
+    Time,
     Animation(..),
     mkAnimation,
     animate,
     duration,
+    frameAt,
     -- ** Composition
     seqA,
     parA,
@@ -71,6 +73,32 @@ module Reanimate
     wait,
     adjustZ ,
     withSceneDuration,
+    newSprite,
+    newSpriteA,
+    destroySprite,
+    spriteE,
+    newVar,
+    tweenVar,
+    freezeVar,
+
+    -- ** Effects
+    Effect,
+    overBeginning,
+    overEnding,
+    reverseE,
+    delayE,
+    applyE,
+    constE,
+    fadeInE,
+    fadeOutE,
+    fadeLineInE,
+    fadeLineOutE,
+    drawInE,
+    drawOutE,
+    fillInE,
+    translateE,
+    aroundCenterE,
+    transitions,
 
     -- * SVG
     module Reanimate.Svg.Constructors,
@@ -82,11 +110,18 @@ module Reanimate
     embedDynamicImage,
     embedPng,
     raster,
+    svgAsPngFile,
+    vectorize,
+    vectorize_,
     -- ** External SVG providers
     latex,
     latexAlign,
     xelatex,
+    -- * External 3D renderers
     povray,
+    povray',
+    blender,
+    blender',
     -- * Colormaps
     turbo,
     viridis,
@@ -112,16 +147,18 @@ module Reanimate
   ) where
 
 import           Reanimate.Animation
+import           Reanimate.Blender
 import           Reanimate.ColorMap
 import           Reanimate.Constants
 import           Reanimate.Driver
 import           Reanimate.LaTeX
+import           Reanimate.Parameters
 import           Reanimate.Povray
 import           Reanimate.Raster
+import           Reanimate.Effect
+import           Reanimate.Scene
 import           Reanimate.Signal
 import           Reanimate.Svg
 import           Reanimate.Svg.BoundingBox
 import           Reanimate.Svg.Constructors
 import           Reanimate.Svg.LineCommand
-import           Reanimate.Scene
-import           Reanimate.Parameters

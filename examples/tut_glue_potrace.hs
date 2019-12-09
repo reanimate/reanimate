@@ -4,32 +4,24 @@
 {-# LANGUAGE QuasiQuotes       #-}
 module Main (main) where
 
+import           Reanimate
+import           Reanimate.Povray (povraySlow')
+
 import           Codec.Picture
 import           Control.Monad
 import           Data.String.Here
 import           Data.Text             (Text)
-import           Reanimate
-import           Reanimate.Povray
-import           Reanimate.Raster
-import           Reanimate.Scene
 
 main :: IO ()
 main = reanimate $ parA bg $ sceneAnimation $ do
     play $ mkAnimation drawDuration $ \t -> partialSvg t (wireframe (-45) 220)
     xRot <- newVar (-45)
     yRot <- newVar 220
-    -- _ <- newSprite $ do
-    --   getX <- freezeVar xRot
-    --   getY <- freezeVar yRot
-    --   return $ \real_t dur t ->
-    --     povraySlow [] $
-    --     script (svgAsPngFile (texture (t/dur))) (getX real_t) (getY real_t) 0
     wf <- newSprite $ do
       getX <- freezeVar xRot
       getY <- freezeVar yRot
       return $ \real_t _dur _t ->
         wireframe (getX real_t) (getY real_t)
-    --wait 2
     tweenVar yRot spinDur (\t v -> fromToS v (v+60*3) $ curveS 2 (t/spinDur))
     replicateM_ wobbles $ do
       tweenVar xRot (wobbleDur/2) (\t v -> fromToS v (v+90) $ curveS 2 (t/(wobbleDur/2)))
@@ -37,7 +29,6 @@ main = reanimate $ parA bg $ sceneAnimation $ do
         wait (wobbleDur/2)
         tweenVar xRot (wobbleDur/2) (\t v -> fromToS v (v-90) $ curveS 2 (t/(wobbleDur/2)))
       wait wobbleDur
-    --wait 2
     destroySprite wf
     play $ mkAnimation drawDuration (\t -> partialSvg t (wireframe (-45) 220))
       # reverseA
@@ -60,26 +51,16 @@ wireframe rotX rotY =
   mkPath $ extractPath $
   vectorize_ ["-t","100"] $
   povraySlow' [] $
-  script (svgAsPngFile texture) rotX rotY 0
+  script (svgAsPngFile texture) rotX rotY
 
 texture :: SVG
 texture = checker 10 10
 
-script :: FilePath -> Double -> Double -> Double -> Text
-script png rotX rotY rotZ = [iTrim|
-//Files with predefined colors and textures
+script :: FilePath -> Double -> Double -> Text
+script png rotX rotY = [iTrim|
 #include "colors.inc"
 
-#include "shapes3.inc"
-
 //Place the camera
-camera {
-  orthographic
-  location <0,0,-10>
-  look_at  <0,0,0>
-  up y*9
-  right x*16
-}
 camera {
   perspective
   location <0,0,-9>
@@ -88,13 +69,10 @@ camera {
   right x*16/9
 }
 
-
 //Ambient light to "brighten up" darker pictures
 global_settings { ambient_light White*3 }
 
 //Set a background color
-//background { color White }
-//background { color rgbt <0.1, 0, 0, 0> } // red
 background { color rgbt <0, 0, 0, 1> } // transparent
 
 //Sphere with specified center point and radius
@@ -105,16 +83,15 @@ sphere {
       image_map{ png ${png} }
     }
   }
-  rotate <0,${rotY},${rotZ}>
+  rotate <0,${rotY},0>
   rotate <${rotX},0,0>
 }
-
 |]
 
 checker :: Int -> Int -> SVG
 checker w h =
   withStrokeColor "lightblue" $
-  withStrokeWidth (defaultStrokeWidth/2) $
+  withStrokeWidth (defaultStrokeWidth*4) $
   mkGroup
   [ withStrokeWidth 0 $
     withFillOpacity 0.8 $ mkBackground "white"

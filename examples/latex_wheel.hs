@@ -8,7 +8,6 @@ import           Control.Monad    (forM_)
 import           Graphics.SvgTree (Tree)
 import           Reanimate
 import           Reanimate.Driver (reanimate)
-import           Reanimate.Effect
 
 main :: IO ()
 main = reanimate $ bg `parA` mainScene

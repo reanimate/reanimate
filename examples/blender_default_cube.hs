@@ -6,7 +6,6 @@ module Main (main) where
 
 import           Data.String.Here
 import           Reanimate
-import           Reanimate.Blender
 
 main :: IO ()
 main = reanimate $ mkAnimation 5 $ \t ->

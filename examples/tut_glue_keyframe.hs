@@ -4,11 +4,10 @@
 {-# LANGUAGE RecursiveDo       #-}
 module Main (main) where
 
+import           Reanimate
+
 import           Control.Monad    (forM_)
 import           Graphics.SvgTree (Tree)
-import           Reanimate
-import           Reanimate.Driver (reanimate)
-import           Reanimate.Effect
 import           Codec.Picture
 
 main :: IO ()

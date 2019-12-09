@@ -4,6 +4,9 @@
 {-# LANGUAGE QuasiQuotes       #-}
 module Main (main) where
 
+import           Reanimate
+import           Reanimate.Povray      (povraySlow)
+
 import           Codec.Picture
 import           Codec.Picture.Types
 import           Control.Lens          ((^.))
@@ -12,12 +15,6 @@ import           Data.Monoid
 import           Data.String.Here
 import           Data.Text             (Text)
 import           Graphics.SvgTree      hiding (Text)
-import           Reanimate
-import           Reanimate.Animation
-import           Reanimate.Effect
-import           Reanimate.Povray
-import           Reanimate.Raster
-import           Reanimate.Scene
 import           System.Random
 import           System.Random.Shuffle
 
