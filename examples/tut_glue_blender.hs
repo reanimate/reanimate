@@ -5,16 +5,21 @@
 {-# LANGUAGE BangPatterns       #-}
 module Main (main) where
 
-import           Codec.Picture
 import           Data.String.Here
 import qualified Data.Text         as T
 import           Reanimate
 import           Reanimate.Blender
 import           Reanimate.Raster
 import           Reanimate.Scene
+import           Reanimate.Animation
+import           Reanimate.Effect
 import Graphics.SvgTree
-import System.IO.Unsafe
-import qualified Data.Text.IO as T
+import           System.Random
+import           System.Random.Shuffle
+import           Control.Lens          ((^.))
+import           Control.Monad
+import           Data.Monoid
+import           Codec.Picture.Types
 
 main :: IO ()
 main = seq texture $ reanimate $ parA bg $ sceneAnimation $ do
@@ -27,8 +32,8 @@ main = seq texture $ reanimate $ parA bg $ sceneAnimation $ do
       getTrans <- freezeVar trans
       getRotX <- freezeVar rotX
       getRotY <- freezeVar rotY
-      return $ \real_t dur t ->
-        blender (script (getBend real_t) (getTrans real_t) (getRotX real_t) (getRotY real_t))
+      return $ \real_t dur t -> seq (texture (t/dur)) $
+        blender (script (texture (t/dur)) (getBend real_t) (getTrans real_t) (getRotX real_t) (getRotY real_t))
     tweenVar trans 5 (\t v -> fromToS v (-2) $ curveS 2 (t/5))
     tweenVar bend 5 (\t v -> fromToS v 1 $ curveS 2 (t/5))
     tweenVar rotY 15 (\t v -> fromToS v (pi*2*2) $ curveS 2 (t/15))
@@ -37,7 +42,7 @@ main = seq texture $ reanimate $ parA bg $ sceneAnimation $ do
       wait 5
       tweenVar rotX 5 (\t v -> fromToS v (pi/5) $ curveS 2 (t/5))
     wait (15-5)
-    tweenVar bend 5 (\t v -> fromToS 1 0 $ curveS 2 (t/5))
+    tweenVar bend 5 (\t v -> fromToS v 0 $ curveS 2 (t/5))
     tweenVar rotX 5 (\t v -> fromToS v 0 $ curveS 2 (t/5))
     tweenVar trans 5 (\t v -> fromToS v 0 $ curveS 2 (t/5))
     wait 4
@@ -46,15 +51,14 @@ main = seq texture $ reanimate $ parA bg $ sceneAnimation $ do
   where
     bg = animate $ const $ mkBackground "grey"
 
-texture :: FilePath
-texture = svgAsPngFile (mkGroup
-  [ checker 10 10
-  , withFillColor "red" $
-    scale 2 $ center $
-    latexAlign "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"])
+texture :: Double -> FilePath
+texture t = svgAsPngFile $ mkGroup
+  [ checker 20 20
+  , frameAt (t*duration latexExample) latexExample
+  ]
 
-script :: Double -> Double -> Double -> Double -> T.Text
-script bend transZ rotX rotY = [iTrim|
+script :: FilePath -> Double -> Double -> Double -> Double -> T.Text
+script img bend transZ rotX rotY = [iTrim|
 import os
 import math
 
@@ -91,7 +95,7 @@ texture = mat.node_tree.nodes['Principled BSDF']
 texture.inputs['Roughness'].default_value = 1
 mat.node_tree.links.new(image_node.outputs['Color'], texture.inputs['Base Color'])
 
-image_node.image = bpy.data.images.load('${T.pack texture}')
+image_node.image = bpy.data.images.load('${T.pack img}')
 
 
 modifier = plane.modifiers.new(name='Subsurf', type='SUBSURF')
@@ -115,9 +119,9 @@ bendAround.deform_axis = 'Z'
 bendAround.factor = -math.pi*2*x
 
 bpy.context.view_layer.objects.active = plane
-print(bpy.ops.object.modifier_apply(modifier='Subsurf'))
-print(bpy.ops.object.modifier_apply(modifier='Bend up'))
-print(bpy.ops.object.modifier_apply(modifier='Bend around'))
+#print(bpy.ops.object.modifier_apply(modifier='Subsurf'))
+#print(bpy.ops.object.modifier_apply(modifier='Bend up'))
+#print(bpy.ops.object.modifier_apply(modifier='Bend around'))
 
 bpy.ops.object.select_all(action='DESELECT')
 plane.select_set(True);
@@ -128,21 +132,22 @@ bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN')
 plane.rotation_euler = (0, ${rotY}, 0)
 
 scn = bpy.context.scene
-# scn.render.engine = 'CYCLES'
+
+scn.render.engine = 'CYCLES'
+scn.render.resolution_percentage = 10
+
 scn.render.film_transparent = True
 
 bpy.ops.render.render( write_still=True )
 |]
 
-
 checker :: Int -> Int -> SVG
 checker w h =
-  withFillColor "white" $
-  withStrokeColor "white" $
-  withStrokeWidth 0.1 $
+  withStrokeColor "lightblue" $
+  withStrokeWidth (defaultStrokeWidth/2) $
   mkGroup
   [ withStrokeWidth 0 $
-    withFillOpacity 0.8 $ mkBackground "blue"
+    withFillOpacity 0.8 $ mkBackground "white"
   , mkGroup
     [ translate (stepX*x-offsetX + stepX/2) 0 $
       mkLine (0, -screenHeight/2*0.9) (0, screenHeight/2*0.9)
@@ -160,3 +165,83 @@ checker w h =
     stepY = screenHeight/fromIntegral h
     offsetX = screenWidth/2
     offsetY = screenHeight/2
+
+
+
+
+-----------------------------------
+-- COPIED FROM tut_glue_latex.hs --
+
+
+latexExample :: Animation
+latexExample = sceneAnimation $ do
+    -- Draw equation
+    play $ drawAnimation strokedSvg
+    sprites <- forM glyphs $ \(fn, _, elt) ->
+      newSpriteA $ animate $ const $ fn elt
+    -- Yoink each glyph
+    forM_ (reverse sprites) $ \sprite -> do
+      spriteE sprite (overBeginning 1 $ aroundCenterE $ highlightE)
+      wait 0.5
+    -- Flash glyphs randomly with color
+    forM_ (shuffleList (sprites++sprites)) $ \sprite -> do
+      spriteE sprite (overBeginning 0.5 $ aroundCenterE $ flashE)
+      wait 0.1
+    wait 0.5
+    mapM_ destroySprite sprites
+    -- Undraw equations
+    play $ drawAnimation' (Just 0xdeadbeef) 1 0.1 strokedSvg
+      # reverseA
+  where
+    glyphs = svgGlyphs svg
+    strokedSvg =
+      withStrokeWidth (defaultStrokeWidth*0.5) $
+      withStrokeColor "black" svg
+    svg = lowerTransformations $ simplify $ scale 2 $ center $
+      latexAlign "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
+    shuffleList lst = shuffle' lst (length lst) (mkStdGen 0xdeadbeef)
+
+highlightE :: Effect
+highlightE d t =
+  scale (1 + bellS 2 (t/d)*0.5) . rotate (wiggleS (t/d) * 20)
+
+flashE :: Effect
+flashE d t =
+  withStrokeColor "black" .
+  withStrokeWidth (defaultStrokeWidth*0.5*bellS 2 (t/d)) .
+  withFillColorPixel (promotePixel $ turbo (t/d))
+
+-- s-curve, sin, s-curve
+wiggleS :: Signal
+wiggleS t
+  | t < 0.25  = curveS 2 (t*4)
+  | t < 0.75  = sin ((t-0.25)*2*pi+pi/2)
+  | otherwise = curveS 2 ((t-0.75)*4)-1
+
+--
+
+drawAnimation :: SVG -> Animation
+drawAnimation = drawAnimation' Nothing 0.5 0.3
+
+drawAnimation' :: Maybe Int -> Double -> Double -> SVG -> Animation
+drawAnimation' mbSeed fillDur step svg = sceneAnimation $ do
+  forM_ (zip [0..] $ shuf $ svgGlyphs svg) $ \(n, (fn, attr, tree)) -> do
+    let sWidth =
+          case toUserUnit defaultDPI <$> getLast (attr ^. strokeWidth) of
+            Just (Num d) -> d
+            _            -> defaultStrokeWidth
+    fork $ do
+      wait (n*step)
+      play $ mapA fn $ (animate (\t -> withFillOpacity 0 $ partialSvg t tree)
+        # applyE (overEnding fillDur $ fadeLineOutE sWidth))
+    fork $ do
+      wait (n*step+(1-fillDur))
+      newSprite $ do
+        return $ \_real_t _d t ->
+          withStrokeWidth 0 $ fn $ withFillOpacity (min 1 $ t/fillDur) tree
+  where
+    shuf lst =
+      case mbSeed of
+        Nothing   -> lst
+        Just seed -> shuffle' lst (length lst) (mkStdGen seed)
+

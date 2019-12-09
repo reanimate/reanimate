@@ -19,6 +19,7 @@ import           Graphics.SvgTree           (Tree (..))
 import           Reanimate.Cache
 import           Reanimate.Misc
 import           Reanimate.Raster
+import           Reanimate.Parameters
 import           Reanimate.Svg.Constructors
 import           System.FilePath            (replaceExtension, (<.>))
 import           System.IO.Unsafe           (unsafePerformIO)
@@ -57,6 +58,7 @@ povrayExtreme' :: [String] -> Text -> FilePath
 povrayExtreme' args = povrayRaw' (["+H2160","+W3840", "+A"] ++ args)
 
 mkPovrayImage :: [String] -> Text -> IO Tree
+mkPovrayImage _ script | pNoExternals = pure $ mkText script
 mkPovrayImage args script = do
     out <- mkPovrayImage' args script
     -- return $ center $ scaleToSize 16 9 $ embedImageFile out
@@ -66,6 +68,7 @@ mkPovrayImage args script = do
       Right img -> return $ center $ scaleToSize 16 9 $ embedDynamicImage img
 
 mkPovrayImage' :: [String] -> Text -> IO FilePath
+mkPovrayImage' _ _ | pNoExternals = pure "/povray/has/been/disabled"
 mkPovrayImage' args script = cacheFile template $ \target -> do
     exec <- requireExecutable "povray"
     let pov_file = replaceExtension target "pov"
@@ -74,3 +77,4 @@ mkPovrayImage' args script = cacheFile template $ \target -> do
   where
     template = show (hash key) <.> "png"
     key = T.concat (script:map T.pack args)
+

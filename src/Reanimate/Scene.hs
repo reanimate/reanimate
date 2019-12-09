@@ -154,74 +154,16 @@ withObject obj@(Object ref) scene = do
   liftST $ writeSTRef ref (Just tl)
   return a
 
-
-data Param s a = Param (STRef s (Time, Time, Time -> a))
-
-newParam :: a -> Scene s (Param s a)
-newParam initVal = do
-  now <- queryNow
-  Param <$> liftST (newSTRef (now, -1, const initVal))
-
-destroyParam :: Param s a -> Scene s ()
-destroyParam (Param ref) = do
-  now <- queryNow
-  liftST $ do
-    (startT, _endT, fn) <- readSTRef ref
-    writeSTRef ref (startT, now, fn)
-
-readParam :: Param s a -> Scene s a
-readParam (Param ref) = do
-  now <- queryNow
-  (_, _, fn) <- liftST $ readSTRef ref
-  return $ fn now
-
-paramAt :: Param s a -> Time -> ST s a
-paramAt = undefined
-
-paramFn :: Param s a -> ST s (Time -> a)
-paramFn (Param ref) = do
-  (_, _, fn) <- readSTRef ref
-  return fn
-
-withParamAt :: Param s a -> Time -> (a -> ST s SVG) -> ST s SVG
-withParamAt = undefined
-
 fromParams :: Gen s -> Scene s ()
 fromParams gen = M $ \_ -> return ((), 0, 0, emptyTimeline, [gen])
 
-setParam :: Param s a -> a -> Scene s ()
-setParam = undefined
-
--- setParamZIndex :: Param s a -> ZIndex -> Scene s ()
--- setParamZIndex = undefined
---
--- adjustParamZIndex :: Param s a -> Duration -> (Time -> ZIndex -> ZIndex) -> Scene s ()
--- adjustParamZIndex = undefined
---
--- adjustParamZIndex_ :: Param s a -> (Time -> ZIndex -> ZIndex) -> Scene s ()
--- adjustParamZIndex_ = undefined
-
-tweenParam :: Param s a -> Duration -> (Double -> a -> a) -> Scene s ()
-tweenParam (Param ref) dur fn = do
-  now <- queryNow
-  liftST $ do
-    (startT,endT,prevFn) <- readSTRef ref
-    let worker t
-          | t > now = fn (min 1 ((t-now)/dur)) (prevFn t)
-          | otherwise = prevFn t
-    writeSTRef ref (startT, endT, worker)
-  wait dur
-
-tweenParam_ :: Param s a -> (Time -> a -> a) -> Scene s ()
-tweenParam_ = undefined
-
-simpleParam :: (a -> SVG) -> a -> Scene s (Param s a)
+simpleParam :: (a -> SVG) -> a -> Scene s (Var s a)
 simpleParam render def = do
-  p <- newParam def
-  fromParams $ do
-    fn <- paramFn p
-    return $ \_d t -> (render $ fn t, 0)
-  return p
+  v <- newVar def
+  _ <- newSprite $ do
+       getV <- freezeVar v
+       return $ \real_t _d _t -> render (getV real_t)
+  return v
 
 data Var s a = Var (STRef s (Time -> a))
 

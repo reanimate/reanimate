@@ -104,7 +104,11 @@ module Reanimate
     screenWidth,
     screenHeight,
     defaultDPI,
-    defaultStrokeWidth
+    defaultStrokeWidth,
+    -- * Parameters
+    pFPS,
+    pHeight,
+    pWidth
   ) where
 
 import           Reanimate.Animation
@@ -120,3 +124,4 @@ import           Reanimate.Svg.BoundingBox
 import           Reanimate.Svg.Constructors
 import           Reanimate.Svg.LineCommand
 import           Reanimate.Scene
+import           Reanimate.Parameters

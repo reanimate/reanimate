@@ -67,6 +67,7 @@ library
                       Reanimate.Effect
                       Reanimate.Builtin.TernaryPlot
                       Reanimate.Constants
+                      Reanimate.Parameters
                       Reanimate.Chiphunk
                       Reanimate.PolyShape
                       Reanimate.Builtin.Documentation

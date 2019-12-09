@@ -8,6 +8,7 @@ import           Reanimate.Driver.Check
 import           Reanimate.Driver.CLI
 import           Reanimate.Driver.Compile
 import           Reanimate.Driver.Server
+import           Reanimate.Parameters
 import           Reanimate.Render         (FPS, Format (..), Height, Width,
                                            render, renderSnippets, renderSvgs)
 import           System.Directory
@@ -94,6 +95,7 @@ reanimate animation = do
   case optsCommand of
     Raw        -> renderSvgs animation
     Test       -> do
+      setNoExternals True
       -- hSetBinaryMode stdout True
       renderSnippets animation
     Check      -> checkEnvironment
@@ -137,6 +139,9 @@ reanimate animation = do
             ,"--target", target
             ,"+RTS", "-N", "-RTS"]
         else do
+          setFPS fps
+          setWidth width
+          setHeight height
           printf "Animation options:\n\
                  \  fps:    %d\n\
                  \  width:  %d\n\
