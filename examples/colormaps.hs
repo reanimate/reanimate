@@ -42,11 +42,11 @@ main = reanimate $ youtube $ pauseAtEnd 2 $ playThenReverseA $ pauseAtEnd 2 $ mk
       , translate (-columnX) (rowInit-rowStep*3) $ mkOutline "jet" (dimmer s . jet)
       , translate (-columnX) (rowInit-rowStep*4) $ mkOutline "turbo" (dimmer s . turbo)
 
-      , translate (columnX) (rowInit-rowStep*0) $ mkOutline "magma" (dimmer s . magma)
-      , translate (columnX) (rowInit-rowStep*1) $ mkOutline "plasma" (dimmer s . plasma)
-      , translate (columnX) (rowInit-rowStep*2) $ mkOutline "sinebow" (dimmer s . sinebow)
-      , translate (columnX) (rowInit-rowStep*3) $ mkOutline "hsv" (dimmer s . hsv)
-      , translate (columnX) (rowInit-rowStep*4) $ mkOutline "parula" (dimmer s . parula)
+      , translate columnX (rowInit-rowStep*0) $ mkOutline "magma" (dimmer s . magma)
+      , translate columnX (rowInit-rowStep*1) $ mkOutline "plasma" (dimmer s . plasma)
+      , translate columnX (rowInit-rowStep*2) $ mkOutline "sinebow" (dimmer s . sinebow)
+      , translate columnX (rowInit-rowStep*3) $ mkOutline "hsv" (dimmer s . hsv)
+      , translate columnX (rowInit-rowStep*4) $ mkOutline "parula" (dimmer s . parula)
       ]
   where
     rowInit = 2.2
@@ -57,7 +57,7 @@ main = reanimate $ youtube $ pauseAtEnd 2 $ playThenReverseA $ pauseAtEnd 2 $ mk
       mkGroup
       [ center $ withFillColor "grey" $ mkRect (scaleWidth+0.05) (scaleHeight+0.05)
       , scaleToSize scaleWidth scaleHeight $ mkColorMap f
-      , translate (-scaleWidth/2) (0.5) $ centerY $ withFillColor "white" $
+      , translate (-scaleWidth/2) 0.5 $ centerY $ withFillColor "white" $
         scale 0.5 $ latex label
       ]
     scaleWidth = screenWidth/8*3

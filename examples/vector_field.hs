@@ -1,6 +1,5 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
 module Main (main) where
 

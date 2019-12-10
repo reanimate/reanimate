@@ -16,7 +16,7 @@ main = reanimate $ playThenReverseA $ mkAnimation 5 $ \t ->
     , FilterTree $ mkFilter "blur"
       [FEGaussianBlur $ defaultSvg
         & gaussianBlurStdDeviationX .~ Num dev
-        & filterResult .~ Just "blur"
+        & filterResult ?~ "blur"
       ] & filterWidth .~ pure (Percent 3)
         & filterX .~ pure (Percent (-1))
         & filterHeight .~ pure (Percent 3)
@@ -24,7 +24,7 @@ main = reanimate $ playThenReverseA $ mkAnimation 5 $ \t ->
     , FilterTree $ mkFilter "goo"
       [FEGaussianBlur $ defaultSvg
         & gaussianBlurStdDeviationX .~ Num dev
-        & filterResult .~ Just "blur"
+        & filterResult ?~ "blur"
       ,FEColorMatrix $ defaultSvg
         & colorMatrixType .~ Matrix
         & colorMatrixValues .~ "1 0 0 0 0 \
@@ -60,4 +60,4 @@ main = reanimate $ playThenReverseA $ mkAnimation 5 $ \t ->
     circ = mkCircle radius
 
 mkFilter :: String -> [FilterElement] -> Filter
-mkFilter ident fe = defaultSvg & filterChildren .~ fe & attrId .~ Just ident
+mkFilter ident fe = defaultSvg & filterChildren .~ fe & attrId ?~ ident

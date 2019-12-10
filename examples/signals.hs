@@ -1,7 +1,6 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
 module Main (main) where
 
 import           Data.Monoid         ((<>))
@@ -77,7 +76,7 @@ curvesExample gen = mkAnimation 2 $ \t ->
             , translate (convertX $ 205) (convertX $ -5) $ scale 0.5 $ center $ latex "1"
             , translate (convertX $ 100) (convertX $ -30)$ scale 0.6 $ center $ latex name ]
         , withFillOpacity 0 $ withStrokeColor "green" $ -- withStrokeWidth 0.5 $
-          lowerTransformations $ scaleXY (convertX $ 200) (convertX $ (50)) $ mkSignalLine (fromListS curveFns)
+          lowerTransformations $ scaleXY (convertX $ 200) (convertX $ 50) $ mkSignalLine (fromListS curveFns)
         ]
     ]
 

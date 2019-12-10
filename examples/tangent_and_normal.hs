@@ -1,6 +1,5 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
-{-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
 main :: IO ()
