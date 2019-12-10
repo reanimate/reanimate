@@ -23,6 +23,7 @@ module Reanimate
     --   * Animations are rendered with increasing fidelity until the frame
     --     rate eaches 60 fps.
     --   * Key commands for pausing, frame stepping, forward/rewind.
+    --     To pause press SPACE, to move -1\/+1\/-10\/+10 frames use LEFT\/RIGHT\/DOWN\/UP arrow keys.
     reanimate,
     -- * Animations
     SVG,
