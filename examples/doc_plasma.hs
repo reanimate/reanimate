@@ -2,7 +2,6 @@
 -- stack runghc --package reanimate
 module Main(main) where
 
-import Codec.Picture
 import Reanimate
 import Reanimate.Builtin.Documentation
 
