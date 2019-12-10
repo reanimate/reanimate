@@ -152,7 +152,7 @@ The video above uses a perspective camera, ie. objects further away appears to b
 
 ## Pillar IV: Blender
 
-[Blender](https://www.blender.org/) is a vastly more modern and capable 3D modeller than povray but has a slightly steeper learning curve. Most people interact with Blender through a graphical user interface but all of blender's features can also be used directly from Python. The [Python API](https://docs.blender.org/api/current/index.html) is sizable and, at first glance, it might seem that there are almost no tutorials for blender scripting. However, Blender can tell you the Python command for every action in the GUI, making it easy to translate graphical tutorials to scritping tutorials.
+[Blender](https://www.blender.org/) is a vastly more modern and capable 3D modeller than povray but has a slightly steeper learning curve. Most people interact with Blender through a graphical user interface but all of blender's features can also be used directly from Python. The [Python API](https://docs.blender.org/api/current/index.html) is sizable and, at first glance, it might seem that there are almost no tutorials for blender scripting. However, Blender can tell you the Python command for every action in the GUI, making it easy to translate graphical tutorials to scripting tutorials.
 
 The example below uses built-in modifiers to bend a plane into a sphere and is rendered using the EEVEE engine.
 
