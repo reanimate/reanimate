@@ -10,7 +10,7 @@ import           Linear.V2
 import           Reanimate
 
 main :: IO ()
-main = reanimate $ pauseAtEnd 2 $
+main = reanimate $ pauseAtEnd 2
   fourierAnimation_
 
 sWidth :: Double
@@ -41,7 +41,7 @@ fourierAnimation_ = mkAnimation 50 $ \t ->
       latex $ T.pack $ "Circles: " ++ show (length $ fourierCoefficients circles)
     ]
 
-data Fourier = Fourier {fourierCoefficients :: [Complex Double]}
+newtype Fourier = Fourier {fourierCoefficients :: [Complex Double]}
 
 pointAtFourier :: Fourier -> Complex Double
 pointAtFourier = sum . fourierCoefficients
@@ -75,11 +75,11 @@ setFourierLength len0 (Fourier (first:lst)) = Fourier $ first : worker len0 lst
     worker len (c:cs) =
       if magnitude c < len
         then c : worker (len - magnitude c) cs
-        else [c * (realToFrac (len / magnitude c))]
+        else [c * realToFrac (len / magnitude c)]
 
 rotateFourier :: Double -> Fourier -> Fourier
 rotateFourier phi (Fourier coeffs) =
-    Fourier $ worker (coeffs) (0::Integer)
+    Fourier $ worker coeffs (0::Integer)
   where
     worker [] _ = []
     worker (x:rest) 0 = x : worker rest 1

@@ -46,10 +46,9 @@ demonstrateAlgorithm name algo = mkAnimation 10 $ \t ->
         translate (-screenWidth*0.26) (-screenHeight*0.05) $
         rotate (-90) $ scale 0.5 $ center $
         latex "$Time \\rightarrow$"
-      , withFillColor "white" $ translate ((screenWidth*0.30)) 0 $
+      , withFillColor "white" $ translate (screenWidth*0.30) 0 $
         mkCircle ((1-t)*0.5)
       ]
-  where
 
 
 -- main :: IO ()
@@ -175,7 +174,7 @@ insertSort = do
     worker a 0 = writeS 0 a
     worker a j = do
       b <- readS (j-1)
-      if (a < b)
+      if a < b
         then do
           writeS j b
           worker a (j-1)
