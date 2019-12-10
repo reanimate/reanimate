@@ -7,7 +7,7 @@ import           Data.Monoid ((<>))
 import           Data.Text         (Text)
 import qualified Data.Text         as T
 import qualified Data.Text.IO      as T
-import           Graphics.SvgTree  (Tree (..), defaultSvg, parseSvgFile)
+import           Graphics.SvgTree  (Tree (..), parseSvgFile)
 import           Reanimate.Cache
 import           Reanimate.Misc
 import           Reanimate.Svg
