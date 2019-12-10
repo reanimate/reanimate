@@ -159,5 +159,5 @@ hasProgram :: String -> IO (Either String String)
 hasProgram exec = do
   mbPath <- findExecutable exec
   return $ case mbPath of
-    Nothing   -> Left $ "'" ++ exec ++ "'' not found"
+    Nothing   -> Left $ "'" ++ exec ++ "' not found"
     Just path -> Right path
