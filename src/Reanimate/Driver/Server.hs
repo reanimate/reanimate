@@ -118,7 +118,8 @@ slaveHandler conn self =
           hPutStrLn stderr $ "expectFrame: " ++ err
           sendTextData conn $ T.pack $ "Error" ++ err
           exitWith (ExitFailure 1)
-        Right (frameNumber, rest) -> pure (frameNumber, rest)
+        Right (frameNumber, rest) ->
+          pure (frameNumber, rest)
 
 watchFile :: WatchManager -> FilePath -> IO () -> IO StopListening
 watchFile watch file action = watchTree watch (takeDirectory file) check (const action)
