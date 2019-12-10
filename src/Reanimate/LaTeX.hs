@@ -2,7 +2,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Reanimate.LaTeX (latex,xelatex,latexAlign) where
 
-import           Control.Exception (SomeException, handle)
 import qualified Data.ByteString   as B
 import           Data.Monoid ((<>))
 import           Data.Text         (Text)
@@ -66,13 +65,13 @@ postprocess = lowerTransformations . scaleXY 1 (-1) . scale 0.1 . pathify
 
 -- executable, arguments, header, tex
 latexToSVG :: String -> String -> [String] -> Text -> IO Tree
-latexToSVG dviExt latexExec latexArgs tex = handle (\(_::SomeException) -> return (failedSvg tex)) $ do
+latexToSVG dviExt latexExec latexArgs tex = do
   latexBin <- requireExecutable latexExec
   dvisvgm <- requireExecutable "dvisvgm"
   withTempDir $ \tmp_dir -> withTempFile "tex" $ \tex_file -> withTempFile "svg" $ \svg_file -> do
     let dvi_file = tmp_dir </> replaceExtension (takeFileName tex_file) dviExt
     T.writeFile tex_file tex
-    runCmd latexBin (latexArgs ++ ["-interaction=batchmode", "-halt-on-error", "-output-directory="++tmp_dir, tex_file])
+    runCmd latexBin (latexArgs ++ ["-interaction=nonstopmode", "-halt-on-error", "-output-directory="++tmp_dir, tex_file])
     runCmd dvisvgm [ dvi_file, "--precision=5"
                    , "--exact"    -- better bboxes.
                    -- , "--bbox=1,1" -- increase bbox size.
@@ -82,11 +81,6 @@ latexToSVG dviExt latexExec latexArgs tex = handle (\(_::SomeException) -> retur
     case parseSvgFile svg_file svg_data of
       Nothing  -> error "Malformed svg"
       Just svg -> return $ postprocess $ unbox $ replaceUses svg
-
-failedSvg :: Text -> Tree
-failedSvg _tex = defaultSvg
-  -- text_ [ font_size_ "20"
-  --       , fill_ "white"] (toHtml $ "bad latex: "++tex)
 
 mkTexScript :: String -> [String] -> [Text] -> Text -> Text
 mkTexScript latexExec latexArgs texHeaders tex = T.unlines $

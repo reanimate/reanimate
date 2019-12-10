@@ -43,6 +43,8 @@ mkBlenderImage' script = cacheFile template $ \target -> do
     let py_file = replaceExtension target "py"
     T.writeFile py_file script
     runCmd exec [ "--background","--render-format", "PNG"
+                , "--python-exit-code", "1"
                 , "--render-output", target, "--python", py_file]
   where
     template = show (hash script) <.> "png"
+

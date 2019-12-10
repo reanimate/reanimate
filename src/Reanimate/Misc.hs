@@ -30,7 +30,7 @@ runCmd :: FilePath -> [String] -> IO ()
 runCmd exec args = do
   ret <- runCmd_ exec args
   case ret of
-    Left err -> error $ "exec " ++ exec ++ show args ++ " failed:\n" ++ err
+    Left err -> error $ showCommandForUser exec args ++ ":\n" ++ err
     Right{} -> return ()
 
 runCmd_ :: FilePath -> [String] -> IO (Either String String)
@@ -39,11 +39,15 @@ runCmd_ exec args = do
   _ <- evaluate (length stdout + length stderr)
   case ret of
     ExitSuccess -> return (Right stdout)
-    ExitFailure err -> do
+    ExitFailure err | False ->
       return $ Left $
         "Failed to run: " ++ showCommandForUser exec args ++ "\n" ++
         "Error code: " ++ show err ++ "\n" ++
         "stderr: " ++ stderr
+    ExitFailure{} | null stderr -> -- LaTeX prints errors to stdout. :(
+      return $ Left stdout
+    ExitFailure{} ->
+      return $ Left stderr
 
 runCmdLazy :: FilePath -> [String] -> (IO (Either String T.Text) -> IO a) -> IO a
 runCmdLazy exec args handler = do
@@ -58,11 +62,12 @@ runCmdLazy exec args handler = do
             ret <- waitForProcess pid
             case ret of
               ExitSuccess -> return (Left "")
-              ExitFailure errMsg -> do
+              ExitFailure{} -> return (Left stderr)
+              {-ExitFailure errMsg -> do
                 return $ Left $
                   "Failed to run: " ++ showCommandForUser exec args ++ "\n" ++
                   "Error code: " ++ show errMsg ++ "\n" ++
-                  "stderr: " ++ stderr
+                  "stderr: " ++ stderr-}
           else do
             line <- T.hGetLine out
             return (Right line)

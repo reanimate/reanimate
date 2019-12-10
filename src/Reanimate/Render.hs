@@ -17,13 +17,14 @@ import           Reanimate.Animation
 import           System.FilePath    ((</>))
 import           System.IO
 import           Text.Printf        (printf)
+import System.Exit
 
 renderSvgs :: Animation ->  IO ()
 renderSvgs ani = do
     print frameCount
     lock <- newMVar ()
 
-    concurrentForM_ (frameOrder rate frameCount) $ \nth -> do
+    handle errHandler $ concurrentForM_ (frameOrder rate frameCount) $ \nth -> do
       let -- frame = frameAt (recip (fromIntegral rate-1) * fromIntegral nth) ani
           now = (duration ani / (fromIntegral frameCount-1)) * fromIntegral nth
           frame = frameAt (if frameCount<=1 then 0 else now) ani
@@ -36,6 +37,9 @@ renderSvgs ani = do
   where
     rate = 60
     frameCount = round (duration ani * fromIntegral rate) :: Int
+    errHandler (ErrorCall msg) = do
+      hPutStrLn stderr msg
+      exitWith (ExitFailure 1)
 
 -- XXX: Merge with 'renderSvgs'
 renderSnippets :: Animation ->  IO ()
@@ -137,7 +141,17 @@ concurrentForM_ :: [a] -> (a -> IO ()) -> IO ()
 concurrentForM_ lst action = do
   n <- getNumCapabilities
   sem <- newQSemN n
+  eVar <- newEmptyMVar
   forM_ lst $ \elt -> do
     waitQSemN sem 1
-    forkIO (action elt `finally` signalQSemN sem 1)
+    emp <- isEmptyMVar eVar
+    if emp
+      then void $ forkIO (catch (action elt) (void . tryPutMVar eVar) `finally` signalQSemN sem 1)
+      else signalQSemN sem 1
   waitQSemN sem n
+  mbE <- tryTakeMVar eVar
+  case mbE of
+    Nothing -> return ()
+    Just e  -> throwIO (e :: SomeException)
+  where
+    void x = x >> return ()
