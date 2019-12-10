@@ -64,7 +64,7 @@ drawCircles' circles = mkGroup
       , translate x y $ worker rest ]
 
 -- layer 1
-data Fourier = Fourier {fourierCoefficients :: [Complex Double]}
+newtype Fourier = Fourier {fourierCoefficients :: [Complex Double]}
 
 piFourier :: Fourier
 piFourier = mkFourier $ lineToPoints 500 $
@@ -98,11 +98,11 @@ setFourierLength len0 (Fourier (first:lst)) = Fourier $ first : worker len0 lst
     worker len (c:cs) =
       if magnitude c < len
         then c : worker (len - magnitude c) cs
-        else [c * (realToFrac (len / magnitude c))]
+        else [c * realToFrac (len / magnitude c)]
 
 rotateFourier :: Double -> Fourier -> Fourier
 rotateFourier phi (Fourier coeffs) =
-    Fourier $ worker (coeffs) (0::Integer)
+    Fourier $ worker coeffs (0::Integer)
   where
     worker [] _ = []
     worker (x:rest) 0 = x : worker rest 1

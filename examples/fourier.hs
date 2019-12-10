@@ -75,7 +75,7 @@ mkCirclePath :: Int -> Double -> Tree
 mkCirclePath nCircles phiOffset = mkLinePath $ take 2000 $
     zip [ 2 * i/granularity | i <- [0..]]
     $ drop (round $ (1-phiOffset/(2*pi)) * granularity) $
-    cycle $ [ fourierYValue nCircles phi
+    cycle [ fourierYValue nCircles phi
     | x <- reverse [1..granularity]
     , let phi = 2*pi*(x/granularity)
     ]

@@ -1,7 +1,6 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
 module Main (main) where
 
 import           Reanimate
@@ -13,7 +12,7 @@ polygonTest = mkAnimation 10 $ \t ->
         bigBox = head $ svgToPolyShapes $ pathify $
           mkRect 2 2
         smallBox = head $ svgToPolyShapes $ pathify $
-          translate (0) (screenHeight*s) $
+          translate 0 (screenHeight*s) $
           rotate (-45) $
           mkRect 1 1
 
