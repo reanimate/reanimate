@@ -46,34 +46,34 @@ colorSpacesScene = sceneAnimation $ mdo
       # setDuration (endT-beginT)
     fork $ playZ 1 $ animate (const spectrumGrid)
       # setDuration (endT-beginT)
-    dur <- withSceneDuration $ do
-      fork $ play $ drawSensitivity 1 short blueName
-        # setDuration drawDur
-        # pauseAtBeginning (drawStagger*0)
-        # pauseUntil dur
-      fork $ do
-        wait (drawStagger*0 + drawDur)
-        play $ drawLabel "S" 1 short blueName
-          # setDuration 2
-          # applyE (overBeginning 0.3 fadeInE)
-      fork $ play $ drawSensitivity 1 medium greenName
-        # setDuration drawDur
-        # pauseAtBeginning (drawStagger*1)
-        # pauseUntil dur
-      fork $ do
-        wait (drawStagger*1 + drawDur)
-        play $ drawLabel "M" 1 medium greenName
-          # setDuration 2
-          # applyE (overBeginning 0.3 fadeInE)
-      fork $ do
-        wait (drawStagger*2 + drawDur)
-        play $ drawLabel "L" 1 long redName
-          # setDuration 2
-          # applyE (overBeginning 0.3 fadeInE)
-      play $ drawSensitivity 1 long redName
-        # setDuration drawDur
-        # pauseAtBeginning (drawStagger*2)
-        # pauseAtEnd drawPause
+    -- dur <- withSceneDuration $ do
+    --   fork $ play $ drawSensitivity 1 short blueName
+    --     # setDuration drawDur
+    --     # pauseAtBeginning (drawStagger*0)
+    --     # pauseUntil dur
+    --   fork $ do
+    --     wait (drawStagger*0 + drawDur)
+    --     play $ drawLabel "S" 1 short blueName
+    --       # setDuration 2
+    --       # applyE (overBeginning 0.3 fadeInE)
+    --   fork $ play $ drawSensitivity 1 medium greenName
+    --     # setDuration drawDur
+    --     # pauseAtBeginning (drawStagger*1)
+    --     # pauseUntil dur
+    --   fork $ do
+    --     wait (drawStagger*1 + drawDur)
+    --     play $ drawLabel "M" 1 medium greenName
+    --       # setDuration 2
+    --       # applyE (overBeginning 0.3 fadeInE)
+    --   fork $ do
+    --     wait (drawStagger*2 + drawDur)
+    --     play $ drawLabel "L" 1 long redName
+    --       # setDuration 2
+    --       # applyE (overBeginning 0.3 fadeInE)
+    --   play $ drawSensitivity 1 long redName
+    --     # setDuration drawDur
+    --     # pauseAtBeginning (drawStagger*2)
+    --     # pauseAtEnd drawPause
 
 
     -- waitAll $ do
@@ -91,9 +91,10 @@ colorSpacesScene = sceneAnimation $ mdo
 
       fork $ do
         wait drawDur
-        fork $ play $ drawLabel "Z" 2 zCoords blueName
-          # setDuration 2
-          # applyE (overBeginning 0.3 fadeInE)
+        zLabel <- newSpriteA $ drawLabel "Z" 2 zCoords blueName
+        zLabelFade <- spriteVar zLabel 0 withGroupOpacity
+        fork $ tweenVar zLabelFade 0.3 (\v -> fromToS v 1)
+
         wait drawStagger
         fork $ play $ drawLabel "Y" 2 yCoords greenName
           # setDuration 2
@@ -301,18 +302,18 @@ spectrumGrid =
     | n <- [0..nTicksY-1]
     ]
   , withFillColor "white" $
-    translate (-spectrumWidth*0.5 - svgWidth sensitivity) (0) $
+    translate (-spectrumWidth*0.5 + svgWidth sensitivity) (0) $
     sensitivity
   , withFillColor "white" $
-    translate 0 (-spectrumHeight*0.5 -svgHeight wavelength) $
+    translate 0 (-spectrumHeight*0.5 + svgHeight wavelength) $
     wavelength
   , withFillColor "white" $
     translate (-spectrumWidth*0.5 + svgWidth shortWaves/2)
-              (-spectrumHeight*0.5 -svgHeight shortWaves) $
+              (-spectrumHeight*0.5 + svgHeight shortWaves) $
     shortWaves
   , withFillColor "white" $
     translate (spectrumWidth*0.5 - svgWidth shortWaves/2)
-              (-spectrumHeight*0.5 -svgHeight shortWaves) $
+              (-spectrumHeight*0.5 + svgHeight shortWaves) $
     longWaves
   ]
   where
@@ -382,7 +383,7 @@ sensitivitySVG maxHeight limit dat c =
 
 drawLabel :: Text -> Double -> [(Nanometer, Double)] -> String -> Animation
 drawLabel label maxHeight dat c = animate $ const $
-    translate (0) (svgHeight labelSVG) $
+    translate (0) (-svgHeight labelSVG * 1.5) $
     translate (spectrumWidth*percent) labelY $
     translate (-spectrumWidth/2) (-spectrumHeight/2) $
     -- withStrokeWidth (Num 0.01) $

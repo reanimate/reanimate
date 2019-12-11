@@ -36,12 +36,6 @@ import           Colorspace
 
 highdef = True
 
-takeA :: Double -> Animation -> Animation
-takeA = undefined
-
-dropA :: Double -> Animation -> Animation
-dropA = undefined
-
 main :: IO ()
 main = reanimate $
   (animate $ const $ mkBackground "black") `parA`
