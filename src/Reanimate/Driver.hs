@@ -1,7 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Reanimate.Driver ( reanimate ) where
 
-import           Control.Monad
+import           Control.Applicative      ((<|>))
 import           Data.Maybe
 import           Reanimate.Animation      (Animation)
 import           Reanimate.Driver.Check
@@ -10,7 +10,7 @@ import           Reanimate.Driver.Compile
 import           Reanimate.Driver.Server
 import           Reanimate.Parameters
 import           Reanimate.Render         (FPS, Format (..), Height, Width,
-                                           render, renderSnippets, renderSvgs)
+                                            render, renderSnippets, renderSvgs)
 import           System.Directory
 import           System.FilePath
 import           Text.Printf
@@ -123,10 +123,13 @@ reanimate animation = do
 
       let fps = guessParameter renderFPS (fmap presetFPS renderPreset) $
                 (formatFPS fmt)
-          width = guessParameter renderWidth (fmap presetWidth renderPreset) $
-                  (formatWidth fmt)
-          height = guessParameter renderHeight (fmap presetHeight renderPreset) $
-                  (formatHeight fmt)
+          (width, height) =
+            case userPreferredDimensions renderWidth renderHeight of
+              Just userPref -> userPref
+              Nothing ->
+                ( maybe (formatWidth fmt) presetWidth renderPreset
+                , maybe (formatHeight fmt) presetHeight renderPreset
+                )
 
       if renderCompile
         then
@@ -154,4 +157,18 @@ reanimate animation = do
 
 
 guessParameter :: Maybe a -> Maybe a -> a -> a
-guessParameter a b def = fromMaybe def (a `mplus` b)
+guessParameter a b def = fromMaybe def (a <|> b)
+
+
+-- If user specifies exactly one dimension explicitly, calculate the other
+userPreferredDimensions :: Maybe Width -> Maybe Height -> Maybe (Width, Height)
+userPreferredDimensions (Just width) (Just height)  = Just (width, height)
+userPreferredDimensions (Just width) Nothing        = Just (width, makeEven $ width * 9 `div` 16) 
+userPreferredDimensions Nothing      (Just height)  = Just (makeEven $ height * 16 `div` 9, height)
+userPreferredDimensions Nothing      Nothing        = Nothing
+
+-- Avoid ffmpeg failures "height not divisible by 2"
+makeEven :: Int -> Int
+makeEven x
+  | even x    = x
+  | otherwise = x - 1
