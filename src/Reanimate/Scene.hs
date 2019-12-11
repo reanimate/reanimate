@@ -184,13 +184,12 @@ modifyVar (Var ref) fn = do
       then prev t
       else fn (prev t)
 
-tweenVar :: Var s a -> Duration -> (Time -> a -> a) -> Scene s ()
+tweenVar :: Var s a -> Duration -> (a -> Time -> a) -> Scene s ()
 tweenVar (Var ref) dur fn = do
   now <- queryNow
   liftST $ modifySTRef ref $ \prev t ->
-    if t < now
-      then prev t
-      else fn (min dur $ t-now) $ prev t
+    fn (prev t) ((max 0 $ min dur $ t-now)/dur)
+  wait dur
 
 freezeVar :: Var s a -> ST s (Time -> a)
 freezeVar (Var ref) = readSTRef ref
@@ -256,6 +255,15 @@ spriteModify (Sprite born ref) modFn =
       return $ \relD relT ->
         let absT = relT + born
         in modRender absT relD relT . render relD relT)
+
+spriteVar :: Sprite s -> a -> (a -> SVG -> SVG) -> Scene s (Var s a)
+spriteVar sprite def fn = do
+  v <- newVar def
+  spriteModify sprite $ do
+    getV <- freezeVar v
+    return $ \real_t _d _t (svg, zindex) ->
+      (fn (getV real_t) svg, zindex)
+  return v
 
 spriteE :: Sprite s -> Effect -> Scene s ()
 spriteE (Sprite born ref) effect = do
