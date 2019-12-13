@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo       #-}
-module Colorspace (colorSpacesScene) where
+module Spectrum (colorSpacesScene, xyzTernaryPlot) where
 
 import           Control.Lens                  ((&), (.~))
 
@@ -141,8 +141,8 @@ frame = mkAnimation 2 $ \t ->
         cm = hsv
     in mkGroup
       [ mkClipPath "sRGB"
-        [ simplify
-          sRGBTriangle
+        [ simplify $
+          sRGBTriangle 0
         ]
       , mkClipPath "visible"
         [ simplify
@@ -176,7 +176,59 @@ frame = mkAnimation 2 $ \t ->
   where
     imgSize :: Num a => a
     imgSize = 1000
-    img1 = cieXYImage imgSize
+    img1 = cieXYImage 1 imgSize
+    img2 = cieLABImage imgSize imgSize
+    obsColors =
+      lowerTransformations $
+      scale 5 $
+      renderXYZCoordinatesTernary
+    labColors =
+      lowerTransformations $
+      scale (100/2) $
+      renderLABCoordinates
+
+xyzTernaryPlot = mkAnimation 2 $ \t ->
+    -- emit $ mkBackground "black"
+    -- emit $ spectrumGrid
+    let s = t
+        cm = hsv
+    in mkGroup
+      [ mkClipPath "sRGB"
+        [ simplify $
+          sRGBTriangle 0
+        ]
+      , mkClipPath "sRGBGamut"
+        [ simplify $
+          sRGBTriangle t
+        ]
+      , mkClipPath "visible"
+        [ simplify
+          obsColors
+        ]
+      , translate (-screenWidth*0.2) 0 $ mkGroup
+        [ -- withClipPathRef (Ref "sRGB") $
+          --withClipPathRef (Ref "visible") $
+          mkGroup [img1 t]
+        , withStrokeColor "white" $
+          sRGBTriangle 0
+        , withStrokeColor "white" $
+          obsColors
+        ]
+      , translate (screenWidth*0.2) 0 $ mkGroup
+        [ withClipPathRef (Ref "sRGBGamut") $
+          --withClipPathRef (Ref "visible") $
+          mkGroup [cieXYImageGamut t imgSize]
+        ]
+      -- , translate (screenWidth*0.2) 0 $ mkGroup
+      --   [ -- withClipPathRef (Ref "sRGB") $
+      --     withClipPathRef (Ref "sRGB") $
+      --     mkGroup [img1 t]
+      --   ]
+      ]
+  where
+    imgSize :: Num a => a
+    imgSize = 1000
+    img1 t = cieXYImage t imgSize
     img2 = cieLABImage imgSize imgSize
     obsColors =
       lowerTransformations $
@@ -188,7 +240,6 @@ frame = mkAnimation 2 $ \t ->
       renderLABCoordinates
 
 
-
 renderXYZCoordinatesTernary :: Tree
 renderXYZCoordinatesTernary =
   withFillOpacity 0 $
@@ -198,13 +249,30 @@ renderXYZCoordinatesTernary =
   , let (x,y) = Ternary.toOffsetCartesianCoords green red
   ]
 
-
-cieXYImage :: Int -> Tree
-cieXYImage density = Ternary.ternaryPlot density $ \aCoord bCoord cCoord ->
-    let RGB r g b = toSRGBBounded (cieXYZ aCoord bCoord cCoord)
+-- Red corner: 0.64 0.33 0
+-- Green corner: 0.3 0.6 0.1
+-- Blue corner: 0.15 0.06 0.79
+--1 0 0 -> 0.64 0.33 0.0
+--0 1 0 -> 0.30 0.60 0.1
+cieXYImageGamut :: Double -> Int -> Tree
+cieXYImageGamut t density = Ternary.ternaryPlot density $ \aCoord bCoord cCoord ->
+    let
+      aCoord' = fromToS aCoord (rX * aCoord + gX * bCoord + bX * cCoord) t
+      bCoord' = fromToS bCoord (rY * aCoord + gY * bCoord + bY * cCoord) t
+      cCoord' = fromToS cCoord (rZ * aCoord + gZ * bCoord + bZ * cCoord) t
+      RGB r g b = toSRGBBounded (cieXYZ aCoord' bCoord' cCoord)
     in PixelRGBA8 r g b 0xFF
+  where
+    RGB r g b = primaries sRGBGamut
+    (rX, rY, rZ) = chromaCoords $ chromaConvert r
+    (gX, gY, gZ) = chromaCoords $ chromaConvert g
+    (bX, bY, bZ) = chromaCoords $ chromaConvert b
 
-
+cieXYImage :: Double -> Int -> Tree
+cieXYImage t density = Ternary.ternaryPlot density $ \aCoord bCoord cCoord ->
+    let
+      RGB r g b = toSRGBBounded (cieXYZ aCoord bCoord cCoord)
+    in PixelRGBA8 r g b 0xFF
 
 cieLABImage :: Int -> Int -> Tree
 cieLABImage width height = embedImage $ generateImage gen width height
@@ -252,15 +320,15 @@ colorMapToXYZCoords colorMap = withFillOpacity 0 $ mkLinePath
   where
     steps = 100
 
-sRGBTriangle :: Tree
-sRGBTriangle =
+sRGBTriangle :: Double -> Tree
+sRGBTriangle t =
     lowerTransformations $
     scale 5 $
     withFillOpacity 0 $
     mkClosedLinePath
-    [ Ternary.toOffsetCartesianCoords rY rX
-    , Ternary.toOffsetCartesianCoords gY gX
-    , Ternary.toOffsetCartesianCoords bY bX ]
+    [ Ternary.toOffsetCartesianCoords (fromToS rY 0 t) (fromToS rX 1 t)
+    , Ternary.toOffsetCartesianCoords (fromToS gY 1 t) (fromToS gX 0 t)
+    , Ternary.toOffsetCartesianCoords (fromToS bY 0 t) (fromToS bX 0 t) ]
   where
     RGB r g b = primaries sRGBGamut
     (rX, rY, _) = chromaCoords $ chromaConvert r
