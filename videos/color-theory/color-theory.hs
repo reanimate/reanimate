@@ -32,7 +32,31 @@ import           Reanimate.ColorSpace
 import           Reanimate.Constants
 import           System.IO.Unsafe
 
-import           Colorspace
+import           Spectrum
+
+{- Scene sequence
+
+ - black
+ - numbers
+ - monalisa
+ - monalisa to right side
+ - colormaps added to left side
+ - screen slide transition
+ - draw LMS sensitivities
+ - morph to XYZ sensitivities
+ - move graph to right side
+ - fade in ternary plot
+ - move over XYZ labels
+ - move over spectrum line
+ - hide spectrum & center ternary plot
+ - cut to visible colors
+ - draw sRGB triangle
+ - cut to sRGB triangle
+ - scale sRGB triangle to ternary plot
+ - show interpolation between yellow and blue
+ - show that grey is in the middle
+ - draw LAB space
+-}
 
 highdef = True
 
@@ -40,7 +64,8 @@ main :: IO ()
 main = reanimate $
   (animate $ const $ mkBackground "black") `parA`
   -- monalisaScene
-  colorSpacesScene
+  -- colorSpacesScene
+  xyzTernaryPlot
   -- clipPathTest
 
 
