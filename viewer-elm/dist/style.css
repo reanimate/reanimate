@@ -32,3 +32,22 @@ body {
 .media-controls {
   display: inline-block;
 }
+
+.help-button {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.help-dialog {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: white;
+  background-color: #555;
+  padding: 30px;
+}
+
+.help-dialog table {
+  color: white;
+}
