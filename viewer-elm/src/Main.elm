@@ -31,9 +31,6 @@ subscriptions model =
             AnimationRunning _ _ ->
                 Browser.Events.onAnimationFrameDelta TimeDeltaReceived
 
-            ReceivingFrames _ _ ->
-                Browser.Events.onAnimationFrameDelta TimeDeltaReceived
-
             SomethingWentWrong ConnectionFailed ->
                 Time.every 1000 (always AttemptReconnect)
 
@@ -55,7 +52,6 @@ type Status
     = Disconnected
     | Connected
     | Compiling
-    | ReceivingFrames Int Frames
     | AnimationRunning Int Frames
     | AnimationPaused Int Frames Int
     | SomethingWentWrong Problem
@@ -64,8 +60,6 @@ type Status
 type Problem
     = CompilationError String
     | ConnectionFailed
-    | DoneWithoutFrames
-    | FramesMissing Int
     | PortMessageDecodeFailure Json.Decode.Error
     | UnexpectedMessage String
 
@@ -113,10 +107,10 @@ update msg model =
         MessageReceived result ->
             ( processResult result model, Cmd.none )
 
-        PauseClicked frameIndex ->
+        PauseClicked pauseIndex ->
             ( case model.status of
                 AnimationRunning frameCount frames ->
-                    { model | status = AnimationPaused frameCount frames frameIndex }
+                    { model | status = AnimationPaused frameCount frames pauseIndex }
 
                 _ ->
                     model
@@ -137,8 +131,8 @@ update msg model =
 
         SeekClicked delta ->
             ( case model.status of
-                AnimationPaused frameCount frames frameIndex ->
-                    { model | status = AnimationPaused frameCount frames (modBy frameCount (frameIndex + delta)) }
+                AnimationPaused frameCount frames pauseIndex ->
+                    { model | status = AnimationPaused frameCount frames (modBy frameCount (pauseIndex + delta)) }
 
                 _ ->
                     model
@@ -176,16 +170,8 @@ processMessage data model =
                     { model | status = Compiling }
 
                 "Done" ->
-                    case model.status of
-                        ReceivingFrames frameCount frames ->
-                            if Dict.keys frames == List.range 0 (frameCount - 1) then
-                                { model | status = AnimationRunning frameCount frames }
-
-                            else
-                                somethingWentWrong (FramesMissing frameCount) model
-
-                        _ ->
-                            somethingWentWrong DoneWithoutFrames model
+                    -- TODO there's probably no need for Done message, as frontend doesn't need to do anything special
+                    model
 
                 _ ->
                     somethingWentWrong (UnexpectedMessage ("Unknown status: '" ++ status ++ "'")) model
@@ -196,7 +182,7 @@ processMessage data model =
         [ "frame_count", n ] ->
             case String.toInt n of
                 Just frameCount ->
-                    { model | status = ReceivingFrames frameCount Dict.empty }
+                    { model | status = AnimationRunning frameCount Dict.empty }
 
                 Nothing ->
                     somethingWentWrong (UnexpectedMessage ("frame_count wasn't number, but '" ++ n ++ "'")) model
@@ -205,11 +191,14 @@ processMessage data model =
             case String.toInt n of
                 Just frameIndex ->
                     case model.status of
-                        ReceivingFrames frameCount frames ->
-                            { model | status = ReceivingFrames frameCount (Dict.insert frameIndex svgUrl frames) }
+                        AnimationRunning frameCount frames ->
+                            { model | status = AnimationRunning frameCount (Dict.insert frameIndex svgUrl frames) }
+
+                        AnimationPaused frameCount frames pausedIndex ->
+                            { model | status = AnimationPaused frameCount (Dict.insert frameIndex svgUrl frames) pausedIndex }
 
                         _ ->
-                            somethingWentWrong (UnexpectedMessage "Got 'frame' message while not ReceivingFrames") model
+                            somethingWentWrong (UnexpectedMessage "Got 'frame' message while not in AnimationRunning or AnimationPaused state") model
 
                 Nothing ->
                     somethingWentWrong (UnexpectedMessage ("Frame index wasn't number, but '" ++ n ++ "'")) model
@@ -234,19 +223,21 @@ view model =
                 Html.text "Connected"
 
             Compiling ->
-                Html.text "Compiling.."
+                -- TODO it would be nice to have some progress indication (at least animated spinner or something)
+                Html.text "Compiling ..."
 
             SomethingWentWrong problem ->
                 problemView problem
 
-            ReceivingFrames frameCount frames ->
-                preliminaryAnimationView frameCount frames model.time
-
             AnimationRunning frameCount frames ->
-                animationView frameCount frames model.time
+                let
+                    frameIndex =
+                        frameIndexAt model.time frameCount
+                in
+                frameView frameIndex frameCount False frames
 
             AnimationPaused frameCount frames frameIndex ->
-                manualControlsView frameCount frames frameIndex
+                frameView frameIndex frameCount True frames
         ]
 
 
@@ -255,46 +246,8 @@ frameIndexAt time frameCount =
     floor (60 * time / 1000) |> modBy frameCount
 
 
-preliminaryAnimationView : Int -> Frames -> Float -> Html Msg
-preliminaryAnimationView frameCount frames time =
-    let
-        frameIndex =
-            frameIndexAt time frameCount
-
-        bestFrame =
-            List.head (List.reverse (Dict.values (Dict.filter (\x _ -> x <= frameIndex) frames)))
-
-        controls =
-            progressView (Dict.size frames) frameCount
-    in
-    frameView frameIndex frameCount controls bestFrame
-
-
-animationView : Int -> Frames -> Float -> Html Msg
-animationView frameCount frames time =
-    let
-        frameIndex =
-            frameIndexAt time frameCount
-
-        controls =
-            playControls False frameIndex
-    in
-    Dict.get frameIndex frames
-        |> frameView frameIndex frameCount controls
-
-
-manualControlsView : Int -> Frames -> Int -> Html Msg
-manualControlsView frameCount frames frameIndex =
-    let
-        controls =
-            playControls True frameIndex
-    in
-    Dict.get frameIndex frames
-        |> frameView frameIndex frameCount controls
-
-
 playControls : Bool -> Int -> Html Msg
-playControls paused frameIndex =
+playControls paused pauseIndex =
     Html.div [ class "media-controls" ]
         [ Html.button [ onClick (SeekClicked -10), disabled (not paused), title "10 frames back" ] [ Html.text "<<" ]
         , Html.button [ onClick (SeekClicked -1), disabled (not paused), title "1 frame back" ] [ Html.text "<" ]
@@ -302,17 +255,20 @@ playControls paused frameIndex =
             Html.button [ onClick PlayClicked, disabled (not paused) ] [ Html.text "Play" ]
 
           else
-            Html.button [ onClick (PauseClicked frameIndex), disabled paused ] [ Html.text "Pause" ]
+            Html.button [ onClick (PauseClicked pauseIndex), disabled paused ] [ Html.text "Pause" ]
         , Html.button [ onClick (SeekClicked 1), disabled (not paused), title "1 frame forward" ] [ Html.text ">" ]
         , Html.button [ onClick (SeekClicked 10), disabled (not paused), title "10 frames forward" ] [ Html.text ">>" ]
         ]
 
 
-frameView : Int -> Int -> Html Msg -> Maybe String -> Html Msg
-frameView frameIndex frameCount controls maybeSvgUrl =
+frameView : Int -> Int -> Bool -> Frames -> Html Msg
+frameView frameIndex frameCount isPaused frames =
     let
+        bestFrame =
+            List.head (List.reverse (Dict.values (Dict.filter (\x _ -> x <= frameIndex) frames)))
+
         image =
-            case maybeSvgUrl of
+            case bestFrame of
                 Just svgUrl ->
                     Html.img [ src svgUrl ] []
 
@@ -325,16 +281,27 @@ frameView frameIndex frameCount controls maybeSvgUrl =
         digitCount =
             String.length frameCountStr
 
+        progressView =
+            let
+                receivedFrames =
+                    Dict.size frames
+            in
+            if receivedFrames /= frameCount then
+                progressBar receivedFrames frameCount
+
+            else
+                Html.text ""
+
         bar =
             Html.pre [ class "bar" ]
-                [ Html.text
-                    ("Frame: "
+                [ Html.text <|
+                    "Frame: "
                         ++ String.padLeft digitCount '0' (String.fromInt (frameIndex + 1))
                         ++ " / "
                         ++ frameCountStr
                         ++ " "
-                    )
-                , controls
+                , playControls isPaused frameIndex
+                , progressView
                 ]
     in
     Html.div [ class "viewer" ]
@@ -343,10 +310,10 @@ frameView frameIndex frameCount controls maybeSvgUrl =
         ]
 
 
-progressView : Int -> Int -> Html msg
-progressView receivedFrames frameCount =
+progressBar : Int -> Int -> Html msg
+progressBar receivedFrames frameCount =
     Html.label []
-        [ Html.text "Loading frames "
+        [ Html.text " Loading frames "
         , Html.progress
             [ value (String.fromInt receivedFrames)
             , Attr.max (String.fromInt frameCount)
@@ -373,14 +340,8 @@ problemView problem =
                     ]
                 ]
 
-        DoneWithoutFrames ->
-            Html.text "Received 'done' message, but I was not receiving frames!"
-
         PortMessageDecodeFailure decodeError ->
             Html.text ("Failed to decode Port message. The error was: " ++ Json.Decode.errorToString decodeError)
 
         UnexpectedMessage problemDescription ->
             Html.text ("Unexpected message: " ++ problemDescription)
-
-        FramesMissing frameCount ->
-            Html.text ("Frame indices were not continuous block of number from 0 to " ++ String.fromInt (frameCount - 1))
