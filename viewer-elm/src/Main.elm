@@ -8,6 +8,7 @@ import Html.Attributes as Attr exposing (class, disabled, src, style, title, val
 import Html.Events exposing (onClick)
 import Json.Decode
 import Platform.Sub
+import Task
 import Ports
 import Time exposing (Posix, millisToPosix, posixToMillis)
 import WebSocket
@@ -28,7 +29,7 @@ subscriptions model =
     Platform.Sub.batch
         [ Ports.receiveSocketMsg (WebSocket.receive MessageReceived)
         , case model.status of
-            AnimationRunning _ _ ->
+            AnimationRunning _ _ _ ->
                 Browser.Events.onAnimationFrame TimestampReceived
 
             ReceivingFrames _ _ ->
@@ -48,6 +49,7 @@ type Msg
     | AttemptReconnect
     | PauseClicked Int
     | PlayClicked
+    | PlayAnimation Posix
     | SeekClicked Int
 
 
@@ -56,7 +58,7 @@ type Status
     | Connected
     | Compiling
     | ReceivingFrames Int Frames
-    | AnimationRunning Int Frames
+    | AnimationRunning Int Frames Int
     | AnimationPaused Int Frames Int
     | SomethingWentWrong Problem
 
@@ -71,8 +73,9 @@ type Problem
 
 
 type alias Model =
-    { status : Status
-    , clock : Posix
+    { status     : Status
+    , clockStart : Posix
+    , clockNow   : Posix
     }
 
 
@@ -83,7 +86,8 @@ type alias Frames =
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { status = Disconnected
-      , clock = millisToPosix 0
+      , clockStart = millisToPosix 0
+      , clockNow = millisToPosix 0
       }
     , connectCommand
     )
@@ -106,14 +110,14 @@ update msg model =
             ( model, connectCommand )
 
         TimestampReceived clock ->
-            ( { model | clock = clock }, Cmd.none )
+            ( { model | clockNow = clock }, Cmd.none )
 
         MessageReceived result ->
             ( processResult result model, Cmd.none )
 
         PauseClicked frameIndex ->
             ( case model.status of
-                AnimationRunning frameCount frames ->
+                AnimationRunning frameCount frames frameOffset ->
                     { model | status = AnimationPaused frameCount frames frameIndex }
 
                 _ ->
@@ -122,9 +126,15 @@ update msg model =
             )
 
         PlayClicked ->
+            ( model
+            , Task.perform PlayAnimation Time.now
+            )
+
+        PlayAnimation now ->
             ( case model.status of
-                AnimationPaused frameCount frames _ ->
-                    { model | status = AnimationRunning frameCount frames }
+                AnimationPaused frameCount frames frameIndex ->
+                    { model | status = AnimationRunning frameCount frames frameIndex
+                            , clockStart = now }
 
                 _ ->
                     model
@@ -175,7 +185,7 @@ processMessage data model =
                     case model.status of
                         ReceivingFrames frameCount frames ->
                             if Dict.keys frames == List.range 0 (frameCount - 1) then
-                                { model | status = AnimationRunning frameCount frames }
+                                { model | status = AnimationRunning frameCount frames 0 }
 
                             else
                                 somethingWentWrong (FramesMissing frameCount) model
@@ -236,26 +246,26 @@ view model =
                 problemView problem
 
             ReceivingFrames frameCount frames ->
-                preliminaryAnimationView frameCount frames model.clock
+                preliminaryAnimationView frameCount frames model.clockStart model.clockNow
 
-            AnimationRunning frameCount frames ->
-                animationView frameCount frames model.clock
+            AnimationRunning frameCount frames frameOffset ->
+                animationView frameCount frames model.clockStart model.clockNow frameOffset
 
             AnimationPaused frameCount frames frameIndex ->
                 manualControlsView frameCount frames frameIndex
         ]
 
 
-frameIndexAt : Posix -> Int -> Int
-frameIndexAt now frameCount =
-    (posixToMillis now * 60) // 1000 |> modBy frameCount
+frameIndexAt : Posix -> Posix -> Int -> Int -> Int
+frameIndexAt start now frameOffset frameCount =
+    (((posixToMillis now - posixToMillis start) * 60) // 1000 + frameOffset) |> modBy frameCount
 
 
-preliminaryAnimationView : Int -> Frames -> Posix -> Html Msg
-preliminaryAnimationView frameCount frames clock =
+preliminaryAnimationView : Int -> Frames -> Posix -> Posix -> Html Msg
+preliminaryAnimationView frameCount frames clockStart clockNow =
     let
         frameIndex =
-            frameIndexAt clock frameCount
+            frameIndexAt clockStart clockNow 0 frameCount
 
         bestFrame =
             List.head (List.reverse (Dict.values (Dict.filter (\x _ -> x <= frameIndex) frames)))
@@ -266,11 +276,11 @@ preliminaryAnimationView frameCount frames clock =
     frameView frameIndex frameCount controls bestFrame
 
 
-animationView : Int -> Frames -> Posix -> Html Msg
-animationView frameCount frames clock =
+animationView : Int -> Frames -> Posix -> Posix -> Int -> Html Msg
+animationView frameCount frames clockStart clockNow frameOffset =
     let
         frameIndex =
-            frameIndexAt clock frameCount
+            frameIndexAt clockStart clockNow frameOffset frameCount
 
         controls =
             playControls False frameIndex
