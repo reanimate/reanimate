@@ -12,8 +12,8 @@ import           System.IO.Unsafe
 
 main :: IO ()
 main = reanimate $ mkAnimation dur $ \t -> unsafePerformIO $ do
-    let frame = round (t*dur*fromIntegral pFPS)
-    threadDelay (10^6)
+    let frame = round (t*dur*fromIntegral pFPS) :: Integer
+    threadDelay (10^(6::Integer))
     evaluate $ mkGroup
       [ mkBackground "black"
       , translate (-4) 0 $
