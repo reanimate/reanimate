@@ -1,14 +1,17 @@
 module Main exposing (main)
 
 import Browser
+import Browser.Dom
 import Browser.Events
 import Dict exposing (Dict)
 import Html exposing (Html)
-import Html.Attributes as Attr exposing (class, disabled, src, title, value)
+import Html.Attributes as Attr exposing (class, disabled, id, src, title, value)
 import Html.Events exposing (onClick)
 import Json.Decode
+import Keyboard exposing (RawKey)
 import Platform.Sub
 import Ports
+import Task
 import Time
 import WebSocket
 
@@ -27,6 +30,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Platform.Sub.batch
         [ Ports.receiveSocketMsg (WebSocket.receive MessageReceived)
+        , Keyboard.downs KeyPressed
         , case model.status of
             AnimationRunning _ _ ->
                 Browser.Events.onAnimationFrameDelta TimeDeltaReceived
@@ -43,9 +47,11 @@ type Msg
     = MessageReceived (Result Json.Decode.Error WebSocket.WebSocketMsg)
     | TimeDeltaReceived Float
     | AttemptReconnect
-    | PauseClicked Int
-    | PlayClicked
-    | SeekClicked Int
+    | PauseAtFrame Int
+    | Play
+    | Seek Int
+    | KeyPressed Keyboard.RawKey
+    | NoOp
 
 
 type Status
@@ -107,17 +113,20 @@ update msg model =
         MessageReceived result ->
             ( processResult result model, Cmd.none )
 
-        PauseClicked pauseIndex ->
+        KeyPressed rawKey ->
+            ( model, processKeyPress rawKey model )
+
+        PauseAtFrame pauseIndex ->
             ( case model.status of
                 AnimationRunning frameCount frames ->
                     { model | status = AnimationPaused frameCount frames pauseIndex }
 
                 _ ->
                     model
-            , Cmd.none
+            , blurPlayOrPause
             )
 
-        PlayClicked ->
+        Play ->
             ( case model.status of
                 AnimationPaused frameCount frames _ ->
                     { model
@@ -126,10 +135,10 @@ update msg model =
 
                 _ ->
                     model
-            , Cmd.none
+            , blurPlayOrPause
             )
 
-        SeekClicked delta ->
+        Seek delta ->
             ( case model.status of
                 AnimationPaused frameCount frames pauseIndex ->
                     { model | status = AnimationPaused frameCount frames (modBy frameCount (pauseIndex + delta)) }
@@ -138,6 +147,22 @@ update msg model =
                     model
             , Cmd.none
             )
+
+        NoOp ->
+            ( model, Cmd.none )
+
+
+playOrPauseId : String
+playOrPauseId =
+    "play-or-pause"
+
+
+{-| Hack: Mouse click on Play/Pause focuses the button.
+Without this hack pressing SPACE with the button focused triggers the Play/Pause event twice
+-}
+blurPlayOrPause : Cmd Msg
+blurPlayOrPause =
+    Task.attempt (always NoOp) (Browser.Dom.blur playOrPauseId)
 
 
 processResult : Result Json.Decode.Error WebSocket.WebSocketMsg -> Model -> Model
@@ -249,15 +274,15 @@ frameIndexAt time frameCount =
 playControls : Bool -> Int -> Html Msg
 playControls paused pauseIndex =
     Html.div [ class "media-controls" ]
-        [ Html.button [ onClick (SeekClicked -10), disabled (not paused), title "10 frames back" ] [ Html.text "<<" ]
-        , Html.button [ onClick (SeekClicked -1), disabled (not paused), title "1 frame back" ] [ Html.text "<" ]
+        [ Html.button [ onClick (Seek -10), disabled (not paused), title "10 frames back" ] [ Html.text "<<" ]
+        , Html.button [ onClick (Seek -1), disabled (not paused), title "1 frame back" ] [ Html.text "<" ]
         , if paused then
-            Html.button [ onClick PlayClicked, disabled (not paused) ] [ Html.text "Play" ]
+            Html.button [ onClick Play, id playOrPauseId ] [ Html.text "Play" ]
 
           else
-            Html.button [ onClick (PauseClicked pauseIndex), disabled paused ] [ Html.text "Pause" ]
-        , Html.button [ onClick (SeekClicked 1), disabled (not paused), title "1 frame forward" ] [ Html.text ">" ]
-        , Html.button [ onClick (SeekClicked 10), disabled (not paused), title "10 frames forward" ] [ Html.text ">>" ]
+            Html.button [ onClick (PauseAtFrame pauseIndex), id playOrPauseId ] [ Html.text "Pause" ]
+        , Html.button [ onClick (Seek 1), disabled (not paused), title "1 frame forward" ] [ Html.text ">" ]
+        , Html.button [ onClick (Seek 10), disabled (not paused), title "10 frames forward" ] [ Html.text ">>" ]
         ]
 
 
@@ -345,3 +370,39 @@ problemView problem =
 
         UnexpectedMessage problemDescription ->
             Html.text ("Unexpected message: " ++ problemDescription)
+
+
+processKeyPress : RawKey -> Model -> Cmd Msg
+processKeyPress rawKey model =
+    Keyboard.oneOf [ Keyboard.navigationKey, Keyboard.whitespaceKey ] rawKey
+        |> Maybe.andThen
+            (\key ->
+                case key of
+                    Keyboard.ArrowDown ->
+                        Just (Seek -10)
+
+                    Keyboard.ArrowUp ->
+                        Just (Seek 10)
+
+                    Keyboard.ArrowRight ->
+                        Just (Seek 1)
+
+                    Keyboard.ArrowLeft ->
+                        Just (Seek -1)
+
+                    Keyboard.Spacebar ->
+                        case model.status of
+                            AnimationPaused _ _ _ ->
+                                Just Play
+
+                            AnimationRunning frameCount _ ->
+                                Just (PauseAtFrame (frameIndexAt model.time frameCount))
+
+                            _ ->
+                                Nothing
+
+                    _ ->
+                        Nothing
+            )
+        |> Maybe.map (Task.succeed >> Task.perform identity)
+        |> Maybe.withDefault Cmd.none
