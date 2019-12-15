@@ -5,7 +5,7 @@ import Browser.Dom
 import Browser.Events
 import Dict exposing (Dict)
 import Html exposing (Html)
-import Html.Attributes as Attr exposing (class, disabled, id, src, title, value)
+import Html.Attributes as Attr exposing (class, disabled, id, src, style, title, value)
 import Html.Events exposing (onClick)
 import Json.Decode
 import Keyboard exposing (RawKey)
@@ -51,6 +51,7 @@ type Msg
     | Play
     | Seek Int
     | KeyPressed Keyboard.RawKey
+    | ToggleHelp
     | NoOp
 
 
@@ -75,6 +76,7 @@ type alias Model =
 
     -- Milliseconds from the beginning of animation
     , time : Float
+    , showingHelp : Bool
     }
 
 
@@ -86,6 +88,7 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ( { status = Disconnected
       , time = 0
+      , showingHelp = False
       }
     , connectCommand
     )
@@ -147,6 +150,9 @@ update msg model =
                     model
             , Cmd.none
             )
+
+        ToggleHelp ->
+            ( { model | showingHelp = not model.showingHelp }, Cmd.none )
 
         NoOp ->
             ( model, Cmd.none )
@@ -259,10 +265,10 @@ view model =
                     frameIndex =
                         frameIndexAt model.time frameCount
                 in
-                frameView frameIndex frameCount False frames
+                frameView frameIndex frameCount False frames model.showingHelp
 
             AnimationPaused frameCount frames frameIndex ->
-                frameView frameIndex frameCount True frames
+                frameView frameIndex frameCount True frames model.showingHelp
         ]
 
 
@@ -286,8 +292,8 @@ playControls paused pauseIndex =
         ]
 
 
-frameView : Int -> Int -> Bool -> Frames -> Html Msg
-frameView frameIndex frameCount isPaused frames =
+frameView : Int -> Int -> Bool -> Frames -> Bool -> Html Msg
+frameView frameIndex frameCount isPaused frames showingHelp =
     let
         bestFrame =
             List.head (List.reverse (Dict.values (Dict.filter (\x _ -> x <= frameIndex) frames)))
@@ -317,6 +323,13 @@ frameView frameIndex frameCount isPaused frames =
             else
                 Html.text ""
 
+        helpView =
+            if showingHelp then
+                helpModal
+
+            else
+                Html.button [ class "help-button", onClick ToggleHelp ] [ Html.text "?" ]
+
         bar =
             Html.pre [ class "bar" ]
                 [ Html.text <|
@@ -327,6 +340,7 @@ frameView frameIndex frameCount isPaused frames =
                         ++ " "
                 , playControls isPaused frameIndex
                 , progressView
+                , helpView
                 ]
     in
     Html.div [ class "viewer" ]
@@ -406,3 +420,25 @@ processKeyPress rawKey model =
             )
         |> Maybe.map (Task.succeed >> Task.perform identity)
         |> Maybe.withDefault Cmd.none
+
+
+helpModal : Html Msg
+helpModal =
+    let
+        explainKey key legend =
+            Html.tr []
+                [ Html.td [] [ Html.b [] [ Html.text key ] ]
+                , Html.td [] [ Html.text legend ]
+                ]
+    in
+    Html.div [ class "help-dialog" ]
+        [ Html.h2 [ style "margin-top" "0px" ] [ Html.text "Keyboard shortcuts" ]
+        , Html.button [ class "help-button", onClick ToggleHelp ] [ Html.text "X" ]
+        , Html.table []
+            [ explainKey "SPACEBAR" "Pause / Play animation"
+            , explainKey "ARROW LEFT" " Move back 1 frame"
+            , explainKey "ARROW RIGHT" " Move forward 1 frame"
+            , explainKey "ARROW UP" " Move forward 10 frames"
+            , explainKey "ARROW DOWN" " Move back 10 frames"
+            ]
+        ]
