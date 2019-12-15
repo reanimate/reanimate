@@ -4,6 +4,7 @@ import Browser
 import Browser.Dom
 import Browser.Events
 import Dict exposing (Dict)
+import Fps
 import Html exposing (Html)
 import Html.Attributes as Attr exposing (class, disabled, id, src, style, title, value)
 import Html.Events exposing (onClick)
@@ -77,6 +78,7 @@ type alias Model =
     -- Milliseconds from the beginning of animation
     , time : Float
     , showingHelp : Bool
+    , frameDeltas : List Float
     }
 
 
@@ -89,6 +91,7 @@ init _ =
     ( { status = Disconnected
       , time = 0
       , showingHelp = False
+      , frameDeltas = []
       }
     , connectCommand
     )
@@ -111,7 +114,12 @@ update msg model =
             ( model, connectCommand )
 
         TimeDeltaReceived delta ->
-            ( { model | time = model.time + delta }, Cmd.none )
+            ( { model
+                | time = model.time + delta
+                , frameDeltas = Fps.update delta model.frameDeltas
+              }
+            , Cmd.none
+            )
 
         MessageReceived result ->
             ( processResult result model, Cmd.none )
@@ -265,10 +273,10 @@ view model =
                     frameIndex =
                         frameIndexAt model.time frameCount
                 in
-                frameView frameIndex frameCount False frames model.showingHelp
+                frameView frameIndex frameCount False frames model.showingHelp model.frameDeltas
 
             AnimationPaused frameCount frames frameIndex ->
-                frameView frameIndex frameCount True frames model.showingHelp
+                frameView frameIndex frameCount True frames model.showingHelp model.frameDeltas
         ]
 
 
@@ -292,8 +300,8 @@ playControls paused pauseIndex =
         ]
 
 
-frameView : Int -> Int -> Bool -> Frames -> Bool -> Html Msg
-frameView frameIndex frameCount isPaused frames showingHelp =
+frameView : Int -> Int -> Bool -> Frames -> Bool -> List Float -> Html Msg
+frameView frameIndex frameCount isPaused frames showingHelp frameDeltas =
     let
         bestFrame =
             List.head (List.reverse (Dict.values (Dict.filter (\x _ -> x <= frameIndex) frames)))
@@ -332,13 +340,18 @@ frameView frameIndex frameCount isPaused frames showingHelp =
 
         bar =
             Html.pre [ class "bar" ]
-                [ Html.text <|
-                    "Frame: "
+                [ playControls isPaused frameIndex
+                , Html.text <|
+                    " Frame: "
                         ++ String.padLeft digitCount '0' (String.fromInt (frameIndex + 1))
                         ++ " / "
                         ++ frameCountStr
-                        ++ " "
-                , playControls isPaused frameIndex
+                        ++ (if isPaused then
+                                " "
+
+                            else
+                                Fps.showAverage frameDeltas
+                           )
                 , progressView
                 , helpView
                 ]
@@ -352,7 +365,7 @@ frameView frameIndex frameCount isPaused frames showingHelp =
 progressBar : Int -> Int -> Html msg
 progressBar receivedFrames frameCount =
     Html.label []
-        [ Html.text " Loading frames "
+        [ Html.text " | Loading frames "
         , Html.progress
             [ value (String.fromInt receivedFrames)
             , Attr.max (String.fromInt frameCount)
