@@ -139,9 +139,12 @@ update msg model =
 
         Play ->
             ( case model.status of
-                AnimationPaused frameCount frames _ ->
+                AnimationPaused frameCount frames pauseIndex ->
                     { model
                         | status = AnimationRunning frameCount frames
+
+                        -- To resume animation from currently displayed frame
+                        , time = toFloat pauseIndex / framesPerMillisecond
                     }
 
                 _ ->
@@ -282,7 +285,14 @@ view model =
 
 frameIndexAt : Float -> Int -> Int
 frameIndexAt time frameCount =
-    floor (60 * time / 1000) |> modBy frameCount
+    floor (time * framesPerMillisecond) |> modBy frameCount
+
+
+{-| At 60 FPS there is 60 / 1000 = 0.06 frames per millisecond
+-}
+framesPerMillisecond : Float
+framesPerMillisecond =
+    0.06
 
 
 playControls : Bool -> Int -> Html Msg
