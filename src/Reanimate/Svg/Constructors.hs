@@ -208,10 +208,10 @@ gridLayout rows = mkGroup
 --   <<docs/gifs/doc_mkText.gif>>
 mkText :: T.Text -> Tree
 mkText str =
-  flipYAxis $
+  (flipYAxis $
   TextTree Nothing $ defaultSvg
     & textRoot .~ span_
+    & fontSize .~ pure (Num 2))
     & textAnchor .~ pure (TextAnchorMiddle)
-    & fontSize .~ pure (Num 2)
   where
     span_ = defaultSvg & spanContent .~ [SpanText str]
