@@ -93,7 +93,7 @@ reanimate :: Animation -> IO ()
 reanimate animation = do
   Options{..} <- getDriverOptions
   case optsCommand of
-    Raw        -> renderSvgs animation
+    Raw        -> setFPS 60 >> renderSvgs animation
     Test       -> do
       setNoExternals True
       -- hSetBinaryMode stdout True
