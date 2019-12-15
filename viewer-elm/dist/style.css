@@ -51,3 +51,8 @@ body {
 .help-dialog table {
   color: white;
 }
+
+#play-or-pause {
+  text-align: center;
+  width: 60px;
+}
