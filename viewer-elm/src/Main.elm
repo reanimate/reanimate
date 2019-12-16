@@ -351,7 +351,7 @@ frameView frameIndex frameCount isPaused frames showingHelp frameDeltas =
         bar =
             Html.pre [ class "bar" ]
                 [ playControls isPaused frameIndex
-                , Html.text <|
+                , Html.span [ class "text" ] [Html.text <|
                     " Frame: "
                         ++ String.padLeft digitCount '0' (String.fromInt (frameIndex + 1))
                         ++ " / "
@@ -361,7 +361,7 @@ frameView frameIndex frameCount isPaused frames showingHelp frameDeltas =
 
                             else
                                 Fps.showAverage frameDeltas
-                           )
+                           )]
                 , progressView
                 , helpView
                 ]
@@ -374,8 +374,8 @@ frameView frameIndex frameCount isPaused frames showingHelp frameDeltas =
 
 progressBar : Int -> Int -> Html msg
 progressBar receivedFrames frameCount =
-    Html.label []
-        [ Html.text " | Loading frames "
+    Html.label [ ]
+        [ Html.span [ class "text" ] [ Html.text " | Loading frames " ]
         , Html.progress
             [ value (String.fromInt receivedFrames)
             , Attr.max (String.fromInt frameCount)
