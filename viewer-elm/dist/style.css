@@ -28,6 +28,12 @@ body {
   margin-top: 0;
   width: 100%;
 }
+.bar .text {
+  background: rgba(0,0,0,0.5);
+}
+.bar progress {
+  background-color: #eee;
+}
 
 .media-controls {
   display: inline-block;
