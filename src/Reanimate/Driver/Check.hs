@@ -22,16 +22,18 @@ checkEnvironment :: IO ()
 checkEnvironment = do
     putStrLn "reanimate checks:"
     runCheck "Has ffmpeg" hasFFmpeg
-    runCheck "Has LaTeX" hasLaTeX
-    runCheck "Has XeLaTeX" hasXeLaTeX
     runCheck "Has dvisvgm" hasDvisvgm
     runCheck "Has povray" hasPovray
     runCheck "Has blender" hasBlender
+    runCheck "Has inkscape" hasInkscape
+    runCheck "Has convert" hasConvert
+    runCheck "Has LaTeX" hasLaTeX
     runCheck ("Has LaTeX package '"++ "babel" ++ "'") $ hasTeXPackage "latex"
       "[english]{babel}"
     forM_ latexPackages $ \pkg ->
       runCheck ("Has LaTeX package '"++ pkg ++ "'") $ hasTeXPackage "latex" $
         "{"++pkg++"}"
+    runCheck "Has XeLaTeX" hasXeLaTeX
     forM_ xelatexPackages $ \pkg ->
       runCheck ("Has XeLaTeX package '"++ pkg ++ "'") $ hasTeXPackage "xelatex" $
         "{"++pkg++"}"
@@ -78,59 +80,66 @@ hasPovray :: IO (Either String String)
 hasPovray = hasProgram "povray"
 
 hasFFmpeg :: IO (Either String String)
-hasFFmpeg = do
-  mbVersion <- ffmpegVersion
-  return $ case mbVersion of
-    Nothing                   -> Left "no"
-    Just vs | vs < minVersion -> Left $ "too old: " ++ showVersion vs ++ " < " ++ showVersion minVersion
-            | otherwise       -> Right (showVersion vs)
+hasFFmpeg = checkMinVersion minVersion <$> ffmpegVersion
   where
     minVersion = Version [4,1,3] []
 
 hasBlender :: IO (Either String String)
-hasBlender = do
-  mbVersion <- blenderVersion
-  return $ case mbVersion of
-    Nothing                   -> Left "no"
-    Just vs | vs < minVersion -> Left $ "too old: " ++ showVersion vs ++ " < " ++ showVersion minVersion
-            | otherwise       -> Right (showVersion vs)
+hasBlender = checkMinVersion minVersion <$> blenderVersion
   where
     minVersion = Version [2,80] []
 
-ffmpegVersion :: IO (Maybe Version)
-ffmpegVersion = do
-  mbPath <- findExecutable "ffmpeg"
-  case mbPath of
-    Nothing   -> return Nothing
-    Just path -> do
-      ret <- runCmd_ path ["-version"]
-      case ret of
-        Left{} -> return $ Just noVersion
-        Right out ->
-          case map (take 3 . words) $ take 1 $ lines out of
-            [["ffmpeg", "version", vs]] ->
-              return $ Just $ fromMaybe noVersion $ parseVS vs
-            _ -> return $ Just noVersion
+hasInkscape :: IO (Either String String)
+hasInkscape = checkMinVersion minVersion <$> inkscapeVersion
   where
-    noVersion = Version [] []
-    parseVS vs = listToMaybe $ reverse
-      [ v | (v, _) <- readP_to_S parseVersion vs ]
+    minVersion = Version [0,92] []
 
+hasConvert :: IO (Either String String)
+hasConvert = checkMinVersion minVersion <$> convertVersion
+  where
+    minVersion = Version [7,0,0] []
+
+ffmpegVersion :: IO (Maybe Version)
+ffmpegVersion = extractVersion "ffmpeg" ["-version"] $ \line ->
+      case take 3 $ words line of
+        ["ffmpeg", "version", vs] -> vs
+        _ -> ""
 
 blenderVersion :: IO (Maybe Version)
-blenderVersion = do
-  mbPath <- findExecutable "blender"
+blenderVersion = extractVersion "blender" ["--version"] $ \line ->
+    case take 2 (words line) of
+      ["Blender", vs] -> vs
+      _ -> ""
+
+inkscapeVersion :: IO (Maybe Version)
+inkscapeVersion = extractVersion "inkscape" ["--version"] $ \line ->
+    case take 2 $ words line of
+      ["Inkscape", vs] -> vs
+      _ -> ""
+
+convertVersion :: IO (Maybe Version)
+convertVersion = extractVersion "convert" ["-version"] $ \line ->
+    case take 3 $ words line of
+      ["Version:", "ImageMagick", vs] -> vs
+      _ -> ""
+
+checkMinVersion :: Version -> Maybe Version -> Either String String
+checkMinVersion _minVersion Nothing = Left "no"
+checkMinVersion minVersion (Just vs)
+  | vs < minVersion = Left $ "too old: " ++ showVersion vs ++ " < " ++ showVersion minVersion
+  | otherwise       = Right (showVersion vs)
+
+extractVersion :: FilePath -> [String] -> (String -> String) -> IO (Maybe Version)
+extractVersion execPath args outputFilter = do
+  mbPath <- findExecutable execPath
   case mbPath of
     Nothing -> return Nothing
     Just path -> do
-      ret <- runCmd_ path ["--version"]
+      ret <- runCmd_ path args
       case ret of
         Left{} -> return $ Just noVersion
         Right out ->
-          case take 2 (words out) of
-            ["Blender", vs] ->
-              return $ Just $ fromMaybe noVersion $ parseVS vs
-            _ -> return $ Just noVersion
+          pure $ Just $ fromMaybe noVersion $ parseVS $ outputFilter out
   where
     noVersion = Version [] []
     parseVS vs = listToMaybe $ reverse
