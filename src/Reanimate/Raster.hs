@@ -17,19 +17,21 @@ import qualified Data.ByteString             as B
 import qualified Data.ByteString.Base64.Lazy as Base64
 import qualified Data.ByteString.Lazy.Char8  as LBS
 import           Data.Hashable
+import qualified Data.Text                   as T
 import           Graphics.SvgTree            (Number (..), Tree (..),
-                                              defaultSvg,parseSvgFile)
+                                              defaultSvg, parseSvgFile)
 import qualified Graphics.SvgTree            as Svg
 import           Reanimate.Animation
-import           Reanimate.Misc
 import           Reanimate.Cache
+import           Reanimate.Misc
+import           Reanimate.Parameters
 import           Reanimate.Svg.Constructors
 import           Reanimate.Svg.Unuse
 import           System.Directory
 import           System.FilePath
-import           System.IO.Unsafe
-import           System.IO.Temp
 import           System.IO
+import           System.IO.Temp
+import           System.IO.Unsafe
 
 
 {-# INLINE embedImage #-}
@@ -88,6 +90,7 @@ vectorize :: FilePath -> Tree
 vectorize = vectorize_ []
 
 vectorize_ :: [String] -> FilePath -> Tree
+vectorize_ _ path | pNoExternals = mkText $ T.pack path
 vectorize_ args path = unsafePerformIO $ do
     root <- getXdgDirectory XdgCache "reanimate"
     createDirectoryIfMissing True root
@@ -116,6 +119,7 @@ vectorize_ args path = unsafePerformIO $ do
 -- imageAsFile img
 
 svgAsPngFile :: Tree -> FilePath
+svgAsPngFile _ | pNoExternals = "/svgAsPngFile/has/been/disabled"
 svgAsPngFile svg = unsafePerformIO $ cacheFile template $ \pngPath -> do
     let svgPath = replaceExtension pngPath "svg"
     -- ffmpeg <- requireExecutable "ffmpeg"

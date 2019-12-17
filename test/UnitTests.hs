@@ -58,6 +58,7 @@ compileTestFolder path = do
     | file <- files
     , let fullPath = path </> file
     , takeExtension file == ".hs" || takeExtension file == ".lhs"
+    , notElem (replaceExtension file "golden") files
     ]
   where
     ghcOpts = ["-fno-code", "-O0", "-Werror", "-Wall"]
