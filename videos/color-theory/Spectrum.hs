@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo       #-}
-module Spectrum (colorSpacesScene, xyzTernaryPlot) where
+module Spectrum (colorSpacesScene, xyzTernaryPlot, interpolation, spacesA) where
 
 import           Control.Lens                  ((&), (.~))
 
@@ -31,6 +31,8 @@ import           Reanimate.Scene
 import           Reanimate.Effect
 import           Reanimate.Signal
 import           Reanimate.Svg
+import           Reanimate.Interpolate
+import           Reanimate.Builtin.Documentation
 
 labScaleX = 128
 labScaleY = 128
@@ -227,7 +229,7 @@ xyzTernaryPlot = mkAnimation 2 $ \t ->
       ]
   where
     imgSize :: Num a => a
-    imgSize = 1000
+    imgSize = 50
     img1 t = cieXYImage t imgSize
     img2 = cieLABImage imgSize imgSize
     obsColors =
@@ -468,3 +470,62 @@ drawLabel label maxHeight dat c = animate $ const $
     initNM = fromIntegral $ fst (head dat)
     lastNM = 700
     percent = (fromIntegral nm-initNM)/(lastNM-initNM)
+
+interpolation :: Animation
+interpolation = mkAnimation 2 $ \t ->
+    mkGroup
+    [ translate 0 3 $
+      scaleXY (curveS 2 1) 0.2 $
+      showColorMap $ interpolateRGB8 hsvComponents a b
+    , translate 0 1 $
+      scaleXY (curveS 2 1) 0.2 $
+      showColorMap $ interpolateRGB8 xyzComponents a b
+    , translate 0 (-1) $
+      scaleXY (curveS 2 1) 0.2 $
+      showColorMap $ interpolateRGB8 lchComponents a b
+    , translate 0 (-3) $
+      scaleXY (curveS 2 1) 0.2 $
+      showColorMap $ interpolateRGB8 labComponents a b
+    ]
+  where
+    a = cyan -- green
+    b = red
+    yellow = PixelRGB8 0xFF 0xFF 0x00
+    green = PixelRGB8 0x00 0xFF 0x00
+    blue = PixelRGB8 0x00 0x00 0xFF
+    cyan = PixelRGB8 0x00 0xFF 0xFF
+    red =  PixelRGB8 0xFF 0x00 0x00
+
+lchColorSpace :: Int -> Int -> Tree
+lchColorSpace width height = embedImage $ generateImage gen width height
+  where
+    toRad deg = deg/180 * pi
+    gen x y =
+      let
+          h = fromToS 0 360 (fromIntegral x / fromIntegral width)
+          aStar = (cos (toRad h) * c)
+          bStar = (sin (toRad h) * c)
+          l = findLStar aStar bStar
+          c = fromToS 0 (sqrt (labScaleX^2 + labScaleY^2)) (fromIntegral y / fromIntegral height)
+          -- RGB r g b = toSRGBBounded (colorPack lchComponents l c h)
+          RGB r g b = toSRGBBounded (cieLAB d65 l aStar bStar)
+      in PixelRGB8 r g b
+
+hsvColorSpace :: Int -> Int -> Tree
+hsvColorSpace width height = embedImage $ generateImage gen width height
+  where
+    toRad deg = deg/180 * pi
+    gen x y =
+      let
+          h = fromToS 0 360 (fromIntegral x / fromIntegral width)
+          v = 1
+          s = fromToS 0 1 (fromIntegral y / fromIntegral height)
+          RGB r g b = toSRGBBounded (colorPack hsvComponents h s v)
+      in PixelRGB8 r g b
+
+spacesA :: Animation
+spacesA = animate $ const $
+  scaleToSize screenWidth screenHeight $
+  -- cieLABImage 100 100
+  -- lchColorSpace 100 100
+  hsvColorSpace 100 100
