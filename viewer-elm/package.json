@@ -1,0 +1,22 @@
+{
+  "name": "viewer-elm",
+  "version": "0.1.0",
+  "description": "Animation preview ui for reanimate",
+  "main": "",
+  "scripts": {
+    "build": "elm make src/Main.elm --optimize --output dist/elm.js",
+    "dev-server": "elm-live --open --dir=dist --start-page=index.html src/Main.elm -- --output dist/elm.js",
+    "format": "elm-format --yes .",
+    "minify": "uglifyjs dist/elm.js --compress \"pure_funcs='F2,F3,F4,F5,F6,F7,F8,F9,A2,A3,A4,A5,A6,A7,A8,A9',pure_getters,keep_fargs=false,unsafe_comps,unsafe\" | uglifyjs --mangle --output=dist/elm.js"
+  },
+  "author": "",
+  "license": "Unlicense",
+  "dependencies": {
+    "elm": "^0.19.1-3"
+  },
+  "devDependencies": {
+    "elm-format": "^0.8.2",
+    "elm-live": "^4.0.1",
+    "uglify-js": "^3.7.2"
+  }
+}
