@@ -23,12 +23,9 @@ description:
   viewer and auto-reloader.
 
 
-data-files:           viewer/build/*.js
-                      viewer/build/*.html
-                      viewer/build/static/js/2.822530b2.chunk.js
-                      viewer/build/static/js/main.b15b405f.chunk.js
-                      viewer/build/static/js/runtime~main.9eb600ee.js
-                      viewer/build/static/css/main.f7ad3e9b.chunk.css
+data-files:           viewer-elm/dist/index.html
+                      viewer-elm/dist/elm.js
+                      viewer-elm/dist/style.css
                       data/CIExyz.csv
                       data/CIE_XYZ.csv
                       data/cone_sensitivity_lms.csv
