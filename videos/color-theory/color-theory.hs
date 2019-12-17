@@ -53,9 +53,11 @@ import           Spectrum
  - draw sRGB triangle
  - cut to sRGB triangle
  - scale sRGB triangle to ternary plot
- - show interpolation between yellow and blue
+ - show interpolation between green and red
+ - it has yellow in the middle because xyz-space is based on physical reality
+ - show interpolation between cyan and red
  - show that grey is in the middle
- - draw LAB space
+ - transition xyz-space to hsv-space
 -}
 
 highdef = True
@@ -65,7 +67,9 @@ main = reanimate $
   (animate $ const $ mkBackground "black") `parA`
   -- monalisaScene
   -- colorSpacesScene
-  xyzTernaryPlot
+  -- xyzTernaryPlot
+  interpolation
+  -- spacesA
   -- clipPathTest
 
 
