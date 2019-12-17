@@ -1,0 +1,64 @@
+body {
+  padding: 0;
+  margin: 0;
+}
+
+.app {
+  height: 100vh;
+  background-color: #282c34;
+  color: white;
+  font-family: monospace;
+  overflow: hidden;
+}
+
+.viewer {
+  position: static;
+}
+
+.viewer img {
+  max-width: 100vw;
+  max-height: 100vh;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.bar {
+  position: fixed;
+  top: 0;
+  margin-top: 0;
+  width: 100%;
+}
+.bar .text {
+  background: rgba(0,0,0,0.5);
+}
+.bar progress {
+  background-color: #eee;
+}
+
+.media-controls {
+  display: inline-block;
+}
+
+.help-button {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.help-dialog {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: white;
+  background-color: #555;
+  padding: 30px;
+}
+
+.help-dialog table {
+  color: white;
+}
+
+#play-or-pause {
+  text-align: center;
+  width: 60px;
+}
