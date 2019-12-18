@@ -1,4 +1,41 @@
-module Reanimate.Animation where
+module Reanimate.Animation
+  ( Duration
+  , Time
+  , SVG
+  , Animation(..) -- TODO should this be exposed? The constructor is used directly in Effect.hs
+  -- * Creating animations
+  , mkAnimation
+  , animate
+  , staticFrame
+  , pause
+  -- * Querying animations
+  , duration
+  , frameAt
+  -- * Composing animations
+  , seqA
+  , andThen
+  , parA
+  , parLoopA
+  , parDropA
+  -- * Modifying animations
+  , setDuration
+  , adjustDuration
+  , mapA
+  , takeA
+  , dropA
+  , pauseAtEnd
+  , pauseAtBeginning
+  , pauseAround
+  , pauseUntil
+  , repeatA
+  , reverseA
+  , playThenReverseA
+  , signalA
+  , freezeAtPercentage
+  -- * Rendering
+  , renderTree
+  , renderSvg
+  ) where
 
 import           Control.Arrow              ()
 import           Data.Fixed                 (mod')
@@ -25,9 +62,13 @@ data Animation = Animation Duration (Time -> SVG)
 mkAnimation :: Duration -> (Time -> SVG) -> Animation
 mkAnimation = Animation
 
--- | Construct animation with a duration of @1@.
+-- | Construct an animation with a duration of @1@.
 animate :: (Time -> SVG) -> Animation
 animate = Animation 1
+
+-- | Create an animation with provided @duration@, which consists of stationary frame displayed for its entire duration.
+staticFrame :: Duration -> SVG -> Animation
+staticFrame d svg = Animation d (const svg)
 
 -- | Query the duration of an animation.
 duration :: Animation -> Duration
@@ -128,15 +169,21 @@ pause d = Animation d (const None)
 andThen :: Animation -> Animation -> Animation
 andThen a b = a `parA` (pause (duration a) `seqA` b)
 
-frameAt :: Double -> Animation -> Tree
+-- | Calculate the frame that would be displayed at given point in @time@ of running @animation@.
+--
+-- The provided time parameter is clamped between 0 and animation duration.
+frameAt :: Time -> Animation -> SVG
 frameAt t (Animation d f) = f t'
   where
-    t' = min 1 (max 0 (t/d))
+    t' = clamp 0 1 (t/d)
 
-renderTree :: Tree -> String
+renderTree :: SVG -> String
 renderTree t = maybe "" ppElement $ xmlOfTree t
 
-renderSvg :: Maybe Number -> Maybe Number -> Tree -> String
+renderSvg :: Maybe Number -- ^ The number to use as value of the @width@ attribute of the resulting top-level svg element. If @Nothing@, the width attribute won't be rendered.
+          -> Maybe Number -- ^ Similar to previous argument, but for @height@ attribute.
+          -> SVG          -- ^ SVG to render
+          -> String       -- ^ String representation of SVG XML markup
 renderSvg w h t = ppDocument doc
 -- renderSvg w h t = ppFastElement (xmlOfDocument doc)
   where
@@ -160,7 +207,7 @@ renderSvg w h t = ppDocument doc
 --
 --   <<docs/gifs/doc_mapA.gif>>
 
-mapA :: (Tree -> Tree) -> Animation -> Animation
+mapA :: (SVG -> SVG) -> Animation -> Animation
 mapA fn (Animation d f) = Animation d (fn . f)
 
 -- | Freeze the last frame for @t@ seconds at the end of the animation.
@@ -200,7 +247,7 @@ pauseUntil :: Duration -> Animation -> Animation
 pauseUntil d a = pauseAtEnd (d-duration a) a
 
 -- Freeze frame at time @t@.
-freezeFrame :: Double -> Animation -> (Time -> SVG)
+freezeFrame :: Time -> Animation -> (Time -> SVG)
 freezeFrame t (Animation d f) = const $ f (t/d)
 
 -- | Change the duration of an animation. Animates are stretched or squished
@@ -249,7 +296,13 @@ repeatA :: Double -> Animation -> Animation
 repeatA n (Animation d f) = Animation (d*n) $ \t ->
   f ((t*n) `mod'` 1)
 
-freezeAtPercentage :: Time -> Animation -> Animation
+
+-- | @freezeAtPercentage time animation@ creates an animation consisting of stationary frame,
+-- that would be displayed in the provided @animation@ at given @time@.
+-- The duration of the new animation is the same as the duration of provided @animation@.
+freezeAtPercentage :: Time  -- ^ value between 0 and 1. The frame displayed at this point in the original animation will be displayed for the duration of the new animation
+                   -> Animation -- ^ original animation, from which the frame will be taken
+                   -> Animation -- ^ new animation consisting of static frame displayed for the duration of the original animation
 freezeAtPercentage frac (Animation d genFrame) =
   Animation d $ const $ genFrame frac
 
@@ -263,14 +316,29 @@ freezeAtPercentage frac (Animation d genFrame) =
 signalA :: Signal -> Animation -> Animation
 signalA fn (Animation d gen) = Animation d $ gen . fn
 
-takeA :: Double -> Animation -> Animation
+-- | @takeA duration animation@ creates a new animation consisting of initial segment of 
+--   @animation@ of given @duration@, played at the same rate as the original animation.
+--
+--  The @duration@ parameter is clamped to be between 0 and @animation@'s duration.
+--  New animation duration is equal to (eventually clamped) @duration@.
+takeA :: Duration -> Animation -> Animation
 takeA len (Animation d gen) = Animation len' $ \t ->
     gen (t * len'/d)
   where
-    len' = min len d
+    len' = clamp 0 d len
 
-dropA :: Double -> Animation -> Animation
+-- | @dropA duration animation@ creates a new animation by dropping initial segment
+--   of length @duration@ from the provided @animation@, played at the same rate as the original animation.
+--
+--  The @duration@ parameter is clamped to be between 0 and @animation@'s duration.
+--  The duration of the resulting animation is duration of provided @animation@ minus (eventually clamped) @duration@.
+dropA :: Duration -> Animation -> Animation
 dropA len (Animation d gen) = Animation len' $ \t ->
     gen (t * len'/d + len/d)
   where
-    len' = max (d-len) 0
+    len' = d - clamp 0 d len
+
+clamp :: Double -> Double -> Double -> Double
+clamp a b number
+  | a < b     = max a (min b number)
+  | otherwise = max b (min a number)
