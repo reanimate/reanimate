@@ -4,7 +4,6 @@ module Reanimate.Scene where
 import           Control.Monad.Fix
 import           Control.Monad.ST
 import           Data.List
-import           Data.Ord
 import           Data.STRef
 import           Reanimate.Animation
 import           Reanimate.Signal
@@ -61,7 +60,7 @@ sceneAnimation action =
     (_, s, p, tl, gens) <- unM action 0
     let dur = max s p
         anis = foldl' parDropA (pause 0) $
-                map snd $ sortBy (comparing fst)
+                map snd $ sortOn fst
                   [ (z, pause startT `seqA` a)
                   | (startT, a, z) <- tl
                   ]
@@ -69,7 +68,7 @@ sceneAnimation action =
     return $ anis `parDropA` mkAnimation dur (\t ->
       mkGroup $
       map fst $
-      sortBy (comparing snd)
+      sortOn snd
       [ spriteRender dur (t*dur)
       | spriteRender <- genFns ])
   )
@@ -117,7 +116,7 @@ withSceneDuration s = do
   t2 <- queryNow
   return (t2-t1)
 
-data Object s = Object (STRef s (Maybe Timeline))
+newtype Object s = Object (STRef s (Maybe Timeline))
 
 newObject :: Scene s (Object s)
 newObject = Object <$> liftST (newSTRef Nothing)
@@ -165,7 +164,7 @@ simpleParam render def = do
        return $ \real_t _d _t -> render (getV real_t)
   return v
 
-data Var s a = Var (STRef s (Time -> a))
+newtype Var s a = Var (STRef s (Time -> a))
 
 newVar :: a -> Scene s (Var s a)
 newVar def = Var <$> liftST (newSTRef (const def))
@@ -338,18 +337,18 @@ newBlock :: Var s Position -> Number -> Scene s (Sprite s)
 
 
 -- FIXME: Move this somewhere more appropriate
-transition :: Effect
-           -> Effect
-           -> Double
-           -> Animation
-           -> Animation
-           -> Animation
+transition :: Effect -- ^ Effect to be applied at the beginning of the second animation
+           -> Effect -- ^ Effect to be applied at the end of first animation
+           -> Double -- ^ Duration of the transition
+           -> Animation -- ^ First animation
+           -> Animation -- ^ Second animation
+           -> Animation -- ^ Animation consisting of first animation, followed by second animation with transition based on given effects in between
 transition tIn tOut tT a b = sceneAnimation $ do
   fork $ play $ a
-    # applyE (overEnding tT $ tOut)
+    # applyE (overEnding tT tOut)
   wait (duration a - tT)
   play $ b
-    # applyE (overBeginning tT $ tIn)
+    # applyE (overBeginning tT tIn)
 
 transitions :: Effect -> Effect -> Double -> [Animation] -> Animation
 transitions _ _ _ [] = pause 0
