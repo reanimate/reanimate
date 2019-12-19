@@ -65,10 +65,12 @@ highdef = True
 main :: IO ()
 main = reanimate $
   (animate $ const $ mkBackground "black") `parA`
-  -- monalisaScene
+  monalisaScene `seqA`
   -- colorSpacesScene
+  scene2
+  -- scene3
   -- xyzTernaryPlot
-  interpolation
+  -- interpolation
   -- spacesA
   -- clipPathTest
 
@@ -96,11 +98,11 @@ monalisaScene =
         play $ sceneFalseColorIntro
 
       -- Show colormap as monalisa fades in
-      play $ showColorMap (fromIntegral minR/255) ((fromIntegral maxR+1)/255)
-        # setDuration toGrayScaleTime
-        # pauseAround 1 1
-        # fadeIn stdFade
-        # fadeOut stdFade
+      -- play $ showColorMap (fromIntegral minR/255) ((fromIntegral maxR+1)/255)
+      --   # setDuration toGrayScaleTime
+      --   # pauseAround 1 1
+      --   # fadeIn stdFade
+      --   # fadeOut stdFade
 
     -- Cycle through colormaps for monalisa
     -- play $ sceneColorMaps `sim` (sceneFalseColorChain $ map snd
@@ -284,7 +286,7 @@ drawPixelImage start end = mkAnimation 2 $ \t ->
      limitGreyPixels (floor (limit*255)) monalisaLarge
 
 drawHexPixels :: Animation
-drawHexPixels = mkAnimation 1 $ \_ ->
+drawHexPixels = mkAnimation 1 $ \_ -> simplify $ simplify $ simplify $
   mkGroup
   [ if highdef then defs else None
   , withFillOpacity 1 $ withStrokeWidth 0 $ withFillColor "white" $

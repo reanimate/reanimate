@@ -42,6 +42,15 @@ embedImage img = embedPng width height (encodePng img)
     height = fromIntegral $ imageHeight img
 
 embedPng :: Double -> Double -> LBS.ByteString -> Tree
+-- embedPng w h png = unsafePerformIO $ do
+--     LBS.writeFile path png
+--     return $ ImageTree $ defaultSvg
+--       & Svg.imageCornerUpperLeft .~ (Svg.Num (-w/2), Svg.Num (-h/2))
+--       & Svg.imageWidth .~ Svg.Num w
+--       & Svg.imageHeight .~ Svg.Num h
+--       & Svg.imageHref .~ ("file://"++path)
+--   where
+--     path = "/tmp" </> show (hash png) <.> "png"
 embedPng w h png = flipYAxis $
   ImageTree $ defaultSvg
     & Svg.imageCornerUpperLeft .~ (Svg.Num (-w/2), Svg.Num (-h/2))

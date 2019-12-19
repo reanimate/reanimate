@@ -8,16 +8,17 @@ module Reanimate.Render
 
 import           Control.Concurrent
 import           Control.Exception
-import           Control.Monad      (forM_)
-import qualified Data.Text          as T
-import qualified Data.Text.IO       as T
-import           Graphics.SvgTree   (Number (..))
-import           Reanimate.Misc
+import           Control.Monad       (forM_)
+import qualified Data.Text           as T
+import qualified Data.Text.IO        as T
+import           Graphics.SvgTree    (Number (..))
 import           Reanimate.Animation
-import           System.FilePath    ((</>))
+import           Reanimate.Misc
+import           System.FilePath     ((</>))
+-- import           System.FilePath    (replaceExtension)
+import           System.Exit
 import           System.IO
-import           Text.Printf        (printf)
-import System.Exit
+import           Text.Printf         (printf)
 
 renderSvgs :: Animation ->  IO ()
 renderSvgs ani = do
@@ -122,11 +123,19 @@ generateFrames ani width_ height_ rate action = withTempDir $ \tmp -> do
     let frameName nth = tmp </> printf nameTemplate nth
     concurrentForM_ frames $ \n -> do
       writeFile (frameName n) $ renderSvg width height $ nthFrame n
+      -- runCmd "inkscape"
+      --   [ "--without-gui"
+      --   , "--file=" ++ frameName n
+      --   , "--export-png=" ++ replaceExtension (frameName n) "png" ]
+      -- runCmd "rsvg-convert"
+      --   [ frameName n
+      --   , "--output", replaceExtension (frameName n) "png" ]
       modifyMVar_ done $ \nDone -> do
         putStr $ "\r" ++ show (nDone+1) ++ "/" ++ show frameCount
         hFlush stdout
         return (nDone+1)
     putStrLn "\n"
+    -- action (tmp </> pngTemplate)
     action (tmp </> nameTemplate)
   where
     width = Just $ Num $ fromIntegral width_
@@ -136,6 +145,9 @@ generateFrames ani width_ height_ rate action = withTempDir $ \tmp -> do
     frameCount = round (duration ani * fromIntegral rate) :: Int
     nameTemplate :: String
     nameTemplate = "render-%05d.svg"
+
+    -- pngTemplate :: String
+    -- pngTemplate = "render-%05d.png"
 
 concurrentForM_ :: [a] -> (a -> IO ()) -> IO ()
 concurrentForM_ lst action = do

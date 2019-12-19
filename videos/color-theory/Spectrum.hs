@@ -1,10 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo       #-}
-module Spectrum (colorSpacesScene, xyzTernaryPlot, interpolation, spacesA) where
+module Spectrum
+  ( colorSpacesScene
+  , xyzTernaryPlot
+  , interpolation
+  , spacesA
+  , scene2
+  , scene3
+  ) where
 
-import           Control.Lens                  ((&), (.~))
+import           Control.Lens                    ((&), (.~))
 
 import           Codec.Picture
+import           Control.Monad
 import           Data.Colour
 import           Data.Colour.CIE
 import           Data.Colour.CIE.Illuminant
@@ -12,27 +20,43 @@ import           Data.Colour.RGBSpace
 import           Data.Colour.SRGB
 import           Data.Colour.SRGB.Linear
 import           Data.List
-import qualified Data.Map                      as Map
+import qualified Data.Map                        as Map
 import           Data.Ord
-import           Data.Text                     (Text)
-import           Graphics.SvgTree              hiding (Text)
+import           Data.Text                       (Text)
+import           Graphics.SvgTree                hiding (Text)
 import           Linear.V2
-import qualified Reanimate.Builtin.TernaryPlot as Ternary
+import           Reanimate
+import           Reanimate.Animation
+import           Reanimate.Builtin.Documentation
+import qualified Reanimate.Builtin.TernaryPlot   as Ternary
 import           Reanimate.ColorMap
 import           Reanimate.ColorSpace
 import           Reanimate.Constants
-import           Reanimate.Driver              (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate
-import           Reanimate.Animation
-import           Reanimate.Raster
-import           Reanimate.Svg.BoundingBox
-import           Reanimate.Scene
+import           Reanimate.Driver                (reanimate)
 import           Reanimate.Effect
+import           Reanimate.Interpolate
+import           Reanimate.LaTeX
+import           Reanimate.Raster
+import           Reanimate.Scene
 import           Reanimate.Signal
 import           Reanimate.Svg
-import           Reanimate.Interpolate
-import           Reanimate.Builtin.Documentation
+import           Reanimate.Svg.BoundingBox
+
+{- STORYBOARD
+ - Wavelength scene
+    * Background: wavelength/sensitivity grid
+    * Draw SML sensitivities with labels
+    * Hide labels
+    * Morph to XYZ sensitivities
+    * Label as XYZ
+-}
+
+long = [ (nm, l) | (nm, (l, m, s)) <- Map.toList coneSensitivity ]
+medium = [ (nm, m) | (nm, (l, m, s)) <- Map.toList coneSensitivity ]
+short = [ (nm, s) | (nm, (l, m, s)) <- Map.toList coneSensitivity ]
+xCoords = [ (nm, x/2) | (nm, (x, y, z)) <- Map.toList bigXYZCoordinates ]
+yCoords = [ (nm, y/2) | (nm, (x, y, z)) <- Map.toList bigXYZCoordinates ]
+zCoords = [ (nm, z/2) | (nm, (x, y, z)) <- Map.toList bigXYZCoordinates ]
 
 labScaleX = 128
 labScaleY = 128
@@ -41,6 +65,34 @@ blueName = "royalblue"
 greenName = "green"
 redName = "maroon"
 
+drawSensitivities :: Animation
+drawSensitivities = sceneAnimation $ do
+    bg <- newSpriteA $ staticFrame 0 spectrumGrid
+    spriteZ bg 1
+
+    forM_ [(short, blueName), (medium, greenName), (long, redName)] $
+      \(dat,name) -> do
+        fork $ newSpriteA' SyncFreeze $ drawSensitivity 1 dat name
+          # setDuration drawDur
+        wait drawStagger
+  where
+    drawDur = 3
+    drawStagger = 1
+
+drawMorphingSensitivities :: Animation
+drawMorphingSensitivities = sceneAnimation $ do
+    bg <- newSpriteA $ staticFrame 0 spectrumGrid
+    spriteZ bg 1
+
+    forM_ keys $ \(datA, datB, name) -> do
+      fork $ newSpriteA $ morphSensitivity datA datB name
+        # setDuration drawDur
+  where
+    keys = [ (short, zCoords, blueName)
+           , (medium, yCoords, greenName)
+           , (long, xCoords, redName)]
+    drawDur = 3
+
 colorSpacesScene :: Animation
 colorSpacesScene = sceneAnimation $ mdo
     beginT <- queryNow
@@ -48,73 +100,61 @@ colorSpacesScene = sceneAnimation $ mdo
       # setDuration (endT-beginT)
     fork $ playZ 1 $ animate (const spectrumGrid)
       # setDuration (endT-beginT)
-    -- dur <- withSceneDuration $ do
-    --   fork $ play $ drawSensitivity 1 short blueName
-    --     # setDuration drawDur
-    --     # pauseAtBeginning (drawStagger*0)
-    --     # pauseUntil dur
-    --   fork $ do
-    --     wait (drawStagger*0 + drawDur)
-    --     play $ drawLabel "S" 1 short blueName
-    --       # setDuration 2
-    --       # applyE (overBeginning 0.3 fadeInE)
-    --   fork $ play $ drawSensitivity 1 medium greenName
-    --     # setDuration drawDur
-    --     # pauseAtBeginning (drawStagger*1)
-    --     # pauseUntil dur
-    --   fork $ do
-    --     wait (drawStagger*1 + drawDur)
-    --     play $ drawLabel "M" 1 medium greenName
-    --       # setDuration 2
-    --       # applyE (overBeginning 0.3 fadeInE)
-    --   fork $ do
-    --     wait (drawStagger*2 + drawDur)
-    --     play $ drawLabel "L" 1 long redName
-    --       # setDuration 2
-    --       # applyE (overBeginning 0.3 fadeInE)
-    --   play $ drawSensitivity 1 long redName
-    --     # setDuration drawDur
-    --     # pauseAtBeginning (drawStagger*2)
-    --     # pauseAtEnd drawPause
-
-
-    -- waitAll $ do
-    --   fork $ play $ drawSensitivity 1 short "blue"
-    --     # setDuration drawDur
-    --     # reverseAnimation
-    --   fork $ play $ drawSensitivity 1 medium "green"
-    --     # setDuration drawDur
-    --     # reverseAnimation
-    --   fork $ play $ drawSensitivity 1 long "red"
-    --     # setDuration drawDur
-    --     # reverseAnimation
+    dur <- withSceneDuration $ do
+      fork $ play $ drawSensitivity 1 short blueName
+        # setDuration drawDur
+        # pauseAtBeginning (drawStagger*0)
+        # pauseUntil dur
+      fork $ do
+        wait (drawStagger*0 + drawDur)
+        play $ drawLabel "S" blueName
+          # setDuration 2
+          # applyE (overBeginning 0.3 fadeInE)
+      fork $ play $ drawSensitivity 1 medium greenName
+        # setDuration drawDur
+        # pauseAtBeginning (drawStagger*1)
+        # pauseUntil dur
+      fork $ do
+        wait (drawStagger*1 + drawDur)
+        play $ drawLabel "M" greenName
+          # setDuration 2
+          # applyE (overBeginning 0.3 fadeInE)
+      fork $ do
+        wait (drawStagger*2 + drawDur)
+        play $ drawLabel "L" redName
+          # setDuration 2
+          # applyE (overBeginning 0.3 fadeInE)
+      play $ drawSensitivity 1 long redName
+        # setDuration drawDur
+        # pauseAtBeginning (drawStagger*2)
+        # pauseAtEnd drawPause
 
     dur2 <- withSceneDuration $ do
 
       fork $ do
         wait drawDur
-        zLabel <- newSpriteA $ drawLabel "Z" 2 zCoords blueName
+        zLabel <- newSpriteA $ drawLabel "Z" blueName
         zLabelFade <- spriteVar zLabel 0 withGroupOpacity
         fork $ tweenVar zLabelFade 0.3 (\v -> fromToS v 1)
 
         wait drawStagger
-        fork $ play $ drawLabel "Y" 2 yCoords greenName
+        fork $ play $ drawLabel "Y" greenName
           # setDuration 2
           # applyE (overBeginning 0.3 fadeInE)
         wait drawStagger
-        fork $ play $ drawLabel "X" 2 xCoords redName
+        fork $ play $ drawLabel "X" redName
           # setDuration 2
           # applyE (overBeginning 0.3 fadeInE)
 
-      fork $ play $ morphSensitivity 1 2 short zCoords blueName
+      fork $ play $ morphSensitivity short zCoords blueName
         # setDuration drawDur
         -- # pauseAtBeginning (drawStagger*0)
         # pauseUntil dur2
-      fork $ play $ morphSensitivity 1 2 medium yCoords greenName
+      fork $ play $ morphSensitivity medium yCoords greenName
         # setDuration drawDur
         -- # pauseAtBeginning (drawStagger*1)
         # pauseUntil dur2
-      play $ morphSensitivity 1 2 long xCoords redName
+      play $ morphSensitivity long xCoords redName
         # setDuration drawDur
         -- # pauseAtBeginning (drawStagger*2)
         # pauseAtEnd drawPause
@@ -127,14 +167,194 @@ colorSpacesScene = sceneAnimation $ mdo
     drawDur = 3
     drawStagger = 1
     drawPause = 4
-    long = [ (nm, l) | (nm, (l, m, s)) <- Map.toList coneSensitivity ]
-    medium = [ (nm, m) | (nm, (l, m, s)) <- Map.toList coneSensitivity ]
-    short = [ (nm, s) | (nm, (l, m, s)) <- Map.toList coneSensitivity ]
 
-    xCoords = [ (nm, x) | (nm, (x, y, z)) <- Map.toList bigXYZCoordinates ]
-    yCoords = [ (nm, y) | (nm, (x, y, z)) <- Map.toList bigXYZCoordinates ]
-    zCoords = [ (nm, z) | (nm, (x, y, z)) <- Map.toList bigXYZCoordinates ]
+drawLabelS = drawLabel "S" blueName
+drawLabelM = drawLabel "M" greenName
+drawLabelL = drawLabel "L" redName
 
+drawLabelZ = drawLabel "Z" blueName
+drawLabelY = drawLabel "Y" greenName
+drawLabelX = drawLabel "X" redName
+
+scene2 :: Animation
+scene2 = {- dropA 29 $-} sceneAnimation $ do
+  -- SML labels and timings.
+  labelS <- fork $ newSpriteA $ drawLabelS
+    # applyE (overBeginning 0.3 fadeInE)
+    # applyE (overEnding 0.2 fadeOutE)
+    # mapA (uncurry translate (labelPosition short))
+  labelM <- fork $ do
+    wait 2
+    newSpriteA $ drawLabelM
+      # applyE (overBeginning 0.3 fadeInE)
+      # applyE (overEnding 0.2 fadeOutE)
+      # mapA (uncurry translate (labelPosition medium))
+  labelL <- fork $ do
+    wait 3.5
+    newSpriteA $ drawLabelL
+      # applyE (overBeginning 0.3 fadeInE)
+      # applyE (overEnding 0.2 fadeOutE)
+      # mapA (uncurry translate (labelPosition long))
+
+  play $ drawSensitivities
+    # pauseAtEnd 1
+
+  -- Drop SML labels
+  forM_ [labelS, labelM, labelL] destroySprite
+
+  xyzGraph <- fork $ newSpriteA' SyncFreeze $ drawMorphingSensitivities
+
+  -- XYZ labels and timings
+  wait (duration drawMorphingSensitivities)
+  labelZ <- fork $ newSpriteA $ drawLabelZ
+    # applyE (overBeginning 0.3 fadeInE)
+  labelZPos <- spriteVar labelZ (labelPosition zCoords) $ uncurry translate
+
+  labelY <- fork $ newSpriteA $ drawLabelY
+    # applyE (overBeginning 0.3 fadeInE)
+  labelYPos <- spriteVar labelY (labelPosition yCoords) $ uncurry translate
+
+  labelX <- fork $ newSpriteA $ drawLabelX
+    # applyE (overBeginning 0.3 fadeInE)
+  labelXPos <- spriteVar labelX (labelPosition xCoords) $ uncurry translate
+
+  wait 4
+
+  fork $ spriteTween xyzGraph 2 $ \t -> scale (fromToS 1 0.5 $ curveS 2 t)
+  fork $ spriteTween xyzGraph 2 $ \t -> translate (fromToS 0 (screenWidth/4) $ curveS 2 t) 0
+
+  fork $ tweenVar labelZPos 2 $ \(x,y) t ->
+    let (newX, newY) = Ternary.toOffsetCartesianCoords 0 0
+        s = curveS 2 t
+    in (fromToS x (newX*5-screenWidth/4) s, fromToS y (newY*5-1) s)
+
+  fork $ tweenVar labelYPos 2 $ \(x,y) t ->
+    let (newX, newY) = Ternary.toOffsetCartesianCoords 1 0
+        s = curveS 2 t
+    in (fromToS x (newX*5-screenWidth/4) s, fromToS y (newY*5) s)
+
+  fork $ tweenVar labelXPos 2 $ \(x,y) t ->
+    let (newX, newY) = Ternary.toOffsetCartesianCoords 0 1
+        s = curveS 2 t
+    in (fromToS x (newX*5-screenWidth/4) s, fromToS y (newY*5-1) s)
+
+  wait 2
+
+  redFactor <- newVar 0
+  greenFactor <- newVar 0
+  blueFactor <- newVar 0
+  xyzSpace <- newSprite $ do
+    getRed <- freezeVar redFactor
+    getGreen <- freezeVar greenFactor
+    getBlue <- freezeVar blueFactor
+    return $ \real_t d t ->
+      cieXYImage (getRed real_t) (getGreen real_t) (getBlue real_t) imgSize
+  -- xyzSpace <- newSparite $ cieXYImage <$> unVar redFactor <*> unVar greenFactor <*> unVar blueFactor
+  spriteE xyzSpace $ constE $ translate (-screenWidth/4) 0
+  spriteZ xyzSpace (-1)
+
+
+
+  spriteE labelX (overBeginning 1 $ aroundCenterE highlightE)
+  tweenVar redFactor 1 $ \v -> fromToS v 1 . curveS 2
+
+  spriteE labelY (overBeginning 1 $ aroundCenterE highlightE)
+  tweenVar greenFactor 1 $ \v -> fromToS v 1 . curveS 2
+
+  spriteE labelZ (overBeginning 1 $ aroundCenterE highlightE)
+  tweenVar blueFactor 1 $ \v -> fromToS v 1 . curveS 2
+
+  wait 3
+  visLine <- fork $ newSpriteA' SyncFreeze $ mkAnimation 3 $ \t ->
+    withStrokeWidth 0.03 $ withStrokeColor "white" $ morphXYZCoordinates t
+  spriteZ visLine (1)
+  visSide <- spriteVar visLine 0 $ \t ->
+    translate (fromToS (screenWidth/4) (-screenWidth/4) $ curveS 2 t) 0 .
+    scale (fromToS 0.5 1 $ curveS 2 t) .
+    translate 0 (fromToS (-spectrumHeight/2) 0 $ curveS 2 t)
+  fork $ tweenVar visSide 3 $ \v -> fromToS v 1
+
+  obsVisible <- newVar 1
+  gamut <- newVar 0
+  visSpace <- fork $ newSprite $ do
+    getObs <- freezeVar obsVisible
+    getGamut <- freezeVar gamut
+    return $ \real_t d t ->
+      translate (-screenWidth/4) 0 $
+      mkGroup
+      [ mkClipPath "visible"
+        [ simplify
+          obsColors
+        ]
+      , mkClipPath "sRGB"
+        [ simplify $
+          sRGBTriangle (getGamut real_t)
+        ]
+      , withGroupOpacity (getObs real_t) $
+        withClipPathRef (Ref "visible") $
+        mkGroup [cieXYImage 1 1 1 imgSize]
+      , withClipPathRef (Ref "sRGB") $
+        mkGroup [cieXYImageGamut (getGamut real_t) imgSize]
+      ]
+
+
+
+  wait 4
+  fork $ spriteTween visLine 1 $ \t -> withGroupOpacity (1-t)
+  fork $ spriteTween xyzSpace 1 $ \t -> withGroupOpacity (1-t)
+  wait 2
+
+  fork $ spriteTween xyzGraph 1 $ \t -> withGroupOpacity (1-t)
+
+  fork $ spriteTween labelX 1 $ \t -> withGroupOpacity (1-t)
+  fork $ spriteTween labelY 1 $ \t -> withGroupOpacity (1-t)
+  fork $ spriteTween labelZ 1 $ \t -> withGroupOpacity (1-t)
+
+  wait 1
+
+  spriteTween visSpace 1 $ \t ->
+    translate (fromToS 0 (screenWidth/4) $ curveS 2 t) 0
+
+  wait 2
+
+  rgb <- newSprite $ do
+    getGamut <- freezeVar gamut
+    return $ \real_t d t ->
+      withStrokeColor "white" $ sRGBTriangle (getGamut real_t)
+  spriteTween rgb 1 $ partialSvg
+  wait 1
+  tweenVar obsVisible 1 $ \v -> fromToS v 0 . curveS 2
+  wait 1
+  fork $ spriteTween rgb 1 $ \t -> withGroupOpacity (1-t)
+  tweenVar gamut 1 $ \v -> fromToS v 1 . curveS 2
+  wait 2
+
+  return ()
+  where
+    imgSize = 50
+    obsColors =
+      lowerTransformations $
+      scale 5 $
+      renderXYZCoordinatesTernary
+
+scene3 :: Animation
+scene3 = sceneAnimation $ do
+    play $ mkAnimation 1 $ \t -> cieXYImage 0 0 t imgSize
+    play $ mkAnimation 1 $ \t -> cieXYImage t 0 1 imgSize
+    play $ mkAnimation 1 (\t -> cieXYImage 1 t 1 imgSize)
+      # pauseAtEnd 2
+  where
+    imgSize :: Num a => a
+    imgSize = 300
+    img1 t = cieXYImage t t t imgSize
+    obsColors =
+      lowerTransformations $
+      scale 5 $
+      renderXYZCoordinatesTernary
+    labColors =
+      lowerTransformations $
+      scale (100/2) $
+      renderLABCoordinates
 
 frame = mkAnimation 2 $ \t ->
     -- emit $ mkBackground "black"
@@ -178,7 +398,7 @@ frame = mkAnimation 2 $ \t ->
   where
     imgSize :: Num a => a
     imgSize = 1000
-    img1 = cieXYImage 1 imgSize
+    img1 = cieXYImage 1 1 1 imgSize
     img2 = cieLABImage imgSize imgSize
     obsColors =
       lowerTransformations $
@@ -230,7 +450,7 @@ xyzTernaryPlot = mkAnimation 2 $ \t ->
   where
     imgSize :: Num a => a
     imgSize = 50
-    img1 t = cieXYImage t imgSize
+    img1 t = cieXYImage t t t imgSize
     img2 = cieLABImage imgSize imgSize
     obsColors =
       lowerTransformations $
@@ -251,6 +471,20 @@ renderXYZCoordinatesTernary =
   , let (x,y) = Ternary.toOffsetCartesianCoords green red
   ]
 
+morphXYZCoordinates :: Double -> Tree
+morphXYZCoordinates t = withFillOpacity 0 $
+  mkLinePath $
+  [ (fromToS linearX (x*5) t, fromToS 0 (y*5) t)
+  | (nm, (red,green,blue)) <- Map.toList lightXYZCoordinates
+  , let (x,y) = Ternary.toOffsetCartesianCoords green red
+  , let percent = (fromIntegral nm-initNM)/(lastNM-initNM)
+        linearX = percent * spectrumWidth - spectrumWidth/2
+  ]
+  where
+    dat = Map.toList lightXYZCoordinates
+    initNM = fromIntegral $ fst (head dat)
+    lastNM = 700 -- fromIntegral $ fst (last dat)
+
 -- Red corner: 0.64 0.33 0
 -- Green corner: 0.3 0.6 0.1
 -- Blue corner: 0.15 0.06 0.79
@@ -270,10 +504,24 @@ cieXYImageGamut t density = Ternary.ternaryPlot density $ \aCoord bCoord cCoord 
     (gX, gY, gZ) = chromaCoords $ chromaConvert g
     (bX, bY, bZ) = chromaCoords $ chromaConvert b
 
-cieXYImage :: Double -> Int -> Tree
-cieXYImage t density = Ternary.ternaryPlot density $ \aCoord bCoord cCoord ->
+-- aCoord = red
+-- bCoord = green
+-- cCoord = blue
+-- closer to white when (aCoord+cCoord) approaches 0
+cieXYImage :: Double -> Double -> Double -> Int -> Tree
+cieXYImage redFactor greenFactor blueFactor density =
+    Ternary.ternaryPlot density $ \aCoord bCoord cCoord ->
     let
-      RGB r g b = toSRGBBounded (cieXYZ aCoord bCoord cCoord)
+      white = chromaColour d65 1
+      c = cieXYZ aCoord bCoord cCoord
+      redD = fromToS (1-aCoord) 1 redFactor
+      greenD = fromToS (1-bCoord) 1 greenFactor
+      blueD = fromToS (1-cCoord) 1 blueFactor
+      RGB r g b = toSRGBBounded $
+        blend (1-redD) white $
+        blend (1-greenD) white $
+        blend (1-blueD) white $ c
+      -- RGB r g b = toSRGBBounded (chromaColour d65 1)
     in PixelRGBA8 r g b 0xFF
 
 cieLABImage :: Int -> Int -> Tree
@@ -353,7 +601,8 @@ spectrumGrid :: Tree
 spectrumGrid =
   withStrokeWidth strokeWidth $
   mkGroup
-  [ center $
+  [ --center $
+    translate (-spectrumWidth/2) (spectrumHeight/2) $
     withFillOpacity 0 $ withStrokeColor "white" $ mkPath $
     [ MoveTo OriginAbsolute [V2 0 0]
     , HorizontalTo OriginRelative [tickLength,-tickLength]
@@ -372,19 +621,19 @@ spectrumGrid =
     | n <- [0..nTicksY-1]
     ]
   , withFillColor "white" $
-    translate (-spectrumWidth*0.5 + svgWidth sensitivity) (0) $
+    translate (-spectrumWidth*0.5 + svgWidth sensitivity*1.2) 0 $
     sensitivity
   , withFillColor "white" $
-    translate 0 (-spectrumHeight*0.5 + svgHeight wavelength) $
+    translate 0 (-spectrumHeight*0.5 + svgHeight wavelength*1.2) $
     wavelength
-  , withFillColor "white" $
-    translate (-spectrumWidth*0.5 + svgWidth shortWaves/2)
-              (-spectrumHeight*0.5 + svgHeight shortWaves) $
-    shortWaves
-  , withFillColor "white" $
-    translate (spectrumWidth*0.5 - svgWidth shortWaves/2)
-              (-spectrumHeight*0.5 + svgHeight shortWaves) $
-    longWaves
+  -- , withFillColor "white" $
+  --   translate (-spectrumWidth*0.5 + svgWidth shortWaves/2)
+  --             (-spectrumHeight*0.5 + svgHeight shortWaves) $
+  --   shortWaves
+  -- , withFillColor "white" $
+  --   translate (spectrumWidth*0.5 - svgWidth shortWaves/2)
+  --             (-spectrumHeight*0.5 + svgHeight shortWaves) $
+  --   longWaves
   ]
   where
     strokeWidth = 0.03
@@ -393,19 +642,19 @@ spectrumGrid =
     tickLength = spectrumHeight*0.02
     sensitivity =
       center $
-      scale 0.4 $ rotate 90 $
+      scale 0.7 $ rotate 90 $
       latex "Sensitivity $\\rightarrow$"
     wavelength =
       center $
-      scale 0.4 $
+      scale 0.8 $
       latex "Wavelength"
     shortWaves =
       center $
-      scale 0.3 $
+      scale 0.6 $
       latex "400 nm"
     longWaves =
       center $
-      scale 0.3 $
+      scale 0.6 $
       latex "700 nm"
 
 
@@ -414,18 +663,15 @@ drawSensitivity maxHeight dat c = animate $ \limit ->
   sensitivitySVG maxHeight limit dat c
 
 morphSensitivity
-  :: Double
-  -> Double
-  -> [(Nanometer, Double)]
+  :: [(Nanometer, Double)]
   -> [(Nanometer, Double)]
   -> String
   -> Animation
-morphSensitivity maxHeightA maxHeightB datA datB c = animate $ \t ->
+morphSensitivity datA datB c = animate $ \t ->
   let m = curveS 2 t
-      maxHeight = fromToS maxHeightA maxHeightB m
       dat = [ (nm, fromToS a b m)
             | ((nm,a),(_,b)) <- zip datA datB ]
-  in sensitivitySVG maxHeight 1 dat c
+  in sensitivitySVG 1 1 dat c
 
   -- emit $
   --  withClipPathRef (Ref "spectrum") $
@@ -451,13 +697,20 @@ sensitivitySVG maxHeight limit dat c =
     initNM = fromIntegral $ fst (head dat)
     lastNM = 700 -- fromIntegral $ fst (last dat)
 
-drawLabel :: Text -> Double -> [(Nanometer, Double)] -> String -> Animation
-drawLabel label maxHeight dat c = animate $ const $
+labelPosition :: [(Nanometer, Double)] -> (Double, Double)
+labelPosition dat =
+    ( spectrumWidth*percent - spectrumWidth/2
+    , labelY - spectrumHeight/2)
+  where
+    (nm,v) = maximumBy (comparing snd) dat
+    labelY = v * spectrumHeight
+    initNM = fromIntegral $ fst (head dat)
+    lastNM = 700
+    percent = (fromIntegral nm-initNM)/(lastNM-initNM)
+
+drawLabel :: Text -> String -> Animation
+drawLabel label c = animate $ const $
     translate (0) (-svgHeight labelSVG * 1.5) $
-    translate (spectrumWidth*percent) labelY $
-    translate (-spectrumWidth/2) (-spectrumHeight/2) $
-    -- withStrokeWidth (Num 0.01) $
-    -- withStrokeColor c $
     withFillColor c $
     labelSVG
   where
@@ -465,11 +718,12 @@ drawLabel label maxHeight dat c = animate $ const $
       center $
       scale 1 $
       latex label
-    labelY = (v/maxHeight) * spectrumHeight
-    (nm,v) = maximumBy (comparing snd) dat
-    initNM = fromIntegral $ fst (head dat)
-    lastNM = 700
-    percent = (fromIntegral nm-initNM)/(lastNM-initNM)
+
+moveUp :: SVG -> SVG
+moveUp svg = translate 0 (-svgHeight svg * 1.5) svg
+
+moveDown :: SVG -> SVG
+moveDown svg = translate 0 (svgHeight svg * 1.5) svg
 
 interpolation :: Animation
 interpolation = mkAnimation 2 $ \t ->
@@ -524,8 +778,21 @@ hsvColorSpace width height = embedImage $ generateImage gen width height
       in PixelRGB8 r g b
 
 spacesA :: Animation
-spacesA = animate $ const $
+spacesA = mkAnimation 10 $ \t ->
   scaleToSize screenWidth screenHeight $
-  -- cieLABImage 100 100
-  -- lchColorSpace 100 100
-  hsvColorSpace 100 100
+  if t < 0.3
+    then cieLABImage 100 100
+    else if t < 0.6
+      then lchColorSpace 100 100
+      else hsvColorSpace 100 100
+
+highlightE :: Effect
+highlightE d t =
+  scale (1 + bellS 2 (t/d)*0.5) . rotate (wiggleS (t/d) * 20)
+
+-- s-curve, sin, s-curve
+wiggleS :: Signal
+wiggleS t
+  | t < 0.25  = curveS 2 (t*4)
+  | t < 0.75  = sin ((t-0.25)*2*pi+pi/2)
+  | otherwise = curveS 2 ((t-0.75)*4)-1
