@@ -226,7 +226,10 @@ newSprite render = do
   return $ Sprite now ref
 
 newSpriteA :: Animation -> Scene s (Sprite s)
-newSpriteA (Animation _ gen) = do
+newSpriteA = newSpriteA' SyncStretch
+
+newSpriteA' :: Sync -> Animation -> Scene s (Sprite s)
+newSpriteA' sync animation = do
   now <- queryNow
   ref <- liftST $ newSTRef (-1, return $ \_d _t svg -> (svg, 0))
   fromParams $ do
@@ -237,8 +240,25 @@ newSpriteA (Animation _ gen) = do
           relT = absT-now in
       if relT < 0 || relT > relD
         then (None, 0)
-        else spriteEffect relD relT (gen (relT/relD))
+        else spriteEffect relD relT (getAnimationFrame sync animation relT relD)
+  wait (duration animation)
   return $ Sprite now ref
+
+getAnimationFrame :: Sync -> Animation -> Time -> Duration -> SVG
+getAnimationFrame sync (Animation aDur aGen) t d =
+  case sync of
+    SyncStretch -> aGen (t/d)
+    SyncLoop    -> aGen (takeFrac $ t/aDur)
+    SyncDrop    -> if t > aDur then None else aGen (t/aDur)
+    SyncFreeze  -> aGen (min 1 $ t/aDur)
+  where
+    takeFrac f = snd (properFraction f :: (Int, Double))
+
+data Sync
+  = SyncStretch
+  | SyncLoop
+  | SyncDrop
+  | SyncFreeze
 
 destroySprite :: Sprite s -> Scene s ()
 destroySprite (Sprite _ ref) = do
@@ -255,6 +275,20 @@ spriteModify (Sprite born ref) modFn =
       return $ \relD relT ->
         let absT = relT + born
         in modRender absT relD relT . render relD relT)
+
+spriteTween :: Sprite s -> Duration -> (Double -> SVG -> SVG) -> Scene s ()
+spriteTween sprite@(Sprite born _) dur fn = do
+  now <- queryNow
+  let tDelta = now - born
+  spriteModify sprite $ do
+    return $ \_real_t _d t (svg, zindex) ->
+      (fn (clamp 0 1 $ (t-tDelta)/dur) svg, zindex)
+  wait dur
+  where
+    clamp a b v
+      | v < a     = a
+      | v > b     = b
+      | otherwise = v
 
 spriteVar :: Sprite s -> a -> (a -> SVG -> SVG) -> Scene s (Var s a)
 spriteVar sprite def fn = do

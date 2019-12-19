@@ -28,6 +28,10 @@ import           System.Random.Shuffle
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as V
 
+main :: IO ()
+main = return ()
+
+{-
 fixed :: Tree -> Animation -> Animation
 fixed svg ani = animate (const svg) `parA` ani
 
@@ -464,3 +468,4 @@ highlightPair fromX toX = animate $ \t ->
     xPos = fromToS fromPos toPos
     fromPos = fromIntegral (fromX-5) * digitWidth + digitWidth/2
     toPos = fromIntegral (toX-5) * digitWidth + digitWidth/2
+-}
