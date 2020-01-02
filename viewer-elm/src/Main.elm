@@ -32,12 +32,17 @@ subscriptions model =
     Platform.Sub.batch
         [ Ports.receiveSocketMsg (WebSocket.receive MessageReceived)
         , Keyboard.downs KeyPressed
-        , case model.status of
-            AnimationRunning _ _ ->
-                Browser.Events.onAnimationFrameDelta TimeDeltaReceived
+        , case model of
+            Animating { cursor } ->
+                case cursor of
+                    Playing _ _ ->
+                        Browser.Events.onAnimationFrameDelta TimeDeltaReceived
 
-            SomethingWentWrong ConnectionFailed ->
-                Time.every 1000 (always AttemptReconnect)
+                    Paused _ ->
+                        Sub.none
+
+            Problem ConnectionFailed ->
+                Time.every 2000 (always AttemptReconnect)
 
             _ ->
                 Sub.none
@@ -56,13 +61,42 @@ type Msg
     | NoOp
 
 
-type Status
+type Model
     = Disconnected
     | Connected
     | Compiling
-    | AnimationRunning Int Frames
-    | AnimationPaused Int Frames Int
-    | SomethingWentWrong Problem
+    | Animating Animation
+    | Problem Problem
+
+
+type alias Animation =
+    { frameCount : Int
+    , frames : Frames
+    , cursor : Cursor
+    , bestFrame : Maybe String
+    , showingHelp : Bool
+    , frameDeltas : List Float
+    }
+
+
+initAnimation : Int -> Animation
+initAnimation frameCount =
+    { frameCount = frameCount
+    , frames = Dict.empty
+    , cursor = Playing 0 0
+    , bestFrame = Nothing
+    , showingHelp = False
+    , frameDeltas = Fps.init
+    }
+
+
+{-| Determines current frame being displayed
+Int = frameIndex
+Float = time in milliseconds from the beginning of the animation
+-}
+type Cursor
+    = Paused Int
+    | Playing Float Int
 
 
 type Problem
@@ -72,29 +106,13 @@ type Problem
     | UnexpectedMessage String
 
 
-type alias Model =
-    { status : Status
-
-    -- Milliseconds from the beginning of animation
-    , time : Float
-    , showingHelp : Bool
-    , frameDeltas : List Float
-    }
-
-
 type alias Frames =
     Dict Int String
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { status = Disconnected
-      , time = 0
-      , showingHelp = False
-      , frameDeltas = []
-      }
-    , connectCommand
-    )
+    ( Disconnected, connectCommand )
 
 
 connectCommand : Cmd msg
@@ -110,14 +128,73 @@ connectCommand =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        AttemptReconnect ->
-            ( model, connectCommand )
-
         TimeDeltaReceived delta ->
-            ( { model
-                | time = model.time + delta
-                , frameDeltas = Fps.update delta model.frameDeltas
-              }
+            ( updateAnimation
+                (\({ frameCount, frames, cursor, frameDeltas } as animation) ->
+                    case cursor of
+                        Playing time _ ->
+                            let
+                                newTime =
+                                    time + delta
+
+                                newFrameIndex =
+                                    frameIndexAt newTime frameCount
+
+                                hasNewFrame =
+                                    Dict.member newFrameIndex frames
+                            in
+                            { animation
+                                | cursor = Playing newTime newFrameIndex
+                                , bestFrame = lookupBestFrame frameCount newFrameIndex frames
+                                , frameDeltas = Fps.update hasNewFrame delta frameDeltas
+                            }
+
+                        Paused _ ->
+                            animation
+                )
+                model
+            , Cmd.none
+            )
+
+        Play ->
+            ( updateAnimation
+                (\animation ->
+                    case animation.cursor of
+                        Paused pauseIndex ->
+                            let
+                                newTime =
+                                    toFloat pauseIndex / framesPerMillisecond
+                            in
+                            { animation
+                                | -- resume from currently displayed frame
+                                  cursor = Playing newTime (frameIndexAt newTime animation.frameCount)
+                            }
+
+                        Playing _ _ ->
+                            animation
+                )
+                model
+            , blurPlayOrPause
+            )
+
+        Seek delta ->
+            ( updateAnimation
+                (\({ frames, frameCount } as animation) ->
+                    case animation.cursor of
+                        Paused pauseIndex ->
+                            let
+                                newPauseIndex =
+                                    (pauseIndex + delta) |> modBy animation.frameCount
+                            in
+                            { animation
+                                | cursor = Paused newPauseIndex
+                                , bestFrame = lookupBestFrame frameCount newPauseIndex frames
+                            }
+
+                        Playing _ _ ->
+                            animation
+                )
+                model
             , Cmd.none
             )
 
@@ -128,45 +205,44 @@ update msg model =
             ( model, processKeyPress rawKey model )
 
         PauseAtFrame pauseIndex ->
-            ( case model.status of
-                AnimationRunning frameCount frames ->
-                    { model | status = AnimationPaused frameCount frames pauseIndex }
-
-                _ ->
-                    model
+            ( updateAnimation (pauseAt pauseIndex) model
             , blurPlayOrPause
-            )
-
-        Play ->
-            ( case model.status of
-                AnimationPaused frameCount frames pauseIndex ->
-                    { model
-                        | status = AnimationRunning frameCount frames
-
-                        -- To resume animation from currently displayed frame
-                        , time = toFloat pauseIndex / framesPerMillisecond
-                    }
-
-                _ ->
-                    model
-            , blurPlayOrPause
-            )
-
-        Seek delta ->
-            ( case model.status of
-                AnimationPaused frameCount frames pauseIndex ->
-                    { model | status = AnimationPaused frameCount frames (modBy frameCount (pauseIndex + delta)) }
-
-                _ ->
-                    model
-            , Cmd.none
             )
 
         ToggleHelp ->
-            ( { model | showingHelp = not model.showingHelp }, Cmd.none )
+            ( updateAnimation (\animation -> { animation | showingHelp = not animation.showingHelp }) model, Cmd.none )
+
+        AttemptReconnect ->
+            ( model, connectCommand )
 
         NoOp ->
             ( model, Cmd.none )
+
+
+lookupBestFrame : Int -> Int -> Frames -> Maybe String
+lookupBestFrame frameCount frameIndex frames =
+    if Dict.size frames == frameCount then
+        -- Everything loaded => exact lookup
+        Dict.get frameIndex frames
+
+    else
+        -- Some frames are missing => approximate lookup
+        List.head (List.reverse (Dict.values (Dict.filter (\x _ -> x <= frameIndex) frames)))
+
+
+updateAnimation : (Animation -> Animation) -> Model -> Model
+updateAnimation f model =
+    case model of
+        Animating animation ->
+            Animating (f animation)
+
+        other ->
+            other
+
+
+pauseAt : Int -> Animation -> Animation
+pauseAt pauseIndex animation =
+    { animation | cursor = Paused pauseIndex }
 
 
 playOrPauseId : String
@@ -186,12 +262,12 @@ processResult : Result Json.Decode.Error WebSocket.WebSocketMsg -> Model -> Mode
 processResult result model =
     case result of
         Err decodeError ->
-            { model | status = SomethingWentWrong (PortMessageDecodeFailure decodeError) }
+            Problem (PortMessageDecodeFailure decodeError)
 
         Ok wsMsg ->
             case wsMsg of
                 WebSocket.Error { error } ->
-                    { model | status = SomethingWentWrong (UnexpectedMessage error) }
+                    Problem (UnexpectedMessage error)
 
                 WebSocket.Data { data } ->
                     processMessage data model
@@ -201,63 +277,55 @@ processMessage : String -> Model -> Model
 processMessage data model =
     case String.lines data of
         [ "connection established" ] ->
-            { model | status = Connected }
+            Connected
 
         [ "connection failed" ] ->
-            somethingWentWrong ConnectionFailed model
+            Problem ConnectionFailed
 
         [ "status", status ] ->
             case status of
                 "Compiling" ->
-                    { model | status = Compiling }
+                    Compiling
 
                 "Done" ->
                     -- TODO there's probably no need for Done message, as frontend doesn't need to do anything special
                     model
 
                 _ ->
-                    somethingWentWrong (UnexpectedMessage ("Unknown status: '" ++ status ++ "'")) model
+                    Problem (UnexpectedMessage ("Unknown status: '" ++ status ++ "'"))
 
         "error" :: errorLines ->
-            somethingWentWrong (CompilationError (String.join "\n" errorLines)) model
+            Problem (CompilationError (String.join "\n" errorLines))
 
         [ "frame_count", n ] ->
             case String.toInt n of
                 Just frameCount ->
-                    { model | status = AnimationRunning frameCount Dict.empty }
+                    Animating (initAnimation frameCount)
 
                 Nothing ->
-                    somethingWentWrong (UnexpectedMessage ("frame_count wasn't number, but '" ++ n ++ "'")) model
+                    Problem (UnexpectedMessage ("frame_count wasn't number, but '" ++ n ++ "'"))
 
         [ "frame", n, svgUrl ] ->
             case String.toInt n of
                 Just frameIndex ->
-                    case model.status of
-                        AnimationRunning frameCount frames ->
-                            { model | status = AnimationRunning frameCount (Dict.insert frameIndex svgUrl frames) }
-
-                        AnimationPaused frameCount frames pausedIndex ->
-                            { model | status = AnimationPaused frameCount (Dict.insert frameIndex svgUrl frames) pausedIndex }
+                    case model of
+                        Animating animation ->
+                            Animating { animation | frames = Dict.insert frameIndex svgUrl animation.frames }
 
                         _ ->
-                            somethingWentWrong (UnexpectedMessage "Got 'frame' message while not in AnimationRunning or AnimationPaused state") model
+                            Problem (UnexpectedMessage "Got 'frame' message while not Animating")
 
                 Nothing ->
-                    somethingWentWrong (UnexpectedMessage ("Frame index wasn't number, but '" ++ n ++ "'")) model
+                    Problem (UnexpectedMessage ("Frame index wasn't number, but '" ++ n ++ "'"))
 
         _ ->
-            somethingWentWrong (UnexpectedMessage data) model
-
-
-somethingWentWrong : Problem -> Model -> Model
-somethingWentWrong what model =
-    { model | status = SomethingWentWrong what }
+            Problem (UnexpectedMessage data)
 
 
 view : Model -> Html Msg
 view model =
     Html.div [ class "app" ]
-        [ case model.status of
+        [ case model of
             Disconnected ->
                 Html.text "Disconnected"
 
@@ -268,18 +336,16 @@ view model =
                 -- TODO it would be nice to have some progress indication (at least animated spinner or something)
                 Html.text "Compiling ..."
 
-            SomethingWentWrong problem ->
+            Problem problem ->
                 problemView problem
 
-            AnimationRunning frameCount frames ->
-                let
-                    frameIndex =
-                        frameIndexAt model.time frameCount
-                in
-                frameView frameIndex frameCount False frames model.showingHelp model.frameDeltas
+            Animating { frameCount, frames, cursor, bestFrame, showingHelp, frameDeltas } ->
+                case cursor of
+                    Paused frameIndex ->
+                        frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas True
 
-            AnimationPaused frameCount frames frameIndex ->
-                frameView frameIndex frameCount True frames model.showingHelp model.frameDeltas
+                    Playing _ frameIndex ->
+                        frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas False
         ]
 
 
@@ -310,12 +376,9 @@ playControls paused pauseIndex =
         ]
 
 
-frameView : Int -> Int -> Bool -> Frames -> Bool -> List Float -> Html Msg
-frameView frameIndex frameCount isPaused frames showingHelp frameDeltas =
+frameView : Maybe String -> Int -> Int -> Frames -> Bool -> List Float -> Bool -> Html Msg
+frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas isPaused =
     let
-        bestFrame =
-            List.head (List.reverse (Dict.values (Dict.filter (\x _ -> x <= frameIndex) frames)))
-
         image =
             case bestFrame of
                 Just svgUrl ->
@@ -351,17 +414,19 @@ frameView frameIndex frameCount isPaused frames showingHelp frameDeltas =
         bar =
             Html.pre [ class "bar" ]
                 [ playControls isPaused frameIndex
-                , Html.span [ class "text" ] [Html.text <|
-                    " Frame: "
-                        ++ String.padLeft digitCount '0' (String.fromInt (frameIndex + 1))
-                        ++ " / "
-                        ++ frameCountStr
-                        ++ (if isPaused then
-                                " "
+                , Html.span []
+                    [ Html.text <|
+                        " Frame: "
+                            ++ String.padLeft digitCount '0' (String.fromInt (frameIndex + 1))
+                            ++ " / "
+                            ++ frameCountStr
+                            ++ (if isPaused then
+                                    " "
 
-                            else
-                                Fps.showAverage frameDeltas
-                           )]
+                                else
+                                    Fps.showAverage frameDeltas
+                               )
+                    ]
                 , progressView
                 , helpView
                 ]
@@ -374,8 +439,8 @@ frameView frameIndex frameCount isPaused frames showingHelp frameDeltas =
 
 progressBar : Int -> Int -> Html msg
 progressBar receivedFrames frameCount =
-    Html.label [ ]
-        [ Html.span [ class "text" ] [ Html.text " | Loading frames " ]
+    Html.label []
+        [ Html.span [] [ Html.text " | Loading frames " ]
         , Html.progress
             [ value (String.fromInt receivedFrames)
             , Attr.max (String.fromInt frameCount)
@@ -428,12 +493,14 @@ processKeyPress rawKey model =
                         Just (Seek -1)
 
                     Keyboard.Spacebar ->
-                        case model.status of
-                            AnimationPaused _ _ _ ->
-                                Just Play
+                        case model of
+                            Animating { cursor } ->
+                                case cursor of
+                                    Playing _ frameIndex ->
+                                        Just (PauseAtFrame frameIndex)
 
-                            AnimationRunning frameCount _ ->
-                                Just (PauseAtFrame (frameIndexAt model.time frameCount))
+                                    Paused _ ->
+                                        Just Play
 
                             _ ->
                                 Nothing
