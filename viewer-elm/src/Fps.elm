@@ -1,11 +1,26 @@
-module Fps exposing (showAverage, update)
+module Fps exposing (init, showAverage, update)
 
--- FPS logic copied from https://github.com/w0rm/elm-physics/blob/master/examples/Common/Fps.elm
+-- FPS logic inspired by https://github.com/w0rm/elm-physics/blob/master/examples/Common/Fps.elm
 
 
-update : Float -> List Float -> List Float
-update dt fps =
-    List.take 50 (dt :: fps)
+update : Bool -> Float -> List Float -> List Float
+update hasNewFrame dt fps =
+    List.take 50 <|
+        if hasNewFrame then
+            dt :: fps
+
+        else
+            addToHead dt fps
+
+
+addToHead : Float -> List Float -> List Float
+addToHead dt fps =
+    case fps of
+        [] ->
+            []
+
+        x :: xs ->
+            (x + dt) :: xs
 
 
 showAverage : List Float -> String
@@ -25,3 +40,10 @@ averageHelp currentWeight sumOfWeights weightedSum fps =
                 (currentWeight + sumOfWeights)
                 (el * currentWeight + weightedSum)
                 rest
+
+
+{-| Corresponds to initial FPS of 1
+-}
+init : List Float
+init =
+    List.repeat 50 1000
