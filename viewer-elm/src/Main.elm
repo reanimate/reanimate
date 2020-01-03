@@ -145,7 +145,7 @@ update msg model =
                             in
                             { animation
                                 | cursor = Playing newTime newFrameIndex
-                                , bestFrame = lookupBestFrame frameCount newFrameIndex frames
+                                , bestFrame = lookupBestFrame newFrameIndex frames
                                 , frameDeltas = Fps.update hasNewFrame delta frameDeltas
                             }
 
@@ -179,7 +179,7 @@ update msg model =
 
         Seek delta ->
             ( updateAnimation
-                (\({ frames, frameCount } as animation) ->
+                (\animation ->
                     case animation.cursor of
                         Paused pauseIndex ->
                             let
@@ -188,7 +188,7 @@ update msg model =
                             in
                             { animation
                                 | cursor = Paused newPauseIndex
-                                , bestFrame = lookupBestFrame frameCount newPauseIndex frames
+                                , bestFrame = lookupBestFrame newPauseIndex animation.frames
                             }
 
                         Playing _ _ ->
@@ -219,15 +219,15 @@ update msg model =
             ( model, Cmd.none )
 
 
-lookupBestFrame : Int -> Int -> Frames -> Maybe String
-lookupBestFrame frameCount frameIndex frames =
-    if Dict.size frames == frameCount then
-        -- Everything loaded => exact lookup
-        Dict.get frameIndex frames
+lookupBestFrame : Int -> Frames -> Maybe String
+lookupBestFrame frameIndex frames =
+    case Dict.get frameIndex frames of
+        Just svgUrl ->
+            Just svgUrl
 
-    else
-        -- Some frames are missing => approximate lookup
-        List.head (List.reverse (Dict.values (Dict.filter (\x _ -> x <= frameIndex) frames)))
+        Nothing ->
+            -- The specific frame in question is not loaded yet => approximate lookup
+            List.head (List.reverse (Dict.values (Dict.filter (\x _ -> x <= frameIndex) frames)))
 
 
 updateAnimation : (Animation -> Animation) -> Model -> Model
