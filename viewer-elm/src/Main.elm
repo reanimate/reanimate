@@ -33,12 +33,12 @@ subscriptions model =
         [ Ports.receiveSocketMsg (WebSocket.receive MessageReceived)
         , Keyboard.downs KeyPressed
         , case model of
-            Animating { cursor } ->
-                case cursor of
-                    Playing _ _ ->
+            Animating { player } ->
+                case player of
+                    Playing _ ->
                         Browser.Events.onAnimationFrameDelta TimeDeltaReceived
 
-                    Paused _ ->
+                    Paused ->
                         Sub.none
 
             Problem ConnectionFailed ->
@@ -53,7 +53,7 @@ type Msg
     = MessageReceived (Result Json.Decode.Error WebSocket.WebSocketMsg)
     | TimeDeltaReceived Float
     | AttemptReconnect
-    | PauseAtFrame Int
+    | Pause
     | Play
     | Seek Int
     | KeyPressed Keyboard.RawKey
@@ -72,7 +72,8 @@ type Model
 type alias Animation =
     { frameCount : Int
     , frames : Frames
-    , cursor : Cursor
+    , frameIndex : Int
+    , player : Player
     , bestFrame : Maybe String
     , showingHelp : Bool
     , frameDeltas : List Float
@@ -83,20 +84,18 @@ initAnimation : Int -> Animation
 initAnimation frameCount =
     { frameCount = frameCount
     , frames = Dict.empty
-    , cursor = Playing 0 0
+    , frameIndex = 0
+    , player = Playing 0
     , bestFrame = Nothing
     , showingHelp = False
     , frameDeltas = Fps.init
     }
 
 
-{-| Determines current frame being displayed
-Int = frameIndex
-Float = time in milliseconds from the beginning of the animation
--}
-type Cursor
-    = Paused Int
-    | Playing Float Int
+type Player
+    = Paused
+      -- Float = time in milliseconds from the beginning/resuming of the animation
+    | Playing Float
 
 
 type Problem
@@ -130,9 +129,9 @@ update msg model =
     case msg of
         TimeDeltaReceived delta ->
             ( updateAnimation
-                (\({ frameCount, frames, cursor, frameDeltas } as animation) ->
-                    case cursor of
-                        Playing time _ ->
+                (\({ frameCount, frames, player, frameDeltas } as animation) ->
+                    case player of
+                        Playing time ->
                             let
                                 newTime =
                                     time + delta
@@ -144,12 +143,13 @@ update msg model =
                                     Dict.member newFrameIndex frames
                             in
                             { animation
-                                | cursor = Playing newTime newFrameIndex
+                                | player = Playing newTime
+                                , frameIndex = newFrameIndex
                                 , bestFrame = lookupBestFrame newFrameIndex frames
                                 , frameDeltas = Fps.update hasNewFrame delta frameDeltas
                             }
 
-                        Paused _ ->
+                        Paused ->
                             animation
                 )
                 model
@@ -158,19 +158,20 @@ update msg model =
 
         Play ->
             ( updateAnimation
-                (\animation ->
-                    case animation.cursor of
-                        Paused pauseIndex ->
+                (\({ frameCount, frameIndex, player } as animation) ->
+                    case player of
+                        Paused ->
                             let
                                 newTime =
-                                    toFloat pauseIndex / framesPerMillisecond
+                                    -- resume from currently displayed frame
+                                    toFloat frameIndex / framesPerMillisecond
                             in
                             { animation
-                                | -- resume from currently displayed frame
-                                  cursor = Playing newTime (frameIndexAt newTime animation.frameCount)
+                                | player = Playing newTime
+                                , frameIndex = frameIndexAt newTime frameCount
                             }
 
-                        Playing _ _ ->
+                        Playing _ ->
                             animation
                 )
                 model
@@ -179,19 +180,19 @@ update msg model =
 
         Seek delta ->
             ( updateAnimation
-                (\animation ->
-                    case animation.cursor of
-                        Paused pauseIndex ->
+                (\({ player, frameIndex, frameCount, frames } as animation) ->
+                    case player of
+                        Paused ->
                             let
-                                newPauseIndex =
-                                    (pauseIndex + delta) |> modBy animation.frameCount
+                                newFrameIndex =
+                                    (frameIndex + delta) |> modBy frameCount
                             in
                             { animation
-                                | cursor = Paused newPauseIndex
-                                , bestFrame = lookupBestFrame newPauseIndex animation.frames
+                                | bestFrame = lookupBestFrame newFrameIndex frames
+                                , frameIndex = newFrameIndex
                             }
 
-                        Playing _ _ ->
+                        Playing _ ->
                             animation
                 )
                 model
@@ -204,8 +205,8 @@ update msg model =
         KeyPressed rawKey ->
             ( model, processKeyPress rawKey model )
 
-        PauseAtFrame pauseIndex ->
-            ( updateAnimation (pauseAt pauseIndex) model
+        Pause ->
+            ( updateAnimation (\animation -> { animation | player = Paused }) model
             , blurPlayOrPause
             )
 
@@ -238,11 +239,6 @@ updateAnimation f model =
 
         other ->
             other
-
-
-pauseAt : Int -> Animation -> Animation
-pauseAt pauseIndex animation =
-    { animation | cursor = Paused pauseIndex }
 
 
 playOrPauseId : String
@@ -339,12 +335,12 @@ view model =
             Problem problem ->
                 problemView problem
 
-            Animating { frameCount, frames, cursor, bestFrame, showingHelp, frameDeltas } ->
-                case cursor of
-                    Paused frameIndex ->
+            Animating { frameCount, frames, frameIndex, player, bestFrame, showingHelp, frameDeltas } ->
+                case player of
+                    Paused ->
                         frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas True
 
-                    Playing _ frameIndex ->
+                    Playing _ ->
                         frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas False
         ]
 
@@ -361,8 +357,8 @@ framesPerMillisecond =
     0.06
 
 
-playControls : Bool -> Int -> Html Msg
-playControls paused pauseIndex =
+playControls : Bool -> Html Msg
+playControls paused =
     Html.div [ class "media-controls" ]
         [ Html.button [ onClick (Seek -10), disabled (not paused), title "10 frames back" ] [ Html.text "<<" ]
         , Html.button [ onClick (Seek -1), disabled (not paused), title "1 frame back" ] [ Html.text "<" ]
@@ -370,7 +366,7 @@ playControls paused pauseIndex =
             Html.button [ onClick Play, id playOrPauseId ] [ Html.text "Play" ]
 
           else
-            Html.button [ onClick (PauseAtFrame pauseIndex), id playOrPauseId ] [ Html.text "Pause" ]
+            Html.button [ onClick Pause, id playOrPauseId ] [ Html.text "Pause" ]
         , Html.button [ onClick (Seek 1), disabled (not paused), title "1 frame forward" ] [ Html.text ">" ]
         , Html.button [ onClick (Seek 10), disabled (not paused), title "10 frames forward" ] [ Html.text ">>" ]
         ]
@@ -413,7 +409,7 @@ frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas isPause
 
         bar =
             Html.pre [ class "bar" ]
-                [ playControls isPaused frameIndex
+                [ playControls isPaused
                 , Html.span []
                     [ Html.text <|
                         " Frame: "
@@ -494,12 +490,12 @@ processKeyPress rawKey model =
 
                     Keyboard.Spacebar ->
                         case model of
-                            Animating { cursor } ->
-                                case cursor of
-                                    Playing _ frameIndex ->
-                                        Just (PauseAtFrame frameIndex)
+                            Animating { player } ->
+                                case player of
+                                    Playing _ ->
+                                        Just Pause
 
-                                    Paused _ ->
+                                    Paused ->
                                         Just Play
 
                             _ ->
