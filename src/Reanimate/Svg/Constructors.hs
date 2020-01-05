@@ -1,5 +1,55 @@
 {-| Functions for creating basic SVG elements and applying transformations to them. -}
-module Reanimate.Svg.Constructors where
+module Reanimate.Svg.Constructors
+  ( -- * Primitive shapes
+    mkCircle
+  , mkEllipse
+  , mkRect
+  , mkLine
+  , mkPath
+  , mkPathString
+  , mkPathText
+  , mkLinePath
+  , mkClipPath
+  , mkText
+  -- * Grouping shapes and definitions
+  , mkGroup
+  , mkDefinitions
+  , mkUse
+  -- * Attributes
+  , withId
+  , withStrokeColor
+  , withStrokeColorPixel
+  , withStrokeLineJoin
+  , withFillColor
+  , withFillColorPixel
+  , withFillOpacity
+  , withGroupOpacity
+  , withStrokeWidth
+  , withClipPathRef
+  -- * Transformations
+  , center
+  , centerX
+  , centerY
+  , translate
+  , rotate
+  , rotateAroundCenter
+  , rotateAround
+  , scale
+  , scaleToSize
+  , scaleToWidth
+  , scaleToHeight
+  , scaleXY
+  , flipXAxis
+  , flipYAxis
+  , aroundCenter
+  , withTransformations
+  -- * Other
+  , mkColor
+  , mkBackground
+  , mkBackgroundPixel
+  , gridLayout
+  
+  ) where
 
 import           Codec.Picture                (PixelRGBA8 (..))
 import           Control.Lens                 ((&), (.~), (?~))
@@ -115,31 +165,39 @@ mkColor name =
     Nothing -> ColorRef (PixelRGBA8 240 248 255 255)
     Just c  -> ColorRef c
 
+-- | See <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke>
 withStrokeColor :: String -> Tree -> Tree
 withStrokeColor color = strokeColor .~ pure (mkColor color)
 
 withStrokeColorPixel :: PixelRGBA8 -> Tree -> Tree
 withStrokeColorPixel color = strokeColor .~ pure (ColorRef color)
 
+-- | See <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke-linejoin>
 withStrokeLineJoin :: LineJoin -> Tree -> Tree
 withStrokeLineJoin ljoin = strokeLineJoin .~ pure ljoin
 
+-- | See <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/fill>
 withFillColor :: String -> Tree -> Tree
 withFillColor color = fillColor .~ pure (mkColor color)
 
 withFillColorPixel :: PixelRGBA8 -> Tree -> Tree
 withFillColorPixel color = fillColor .~ pure (ColorRef color)
 
+-- | See <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/fill-opacity>
 withFillOpacity :: Double -> Tree -> Tree
 withFillOpacity opacity = fillOpacity ?~ realToFrac opacity
 
 withGroupOpacity :: Double -> Tree -> Tree
 withGroupOpacity opacity = groupOpacity ?~ realToFrac opacity
 
+-- | See <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke-width>
 withStrokeWidth :: Double -> Tree -> Tree
 withStrokeWidth width = strokeWidth .~ pure (Num width)
 
-withClipPathRef :: ElementRef -> Tree -> Tree
+-- | See <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/clip-path>
+withClipPathRef :: ElementRef -- ^ Reference to clip path defined previously (e.g. by 'mkClipPath')
+                -> Tree -- ^ Image that will be clipped by the referenced clip path
+                -> Tree
 withClipPathRef ref = clipPathRef .~ pure ref
 
 -- | Assigns ID attribute to given image.
@@ -147,6 +205,7 @@ withId :: String -> Tree -> Tree
 withId idTag = attrId ?~ idTag
 
 -- | @mkRect width height@ creates a rectangle with given @with@ and @height@, centered at @(0, 0)@.
+-- See <https://developer.mozilla.org/en-US/docs/Web/SVG/Element/rect>
 mkRect :: Double -> Double -> Tree
 mkRect width height = translate (-width/2) (-height/2) $ RectangleTree $ defaultSvg
   & rectUpperLeftCorner .~ (Num 0, Num 0)
@@ -154,12 +213,22 @@ mkRect width height = translate (-width/2) (-height/2) $ RectangleTree $ default
   & rectHeight ?~ Num height
 
 -- | Create a circle with given radius, centered at @(0, 0)@.
+-- See <https://developer.mozilla.org/en-US/docs/Web/SVG/Element/circle>
 mkCircle :: Double -> Tree
 mkCircle radius = CircleTree $ defaultSvg
   & circleCenter .~ (Num 0, Num 0)
   & circleRadius .~ Num radius
 
+-- | Create an ellipse given X-axis radius, and Y-axis radius, with center at @(0, 0)@.
+-- See <https://developer.mozilla.org/en-US/docs/Web/SVG/Element/ellipse>
+mkEllipse :: Double -> Double -> Tree
+mkEllipse rx ry = EllipseTree $ defaultSvg
+  & ellipseCenter .~ (Num 0, Num 0)
+  & ellipseXRadius .~ Num rx
+  & ellipseYRadius .~ Num ry
+
 -- | Create a line segment between two points given by their @(x, y)@ coordinates.
+-- See <https://developer.mozilla.org/en-US/docs/Web/SVG/Element/line>
 mkLine :: (Double,Double) -> (Double, Double) -> Tree
 mkLine (x1,y1) (x2,y2) = LineTree $ defaultSvg
   & linePoint1 .~ (Num x1, Num y1)
@@ -183,9 +252,13 @@ mkDefinitions forest = DefinitionTree $ defaultSvg
 mkUse :: String -> Tree
 mkUse name = UseTree (defaultSvg & useName .~ name) Nothing
 
-mkClipPath :: String -> [Tree] -> Tree
-mkClipPath idTag forest = withId idTag $ ClipPathTree (defaultSvg
-  & clipPathContent .~ forest)
+-- | A clip path restricts the region to which paint can be applied.
+-- See <https://developer.mozilla.org/en-US/docs/Web/SVG/Element/clipPath>
+mkClipPath :: String  -- ^ ID of the clip path, which can then be referred to by other elements using 'withClipPathRef'.
+           -> [Tree] -- ^ List of shapes that will determine the final shape of the clipping region
+           -> Tree
+mkClipPath idTag forest = withId idTag $ ClipPathTree $ defaultSvg
+  & clipPathContent .~ forest
 
 -- | Create a path from the list of path commands.
 --   See <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/d#Path_commands>
@@ -196,9 +269,9 @@ mkPath cmds = PathTree $ defaultSvg & pathDefinition .~ cmds
 mkPathString :: String -> Tree
 mkPathString = mkPathText . T.pack
 
--- | Create path from textual representation of SVG path command <https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/Paths>.
+-- | Create path from textual representation of SVG path command.
 --   If the text doesn't represent valid path command, this function fails with 'Prelude.error'.
---   Use 'mkPath' for type safe way of creatin paths.
+--   Use 'mkPath' for type safe way of creating paths.
 mkPathText :: T.Text -> Tree
 mkPathText str =
   case parseOnly pathParser str of

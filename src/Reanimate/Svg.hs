@@ -156,6 +156,23 @@ svgGlyphs = worker id defaultSvg
           in concatMap (worker acc' attr') (g ^. groupChildren)
         t -> [(acc, attr, t)]
 
+{-| Convert primitive SVG shapes (like those created by 'mkCircle', 'mkRect', 'mkLine' or 'mkEllipse') into SVG path.
+    This can be useful for creating animations of these shapes being drawn progressively with 'partialSvg'.
+
+    Example:
+
+    > pathifyExample :: Animation
+    > pathifyExample = animate $ \t -> gridLayout
+    >     [ [ partialSvg t $ pathify $ mkCircle 1
+    >       , partialSvg t $ pathify $ mkRect 2 2
+    >       ]
+    >     , [ partialSvg t $ pathify $ mkEllipse 1 0.5
+    >       , partialSvg t $ pathify $ mkLine (-1, -1) (1, 1)
+    >       ]
+    >     ]
+
+    <<docs/gifs/doc_pathify.gif>>
+ -}
 pathify :: Tree -> Tree
 pathify = mapTree worker
   where
@@ -163,7 +180,8 @@ pathify = mapTree worker
       \case
         RectangleTree rect | Just (x,y,w,h) <- unpackRect rect ->
           PathTree $ defaultSvg
-            & drawAttributes .~ rect ^. drawAttributes & strokeLineCap .~ pure CapSquare
+            & drawAttributes .~ rect ^. drawAttributes
+            & strokeLineCap .~ pure CapSquare
             & pathDefinition .~
               [MoveTo OriginAbsolute [V2 x y]
               ,HorizontalTo OriginRelative [w]
@@ -183,10 +201,31 @@ pathify = mapTree worker
               [MoveTo OriginAbsolute [V2 (x-r) y]
               ,EllipticalArc OriginRelative [(r, r, 0,True,False,(V2 (r*2) 0))
                                             ,(r, r, 0,True,False,(V2 (-r*2) 0))]]
+        PolyLineTree pl ->
+          let points = pl ^. polyLinePoints
+          in PathTree $ defaultSvg
+               & drawAttributes .~ pl ^. drawAttributes
+               & pathDefinition .~ pointsToPathCommands points
+        PolygonTree pg ->
+          let points = pg ^. polygonPoints
+          in PathTree $ defaultSvg
+               & drawAttributes .~ pg ^. drawAttributes
+               -- Polygon automatically connects the last point to the first. For path we must do it explicitly
+               & pathDefinition .~ (pointsToPathCommands points ++ [EndPath])
+        EllipseTree elip | Just (cx,cy,rx,ry) <- unpackEllipse elip ->
+          PathTree $ defaultSvg
+             & drawAttributes .~ elip ^. drawAttributes
+             & pathDefinition .~
+               [ MoveTo OriginAbsolute [V2 (cx-rx) cy]
+               , EllipticalArc OriginRelative [(rx, ry, 0,True,False,(V2 (rx*2) 0))
+                                              ,(rx, ry, 0,True,False,(V2 (-rx*2) 0))]]
         t -> t
     unpackCircle circ = do
       let (x,y) = circ ^. circleCenter
       liftM3 (,,) (unpackNumber x) (unpackNumber y) (unpackNumber $ circ ^. circleRadius)
+    unpackEllipse elip = do
+      let (x,y) = elip ^. ellipseCenter
+      liftM4 (,,,) (unpackNumber x) (unpackNumber y) (unpackNumber $ elip ^. ellipseXRadius) (unpackNumber $ elip ^. ellipseYRadius)
     unpackLine line = do
       let (x1,y1) = line ^. linePoint1
           (x2,y2) = line ^. linePoint2
@@ -198,6 +237,10 @@ pathify = mapTree worker
       w <- unpackNumber =<< rect ^. rectWidth
       h <- unpackNumber =<< rect ^. rectHeight
       return (x,y,w,h)
+    pointsToPathCommands points = case points of
+      [] -> []
+      (p:ps) -> [ MoveTo OriginAbsolute [p] 
+                , LineTo OriginAbsolute ps ]
     unpackNumber n =
       case toUserUnit defaultDPI n of
         Num d -> Just d
