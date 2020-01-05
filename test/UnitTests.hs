@@ -6,6 +6,7 @@ module UnitTests
 
 import           Control.Exception
 import qualified Data.ByteString.Lazy as LBS
+import           Data.List            (sort)
 import           Reanimate.Misc       (withTempDir, withTempFile)
 import           System.Directory
 import           System.Exit
@@ -18,7 +19,7 @@ import           Test.Tasty.HUnit
 
 unitTestFolder :: FilePath -> IO TestTree
 unitTestFolder path = do
-  files <- getDirectoryContents path
+  files <- sort <$> getDirectoryContents path
   return $ testGroup "animate"
     [ goldenVsStringDiff file (\ref new -> ["diff", "--strip-trailing-cr", ref, new]) fullPath (genGolden hsPath)
     | file <- files
@@ -47,7 +48,7 @@ genGolden path = withTempDir $ \tmpDir -> withTempFile ".exe" $ \tmpExecutable -
 
 compileTestFolder :: FilePath -> IO TestTree
 compileTestFolder path = do
-  files <- getDirectoryContents path
+  files <- sort <$> getDirectoryContents path
   return $ testGroup "compile"
     [ testCase file $ do
         (ret, _stdout, err) <- readProcessWithExitCode "stack" (["ghc","--", fullPath] ++ ghcOpts) ""
@@ -65,7 +66,7 @@ compileTestFolder path = do
 
 compileVideoFolder :: FilePath -> IO TestTree
 compileVideoFolder path = do
-  files <- getDirectoryContents path
+  files <- sort <$> getDirectoryContents path
   return $ testGroup "videos"
     [ testCase dir $ do
         (ret, _stdout, err) <- readProcessWithExitCode "stack" (["ghc","--", "-i"++path</>dir, fullPath] ++ ghcOpts) ""
