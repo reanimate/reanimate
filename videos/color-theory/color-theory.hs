@@ -64,8 +64,8 @@ highdef = True
 
 main :: IO ()
 main = reanimate $
-  (animate $ const $ mkBackground "black") `parA`
-  monalisaScene `seqA`
+  parA (animate $ const $ mkBackground "black") $
+  -- monalisaScene `seqA`
   -- colorSpacesScene
   scene2
   -- scene3

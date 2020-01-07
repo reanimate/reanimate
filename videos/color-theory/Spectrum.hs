@@ -177,7 +177,7 @@ drawLabelY = drawLabel "Y" greenName
 drawLabelX = drawLabel "X" redName
 
 scene2 :: Animation
-scene2 = {- dropA 29 $-} sceneAnimation $ do
+scene2 =  dropA 39 $ sceneAnimation $ do
   -- SML labels and timings.
   labelS <- fork $ newSpriteA $ drawLabelS
     # applyE (overBeginning 0.3 fadeInE)
@@ -328,6 +328,17 @@ scene2 = {- dropA 29 $-} sceneAnimation $ do
   fork $ spriteTween rgb 1 $ \t -> withGroupOpacity (1-t)
   tweenVar gamut 1 $ \v -> fromToS v 1 . curveS 2
   wait 2
+
+  spriteTween visSpace 1 $ \t -> translate (-3*curveS 2 t) 0
+
+  hsv <- newSpriteA $ animate $ const $
+    scaleToSize (screenWidth/3) (screenHeight/3) $
+    -- hsvColorSpace 100 100
+    -- lchColorSpace 100 100
+    -- cieLABImage 100 100
+    cieLABImage 1000 1000
+
+  spriteTween hsv 0 $ const $ translate 3 0
 
   return ()
   where
@@ -531,10 +542,13 @@ cieLABImage width height = embedImage $ generateImage gen width height
       let
           aStar = (fromIntegral x / fromIntegral width) * labScaleX*2 - labScaleX
           bStar = (1-(fromIntegral y / fromIntegral height)) * labScaleY*2 - labScaleY
-          lStar = findLStar aStar bStar
+          lStar = 50 -- findLStar aStar bStar
+          color = cieLAB d65 lStar aStar bStar
           RGB r g b = toSRGBBounded (cieLAB d65 lStar aStar bStar)
           -- RGB r g b = RGB (round $ lStar/100 * 255) (round $ lStar/100 * 255) (round $ lStar/100 * 255)
-      in PixelRGB8 r g b
+      in if inGamut sRGBGamut color
+          then PixelRGBA8 r g b 0xFF
+          else PixelRGBA8 r g b 0x00
 
 findLStar :: Double -> Double -> Double
 findLStar aStar bStar = worker 0 100 10
