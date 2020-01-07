@@ -132,7 +132,7 @@ monalisa = unsafePerformIO $ do
     Right img -> return $ convertRGB8 img
 
 monalisaLarge :: Image PixelRGB8
-monalisaLarge = scaleImage 15 monalisa
+monalisaLarge = scaleImage (if highdef then 15 else 1) monalisa
 
 maxPixel :: Image PixelRGB8 -> PixelRGB8
 maxPixel img = pixelFold (\acc _ _ pix -> max acc pix) (pixelAt img 0 0) img
@@ -215,12 +215,8 @@ sceneColorMaps = mkAnimation 5 $ const $
 
 
 limitGreyPixels :: Word8 -> Image PixelRGB8 -> Image PixelRGBA8
-limitGreyPixels limit img =
-    generateImage fn (imageWidth img) (imageHeight img)
-  where
-    fn x y =
-      let pixel@(PixelRGB8 r _ _) = pixelAt img x y
-      in if r < limit then promotePixel pixel else PixelRGBA8 0 0 0 1 --limit limit limit
+limitGreyPixels limit = pixelMap $ \pixel@(PixelRGB8 r _ _) ->
+    if r < limit then PixelRGBA8 r r r 255 else PixelRGBA8 0 0 0 0
 
 renderColorMap :: Double -> Double -> (Double -> PixelRGB8) -> Tree
 renderColorMap width height cmap = mkGroup
@@ -281,27 +277,33 @@ mkColorMap f = center $ embedImage img
 
 drawPixelImage :: Double -> Double -> Animation
 drawPixelImage start end = mkAnimation 2 $ \t ->
-  let limit = fromToS start end $ curveS 2 t
-  in scaleToSize screenWidth screenHeight $ center $ embedImage $
-     limitGreyPixels (floor (limit*255)) monalisaLarge
+    let limit = fromToS start end $ curveS 2 t
+    in scaleToSize screenWidth screenHeight $ center $ embedImage $
+       cache !! floor (limit*255)
+  where
+    cache =
+      [ limitGreyPixels n monalisaLarge
+      | n <- [0..255] ]
 
 drawHexPixels :: Animation
-drawHexPixels = mkAnimation 1 $ \_ -> simplify $ simplify $ simplify $
-  mkGroup
-  [ if highdef then defs else None
-  , withFillOpacity 1 $ withStrokeWidth 0 $ withFillColor "white" $
-    mkGroup
-    [ translate ((fromIntegral x+0.5)/fromIntegral width*screenWidth - screenWidth/2)
-                (screenHeight/2 - (fromIntegral y+0.5)/fromIntegral height*screenHeight) $
-      if highdef
-        then mkUse ("tag" ++ show r)
-        else mkCircle 0.5
-    | x <- [0..width-1]
-    , y <- [0..height-1]
-    , let pixel@(PixelRGB8 r _ _) = pixelAt monalisa x y
-    ]
-  ]
+drawHexPixels = mkAnimation 1 $ \_ -> svg
   where
+    svg = -- scaleToSize screenWidth screenHeight $ embedDynamicImage $ raster $
+      simplify $ simplify $ simplify $
+        mkGroup
+        [ if highdef then defs else None
+        , withFillOpacity 1 $ withStrokeWidth 0 $ withFillColor "white" $
+          mkGroup
+          [ translate ((fromIntegral x+0.5)/fromIntegral width*screenWidth - screenWidth/2)
+                      (screenHeight/2 - (fromIntegral y+0.5)/fromIntegral height*screenHeight) $
+            if highdef
+              then mkUse ("tag" ++ show r)
+              else mkCircle 0.5
+          | x <- [0..width-1]
+          , y <- [0..height-1]
+          , let pixel@(PixelRGB8 r _ _) = pixelAt monalisa x y
+          ]
+        ]
     defs = preRender $ mkDefinitions images
     getNthSet n = centerX $ snd (splitGlyphs [n*2,n*2+1] allGlyphs)
     allGlyphs = lowerTransformations $ scale 0.15 $ center $ latex $
