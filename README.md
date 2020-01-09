@@ -20,7 +20,7 @@ scripting.
 
 Reanimate is built using the Haskell Tool Stack. For installation instructions, see: https://docs.haskellstack.org/en/stable/README/
 
-Additionally, you may want to install one of more of these programs to enable optional features:
+Optionally, you can install one or more of these programs to enable additional features:
  * [ffmpeg](https://www.ffmpeg.org/), enables rendering animations to video files.
  * [latex](https://www.latex-project.org/), enables mathematical typesetting.
  * [inkscape](https://inkscape.org/)/[imagemagick](https://imagemagick.org/index.php), enables SVG->PNG convertions.
@@ -64,6 +64,27 @@ The example gifs are displayed at 25 fps.
 ![Bezier curves](gifs/bezier.gif)
 ![Valentine's Day](gifs/valentine.gif)
 ![Basic LaTeX](gifs/latex_basic.gif)
+
+# Authors
+
+  * David Himmelstrup.
+  * Jan Hrcek.
+
+# License
+
+This is free and unencumbered software released into the public domain.
+
+Anyone is free to copy, modify, publish, use, compile, sell, or
+distribute this software, either in source code form or as a compiled
+binary, for any purpose, commercial or non-commercial, and by any
+means.
+
+# Acknowledgments
+
+  * Huge thanks to 3b1b's [manim](https://github.com/3b1b/manim) which inspired this library.
+  * Thanks to [svg-tree](https://github.com/Twinside/svg-tree) for their SVG library.
+  * Thanks to [CthulhuDen/chiphunk](https://github.com/CthulhuDen/chiphunk) for making a 2D physics
+    library easily available.
 
 # YouTube
 
