@@ -17,15 +17,8 @@ scripting.
 In more practical terms, reanimate is a library for turning code like this:
 
 ```haskell
-module Main(main) where
-
-import Reanimate
-import Reanimate.Builtin.Documentation
-
-main :: IO ()
 main = reanimate $ docEnv $ mkAnimation 2 $ \t ->
-  partialSvg t $ pathify $
-  mkCircle (screenHeight/3)
+  partialSvg t $ pathify $ mkCircle (screenHeight/3)
 ```
 
 ... into animations like this:
