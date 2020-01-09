@@ -18,7 +18,8 @@ In more practical terms, reanimate is a library for turning code like this:
 
 ```haskell
 main = reanimate $ docEnv $ mkAnimation 2 $ \t ->
-  partialSvg t $ pathify $ mkCircle (screenHeight/3)
+  partialSvg t $ pathify $ mkCircle radius
+  where radius = screenHeight/3
 ```
 
 ... into animations like this:
