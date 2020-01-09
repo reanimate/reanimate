@@ -14,9 +14,26 @@ a universal image format, LaTeX for typesetting, ffmpeg for video encoding, inks
 for rasterization, potrace for vectorization, blender/povray for 3D graphics, and Haskell for
 scripting.
 
-# Getting started
+In more practical terms, reanimate is a library for turning code like this:
 
-## Prerequisites
+```haskell
+module Main(main) where
+
+import Reanimate
+import Reanimate.Builtin.Documentation
+
+main :: IO ()
+main = reanimate $ docEnv $ mkAnimation 2 $ \t ->
+  partialSvg t $ pathify $
+  mkCircle (screenHeight/3)
+```
+
+... into animations like this:
+
+![Draw Circle](docs/gifs/doc_drawCircle.gif)
+
+
+# Prerequisites
 
 Reanimate is built using the Haskell Tool Stack. For installation instructions, see: https://docs.haskellstack.org/en/stable/README/
 
@@ -28,7 +45,9 @@ Optionally, you can install one or more of these programs to enable additional f
  * [povray](https://www.povray.org/), enables raytracing.
  * [blender](https://www.blender.org/), enables 3D graphics.
 
-## Installing / Running an example
+I highly recommend that you install at least 'ffmpeg' and 'latex'.
+
+# Installing / Running an example
 
 Reanimate ships with a web-based viewer and automatic code reloading. To get a small demo
 up and running, clone the repository, run one of the examples (this will install the library),
