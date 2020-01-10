@@ -17,14 +17,14 @@ scripting.
 In more practical terms, reanimate is a library for turning code like this:
 
 ```haskell
-main = reanimate $ docEnv $ mkAnimation 2 $ \t ->
+main = reanimate $ docEnv $ playThenReverseA $ mkAnimation duration $ \t ->
   partialSvg t $ pathify $ mkCircle radius
-  where radius = screenHeight/3
+  where duration = 2; radius = screenHeight/3
 ```
 
 ... into animations like this:
 
-![Draw Circle](docs/gifs/doc_drawCircle.gif)
+![Draw Circle](docs/gifs/doc_playThenReverseA.gif)
 
 
 # Prerequisites
