@@ -1,24 +1,46 @@
 [![Hackage](https://img.shields.io/hackage/v/reanimate.svg?color=success)](http://hackage.haskell.org/package/reanimate)
 [![Build Status](https://dev.azure.com/lemmih0612/reanimate/_apis/build/status/Lemmih.reanimate?branchName=master)](https://dev.azure.com/lemmih0612/reanimate/_build/latest?definitionId=1&branchName=master)
 [![Documentation Status](https://readthedocs.org/projects/reanimate/badge/?version=latest)](https://reanimate.readthedocs.io/en/latest/?badge=latest)
-
 ![Platforms](https://img.shields.io/badge/platform-linux%20%7C%20osx%20%7C%20windows-informational)
 
-# reanimate
+# Reanimate
 
-Reanimate is a reactive framework for creating non-interactive animations from SVG images.
-This package consists of a set of combinators, a renderer (using ffmpeg), and a web-based
-previewer. Inline latex code is supported when 'latex' and 'dvisvgm' are installed.
+Reanimate is a library for programmatically generating animations with a twist towards
+mathematics / 2D vector drawings. A lot of inspiration was drawn from 3b1b's manim library.
 
-Nothing about the API is stable at this point.
+Reanimate aims at being a batteries-included way of gluing together different technologies: SVG as
+a universal image format, LaTeX for typesetting, ffmpeg for video encoding, inkscape/imagemagick
+for rasterization, potrace for vectorization, blender/povray for 3D graphics, and Haskell for
+scripting.
 
-# YouTube
+In more practical terms, reanimate is a library for turning code like this:
 
-Completed animations are uploaded to the [Reanimated Science](https://www.youtube.com/channel/UCbZujyI7i6JbI-I0shPvDgg) channel.
+```haskell
+main = reanimate $ docEnv $ playThenReverseA $ mkAnimation duration $ \t ->
+  partialSvg t $ pathify $ mkCircle radius
+  where duration = 2; radius = screenHeight/3
+```
 
-Animation snippets are uploaded to the [Reanimated Science Playground](https://www.youtube.com/channel/UCL7MwXLtQbhJeb6Ts3_HooA) channel.
+... into animations like this:
 
-# Getting started
+![Draw Circle](docs/gifs/doc_playThenReverseA.gif)
+
+
+# Prerequisites
+
+Reanimate is built using the Haskell Tool Stack. For installation instructions, see: https://docs.haskellstack.org/en/stable/README/
+
+Optionally, you can install one or more of these programs to enable additional features:
+ * [ffmpeg](https://www.ffmpeg.org/), enables rendering animations to video files.
+ * [latex](https://www.latex-project.org/), enables mathematical typesetting.
+ * [inkscape](https://inkscape.org/)/[imagemagick](https://imagemagick.org/index.php), enables SVG->PNG convertions.
+ * [potrace](http://potrace.sourceforge.net/), enables PNG->SVG tracing.
+ * [povray](https://www.povray.org/), enables raytracing.
+ * [blender](https://www.blender.org/), enables 3D graphics.
+
+I highly recommend that you install at least 'ffmpeg' and 'latex'.
+
+# Installing / Running an example
 
 Reanimate ships with a web-based viewer and automatic code reloading. To get a small demo
 up and running, clone the repository, run one of the examples (this will install the library),
@@ -28,34 +50,17 @@ and wait for a browser window to open:
 $ git clone https://github.com/Lemmih/reanimate.git
 $ cd reanimate/
 $ stack build
-$ stack ./examples/latex_color.hs
+$ stack ./examples/doc_drawCircle.hs
 ```
 
-This should render the `latex_color` example in a new browser window. If you then change the
+This should render the `doc_drawCircle` example in a new browser window. If you then change the
 animation source code, the browser window will automatically reload and show the updated animation.
 
-# TODO
+# Documentation
 
-* Improve bounding box approximations
-* Alignment and positioning combinators
-* Figure out why performance doesn't scale linearly with more cores
-   - diagrams are slow because they are rendered as a bytestring and then parsed as SVG. Find a way to shortcut.
-* Test-suite: Compile and render all the example animations on the build servers. The SVG output should be stable.
-* API for generating slides.
-* Warn if 'group' nodes are found in 'clippath's.
-* Optionally use gifski for high quality gifs: https://gif.ski/
-* Driver:
-   - Flags for selecting fps in web viewer
-   - Detect if there's already an open browser window. If there is, don't open another one.
-   - Watch all code files in the same directory (and sub-directories) as the source code.
-* Viewer:
-   - Keys for pausing, moving frame-by-frame, resetting.
-* Documentation:
-   - Tutorials
-     - Coordinate system
-     - "Draw" effect
-     - Pixel perfect povray (orthographic projection)
-   - Gallery
+ * API reference: http://hackage.haskell.org/package/reanimate/docs/Reanimate.html
+ * Design overview: https://reanimate.readthedocs.io/en/latest/glue_tut/
+ * Gallery with source code: https://reanimate.readthedocs.io/en/latest/gallery/
 
 # Examples
 
@@ -71,3 +76,30 @@ The example gifs are displayed at 25 fps.
 ![Bezier curves](gifs/bezier.gif)
 ![Valentine's Day](gifs/valentine.gif)
 ![Basic LaTeX](gifs/latex_basic.gif)
+
+# Authors
+
+  * David Himmelstrup.
+  * Jan Hrcek.
+
+# License
+
+This is free and unencumbered software released into the public domain.
+
+Anyone is free to copy, modify, publish, use, compile, sell, or
+distribute this software, either in source code form or as a compiled
+binary, for any purpose, commercial or non-commercial, and by any
+means.
+
+# Acknowledgments
+
+  * Huge thanks to 3b1b's [manim](https://github.com/3b1b/manim) which inspired this library.
+  * Thanks to [svg-tree](https://github.com/Twinside/svg-tree) for their SVG library.
+  * Thanks to [CthulhuDen/chiphunk](https://github.com/CthulhuDen/chiphunk) for making a 2D physics
+    library easily available.
+
+# YouTube
+
+Completed animations are uploaded to the [Reanimated Science](https://www.youtube.com/channel/UCbZujyI7i6JbI-I0shPvDgg) channel.
+
+Animation snippets are uploaded to the [Reanimated Science Playground](https://www.youtube.com/channel/UCL7MwXLtQbhJeb6Ts3_HooA) channel.
