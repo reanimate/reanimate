@@ -24,7 +24,7 @@ main = reanimate $ docEnv $ playThenReverseA $ mkAnimation duration $ \t ->
 
 ... into animations like this:
 
-![Draw Circle](docs/gifs/doc_playThenReverseA.gif =320x180)
+![Draw Circle](docs/gifs/doc_playThenReverseA.gif)
 
 
 # Prerequisites
@@ -67,16 +67,16 @@ animation source code, the browser window will automatically reload and show the
 
 The example gifs are displayed at 25 fps.
 
-![LaTeX wheel](gifs/latex_wheel.gif =320x180)
-![Sunflower](gifs/sunflower.gif =320x180)
-![Tangent](gifs/tangent.gif =320x180)
-![Goo](gifs/goo.gif =320x180)
-![Drawing LaTeX equations](gifs/latex_draw.gif =320x180)
-![Bounding boxes](gifs/bbox.gif =320x180)
-![Colorful LaTeX](gifs/latex_color.gif =320x180)
-![Bezier curves](gifs/bezier.gif =320x180)
-![Valentine's Day](gifs/valentine.gif =320x180)
-![Basic LaTeX](gifs/latex_basic.gif =320x180)
+![LaTeX wheel](gifs/latex_wheel.gif)
+![Sunflower](gifs/sunflower.gif)
+![Tangent](gifs/tangent.gif)
+![Goo](gifs/goo.gif)
+![Drawing LaTeX equations](gifs/latex_draw.gif)
+![Bounding boxes](gifs/bbox.gif)
+![Colorful LaTeX](gifs/latex_color.gif)
+![Bezier curves](gifs/bezier.gif)
+![Valentine's Day](gifs/valentine.gif)
+![Basic LaTeX](gifs/latex_basic.gif)
 
 # Authors
 
