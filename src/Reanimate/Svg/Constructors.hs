@@ -89,7 +89,7 @@ rotateAroundCenter a t =
     (x,y,w,h) = boundingBox t
 
 -- | @arounCenter f image@ first moves the image so the center of its bounding box is at the origin @(0, 0)@,
--- applies transformation @f@ to it and then moves the transformed image to it's original position.
+-- applies transformation @f@ to it and then moves the transformed image back to its original position.
 aroundCenter :: (Tree -> Tree) -> Tree -> Tree
 aroundCenter fn t =
     translate (-offsetX) (-offsetY) $ fn $ translate offsetX offsetY t
@@ -104,7 +104,7 @@ aroundCenter fn t =
 scale :: Double -> Tree -> Tree
 scale a = withTransformations [Scale a Nothing]
 
--- | @scaleToSize width height@ resizes the image so that it's bounding box has corresponding @width@ and @height@.
+-- | @scaleToSize width height@ resizes the image so that its bounding box has corresponding @width@ and @height@.
 scaleToSize :: Double -> Double -> Tree -> Tree
 scaleToSize w h t =
     scaleXY (w/w') (h/h') t
