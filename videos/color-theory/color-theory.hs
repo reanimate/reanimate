@@ -18,22 +18,25 @@ import           Data.Word
 import           Graphics.SvgTree      hiding (Image, imageHeight, imageWidth)
 import           Graphics.SvgTree.Memo
 import           Numeric
-import           Reanimate.ColorMap
-import           Reanimate.Driver      (reanimate)
-import           Reanimate.LaTeX
 import           Reanimate
 import           Reanimate.Animation
+import           Reanimate.ColorMap
+import           Reanimate.ColorSpace
+import           Reanimate.Builtin.Flip
+import           Reanimate.Constants
+import           Reanimate.Driver      (reanimate)
+import           Reanimate.Effect
+import           Reanimate.LaTeX
 import           Reanimate.Raster
 import           Reanimate.Scene
 import           Reanimate.Signal
-import           Reanimate.Effect
+import           Reanimate.Interpolate
 import           Reanimate.Svg
-import           Reanimate.ColorSpace
-import           Reanimate.Constants
 import           System.IO.Unsafe
 
+import           Grid
 import           Spectrum
-
+import           EndScene
 {- Scene sequence
 
  - black
@@ -63,11 +66,15 @@ import           Spectrum
 highdef = True
 
 main :: IO ()
-main = reanimate $
-  parA (animate $ const $ mkBackground "black") $
-  -- monalisaScene `seqA`
-  -- colorSpacesScene
-  scene2
+main = reanimate $ -- takeA 10 $ dropA 89 $
+  parA (staticFrame 1 $ mkBackground "black") $
+  monalisaScene `seqA`
+  falseColorScene `seqA`
+  scene2 `seqA`
+  (parA (staticFrame 1 $ mkBackground "darkgrey") $
+  overlapTransition 1.5 (signalT (curveS 2) flipTransition)
+    (parA (staticFrame 1 $ mkBackground "black") $ gridScene)
+    (parA (staticFrame 1 $ mkBackground "black") $ endScene))
   -- scene3
   -- xyzTernaryPlot
   -- interpolation
@@ -82,7 +89,7 @@ monalisaScene =
     -- Draw numbers
     fork $
       play $ drawHexPixels
-        # setDuration (drawPixelDelay+toGrayScaleTime)
+        # setDuration (drawPixelDelay+toGrayScaleTime+3)
         # pauseAtBeginning beginPause
         # fadeIn stdFade
     wait beginPause
@@ -90,19 +97,20 @@ monalisaScene =
     let PixelRGB8 minR _ _ = minPixel monalisa
         PixelRGB8 maxR _ _ = maxPixel monalisa
     waitAll $ do
-      fork $ do
-        play $ drawPixelImage (fromIntegral minR/255) ((fromIntegral maxR+1)/255)
-          # setDuration toGrayScaleTime
-          # pauseAround drawPixelDelay 5
-        -- Move monalisa to the side of the screen
-        play $ sceneFalseColorIntro
-
       -- Show colormap as monalisa fades in
-      -- play $ showColorMap (fromIntegral minR/255) ((fromIntegral maxR+1)/255)
-      --   # setDuration toGrayScaleTime
-      --   # pauseAround 1 1
-      --   # fadeIn stdFade
-      --   # fadeOut stdFade
+      play $ showColorMap (fromIntegral minR/255) ((fromIntegral maxR+1)/255)
+        # setDuration 2
+        # pauseAround 1 1
+        # fadeIn stdFade
+        # fadeOut stdFade
+
+      play $ drawPixelImage (fromIntegral minR/255) ((fromIntegral maxR+1)/255)
+        # setDuration toGrayScaleTime
+        # pauseAround drawPixelDelay 5
+      -- Move monalisa to the side of the screen
+      play $ sceneFalseColorIntro
+
+
 
     -- Cycle through colormaps for monalisa
     -- play $ sceneColorMaps `sim` (sceneFalseColorChain $ map snd
@@ -122,6 +130,51 @@ monalisaScene =
     drawPixelDelay = 1
     stdFade = 0.3
     toGrayScaleTime = 3
+
+falseColorScene :: Animation
+falseColorScene = sceneAnimation $ do
+
+    delta <- newVar 0
+    cms <- newVar (greyscale, greyscale)
+    let total = 7
+
+    nth <- newVar 0
+    let pushCM label cm = do
+          (_, prevCM) <- readVar cms
+          writeVar delta 0
+          writeVar cms (prevCM, cm)
+
+          this <- readVar nth
+          writeVar nth (this+1)
+
+          s <- fork $ newSpriteA $ drawColorMap label cm
+          spriteE s (overBeginning 0.3 fadeInE)
+          spriteTween s 0 $ \_ -> positionColorMap total this
+
+          fork $ tweenVar delta 0.3 $ \v -> fromToS v 1 . curveS 2
+          wait 5
+    s <- newSprite $ do
+      getDelta <- freezeVar delta
+      getCms <- freezeVar cms
+      return $ \real_t d t ->
+        let s = curveS 3 t
+            (cmap1, cmap2) = getCms real_t
+            cm x = interpolateRGB8 labComponents (cmap1 x) (cmap2 x) (getDelta real_t)
+        in translate (screenWidth/4 - 0.75) 0 $
+           scaleToSize (screenWidth/2) (screenHeight/2) $
+           embedImage $ applyColorMap cm monalisa
+
+    pushCM "greyscale" greyscale
+    pushCM "jet" jet
+    pushCM "turbo" turbo
+    pushCM "sinebow" sinebow
+    pushCM "parula" parula
+    pushCM "viridis" viridis
+    pushCM "cividis" cividis
+
+    wait 2
+    return ()
+
 
 
 monalisa :: Image PixelRGB8
@@ -211,6 +264,26 @@ sceneColorMaps = mkAnimation 5 $ const $
     yInit = yStep*3
     yStep = height * 2.2
     width = screenWidth*0.4
+    height = screenHeight*0.06
+
+drawColorMap :: T.Text -> (Double -> PixelRGB8) -> Animation
+drawColorMap label cmap = animate $ const $
+  mkGroup
+    [ renderColorMap width height cmap
+    , withFillColor "white" $ translate (-width/2) (height*1.1) $
+      scale 0.3 $ latex label
+    ]
+  where
+    width = screenWidth*0.4
+    height = screenHeight*0.06
+
+positionColorMap :: Int -> Int -> SVG -> SVG
+positionColorMap total nth =
+    translate xOffset (yInit - fromIntegral nth*yStep)
+  where
+    xOffset = -screenWidth*0.3
+    yInit = yStep*fromIntegral (total `div` 2)
+    yStep = height * 2.2
     height = screenHeight*0.06
 
 
