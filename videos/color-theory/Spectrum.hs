@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo       #-}
+{-# LANGUAGE ApplicativeDo     #-}
 module Spectrum
   ( scene2
   ) where
@@ -7,6 +8,7 @@ module Spectrum
 import           Control.Lens                    ((&), (.~))
 
 import           Codec.Picture
+import           Codec.Picture.Types
 import           Control.Monad
 import qualified Data.ByteString                 as BS
 import           Data.Colour
@@ -67,7 +69,7 @@ redName = "maroon"
 
 drawSensitivities :: Animation
 drawSensitivities = sceneAnimation $ do
-    bg <- newSpriteSVG spectrumGrid
+    bg <- newSpriteSVG $ spectrumGrid True
     spriteZ bg 1
 
     forM_ [(short, blueName), (medium, greenName), (long, redName)] $
@@ -81,7 +83,7 @@ drawSensitivities = sceneAnimation $ do
 
 drawMorphingSensitivities :: Animation
 drawMorphingSensitivities = sceneAnimation $ do
-    bg <- newSpriteSVG spectrumGrid
+    bg <- newSpriteSVG $ spectrumGrid True
     spriteZ bg 1
 
     forM_ keys $ \(datA, datB, name) -> do
@@ -176,8 +178,46 @@ drawLabelZ = drawLabel "Z" blueName
 drawLabelY = drawLabel "Y" greenName
 drawLabelX = drawLabel "X" redName
 
+scene2Intro :: Animation
+scene2Intro = staticFrame 10 (spectrumGrid False)
+
+illustrateSpectrum :: Animation
+illustrateSpectrum = sceneAnimation $ do
+    grid <- newSpriteSVG $ spectrumGrid False
+    spriteZ grid 1
+    forM_ (zip [0 ..] spectrum) $ \(nth, intensity) -> do
+      let nm = fromIntegral nth * (300/23/2) + 400
+      fork $ drawLine nm intensity
+      wait 0.05
+    wait 5
+    return ()
+  where
+    spectrum =
+        [ 0.02, 0.03, 0.07, 0.1, 0.2, 0.35, 0.7, 0.8, 0.9 ,0.75, 0.5 ] ++
+        [ 0.3, 0.27, 0.31, 0.25, 0.3, 0.35, 0.4, 0.5] ++
+        [ 0.65, 0.8, 0.95, 1.0, 0.95, 0.98, 0.93, 0.97] ++
+        [ 0.85, 0.75, 0.65, 0.60, 0.55, 0.52, 0.48, 0.45] ++
+        [ 0.45, 0.40, 0.35, 0.30, 0.25, 0.20, 0.15, 0.15, 0.15, 0.13, 0.11, 0.08]
+    drawLine nm intensity = do
+      let Just c = fmap (promotePixel.toRGB8) (nmToColor (round nm))
+      s <- newSpriteSVG $
+        pathify $
+        withStrokeColorPixel c $
+        translate (-spectrumWidth/2) (-spectrumHeight/2) $
+        translate (fromToS 0 spectrumWidth ((nm-400)/(700-400))) 0 $
+        mkLine (0,0) (0, spectrumHeight*intensity)
+      spriteE s $ overEnding 0.3 fadeOutE
+      -- spriteTween s intensity $ partialSvg . curveS 2
+      spriteTween s 0.8 $ partialSvg . curveS 2
+
 scene2 :: Animation
-scene2 = pauseAtBeginning 10 $ sceneAnimation $ do
+scene2 = seqA scene2Intro $ seqA illustrateSpectrum $ sceneAnimation $ do
+  oldGrid <- newSpriteSVG $ spectrumGrid False
+  newGrid <- newSpriteSVG $ spectrumGrid True
+  spriteTween newGrid 0.5 withGroupOpacity
+  destroySprite newGrid
+  destroySprite oldGrid
+
   -- SML labels and timings.
   labelS <- newSpriteSVG $ drawLabelSVG "S" blueName
   spriteMap labelS $ uncurry translate (labelPosition short)
@@ -243,13 +283,12 @@ scene2 = pauseAtBeginning 10 $ sceneAnimation $ do
   redFactor <- newVar 0
   greenFactor <- newVar 0
   blueFactor <- newVar 0
-  xyzSpace <- newSprite $ do
-    getRed <- freezeVar redFactor
-    getGreen <- freezeVar greenFactor
-    getBlue <- freezeVar blueFactor
-    return $ \real_t d t ->
-      cieXYImage (getRed real_t) (getGreen real_t) (getBlue real_t) imgSize
-  -- xyzSpace <- newSparite $ cieXYImage <$> unVar redFactor <*> unVar greenFactor <*> unVar blueFactor
+  xyzSpace <- newSprite $
+    cieXYImage
+      <$> unVar redFactor
+      <*> unVar greenFactor
+      <*> unVar blueFactor
+      <*> pure imgSize
   spriteMap xyzSpace $ translate (-screenWidth/4) 0
   spriteZ xyzSpace (-1)
   spriteTween xyzSpace 0.5 $ aroundCenter . scale . curveS 2
@@ -268,18 +307,26 @@ scene2 = pauseAtBeginning 10 $ sceneAnimation $ do
   tweenVar blueFactor 1 $ \v -> fromToS v 1 . curveS 2
 
   wait 3
+  let downShift = 1
   visCurve <- newVar 0
-  visLine <- newSprite $ do
-    getCurve <- freezeVar visCurve
-    return $ \real_t d t ->
-      let curve = getCurve real_t in
-      withStrokeWidth 0.03 $ withStrokeColor "white" $ morphXYZCoordinates curve
-  spriteZ visLine (1)
-  let downShift = 1.5
-  spriteTween visLine 1 $ \d ->
+  waveLine <- fork $ newSpriteSVG $
+    translate (screenWidth/4) 0 $
+    scale 0.5 $
+    translate 0 (-spectrumHeight/2) $
+    wavelengthAxis
+  spriteTween waveLine 1 $ \d ->
     translate 0 (fromToS 0 (-downShift) $ curveS 2 d)
-  wait 1
+  -- wait 1
+  visLine <- newSprite $
+    withStrokeWidth 0.03 . withStrokeColor "white" . morphXYZCoordinates
+      <$> unVar visCurve
+  spriteZ visLine (1)
+
+  spriteTween waveLine 0.5 $ \t -> withGroupOpacity (1-t)
+  destroySprite waveLine
+
   visSide <- spriteVar visLine 0 $ \t ->
+    translate 0 (-downShift) .
     translate (fromToS (screenWidth/4) (-screenWidth/4) $ curveS 2 t) 0 .
     scale (fromToS 0.5 1 $ curveS 2 t) .
     translate 0 (fromToS (-spectrumHeight/2) 0 $ curveS 2 t)
@@ -296,13 +343,13 @@ scene2 = pauseAtBeginning 10 $ sceneAnimation $ do
   cmName <- newVar "sinebow"
   cmFunc <- newVar sinebow
   visSpace <- fork $ newSprite $ do
-    getObs <- freezeVar obsVisible
-    getGamut <- freezeVar gamut
-    getReorient <- freezeVar reorient
-    getOpacity <- freezeVar cmOpacity
-    getDelta <- freezeVar cmDelta
-    getFunc <- freezeVar cmFunc
-    return $ \real_t d t ->
+    getObs <- unVar obsVisible
+    getGamut <- unVar gamut
+    getReorient <- unVar reorient
+    getOpacity <- unVar cmOpacity
+    getDelta <- unVar cmDelta
+    getFunc <- unVar cmFunc
+    return $
       translate (-screenWidth/4) 0 $
       mkGroup
       [ mkClipPath "visible"
@@ -311,42 +358,41 @@ scene2 = pauseAtBeginning 10 $ sceneAnimation $ do
         ]
       , mkClipPath "sRGB"
         [ simplify $
-          sRGBTriangle (getGamut real_t)
+          sRGBTriangle getGamut
         ]
-      , withGroupOpacity (getObs real_t) $
+      , withGroupOpacity getObs $
         withClipPathRef (Ref "visible") $
         mkGroup [cieXYImage 1 1 1 imgSize]
-      , translate 0 (1*getReorient real_t) $
-        rotate (-gamutSlope sRGBGamut * getReorient real_t) $
+      , translate 0 (1*getReorient) $
+        rotate (-gamutSlope sRGBGamut * getReorient) $
         mkGroup
-        [ scale (1+0.5*getReorient real_t) $
+        [ scale (1+0.5*getReorient) $
           withClipPathRef (Ref "sRGB") $
-          mkGroup [cieXYImageGamut (getGamut real_t) imgSize]
-        , lowerTransformations $ scale (1+0.5*getReorient real_t) $
-          withGroupOpacity (getOpacity real_t) $
-          cmToTernary (getDelta real_t) (getFunc real_t)
+          mkGroup [cieXYImageGamut getGamut imgSize]
+        , lowerTransformations $ scale (1+0.5*getReorient) $
+          withGroupOpacity getOpacity $
+          cmToTernary getDelta getFunc
         ]
-      , withGroupOpacity (getReorient real_t) $
+      , withGroupOpacity getReorient $
         translate 0 3.5 $ scale 0.5 $
         center $ withFillColor "white" $
         latex "sRGB"
       ]
 
   colorMap <- newSprite $ do
-    getOpacity <- freezeVar cmOpacity
-    getDelta <- freezeVar cmDelta
-    getFunc <- freezeVar cmFunc
-    getName <- freezeVar cmName
-    return $ \real_t d t ->
-      withGroupOpacity (getOpacity real_t) $
+    getOpacity <- unVar cmOpacity
+    getDelta <- unVar cmDelta
+    getFunc <- unVar cmFunc
+    getName <- unVar cmName
+    return $
+      withGroupOpacity getOpacity $
       mkGroup
-      [ renderColorMap (getDelta real_t) (screenWidth*0.75) (screenHeight*0.15)
-          (getFunc real_t)
-      , withGroupOpacity (getDelta real_t * 2) $
+      [ renderColorMap getDelta (screenWidth*0.75) (screenHeight*0.15) getFunc
+      , withGroupOpacity (getDelta * 2) $
         withFillColor "white" $
         translate 0 1.2 $
         scale 0.7 $
-        center $ latex (getName real_t)
+        center $ latex getName
       ]
   spriteTween colorMap 0 $ const $ translate 0 (-3)
 
@@ -382,10 +428,7 @@ scene2 = pauseAtBeginning 10 $ sceneAnimation $ do
 
   wait 2
 
-  rgb <- newSprite $ do
-    getGamut <- freezeVar gamut
-    return $ \real_t d t ->
-      withStrokeColor "white" $ sRGBTriangle (getGamut real_t)
+  rgb <- newSprite $ withStrokeColor "white" . sRGBTriangle <$> unVar gamut
   spriteTween rgb 1 $ partialSvg
   wait 1
   fork $ spriteTween rgb 1 $ \t -> withGroupOpacity (1-t)
@@ -410,16 +453,16 @@ scene2 = pauseAtBeginning 10 $ sceneAnimation $ do
   spriteTween visSpace 1 $ \t -> translate (-2.5*curveS 2 t) 0
 
   hsv <- newSprite $ do
-    getOpacity <- freezeVar cmOpacity
-    getDelta <- freezeVar cmDelta
-    getFunc <- freezeVar cmFunc
-    return $ \real_t _d _t ->
+    getOpacity <- unVar cmOpacity
+    getDelta <- unVar cmDelta
+    getFunc <- unVar cmFunc
+    return $
       mkGroup
       [ lowerTransformations $
         scaleToWidth (screenWidth*0.20) $
         mkGroup [ hsvColorSpace 100
-                , withGroupOpacity (getOpacity real_t) $
-                  cmToHSV (getDelta real_t) (getFunc real_t)]
+                , withGroupOpacity getOpacity $
+                  cmToHSV getDelta getFunc]
       , translate 0 2 $ scale 0.5 $
         center $ withFillColor "white" $
         latex "HSV" ]
@@ -455,16 +498,16 @@ scene2 = pauseAtBeginning 10 $ sceneAnimation $ do
   spriteTween visSpace 1 $ \t -> translate (-2*curveS 2 t) 0
 
   lab <- newSprite $ do
-    getOpacity <- freezeVar cmOpacity
-    getDelta <- freezeVar cmDelta
-    getFunc <- freezeVar cmFunc
-    return $ \real_t d t ->
+    getOpacity <- unVar cmOpacity
+    getDelta <- unVar cmDelta
+    getFunc <- unVar cmFunc
+    return $
       mkGroup
       [ lowerTransformations $
         scaleToWidth (screenWidth/4) $
         mkGroup [ cieLABImagePixels
-                , withGroupOpacity (getOpacity real_t) $
-                  cmToLAB (getDelta real_t) (getFunc real_t)]
+                , withGroupOpacity getOpacity $
+                  cmToLAB getDelta getFunc]
       , translate 0 2 $ scale 0.5 $
         center $ withFillColor "white" $
         latex "LAB" ]
@@ -908,6 +951,7 @@ mkClosedLinePath :: [(Double, Double)] -> Tree
 mkClosedLinePath [] = mkGroup []
 mkClosedLinePath ((startX, startY):rest) =
     PathTree $ defaultSvg & pathDefinition .~ cmds
+      & strokeLineJoin .~ pure JoinRound
   where
     cmds = [ MoveTo OriginAbsolute [V2 startX startY]
            , LineTo OriginAbsolute [ V2 x y | (x, y) <- rest ]
@@ -916,8 +960,32 @@ mkClosedLinePath ((startX, startY):rest) =
 spectrumHeight = screenHeight * 0.5
 spectrumWidth = screenWidth * 0.7
 
-spectrumGrid :: Tree
-spectrumGrid =
+
+wavelengthAxis :: Tree
+wavelengthAxis =
+  withStrokeWidth strokeWidth $
+  mkGroup
+  [ translate (-spectrumWidth/2) 0 $
+    withFillOpacity 0 $ withStrokeColor "white" $ mkPath $
+    [ MoveTo OriginAbsolute [V2 0 0]
+    , VerticalTo OriginRelative [tickLength,-tickLength]
+    , HorizontalTo OriginRelative [spectrumWidth]
+    , VerticalTo OriginRelative [tickLength,-tickLength]
+    ]
+    ++ concat
+    [ [ MoveTo OriginAbsolute [V2 (n / (nTicksX-1) * spectrumWidth) 0]
+      , VerticalTo OriginRelative [tickLength]]
+    | n <- [0..nTicksX-1]
+    ]
+  ]
+  where
+    strokeWidth = 0.03
+    nTicksX = 24
+    nTicksY = fromIntegral (round (spectrumHeight/spectrumWidth * nTicksX))
+    tickLength = spectrumHeight*0.02
+
+spectrumGrid :: Bool -> Tree
+spectrumGrid includeSensitivity =
   withStrokeWidth strokeWidth $
   mkGroup
   [ --center $
@@ -939,9 +1007,11 @@ spectrumGrid =
       , HorizontalTo OriginRelative [tickLength]]
     | n <- [0..nTicksY-1]
     ]
-  , withFillColor "white" $
-    translate (-spectrumWidth*0.5 + svgWidth sensitivity*1.2) 0 $
-    sensitivity
+  , if includeSensitivity
+    then withFillColor "white" $
+         translate (-spectrumWidth*0.5 + svgWidth sensitivity*1.2) 0 $
+         sensitivity
+    else None
   , withFillColor "white" $
     translate 0 (-spectrumHeight*0.5 + svgHeight wavelength*1.2) $
     wavelength
@@ -998,6 +1068,15 @@ morphSensitivity datA datB c = animate $ \t ->
   --  mkBackground "green"
 sensitivitySVG :: Double -> Double -> [(Nanometer, Double)] -> String -> Tree
 sensitivitySVG maxHeight limit dat c =
+    mkGroup
+    [ mkClipPath "spectrum" $
+      let margin = 1 in
+      [ simplify $ lowerTransformations $
+        translate 0 (margin/2) $
+        pathify $
+        mkRect spectrumWidth (spectrumHeight+margin)
+      ]
+    ,
     withClipPathRef (Ref "spectrum") $
     simplify $ lowerTransformations $
     withStrokeColor c $
@@ -1011,7 +1090,7 @@ sensitivitySVG maxHeight limit dat c =
             x = percent * spectrumWidth
             y = n/maxHeight * spectrumHeight
       , percent <= limit
-      ]
+      ] ]
   where
     initNM = fromIntegral $ fst (head dat)
     lastNM = 700 -- fromIntegral $ fst (last dat)

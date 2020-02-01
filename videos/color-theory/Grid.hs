@@ -2,6 +2,7 @@
 -- stack --resolver lts-13.14 runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE ApplicativeDo     #-}
 module Grid (gridScene) where
 
 import           Control.Lens          ()
@@ -87,11 +88,11 @@ monalisaSprite :: Double -> Double -> T.Text -> Scene s (Sprite s, Var s Double)
 monalisaSprite x y txt = do
   highlight <- newVar 0
   s <- newSprite $ do
-    getHighlight <- freezeVar highlight
-    return $ \real_t d t ->
-      translate (screenWidth/3 * x * (1-getHighlight real_t))
-                (screenHeight/3 * y * (1-getHighlight real_t)) $
-      scale (fromToS 1 2 (getHighlight real_t)) $
+    getHighlight <- unVar highlight
+    return $
+      translate (screenWidth/3 * x * (1-getHighlight))
+                (screenHeight/3 * y * (1-getHighlight)) $
+      scale (fromToS 1 2 (getHighlight)) $
       mkGroup
       [ scaleToSize (screenWidth/3) (screenHeight/3) $
         embedImage $

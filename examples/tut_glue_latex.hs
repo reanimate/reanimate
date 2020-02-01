@@ -1,6 +1,7 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ApplicativeDo #-}
 module Main (main) where
 
 import           Reanimate
@@ -83,7 +84,8 @@ drawAnimation' mbSeed fillDur step svg = sceneAnimation $ do
     fork $ do
       wait (n*step+(1-fillDur))
       newSprite $ do
-        return $ \_real_t _d t ->
+        t <- spriteT
+        return $
           withStrokeWidth 0 $ fn $ withFillOpacity (min 1 $ t/fillDur) tree
   where
     shuf lst =

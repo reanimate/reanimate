@@ -241,7 +241,7 @@ interpolatePathCommands :: Double -> [PathCommand] -> [PathCommand]
 interpolatePathCommands alpha = lineToPath . partialLine alpha . toLineCommands
 
 partialSvg :: Double -> Tree -> Tree
--- partialSvg alpha | alpha >= 1 = id
+partialSvg alpha | alpha >= 1 = id
 partialSvg alpha = mapTree worker
   where
     worker (PathTree path) =

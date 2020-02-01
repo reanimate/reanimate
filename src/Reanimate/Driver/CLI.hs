@@ -34,7 +34,7 @@ data Command
     }
    deriving (Show)
 
-data Preset = Youtube | ExampleGif | Quick | MediumQ | HighQ
+data Preset = Youtube | ExampleGif | Quick | MediumQ | HighQ | LowFPS
   deriving (Show)
 
 readFormat :: String -> Maybe Format
@@ -58,6 +58,7 @@ readPreset preset =
     "quick"   -> Just Quick
     "medium"  -> Just MediumQ
     "high"    -> Just HighQ
+    "lowfps"  -> Just LowFPS
     _         -> Nothing
 
 showPreset :: Preset -> String
@@ -66,6 +67,7 @@ showPreset ExampleGif = "gif"
 showPreset Quick      = "quick"
 showPreset MediumQ    = "medium"
 showPreset HighQ      = "high"
+showPreset LowFPS     = "lowfps"
 
 options :: Parser Options
 options = Options <$> commandP

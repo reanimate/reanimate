@@ -66,12 +66,12 @@ import           EndScene
 highdef = True
 
 main :: IO ()
-main = reanimate $ -- takeA 10 $ dropA 89 $
+main = reanimate $ --  takeA 10 $ dropA 55 $
   parA (staticFrame 1 $ mkBackground "black") $
   monalisaScene `seqA`
   falseColorScene `seqA`
   scene2 `seqA`
-  (parA (staticFrame 1 $ mkBackground "darkgrey") $
+  (parA (staticFrame 1 $ mkBackground "aliceblue") $
   overlapTransition 1.5 (signalT (curveS 2) flipTransition)
     (parA (staticFrame 1 $ mkBackground "black") $ gridScene)
     (parA (staticFrame 1 $ mkBackground "black") $ endScene))
@@ -106,7 +106,7 @@ monalisaScene =
 
       play $ drawPixelImage (fromIntegral minR/255) ((fromIntegral maxR+1)/255)
         # setDuration toGrayScaleTime
-        # pauseAround drawPixelDelay 5
+        # pauseAround drawPixelDelay 3
       -- Move monalisa to the side of the screen
       play $ sceneFalseColorIntro
 
@@ -152,17 +152,18 @@ falseColorScene = sceneAnimation $ do
           spriteTween s 0 $ \_ -> positionColorMap total this
 
           fork $ tweenVar delta 0.3 $ \v -> fromToS v 1 . curveS 2
-          wait 5
-    s <- newSprite $ do
-      getDelta <- freezeVar delta
-      getCms <- freezeVar cms
-      return $ \real_t d t ->
-        let s = curveS 3 t
-            (cmap1, cmap2) = getCms real_t
-            cm x = interpolateRGB8 labComponents (cmap1 x) (cmap2 x) (getDelta real_t)
-        in translate (screenWidth/4 - 0.75) 0 $
-           scaleToSize (screenWidth/2) (screenHeight/2) $
-           embedImage $ applyColorMap cm monalisa
+          wait 3
+    let cmSprite delta (cmap1, cmap2) t =
+          let s = curveS 3 t
+              cm x = interpolateRGB8 labComponents (cmap1 x) (cmap2 x) delta
+          in translate (screenWidth/4 - 0.75) 0 $
+             scaleToSize (screenWidth/2) (screenHeight/2) $
+             embedImage $ applyColorMap cm monalisa
+    s <- newSprite $
+      cmSprite
+        <$> unVar delta
+        <*> unVar cms
+        <*> spriteT
 
     pushCM "greyscale" greyscale
     pushCM "jet" jet
@@ -270,7 +271,7 @@ drawColorMap :: T.Text -> (Double -> PixelRGB8) -> Animation
 drawColorMap label cmap = animate $ const $
   mkGroup
     [ renderColorMap width height cmap
-    , withFillColor "white" $ translate (-width/2) (height*1.1) $
+    , withFillColor "white" $ translate (-width/2 + screenWidth*0.01) (height*1.1) $
       scale 0.3 $ latex label
     ]
   where
