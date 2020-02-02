@@ -21,6 +21,7 @@ presetFormat ExampleGif = RenderGif
 presetFormat Quick      = RenderMp4
 presetFormat MediumQ    = RenderMp4
 presetFormat HighQ      = RenderMp4
+presetFormat LowFPS     = RenderMp4
 
 presetFPS :: Preset -> FPS
 presetFPS Youtube    = 60
@@ -28,6 +29,7 @@ presetFPS ExampleGif = 24
 presetFPS Quick      = 15
 presetFPS MediumQ    = 30
 presetFPS HighQ      = 30
+presetFPS LowFPS     = 10
 
 presetWidth :: Preset -> Width
 presetWidth Youtube    = 2560
@@ -35,6 +37,7 @@ presetWidth ExampleGif = 320
 presetWidth Quick      = 320
 presetWidth MediumQ    = 800
 presetWidth HighQ      = 1920
+presetWidth LowFPS     = presetWidth HighQ
 
 presetHeight :: Preset -> Height
 presetHeight preset = presetWidth preset * 9 `div` 16
@@ -163,7 +166,7 @@ guessParameter a b def = fromMaybe def (a <|> b)
 -- If user specifies exactly one dimension explicitly, calculate the other
 userPreferredDimensions :: Maybe Width -> Maybe Height -> Maybe (Width, Height)
 userPreferredDimensions (Just width) (Just height)  = Just (width, height)
-userPreferredDimensions (Just width) Nothing        = Just (width, makeEven $ width * 9 `div` 16) 
+userPreferredDimensions (Just width) Nothing        = Just (width, makeEven $ width * 9 `div` 16)
 userPreferredDimensions Nothing      (Just height)  = Just (makeEven $ height * 16 `div` 9, height)
 userPreferredDimensions Nothing      Nothing        = Nothing
 

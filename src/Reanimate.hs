@@ -67,7 +67,6 @@ module Reanimate
     sceneAnimation,
     fork,
     play,
-    playZ,
     queryNow,
     waitAll,
     waitUntil,
@@ -76,11 +75,14 @@ module Reanimate
     withSceneDuration,
     newSprite,
     newSpriteA,
+    newSpriteSVG,
     destroySprite,
     spriteE,
     newVar,
     tweenVar,
-    freezeVar,
+    unVar,
+    spriteT,
+    spriteDuration,
 
     -- ** Effects
     Effect,

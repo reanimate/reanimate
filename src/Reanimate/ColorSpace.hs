@@ -33,6 +33,11 @@ bigXYZCoordinates = unsafePerformIO $ do
     Right vec -> return $ Map.fromList
       [ (nm, (x,y,z)) | (nm,x,y,z) <- V.toList vec, nm <= 700 ]
 
+nmToColor :: Nanometer -> Maybe (Colour Double)
+nmToColor nm = do
+  (x, y, z) <- Map.lookup nm bigXYZCoordinates
+  return $ cieXYZ x y z
+
 renderXYZCoordinates :: Tree
 renderXYZCoordinates =
   withFillOpacity 0 $

@@ -47,4 +47,3 @@ mkBlenderImage' script = cacheFile template $ \target -> do
                 , "--render-output", target, "--python", py_file]
   where
     template = show (hash script) <.> "png"
-
