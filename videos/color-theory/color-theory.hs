@@ -72,7 +72,7 @@ main = reanimate $ --  takeA 10 $ dropA 55 $
   falseColorScene `seqA`
   scene2 `seqA`
   (parA (staticFrame 1 $ mkBackground "aliceblue") $
-  overlapTransition 1.5 (signalT (curveS 2) flipTransition)
+  overlapTransition 2 (signalT (curveS 2) flipTransition)
     (parA (staticFrame 1 $ mkBackground "black") $ gridScene)
     (parA (staticFrame 1 $ mkBackground "black") $ endScene))
   -- scene3
