@@ -18,22 +18,25 @@ import           Data.Word
 import           Graphics.SvgTree      hiding (Image, imageHeight, imageWidth)
 import           Graphics.SvgTree.Memo
 import           Numeric
-import           Reanimate.ColorMap
-import           Reanimate.Driver      (reanimate)
-import           Reanimate.LaTeX
 import           Reanimate
 import           Reanimate.Animation
+import           Reanimate.ColorMap
+import           Reanimate.ColorSpace
+import           Reanimate.Builtin.Flip
+import           Reanimate.Constants
+import           Reanimate.Driver      (reanimate)
+import           Reanimate.Effect
+import           Reanimate.LaTeX
 import           Reanimate.Raster
 import           Reanimate.Scene
 import           Reanimate.Signal
-import           Reanimate.Effect
+import           Reanimate.Interpolate
 import           Reanimate.Svg
-import           Reanimate.ColorSpace
-import           Reanimate.Constants
 import           System.IO.Unsafe
 
+import           Grid
 import           Spectrum
-
+import           EndScene
 {- Scene sequence
 
  - black
@@ -63,11 +66,15 @@ import           Spectrum
 highdef = True
 
 main :: IO ()
-main = reanimate $
-  (animate $ const $ mkBackground "black") `parA`
+main = reanimate $ --  takeA 10 $ dropA 55 $
+  parA (staticFrame 1 $ mkBackground "black") $
   monalisaScene `seqA`
-  -- colorSpacesScene
-  scene2
+  falseColorScene `seqA`
+  scene2 `seqA`
+  (parA (staticFrame 1 $ mkBackground "aliceblue") $
+  overlapTransition 1.5 (signalT (curveS 2) flipTransition)
+    (parA (staticFrame 1 $ mkBackground "black") $ gridScene)
+    (parA (staticFrame 1 $ mkBackground "black") $ endScene))
   -- scene3
   -- xyzTernaryPlot
   -- interpolation
@@ -82,7 +89,7 @@ monalisaScene =
     -- Draw numbers
     fork $
       play $ drawHexPixels
-        # setDuration (drawPixelDelay+toGrayScaleTime)
+        # setDuration (drawPixelDelay+toGrayScaleTime+3)
         # pauseAtBeginning beginPause
         # fadeIn stdFade
     wait beginPause
@@ -90,19 +97,20 @@ monalisaScene =
     let PixelRGB8 minR _ _ = minPixel monalisa
         PixelRGB8 maxR _ _ = maxPixel monalisa
     waitAll $ do
-      fork $ do
-        play $ drawPixelImage (fromIntegral minR/255) ((fromIntegral maxR+1)/255)
-          # setDuration toGrayScaleTime
-          # pauseAround drawPixelDelay 5
-        -- Move monalisa to the side of the screen
-        play $ sceneFalseColorIntro
-
       -- Show colormap as monalisa fades in
-      -- play $ showColorMap (fromIntegral minR/255) ((fromIntegral maxR+1)/255)
-      --   # setDuration toGrayScaleTime
-      --   # pauseAround 1 1
-      --   # fadeIn stdFade
-      --   # fadeOut stdFade
+      play $ showColorMap (fromIntegral minR/255) ((fromIntegral maxR+1)/255)
+        # setDuration 2
+        # pauseAround 1 1
+        # fadeIn stdFade
+        # fadeOut stdFade
+
+      play $ drawPixelImage (fromIntegral minR/255) ((fromIntegral maxR+1)/255)
+        # setDuration toGrayScaleTime
+        # pauseAround drawPixelDelay 3
+      -- Move monalisa to the side of the screen
+      play $ sceneFalseColorIntro
+
+
 
     -- Cycle through colormaps for monalisa
     -- play $ sceneColorMaps `sim` (sceneFalseColorChain $ map snd
@@ -123,6 +131,52 @@ monalisaScene =
     stdFade = 0.3
     toGrayScaleTime = 3
 
+falseColorScene :: Animation
+falseColorScene = sceneAnimation $ do
+
+    delta <- newVar 0
+    cms <- newVar (greyscale, greyscale)
+    let total = 7
+
+    nth <- newVar 0
+    let pushCM label cm = do
+          (_, prevCM) <- readVar cms
+          writeVar delta 0
+          writeVar cms (prevCM, cm)
+
+          this <- readVar nth
+          writeVar nth (this+1)
+
+          s <- fork $ newSpriteA $ drawColorMap label cm
+          spriteE s (overBeginning 0.3 fadeInE)
+          spriteTween s 0 $ \_ -> positionColorMap total this
+
+          fork $ tweenVar delta 0.3 $ \v -> fromToS v 1 . curveS 2
+          wait 3
+    let cmSprite delta (cmap1, cmap2) t =
+          let s = curveS 3 t
+              cm x = interpolateRGB8 labComponents (cmap1 x) (cmap2 x) delta
+          in translate (screenWidth/4 - 0.75) 0 $
+             scaleToSize (screenWidth/2) (screenHeight/2) $
+             embedImage $ applyColorMap cm monalisa
+    s <- newSprite $
+      cmSprite
+        <$> unVar delta
+        <*> unVar cms
+        <*> spriteT
+
+    pushCM "greyscale" greyscale
+    pushCM "jet" jet
+    pushCM "turbo" turbo
+    pushCM "sinebow" sinebow
+    pushCM "parula" parula
+    pushCM "viridis" viridis
+    pushCM "cividis" cividis
+
+    wait 2
+    return ()
+
+
 
 monalisa :: Image PixelRGB8
 monalisa = unsafePerformIO $ do
@@ -132,7 +186,7 @@ monalisa = unsafePerformIO $ do
     Right img -> return $ convertRGB8 img
 
 monalisaLarge :: Image PixelRGB8
-monalisaLarge = scaleImage 15 monalisa
+monalisaLarge = scaleImage (if highdef then 15 else 1) monalisa
 
 maxPixel :: Image PixelRGB8 -> PixelRGB8
 maxPixel img = pixelFold (\acc _ _ pix -> max acc pix) (pixelAt img 0 0) img
@@ -213,14 +267,30 @@ sceneColorMaps = mkAnimation 5 $ const $
     width = screenWidth*0.4
     height = screenHeight*0.06
 
+drawColorMap :: T.Text -> (Double -> PixelRGB8) -> Animation
+drawColorMap label cmap = animate $ const $
+  mkGroup
+    [ renderColorMap width height cmap
+    , withFillColor "white" $ translate (-width/2 + screenWidth*0.01) (height*1.1) $
+      scale 0.3 $ latex label
+    ]
+  where
+    width = screenWidth*0.4
+    height = screenHeight*0.06
+
+positionColorMap :: Int -> Int -> SVG -> SVG
+positionColorMap total nth =
+    translate xOffset (yInit - fromIntegral nth*yStep)
+  where
+    xOffset = -screenWidth*0.3
+    yInit = yStep*fromIntegral (total `div` 2)
+    yStep = height * 2.2
+    height = screenHeight*0.06
+
 
 limitGreyPixels :: Word8 -> Image PixelRGB8 -> Image PixelRGBA8
-limitGreyPixels limit img =
-    generateImage fn (imageWidth img) (imageHeight img)
-  where
-    fn x y =
-      let pixel@(PixelRGB8 r _ _) = pixelAt img x y
-      in if r < limit then promotePixel pixel else PixelRGBA8 0 0 0 1 --limit limit limit
+limitGreyPixels limit = pixelMap $ \pixel@(PixelRGB8 r _ _) ->
+    if r < limit then PixelRGBA8 r r r 255 else PixelRGBA8 0 0 0 0
 
 renderColorMap :: Double -> Double -> (Double -> PixelRGB8) -> Tree
 renderColorMap width height cmap = mkGroup
@@ -281,27 +351,33 @@ mkColorMap f = center $ embedImage img
 
 drawPixelImage :: Double -> Double -> Animation
 drawPixelImage start end = mkAnimation 2 $ \t ->
-  let limit = fromToS start end $ curveS 2 t
-  in scaleToSize screenWidth screenHeight $ center $ embedImage $
-     limitGreyPixels (floor (limit*255)) monalisaLarge
+    let limit = fromToS start end $ curveS 2 t
+    in scaleToSize screenWidth screenHeight $ center $ embedImage $
+       cache !! floor (limit*255)
+  where
+    cache =
+      [ limitGreyPixels n monalisaLarge
+      | n <- [0..255] ]
 
 drawHexPixels :: Animation
-drawHexPixels = mkAnimation 1 $ \_ -> simplify $ simplify $ simplify $
-  mkGroup
-  [ if highdef then defs else None
-  , withFillOpacity 1 $ withStrokeWidth 0 $ withFillColor "white" $
-    mkGroup
-    [ translate ((fromIntegral x+0.5)/fromIntegral width*screenWidth - screenWidth/2)
-                (screenHeight/2 - (fromIntegral y+0.5)/fromIntegral height*screenHeight) $
-      if highdef
-        then mkUse ("tag" ++ show r)
-        else mkCircle 0.5
-    | x <- [0..width-1]
-    , y <- [0..height-1]
-    , let pixel@(PixelRGB8 r _ _) = pixelAt monalisa x y
-    ]
-  ]
+drawHexPixels = mkAnimation 1 $ \_ -> svg
   where
+    svg = -- scaleToSize screenWidth screenHeight $ embedDynamicImage $ raster $
+      simplify $ simplify $ simplify $
+        mkGroup
+        [ if highdef then defs else None
+        , withFillOpacity 1 $ withStrokeWidth 0 $ withFillColor "white" $
+          mkGroup
+          [ translate ((fromIntegral x+0.5)/fromIntegral width*screenWidth - screenWidth/2)
+                      (screenHeight/2 - (fromIntegral y+0.5)/fromIntegral height*screenHeight) $
+            if highdef
+              then mkUse ("tag" ++ show r)
+              else mkCircle 0.5
+          | x <- [0..width-1]
+          , y <- [0..height-1]
+          , let pixel@(PixelRGB8 r _ _) = pixelAt monalisa x y
+          ]
+        ]
     defs = preRender $ mkDefinitions images
     getNthSet n = centerX $ snd (splitGlyphs [n*2,n*2+1] allGlyphs)
     allGlyphs = lowerTransformations $ scale 0.15 $ center $ latex $

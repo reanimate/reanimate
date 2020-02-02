@@ -251,7 +251,7 @@ interpolatePathCommands alpha = lineToPath . partialLine alpha . toLineCommands
 partialSvg :: Double -- ^ number between 0 and 1 inclusively, determining what portion of the path to show
            -> Tree -- ^ Image representing a path, of which we only want to display a portion determined by the first argument
            -> Tree
--- partialSvg alpha | alpha >= 1 = id
+partialSvg alpha | alpha >= 1 = id
 partialSvg alpha = mapTree worker
   where
     worker (PathTree path) =

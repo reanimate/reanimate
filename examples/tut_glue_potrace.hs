@@ -17,11 +17,7 @@ main = reanimate $ parA bg $ sceneAnimation $ do
     play $ mkAnimation drawDuration $ \t -> partialSvg t (wireframe (-45) 220)
     xRot <- newVar (-45)
     yRot <- newVar 220
-    wf <- newSprite $ do
-      getX <- freezeVar xRot
-      getY <- freezeVar yRot
-      return $ \real_t _dur _t ->
-        wireframe (getX real_t) (getY real_t)
+    wf <- newSprite $ wireframe <$> unVar xRot <*> unVar yRot
     tweenVar yRot spinDur (\t v -> fromToS v (v+60*3) $ curveS 2 (t/spinDur))
     replicateM_ wobbles $ do
       tweenVar xRot (wobbleDur/2) (\t v -> fromToS v (v+90) $ curveS 2 (t/(wobbleDur/2)))

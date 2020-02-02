@@ -4,12 +4,11 @@ module Reanimate.Driver.Server
   , findOwnSource
   ) where
 
+import           Control.Concurrent
 import           Control.Concurrent      (forkIO, killThread, threadDelay)
-import           Control.Concurrent.MVar
 import           Control.Exception       (SomeException, catch, finally)
 import           Control.Monad
 import           Control.Monad.Fix       (fix)
-import           Data.Hashable           (hash)
 import           Data.Text               (Text)
 import qualified Data.Text               as T
 import qualified Data.Text.IO            as T
@@ -94,31 +93,47 @@ slaveHandler conn self svgDir =
   withCurrentDirectory (takeDirectory self) $
   withSystemTempDirectory "reanimate" $ \tmpDir ->
   withTempFile tmpDir "reanimate.exe" $ \tmpExecutable handle -> do
+    -- cap <- getNumCapabilities
+    let n = 25
+    sem <- newQSemN n
     hClose handle
+    lock <- newMVar ()
     sendTextData conn (T.pack "status\nCompiling")
     ret <- runCmd_ "stack" $ ["ghc", "--"] ++ ghcOptions tmpDir ++ [takeFileName self, "-o", tmpExecutable]
     case ret of
       Left err ->
         sendTextData conn $ T.pack $ "error\n" ++ unlines (drop 3 (lines err))
       Right{} -> runCmdLazy tmpExecutable execOpts $ \getFrame -> do
-        (frameCount,_) <- expectFrame =<< getFrame
+        (frameCount,_) <- expectFrame sem =<< getFrame
         sendTextData conn (T.pack $ "frame_count\n" ++ show frameCount)
         fix $ \loop -> do
-          (frameIdx, frame) <- expectFrame =<< getFrame
-          let fileName = svgDir </> show (hash frame) <.> "svg"
-          T.writeFile fileName frame
-          sendTextData conn (T.pack $ "frame\n" ++ show frameIdx ++ "\n" ++ fileName)
+          (frameIdx, frame) <- expectFrame sem =<< getFrame
+          -- putStrLn $ "Got frame: " ++ show frameIdx
+          let fileName = svgDir </> takeBaseName tmpExecutable <.> show frameIdx <.> "svg"
+              -- pngName = replaceExtension fileName "png"
+          _ <- forkIO $ do
+            waitQSemN sem 1
+            T.writeFile fileName frame
+            -- runCmd "rsvg-convert"
+            --   [ fileName
+            --   , "--width=256" -- "--width=1024"
+            --   , "--height=144" -- "--height=576"
+            --   , "--output", pngName ]
+            withMVar lock $ \_ ->
+              sendTextData conn (T.pack $ "frame\n" ++ show frameIdx ++ "\n" ++ fileName)
+            signalQSemN sem 1
           loop
   where
-    execOpts = ["raw", "+RTS", "-N", "-M1G", "-RTS"]
-    expectFrame :: Either String Text -> IO (Integer, Text)
-    expectFrame (Left "") = do
+    execOpts = ["raw", "+RTS", "-N", "-M2G", "-RTS"]
+    expectFrame :: QSemN -> Either String Text -> IO (Integer, Text)
+    expectFrame sem (Left "") = do
+      waitQSemN sem 25 -- =<< getNumCapabilities
       sendTextData conn (T.pack "status\nDone")
       exitSuccess
-    expectFrame (Left err) = do
+    expectFrame _ (Left err) = do
       sendTextData conn $ T.pack $ "Error" ++ err
       exitWith (ExitFailure 1)
-    expectFrame (Right frame) =
+    expectFrame _ (Right frame) =
       case T.decimal frame of
         Left err -> do
           hPutStrLn stderr (T.unpack frame)

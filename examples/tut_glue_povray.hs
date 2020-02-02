@@ -2,6 +2,7 @@
 -- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE ApplicativeDo     #-}
 module Main (main) where
 
 import           Reanimate
@@ -25,12 +26,14 @@ main = reanimate $ parA bg $ sceneAnimation $ do
     xRot <- newVar 0
     zRot <- newVar 0
     _ <- newSprite $ do
-      transZ <- freezeVar zPos
-      getX <- freezeVar xRot
-      getZ <- freezeVar zRot
-      return $ \real_t dur t ->
+      transZ <- unVar zPos
+      getX <- unVar xRot
+      getZ <- unVar zRot
+      t <- spriteT
+      dur <- spriteDuration
+      pure $
         povraySlow [] $
-        script (svgAsPngFile (texture (t/dur))) (transZ real_t) (getX real_t) (getZ real_t)
+        script (svgAsPngFile (texture (t/dur))) transZ getX getZ
     wait 2
     tweenVar zPos 9 (\t v -> fromToS v 8 (t/9))
     tweenVar xRot 9 (\t v -> fromToS v 360 $ curveS 2 (t/9))
@@ -148,7 +151,8 @@ drawAnimation' mbSeed fillDur step svg = sceneAnimation $ do
     fork $ do
       wait (n*step+(1-fillDur))
       newSprite $ do
-        return $ \_real_t _d t ->
+        t <- spriteT
+        return $
           withStrokeWidth 0 $ fn $ withFillOpacity (min 1 $ t/fillDur) tree
   where
     shuf lst =

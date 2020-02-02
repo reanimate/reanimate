@@ -2,6 +2,7 @@
 -- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE ApplicativeDo     #-}
 module Main (main) where
 
 import           Reanimate
@@ -23,12 +24,14 @@ main = seq texture $ reanimate $ pauseAtEnd 1 $ parA bg $ sceneAnimation $ do
     rotX <- newVar 0
     rotY <- newVar 0
     _ <- newSprite $ do
-      getBend <- freezeVar bend
-      getTrans <- freezeVar trans
-      getRotX <- freezeVar rotX
-      getRotY <- freezeVar rotY
-      return $ \real_t dur t -> seq (texture (t/dur)) $
-        blender (script (texture (t/dur)) (getBend real_t) (getTrans real_t) (getRotX real_t) (getRotY real_t))
+      getBend <- unVar bend
+      getTrans <- unVar trans
+      getRotX <- unVar rotX
+      getRotY <- unVar rotY
+      t <- spriteT
+      dur <- spriteDuration
+      return $ seq (texture (t/dur)) $
+        blender (script (texture (t/dur)) getBend getTrans getRotX getRotY)
     wait 2
     tweenVar trans 5 (\t v -> fromToS v (-2) $ curveS 2 (t/5))
     tweenVar bend 5 (\t v -> fromToS v 1 $ curveS 2 (t/5))
@@ -234,7 +237,8 @@ drawAnimation' mbSeed fillDur step svg = sceneAnimation $ do
     fork $ do
       wait (n*step+(1-fillDur))
       newSprite $ do
-        return $ \_real_t _d t ->
+        t <- spriteT
+        pure $
           withStrokeWidth 0 $ fn $ withFillOpacity (min 1 $ t/fillDur) tree
   where
     shuf lst =

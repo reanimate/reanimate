@@ -2,6 +2,7 @@
 -- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE ApplicativeDo     #-}
 module Main (main) where
 
 import           Codec.Picture
@@ -103,7 +104,7 @@ sphereIntro = sceneAnimation $ do
   --   # applyE (delayE 1 $ overBeginning 2 fadeInE)
   --   # applyE (delayE 8 $ translateE (-3) 0)
   wait 5
-  playZ 1 $ setDuration 3 $ animate $ \t ->
+  adjustZ (+1) $ play $ setDuration 3 $ animate $ \t ->
     partialSvg t $
     withFillOpacity 0 $
     rotate 180 $
@@ -114,25 +115,25 @@ sphereIntro = sceneAnimation $ do
   --   circ
   let scaleFactor = 0.05
   tweenVar sphereX 1 $ \t x -> fromToS x (-3) (curveS 3 t)
-  fork $ playZ 1 $ pauseAtEnd 2 $ setDuration 1 $ animate $ \t ->
+  fork $ adjustZ (+1) $ play $ pauseAtEnd 2 $ setDuration 1 $ animate $ \t ->
     let p = curveS 3 t in
     withFillOpacity p $
     translate (1*p) (2*p) $
     scale (1-scaleFactor*p) $
     circ
-  fork $ playZ 1 $ pauseAtEnd 2 $ setDuration 1 $ animate $ \t ->
+  fork $ adjustZ (+1) $ play $ pauseAtEnd 2 $ setDuration 1 $ animate $ \t ->
     let p = curveS 3 t in
     withFillOpacity p $
     translate (1*p) (-2*p) $
     scale (1-scaleFactor*p) $
     circ
-  fork $ playZ 1 $ pauseAtEnd 2 $ setDuration 1 $ animate $ \t ->
+  fork $ adjustZ (+1) $ play $ pauseAtEnd 2 $ setDuration 1 $ animate $ \t ->
     let p = curveS 3 t in
     withFillOpacity p $
     translate (5*p) (2*p) $
     scale (1-scaleFactor*p) $
     circ
-  fork $ playZ 1 $ pauseAtEnd 2 $ setDuration 1 $ animate $ \t ->
+  fork $ adjustZ (+1) $ play $ pauseAtEnd 2 $ setDuration 1 $ animate $ \t ->
     let p = curveS 3 t in
     withFillOpacity p $
     translate (5*p) (-2*p) $
@@ -155,13 +156,15 @@ mkFeatSprite xPos yPos ani = do
   spriteAt <- newVar 0
   spriteTMod <- newVar 0
   sprite <- newSprite $ do
-    genAt <- freezeVar spriteAt
-    genT <- freezeVar spriteTMod
-    return $ \real_t d t ->
-      let i = 1-genAt real_t in
+    genAt <- unVar spriteAt
+    genT <- unVar spriteTMod
+    t <- spriteT
+    d <- spriteDuration
+    return $
+      let i = 1-genAt in
       translate (xPos*i) (yPos*i) $
-      scale (1+0.5*genAt real_t) $
-      frameAtT (((t+genT real_t)/d) `mod'` 1) ani
+      scale (1+0.5*genAt) $
+      frameAtT (((t+genT)/d) `mod'` 1) ani
   return (spriteAt, spriteTMod, sprite)
 
 featSVG :: Animation
@@ -227,8 +230,8 @@ introSVG = sceneAnimation $ do
   fork $ play $ animate $ const $
     mkBackground "black"
   -- Title
-  title <- newSprite $ do
-    return $ \_ _d _t ->
+  title <- newSprite $
+    pure $
       translate 0 3.5 $
       center $
       withFillColor "white" $
@@ -237,9 +240,9 @@ introSVG = sceneAnimation $ do
   -- Shading
   shadeOpacity <- newVar 0
   shade <- newSprite $ do
-    opacity <- freezeVar shadeOpacity
-    return $ \real_t d t ->
-      withFillOpacity (0.8 * opacity real_t) $
+    opacity <- unVar shadeOpacity
+    return $
+      withFillOpacity (0.8 * opacity) $
       withFillColor "black" $
       mkRect screenWidth screenHeight
   spriteZ shade 1
@@ -300,7 +303,8 @@ drawAnimation' fillDur step svg = sceneAnimation $ do
     fork $ do
       wait (n*step+(1-fillDur))
       newSprite $ do
-        return $ \_real_t d t ->
+        t <- spriteT
+        return $
           withStrokeWidth 0 $ fn $ withFillOpacity (min 1 $ t/fillDur) tree
       -- play $ animate (\t -> withStrokeWidth 0 $ fn $ withFillOpacity t tree)
       --   # setDuration fillDur
