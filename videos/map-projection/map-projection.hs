@@ -10,10 +10,10 @@ import           System.IO.Unsafe
 import Debug.Trace
 
 main :: IO ()
-main = reanimate $ playThenReverseA $ sceneAnimation $ do
-    play $ animate $ \t ->
+main = seq equirectangular $ reanimate $ playThenReverseA $ sceneAnimation $ do
+    play $ setDuration 1 $ animate $ \t ->
       scaleToSize screenWidth screenHeight $
-      embedImage (mollweide t) -- (mercator t)
+      embedImage (mollweide $ curveS 2 t) -- (mercator t)
 
 equirectangular :: Image PixelRGB8
 equirectangular = unsafePerformIO $ do
@@ -35,29 +35,6 @@ mercator t =
           mid = fromToS (fromIntegral yPx) orig_y t
       in pixelAt equirectangular xPx (round mid)
 
--- pixelAt
--- generateImage
-
-
-
-{-
-image X: -pi to +pi
-image Y: -pi/2 to +pi/2
-
-x=long
-y=lat
-
-Web Mercator
-x = long
-y = -log(tan(pi/4 + lat/2))
-
-x = x_rect
-y = (-log(tan(pi/4 + y_rect/2)))
-
-y_rect = atan (sinh y)
-
--}
-
 {- Mollweide
 phi = latitude
 lamba = longitude
@@ -76,7 +53,7 @@ mollweide t =
     w = imageWidth equirectangular
     h = imageHeight equirectangular
     fn xPx yPx = -- trace (show (xPx, yPx, lam, phi, x_rect, y_rect)) $
-        if lam < -pi || lam > pi
+        if x_new < 0 || x_new >= w || y_new < 0 || y_new >= h -- lam < -pi || lam > pi
           then PixelRGB8 0 0 0
           else pixelAt equirectangular x_new y_new
       where
@@ -103,3 +80,29 @@ theta_gen phi = worker
     worker n =
       let sub = worker (n-1) in
       sub - (2*sub + sin (2*sub) - pi*sin phi) / (2+2*cos (2*sub))
+
+
+{- Lambert
+x = lam
+y = sin phi
+-}
+
+lambert :: Double -> Image PixelRGB8
+lambert t =
+    generateImage fn w h
+  where
+    w = imageWidth equirectangular
+    h = imageHeight equirectangular
+    fn xPx yPx = -- trace (show (xPx, yPx, lam, phi, x_rect, y_rect)) $
+        if x_new < 0 || x_new >= w || y_new < 0 || y_new >= h -- lam < -pi || lam > pi
+          then PixelRGB8 0 0 0
+          else pixelAt equirectangular x_new y_new
+      where
+        x = fromToS (-pi) (pi) (fromIntegral xPx / fromIntegral (w-1))
+        y = fromToS (-1) 1 (fromIntegral yPx / fromIntegral (h-1))
+        lam = x
+        phi = asin y
+        x_rect = (((lam + pi) / (2*pi))*fromIntegral w)
+        y_rect = (((phi + pi/2) / (pi))*fromIntegral h)
+        x_new = round (fromToS (fromIntegral xPx) x_rect t)
+        y_new = round (fromToS (fromIntegral yPx) y_rect t)
