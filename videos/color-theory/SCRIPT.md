@@ -28,7 +28,9 @@ of light.
 There are three types of color-sensing cones, S, M, and L, sensitive
 to short, medium, and long wavelengths respectively.
 
-Now imagine a space with S, M, and L as the axes
+Now imagine a space with S, M, and L as the axes. This space contains all
+unique colors but, due to the rather large overlap between the M and L cones,
+this space is rather awkward to use.
 
 The intensity of light sensed by these three cones give each color a unique
 three dimensional position. However, due to the rather large overlap between
