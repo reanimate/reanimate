@@ -1,5 +1,6 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
+{-# LANGUAGE MultiWayIf #-}
 module Main(main) where
 
 import           Codec.Picture
@@ -9,19 +10,36 @@ import           Reanimate
 import           System.IO.Unsafe
 import Debug.Trace
 
+{-
+  1. equirectangular
+  2. lambert
+  3. mercator
+  4. mollweide
+  5. hammer
+  6. sinusoidal
+  7. bottomley
+-}
 main :: IO ()
 main = seq equirectangular $ reanimate $ playThenReverseA $ sceneAnimation $ do
-    play $ setDuration 5 $ animate $ \t ->
+    -- play $ pauseAtEnd 1 $ setDuration 1 $ animate $ \t ->
+    --   scaleToSize screenWidth screenHeight $
+    --   embedImage (project $ mergeP equirectangularP mollweideP $ curveS 2 t)
+    -- play $ pauseAtEnd 1 $ setDuration 1 $ animate $ \t ->
+    --   scaleToSize screenWidth screenHeight $
+    --   embedImage (project $ mergeP mollweideP (bottomleyP (toRads 30)) $ curveS 2 t)
+    -- play $ pauseAtEnd 1 $ setDuration 1 $ animate $ \t ->
+    --   scaleToSize screenWidth screenHeight $
+    --   embedImage (project $ mergeP mollweideP sinusoidalP $ curveS 2 t)
+    -- play $ pauseAtEnd 1 $ setDuration 1 $ animate $ \t ->
+    --   scaleToSize screenWidth screenHeight $
+    --   embedImage (project $ mergeP sinusoidalP equirectangularP $ curveS 2 t)
+    -- play $ pauseAtEnd 1 $ setDuration 1 $ animate $ \t ->
+    --   scaleToSize screenWidth screenHeight $
+    --   embedImage (project $ mergeP sinusoidalP (bottomleyP (toRads 30)) $ curveS 2 t)
+    play $ pauseAtEnd 1 $ setDuration 1 $ animate $ \t ->
       scaleToSize screenWidth screenHeight $
-      --embedImage (bottomley $ fromToS (toRads 1) (toRads 30) $ curveS 2 t) -- (mercator t)
-      --embedImage (mollweide $ curveS 2 t)
-      --embedImage (mercator 1)
-      --embedImage (project mollweideP)
-      -- embedImage (project $ mergeP mollweideP (bottomleyP (toRads 30)) $ curveS 2 t)
-      --embedImage (project $ bottomleyP $ fromToS (toRads 0.1) (toRads 30) $ curveS 2 t)
-      --embedImage (project $ mergeP mollweideP lambertP $ curveS 2 t)
-      --embedImage (project $ mergeP mollweideP sinusoidalP $ curveS 2 t)
-      embedImage (project $ mergeP equirectangularP mollweideP $ curveS 2 t)
+      embedImage (project $ mergeP (bottomleyP (toRads 30)) (moveDownP (-0.25) wernerP) $ curveS 2 t)
+
 
 equirectangular :: Image PixelRGB8
 equirectangular = unsafePerformIO $ do
@@ -50,15 +68,25 @@ project p = generateImage fn w h
         then PixelRGB8 0 0 0
         else pixelAt equirectangular x_e y_e
 
+moveDownP :: Double -> Projection -> Projection
+moveDownP offset p x y = p x ((y+offset)/(1+offset))
+
 mergeP :: Projection -> Projection -> Double -> Projection
 mergeP p1 p2 t = \x y ->
     let (lon1, lat1) = p1 x y
         (lon2, lat2) = p2 x y
-    in if oob lon1 lat1 && oob lon2 lat2
-      then (100, 100)
-      else (fromToS lon1 lon2 t, fromToS lat1 lat2 t)
+    in
+    if | oob lon1 lat1 && oob lon2 lat2 -> (100, 100)
+       -- | oob lon1 lat1 -> (fromToS x lon2 t, fromToS y lat2 t)
+       -- | oob lon2 lat2 -> (fromToS lon1 x t, fromToS lat1 y t)
+       | otherwise     -> (fromToS lon1 lon2 t, fromToS lat1 lat2 t)
   where
     oob lon lat = lon < (-pi) || lon > pi || lat < (-pi/2) || lat > pi/2
+
+tau = pi*2
+
+equirectangularF :: Projection
+equirectangularF lam phi = (lam/tau, phi/pi)
 
 equirectangularP :: Projection
 equirectangularP x y = (xPi, yPi)
@@ -66,6 +94,8 @@ equirectangularP x y = (xPi, yPi)
     xPi = fromToS (-pi) pi x
     yPi = fromToS (-pi/2) (pi/2) y
 
+-- mercatorF :: Projection
+-- mercatorF lam phi = ((lam+pi)/(2*pi), pi-log ()
 mercatorP :: Projection
 mercatorP x y = (xPi, atan (sinh yPi))
   where
@@ -92,6 +122,14 @@ mollweideP x' y' = (lam, phi)
     lam = pi*x/(2*sqrt(2)*cos theta)
     phi = asin ((2*theta+sin(2*theta))/pi)
 
+hammerP :: Projection
+hammerP x' y' = (lam, phi)
+  where
+    x = fromToS (-2*sqrt(2)) (2*sqrt(2)) x'
+    y = fromToS (-sqrt 2) (sqrt 2) y'
+    z = sqrt (1 - (x/4)**2 - (y/2)**2)
+    lam = 2 * atan2 (z*x) (2*(2*z**2-1))
+    phi = asin (z*y)
 
 {- Lambert
 x = lam
@@ -109,6 +147,13 @@ toRads dec = dec/180 * pi
 {- Bottomley
 -}
 
+bottomleyF :: Double -> Projection
+bottomleyF phi_1 lam phi = ((x+pi)/tau, (y+pi/2)/pi)
+  where
+    x = (rho * sin e) / sin phi_1
+    y = pi/2 - rho * cos e
+    rho = pi/2 - phi
+    e = (lam * sin phi_1 * sin rho) / rho
 bottomleyP :: Double -> Projection
 bottomleyP phi_1 x' y' = (lam, -phi)
   where
@@ -124,6 +169,29 @@ sinusoidalP x' y' = (x/cos y, y)
   where
     x = fromToS (-pi) (pi) x'
     y = fromToS (-pi/2) (pi/2) y'
+
+wernerP :: Projection
+wernerP x' y' = (lam, -phi)
+  where
+    x = fromToS (-pi) (pi) x'
+    y = fromToS (pi/2) (-pi/2) y'
+    rho = sqrt (x**2 + (pi/2 - y)**2)
+    e = atan2 x (pi/2 -y)
+    phi = pi/2 - rho
+    lam = e * rho / sin rho
+
+-- This must be wrong
+bonneP :: Double -> Projection
+bonneP phi_1 x' y' = (lam, -phi)
+  where
+    x = fromToS (-pi) (pi) x'
+    y = fromToS (pi/2) (-pi/2) y'
+    rho = sqrt (x**2 + (cot phi_1 + phi_1 - y)**2)
+    e = atan2 x (cot phi_1 + phi_1 + y)
+    phi = cot phi_1 + phi_1 - rho
+    lam = e * rho / sin rho
+
+cot = recip . tan
 
 orthoP :: Double -> Double -> Projection
 orthoP lam_0 phi_0 x' y' = (lam, phi)
@@ -146,22 +214,10 @@ phi = asin (sin y * cos x)
 lam = atan2 (tan x) (cos y)
 -}
 
-cassini :: Double -> Image PixelRGB8
-cassini t =
-    generateImage fn w h
+cassiniP :: Projection
+cassiniP x' y' = (lam, phi)
   where
-    w = imageWidth equirectangular
-    h = imageHeight equirectangular
-    fn xPx yPx = -- trace (show (xPx, yPx, lam, phi, x_rect, y_rect)) $
-        if x_new < 0 || x_new >= w || y_new < 0 || y_new >= h -- lam < -pi || lam > pi
-          then PixelRGB8 0 0 0
-          else pixelAt equirectangular x_new y_new
-      where
-        x = fromToS (-pi) (pi) (fromIntegral xPx / fromIntegral (w-1))
-        y = fromToS (-pi/2) (pi/2) (fromIntegral yPx / fromIntegral (h-1))
-        lam = atan2 (tan x) (cos y)
-        phi = asin (sin y * cos x)
-        x_rect = (((lam + pi) / (2*pi))*fromIntegral w)
-        y_rect = (((phi + pi/2) / (pi))*fromIntegral h)
-        x_new = round (fromToS (fromIntegral xPx) x_rect t)
-        y_new = round (fromToS (fromIntegral yPx) y_rect t)
+    x = fromToS (-pi/2) (pi/2) x'
+    y = fromToS (-pi) (pi) y'
+    lam = atan2 (tan x) (cos y)
+    phi = asin (sin y * cos x)
