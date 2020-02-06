@@ -5,10 +5,21 @@ module Main(main) where
 
 import           Codec.Picture
 import           Codec.Picture.Jpg
-import qualified Data.ByteString   as BS
+import           Control.Monad.ST
+import qualified Data.ByteString     as BS
+-- import           Data.Vector         ()
+-- import           Data.Vector.Unboxed
+import           Debug.Trace
 import           Reanimate
 import           System.IO.Unsafe
-import Debug.Trace
+
+{-
+Realized projection: UVector Int
+(x,y) -> (lam, phi)
+
+
+
+-}
 
 {-
   1. equirectangular
@@ -17,7 +28,6 @@ import Debug.Trace
   4. mollweide
   5. hammer
   6. sinusoidal
-  7. bottomley
 -}
 main :: IO ()
 main = seq equirectangular $ reanimate $ playThenReverseA $ sceneAnimation $ do
@@ -38,8 +48,21 @@ main = seq equirectangular $ reanimate $ playThenReverseA $ sceneAnimation $ do
     --   embedImage (project $ mergeP sinusoidalP (bottomleyP (toRads 30)) $ curveS 2 t)
     play $ pauseAtEnd 1 $ setDuration 1 $ animate $ \t ->
       scaleToSize screenWidth screenHeight $
-      embedImage (project $ mergeP (bottomleyP (toRads 30)) (moveDownP (-0.25) wernerP) $ curveS 2 t)
+      embedImage (project $ mergeP sinusoidalP hammerP $ curveS 2 t)
+    play $ pauseAtEnd 1 $ setDuration 1 $ animate $ \t ->
+      scaleToSize screenWidth screenHeight $
+      embedImage (project $ mergeP hammerP mollweideP $ curveS 2 t)
+    play $ pauseAtEnd 1 $ setDuration 1 $ animate $ \t ->
+      scaleToSize screenWidth screenHeight $
+      embedImage (project $ mergeP mollweideP mercatorP $ curveS 2 t)
+    play $ pauseAtEnd 1 $ setDuration 1 $ animate $ \t ->
+      scaleToSize screenWidth screenHeight $
+      embedImage (project $ mergeP mercatorP lambertP $ curveS 2 t)
 
+-- type RealProj s = MVector s Int
+
+-- realize :: Projection -> ST s (RealProj s)
+-- realize = undefined
 
 equirectangular :: Image PixelRGB8
 equirectangular = unsafePerformIO $ do
@@ -68,6 +91,25 @@ project p = generateImage fn w h
         then PixelRGB8 0 0 0
         else pixelAt equirectangular x_e y_e
 
+isInverseP :: Projection -> Projection -> Bool
+isInverseP p pInv = and
+    [ check x y
+    | x <- [0..w-1]
+    , y <- [0..h-1] ]
+  where
+    w = imageWidth equirectangular
+    h = imageHeight equirectangular
+    check xPx yPx =
+      let x = (fromIntegral xPx / fromIntegral (w-1))
+          y = (fromIntegral yPx / fromIntegral (h-1))
+          (lam, phi) = p x y
+          (outX, outY) = pInv lam phi
+          valid = lam >= -pi && lam <= pi && phi >= -pi/2 && phi <= pi/2
+          diff = (x-outX)**2 + (y-outY)**2
+      in if not valid || diff < 1.0e-9
+          then True
+          else trace (show (x,y)) False
+
 moveDownP :: Double -> Projection -> Projection
 moveDownP offset p x y = p x ((y+offset)/(1+offset))
 
@@ -86,7 +128,7 @@ mergeP p1 p2 t = \x y ->
 tau = pi*2
 
 equirectangularF :: Projection
-equirectangularF lam phi = (lam/tau, phi/pi)
+equirectangularF lam phi = ((lam+pi)/tau, (phi+pi/2)/pi)
 
 equirectangularP :: Projection
 equirectangularP x y = (xPi, yPi)
@@ -113,6 +155,19 @@ x [-2sqrt(2), +2sqrt(2)]
 y [-sqrt(2), +sqrt(2)]
 
 -}
+mollweideF :: Projection
+mollweideF lam phi = ((x+sqrt2*2)/(4*sqrt2), (y+sqrt2)/(2*sqrt2))
+  where
+    sqrt2 = sqrt 2
+    x = (2*sqrt2)/pi * lam * cos theta
+    y = sqrt2*sin theta
+    theta = find_theta 100
+    find_theta 0 = phi
+    find_theta n | abs phi == pi/2 = signum phi * pi/2
+    find_theta n =
+      let sub = find_theta (n-1)
+      in sub - (2*sub+sin (2*sub)-pi*sin phi)/(2+2*cos(2*sub))
+
 mollweideP :: Projection
 mollweideP x' y' = (lam, phi)
   where
@@ -122,6 +177,13 @@ mollweideP x' y' = (lam, phi)
     lam = pi*x/(2*sqrt(2)*cos theta)
     phi = asin ((2*theta+sin(2*theta))/pi)
 
+
+hammerF :: Projection
+hammerF lam phi = ((x+sqrt2*2)/(4*sqrt2), (y+sqrt2)/(2*sqrt2))
+  where
+    sqrt2 = sqrt 2
+    x = (2*sqrt2*cos phi*sin (lam/2))/(sqrt (1+cos phi*cos (lam/2)))
+    y = (sqrt2*sin phi)/(sqrt (1+cos phi*cos (lam/2)))
 hammerP :: Projection
 hammerP x' y' = (lam, phi)
   where
@@ -153,16 +215,25 @@ bottomleyF phi_1 lam phi = ((x+pi)/tau, (y+pi/2)/pi)
     x = (rho * sin e) / sin phi_1
     y = pi/2 - rho * cos e
     rho = pi/2 - phi
-    e = (lam * sin phi_1 * sin rho) / rho
+    e = lam * sin phi_1 * sin rho / rho
+
 bottomleyP :: Double -> Projection
-bottomleyP phi_1 x' y' = (lam, -phi)
+bottomleyP phi_1 x' y' = (lam, phi)
   where
     x = fromToS (-pi) (pi) x'
-    y = fromToS (pi/2) (-pi/2) y'
-    rho = sqrt ((x * sin phi_1)**2 + (pi/2 - y)**2)
-    e = atan2 (x*sin phi_1) (pi/2 - y)
-    lam = (e*rho)/(sin phi_1*sin rho)
+    y = fromToS (-pi/2) (pi/2) y'
+    x1 = x * sin phi_1
+    y1 = pi/2 - y
+    rho = sqrt (x1*x1 + y1*y1)
+    e = atan2 x1 y1
+    lam = rho / sin rho * e/sin phi_1
     phi = pi/2 - rho
+
+sinusoidalF :: Projection
+sinusoidalF lam phi = ((x+pi)/tau, (y+pi/2)/pi)
+  where
+    x = lam * cos phi
+    y = phi
 
 sinusoidalP :: Projection
 sinusoidalP x' y' = (x/cos y, y)
@@ -170,11 +241,18 @@ sinusoidalP x' y' = (x/cos y, y)
     x = fromToS (-pi) (pi) x'
     y = fromToS (-pi/2) (pi/2) y'
 
+wernerF :: Projection
+wernerF lam phi = ((x+pi)/tau, (y+pi/2)/pi)
+  where
+    rho = pi/2 - phi
+    e = lam * sin rho / rho
+    x = rho * sin e
+    y = pi/2 - rho * cos e
 wernerP :: Projection
-wernerP x' y' = (lam, -phi)
+wernerP x' y' = (lam, phi)
   where
     x = fromToS (-pi) (pi) x'
-    y = fromToS (pi/2) (-pi/2) y'
+    y = fromToS (-pi/2) (pi/2) y'
     rho = sqrt (x**2 + (pi/2 - y)**2)
     e = atan2 x (pi/2 -y)
     phi = pi/2 - rho
@@ -193,6 +271,11 @@ bonneP phi_1 x' y' = (lam, -phi)
 
 cot = recip . tan
 
+orthoF :: Double -> Double -> Projection
+orthoF lam_0 phi_0 lam phi = ((x+(16/9))/(16/9*2), (y+1)/2)
+  where
+    x = cos phi * sin (lam - lam_0)
+    y = cos phi_0 * sin phi - sin phi_0 * cos phi * cos (lam - lam_0)
 orthoP :: Double -> Double -> Projection
 orthoP lam_0 phi_0 x' y' = (lam, phi)
   where
