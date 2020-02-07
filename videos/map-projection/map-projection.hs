@@ -33,53 +33,91 @@ halfPi = pi/2
 interpP :: Projection -> Projection -> Double -> Image PixelRGB8
 interpP p1 p2 t = runST $ do
     img <- newMutableImage w h
-    -- forM_ [0..w-1] $ \x ->
-    --   forM_ [0..h-1] $ \y -> do
-    --     let lam = fromToS (-pi) pi $ fromIntegral x / wMax
-    --         phi = fromToS (-halfPi) halfPi $ fromIntegral y / hMax
-    --         (x1,y1) = p1 lam phi
-    --         (x2,y2) = p2 lam phi
-    --         x3 = round $ fromToS x1 x2 t * wMax
-    --         y3 = round $ fromToS y1 y2 t * hMax
-    --     when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $
-    --       writePixel img x3 y3 (pixelAt equirectangular x y)
+    let blank = PixelRGB8 0x00 0x00 0x00
+    let isBlank pixel = pixel == blank
+    forM_ [0..w-1] $ \x ->
+      forM_ [0..h-1] $ \y ->
+        writePixel img x y blank
+
     forM_ [0..w-1] $ \x ->
       forM_ [0..h-1] $ \y -> do
         let x1 = fromIntegral x / wMax
             y1 = fromIntegral y / hMax
             lonlat@(LonLat lam phi) = projectionInverse p1 (XYCoord x1 y1)
-            XYCoord x2 y2 = projectionForward p2 lonlat
+            XYCoord x2' y2' = projectionForward p2 lonlat
+            lst@(~[(x2,y2)]) = take 1
+              [ (x', y')
+              | let xi = round $ x2' * wMax
+                    yi = round $ y2' * hMax
+              , ax <- [xi, xi-1, xi+1]
+              , ay <- [yi, yi-1, yi+1]
+              , (ax >= 0 && ax < w && ay >= 0 && ay < h)
+              , let x' = fromIntegral ax / wMax
+                    y' = fromIntegral ay / hMax
+              , validLonLat $ projectionInverse p2 (XYCoord x' y')
+              ]
             x3 = round $ fromToS x1 x2 t * wMax
             y3 = round $ fromToS y1 y2 t * hMax
             lamX = round $ (lam+pi)/tau * wMax
             phiY = round $ (phi+halfPi)/pi * hMax
+            xCheck = fromIntegral (round (x2*wMax)) / wMax
+            yCheck = fromIntegral (round (y2*hMax)) / hMax
+            check = projectionInverse p2 (XYCoord xCheck yCheck)
         when (validLonLat lonlat) $
-          when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $
+          when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $ do
             writePixel img x3 y3 (pixelAt equirectangular lamX phiY)
     forM_ [0..w-1] $ \x ->
       forM_ [0..h-1] $ \y -> do
         let x2 = fromIntegral x / wMax
             y2 = fromIntegral y / hMax
             lonlat@(LonLat lam phi) = projectionInverse p2 (XYCoord x2 y2)
-            XYCoord x1 y1 = projectionForward p1 lonlat
+            XYCoord x1' y1' = projectionForward p1 lonlat
             -- (x2,y2) = p2 lam phi
             x3 = round $ fromToS x1 x2 t * wMax
             y3 = round $ fromToS y1 y2 t * hMax
             lamX = round $ (lam+pi)/tau * wMax
             phiY = round $ (phi+halfPi)/pi * hMax
-        when (validLonLat lonlat) $
-          when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $
-            writePixel img x3 y3 (pixelAt equirectangular lamX phiY)
+            xCheck = fromIntegral (round (x1*wMax)) / wMax
+            yCheck = fromIntegral (round (y1*hMax)) / hMax
+            check = projectionInverse p1 (XYCoord xCheck yCheck)
+            lst@(~[(x1,y1)]) = take 1
+              [ (x', y')
+              | let xi = round $ x1' * wMax
+                    yi = round $ y1' * hMax
+              , ax <- [xi, xi-1, xi+1]
+              , ay <- [yi, yi-1, yi+1]
+              , (ax >= 0 && ax < w && ay >= 0 && ay < h)
+              , let x' = fromIntegral ax / wMax
+                    y' = fromIntegral ay / hMax
+              , validLonLat $ projectionInverse p1 (XYCoord x' y')
+              ]
+            -- check = projectionInverse p1 (XYCoord x3 y3)
+        unless (not (validLonLat lonlat) || isNaN x1' || isNaN y1') $
+          when (validLonLat lonlat {-&& validLonLat check && xCheck >= 0-}) $
+            when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $
+              writePixel img x3 y3 (pixelAt equirectangular lamX phiY)
     forM_ [1..w-2] $ \x ->
       forM_ [0..h-1] $ \y -> do
         this <- readPixel img x y
-        let isBlack (PixelRGB8 0 0 0) = True
-            isBlack _ = False
-        when (isBlack this) $ do
+        when (isBlank this) $ do
           left <- readPixel img (x-1) y
           right <- readPixel img (x+1) y
-          unless (isBlack left || isBlack right) $ writePixel img x y left
+          unless (isBlank left || isBlank right) $ writePixel img x y left
+    forM_ [0..w-1] $ \x ->
+      forM_ [1..h-2] $ \y -> do
+        this <- readPixel img x y
+        when (isBlank this) $ do
+          left <- readPixel img x (y-1)
+          right <- readPixel img x (y+1)
+          unless (isBlank left || isBlank right) $ writePixel img x y left
           -- unless (isBlack right) $ writePixel img x y right
+    forM_ [1..w-2] $ \x ->
+      forM_ [0..h-1] $ \y -> do
+        this <- readPixel img x y
+        when (isBlank this) $ do
+          left <- readPixel img (x-1) y
+          right <- readPixel img (x+1) y
+          unless (isBlank left || isBlank right) $ writePixel img x y left
     unsafeFreezeImage img
   where
     w = imageWidth equirectangular
@@ -126,12 +164,37 @@ main = seq equirectangular $ reanimate $ sceneAnimation $ do
     -- play $ pauseAtEnd 1 $ setDuration 1 $ animate $ \t ->
     --   scaleToSize screenWidth screenHeight $
     --   embedImage (project $ mergeP mercatorP lambertP $ curveS 2 t)
+
+    play $ pauseAtEnd 1 $ animate $ \t ->
+      scaleToSize screenWidth screenHeight $
+      embedImage $ interpP equirectangularP lambertP $ curveS 2 t
+    play $ pauseAtEnd 1 $ animate $ \t ->
+      scaleToSize screenWidth screenHeight $
+      embedImage $ project $ mergeP lambertP hammerP $ curveS 2 t
+    play $ pauseAtEnd 1 $ animate $ \t ->
+      scaleToSize screenWidth screenHeight $
+      embedImage $ project $ mergeP hammerP sinusoidalP $ curveS 2 t
+    play $ pauseAtEnd 1 $ animate $ \t ->
+      scaleToSize screenWidth screenHeight $
+      embedImage $ interpP sinusoidalP (bottomleyP (toRads 30)) $ curveS 2 t
+    play $ pauseAtEnd 1 $ animate $ \t ->
+      scaleToSize screenWidth screenHeight $
+      embedImage $ interpP (bottomleyP (toRads 30)) equirectangularP $ curveS 2 t
     -- play $ animate $ \t ->
     --   scaleToSize screenWidth screenHeight $
-    --   embedImage $ interpP equirectangularF mollweideF mollweideP t
-    play $ pauseAround 1 1 $ animate $ \t ->
-      scaleToSize screenWidth screenHeight $
-      embedImage $ interpP (moveDownP 0.25 $ flipYAxisP wernerP) (mollweideP) t
+    --   embedImage $ interpP (bottomleyP (toRads 30)) (flipYAxisP $ bottomleyP (toRads 30)) $ curveS 2 t
+    -- play $ pauseAtEnd 1 $ animate $ \t ->
+    --   scaleToSize screenWidth screenHeight $
+    --   embedImage $ interpP hammerP sinusoidalP $ curveS 2 t
+    -- play $ pauseAtEnd 1 $ animate $ \t ->
+    --   scaleToSize screenWidth screenHeight $
+    --   embedImage $ interpP sinusoidalP wernerP $ curveS 2 t
+    -- play $ pauseAtEnd 1 $ animate $ \t ->
+    --   scaleToSize screenWidth screenHeight $
+    --   embedImage $ interpP wernerP mollweideP $ curveS 2 t
+    -- play $ pauseAtEnd 1 $ animate $ \t ->
+    --   scaleToSize screenWidth screenHeight $
+    --   embedImage $ interpP mollweideP equirectangularP $ curveS 2 t
     -- play $ animate $ \t ->
     --   scaleToSize screenWidth screenHeight $
     --   embedImage $ project $ moveDownP 0.25 $ flipYAxisP wernerP
@@ -150,9 +213,9 @@ equirectangular = unsafePerformIO $ do
     Right img -> return $ convertRGB8 img
 
 data XYCoord = XYCoord Double Double -- 0 to 1
-  deriving (Read,Show)
+  deriving (Read,Show,Eq,Ord)
 data LonLat = LonLat Double Double -- -pi to +pi, -halfPi to +halfPi
-  deriving (Read,Show)
+  deriving (Read,Show,Eq,Ord)
 data Projection = Projection
   { projectionForward :: LonLat -> XYCoord
   , projectionInverse :: XYCoord -> LonLat
@@ -216,17 +279,22 @@ flipYAxisP (Projection p pInv) = Projection p' pInv'
       in LonLat lam (negate phi)
 
 
--- mergeP :: Projection -> Projection -> Double -> Projection
--- mergeP p1 p2 t = \x y ->
---     let (lon1, lat1) = p1 x y
---         (lon2, lat2) = p2 x y
---     in
---     if | oob lon1 lat1 && oob lon2 lat2 -> (100, 100)
---        -- | oob lon1 lat1 -> (fromToS x lon2 t, fromToS y lat2 t)
---        -- | oob lon2 lat2 -> (fromToS lon1 x t, fromToS lat1 y t)
---        | otherwise     -> (fromToS lon1 lon2 t, fromToS lat1 lat2 t)
---   where
---     oob lon lat = lon < (-pi) || lon > pi || lat < (-pi/2) || lat > pi/2
+mergeP :: Projection -> Projection -> Double -> Projection
+mergeP p1 p2 t = Projection p pInv
+  where
+    p lonlat =
+      let XYCoord x1 y1 = projectionForward p1 lonlat
+          XYCoord x2 y2 = projectionForward p2 lonlat
+      in XYCoord (fromToS x1 x2 t) (fromToS y1 y2 t)
+    pInv coord =
+      let LonLat lon1 lat1 = projectionInverse p1 coord
+          LonLat lon2 lat2 = projectionInverse p2 coord
+      in
+        if | oob lon1 lat1 && oob lon2 lat2 -> LonLat 100 100
+           -- | oob lon1 lat1 -> (fromToS x lon2 t, fromToS y lat2 t)
+           -- | oob lon2 lat2 -> (fromToS lon1 x t, fromToS lat1 y t)
+           | otherwise     -> LonLat (fromToS lon1 lon2 t) (fromToS lat1 lat2 t)
+    oob lon lat = lon < (-pi) || lon > pi || lat < (-pi/2) || lat > pi/2
 
 tau = pi*2
 
@@ -318,7 +386,7 @@ lambertP = Projection forward inverse
 toRads dec = dec/180 * pi
 
 bottomleyP :: Double -> Projection
-bottomleyP phi_1 = Projection forward inverse
+bottomleyP phi_1 = flipYAxisP $ Projection forward inverse
   where
     forward (LonLat lam phi) =
         XYCoord ((x+pi)/tau) ((y+pi/2)/pi)
@@ -335,7 +403,7 @@ bottomleyP phi_1 = Projection forward inverse
         y1 = pi/2 - y
         rho = sqrt (x1*x1 + y1*y1)
         e = atan2 x1 y1
-        lam = rho / sin rho * e/sin phi_1
+        lam = (if rho == 0 then 1 else rho / sin rho) * e/sin phi_1
         phi = pi/2 - rho
 
 sinusoidalP :: Projection
@@ -352,7 +420,7 @@ sinusoidalP = Projection forward inverse
         y = fromToS (-pi/2) (pi/2) y'
 
 wernerP :: Projection
-wernerP = Projection forward inverse
+wernerP = moveDownP 0.25 $ flipYAxisP $ Projection forward inverse
   where
     forward (LonLat lam phi) =
         XYCoord ((x+pi)/tau) ((y+pi/2)/pi)
@@ -411,10 +479,14 @@ phi = asin (sin y * cos x)
 lam = atan2 (tan x) (cos y)
 -}
 
--- cassiniP :: Projection
--- cassiniP x' y' = (lam, phi)
---   where
---     x = fromToS (-pi/2) (pi/2) x'
---     y = fromToS (-pi) (pi) y'
---     lam = atan2 (tan x) (cos y)
---     phi = asin (sin y * cos x)
+cassiniP :: Projection
+cassiniP = Projection forward inverse
+  where
+    forward (LonLat lam phi) =
+      XYCoord ((asin (cos phi * sin lam)+halfPi)/pi) ((atan2 (tan phi) (cos lam)+pi)/tau)
+    inverse (XYCoord x' y') = LonLat lam phi
+      where
+        x = fromToS (-halfPi) halfPi x'
+        y = fromToS (-pi) (pi) y'
+        lam = atan2 (tan x) (cos y)
+        phi = asin (sin y * cos x)
