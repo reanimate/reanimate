@@ -29,6 +29,7 @@ Pixel at lam,phi should move from (x1,y1) to (x2,y2)
 -}
 
 halfPi = pi/2
+sqrtPi = sqrt pi
 
 interpP :: Projection -> Projection -> Double -> Image PixelRGB8
 interpP p1 p2 t = runST $ do
@@ -162,12 +163,19 @@ main = seq equirectangular $ reanimate $ sceneAnimation $ do
     -- play $ pauseAtEnd 1 $ animate $ \t ->
     --   scaleToSize screenWidth screenHeight $
     --   embedImage $ interpP mercatorP equirectangularP $ curveS 2 t
-    play $ pauseAtEnd 1 $ animate $ \t ->
-      scaleToSize screenWidth screenHeight $
-      embedImage $ interpP equirectangularP (orthoP 0 0) $ curveS 2 t
+    -- play $ pauseAtEnd 1 $ animate $ \t ->
+    --   scaleToSize screenWidth screenHeight $
+    --   embedImage $ interpP equirectangularP (orthoP 0 0) $ curveS 2 t
     -- play $ pauseAtEnd 1 $ reverseA $ animate $ \t ->
     --   scaleToSize screenWidth screenHeight $
     --   embedImage $ interpP equirectangularP (orthoP 0 0) $ curveS 2 t
+    -- play $ pauseAtEnd 1 $ reverseA $ animate $ \t ->
+    --   scaleToSize screenWidth screenHeight $
+    --   embedImage $ interpP equirectangularP (bonneP (toRads 45)) $ curveS 2 t
+    play $ animate $ \t ->
+      scaleToSize screenWidth screenHeight $
+      embedImage $ project collignonP
+
     return ()
 
 -- type RealProj s = MVector s Int
@@ -250,6 +258,16 @@ flipYAxisP (Projection p pInv) = Projection p' pInv'
     pInv' (XYCoord x y) =
       let LonLat lam phi = pInv (XYCoord x (1-y))
       in LonLat lam (negate phi)
+
+scaleP :: Double -> Double -> Projection -> Projection
+scaleP xScale yScale (Projection p pInv) = Projection forward inverse
+  where
+    forward lonlat =
+      case p lonlat of
+        XYCoord x y -> XYCoord ((x-0.5)*xScale+0.5) ((y-0.5)*yScale+0.5)
+    inverse (XYCoord x y) =
+      let new = XYCoord ((x-0.5)/xScale+0.5) ((y-0.5)/yScale+0.5)
+      in pInv new
 
 
 mergeP :: Projection -> Projection -> Double -> Projection
@@ -412,16 +430,28 @@ wernerP = moveDownP 0.25 $ flipYAxisP $ Projection forward inverse
         phi = pi/2 - rho
         lam = e * rho / sin rho
 
--- This must be wrong
--- bonneP :: Double -> Projection
--- bonneP phi_1 x' y' = (lam, -phi)
---   where
---     x = fromToS (-pi) (pi) x'
---     y = fromToS (pi/2) (-pi/2) y'
---     rho = sqrt (x**2 + (cot phi_1 + phi_1 - y)**2)
---     e = atan2 x (cot phi_1 + phi_1 + y)
---     phi = cot phi_1 + phi_1 - rho
---     lam = e * rho / sin rho
+-- FIXME: find right scale and position.
+bonneP :: Double -> Projection
+bonneP 0 = sinusoidalP
+bonneP phi_0 = moveDownP (-0.15) $ scaleP sf sf $ flipYAxisP $ Projection forward inverse
+  where
+    sf = 0.65
+    forward (LonLat lam phi ) = XYCoord ((x+pi)/tau) ((y+halfPi)/pi)
+      where
+        cotPhi0 = cot phi_0
+        rho = cotPhi0 + phi_0 - phi
+        e = (lam * cos phi) / rho
+        x = rho * sin e
+        y = cotPhi0 - rho * cos e
+    inverse (XYCoord x' y') = LonLat lam phi
+      where
+        x = fromToS (-pi) (pi) x'
+        y = fromToS (-pi/2) (pi/2) y'
+        cotPhi0 = cot phi_0
+        rho = sqrt (x*x + (cot phi_0 - y)**2)
+        -- e = atan2 x (cot phi_1 + phi_1 + y)
+        phi = cotPhi0 + phi_0 - rho
+        lam = rho / cos phi * atan2 x (cotPhi0-y)
 
 cot = recip . tan
 
@@ -468,3 +498,38 @@ cassiniP = Projection forward inverse
         y = fromToS (-pi) (pi) y'
         lam = atan2 (tan x) (cos y)
         phi = asin (sin y * cos x)
+
+-- incomplete
+augustP :: Projection
+augustP = Projection forward inverse
+  where
+    forward (LonLat lam phi) = XYCoord x2 y2
+      where
+        tanPhi = tan (phi/2)
+        k = sqrt (1 - tanPhi * tanPhi)
+        c = 1 + k * cos (lam / 2)
+        x = sin (lam/2) * k / c
+        y = tanPhi / c
+        x2 = x*x
+        y2 = y*y
+    inverse = undefined
+
+collignonP :: Projection
+collignonP = flipYAxisP $ Projection forward inverse
+  where
+    yHi = sqrtPi
+    yLo = sqrtPi * (1 - sqrt 2)
+    xLo = -pi*(2/sqrtPi)*(sqrt 2)
+    xHi = pi*(2/sqrtPi)*(sqrt 2)
+    forward (LonLat lam phi) = XYCoord ((x-xLo)/(xHi-xLo)) ((y-yLo)/(yHi-yLo))
+      where
+        alpha = sqrt (1 - sin phi)
+        x = (2 / sqrtPi) * lam * alpha
+        y = sqrtPi * (1 - alpha)
+    inverse (XYCoord x' y') = LonLat lam phi
+      where
+        x = fromToS xLo xHi x'
+        y = fromToS yLo yHi y'
+        l = (y / sqrtPi -1)**2
+        lam = if l > 0 then x * sqrt (pi / l) / 2 else 0
+        phi = asin (1-l)
