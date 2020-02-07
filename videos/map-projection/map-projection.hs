@@ -169,12 +169,25 @@ main = seq equirectangular $ reanimate $ sceneAnimation $ do
     -- play $ pauseAtEnd 1 $ reverseA $ animate $ \t ->
     --   scaleToSize screenWidth screenHeight $
     --   embedImage $ interpP equirectangularP (orthoP 0 0) $ curveS 2 t
-    -- play $ pauseAtEnd 1 $ reverseA $ animate $ \t ->
+    -- play $ animate $ \t ->
     --   scaleToSize screenWidth screenHeight $
-    --   embedImage $ interpP equirectangularP (bonneP (toRads 45)) $ curveS 2 t
+    --   embedImage $ interpP faheyP (orthoP 0 0) $ curveS 2 t
+
+    -- play $ animate $ \t ->
+    --   scaleToSize screenWidth screenHeight $
+    --   embedImage $ interpP equirectangularP faheyP $ curveS 2 t
     play $ animate $ \t ->
       scaleToSize screenWidth screenHeight $
-      embedImage $ project collignonP
+      embedImage $ project $ mergeP faheyP (orthoP (-halfPi) 0) $ curveS 2 t
+    play $ setDuration 3 $ animate $ \t ->
+      scaleToSize screenWidth screenHeight $
+      embedImage $ project $ orthoP (fromToS (-halfPi) (halfPi*0.4) $ curveS 2 t) 0
+    play $ animate $ \t ->
+      scaleToSize screenWidth screenHeight $
+      embedImage $ project $ mergeP (orthoP (halfPi*0.4) 0) faheyP  $ curveS 2 t
+    -- play $ animate $ \t ->
+    --   scaleToSize screenWidth screenHeight $
+    --   embedImage $ interpP faheyP equirectangularP  $ curveS 2 t
 
     return ()
 
@@ -533,3 +546,81 @@ collignonP = flipYAxisP $ Projection forward inverse
         l = (y / sqrtPi -1)**2
         lam = if l > 0 then x * sqrt (pi / l) / 2 else 0
         phi = asin (1-l)
+
+eckert1P :: Projection
+eckert1P = Projection forward inverse
+  where
+    alpha = sqrt (8 / (3*pi))
+    yLo = -alpha * halfPi
+    yHi = alpha * halfPi
+    xLo = -alpha * pi
+    xHi = alpha * pi
+    forward (LonLat lam phi) = XYCoord ((x-xLo)/(xHi-xLo)) ((y-yLo)/(yHi-yLo))
+      where
+        x = alpha * lam * (1 - abs phi / pi)
+        y = alpha * phi
+    inverse (XYCoord x' y') = LonLat lam phi
+      where
+        x = fromToS xLo xHi x'
+        y = fromToS yLo yHi y'
+        phi = y / alpha
+        lam = x / (alpha * (1 - abs phi / pi))
+
+eckert3P :: Projection
+eckert3P = Projection forward inverse
+  where
+    k = sqrt (pi * (4 + pi))
+    yLo = negate yHi
+    yHi = 4/k * halfPi
+    xLo = negate xHi
+    xHi = 4/k * pi
+    forward (LonLat lam phi) = XYCoord ((x-xLo)/(xHi-xLo)) ((y-yLo)/(yHi-yLo))
+      where
+        x = 2 / k * lam * (1 + sqrt (1 - 4*phi*phi/(pi*pi)))
+        y = 4 / k * phi
+    inverse (XYCoord x' y') = LonLat lam phi
+      where
+        x = fromToS xLo xHi x'
+        y = fromToS yLo yHi y'
+        lam = x  * k/2 / (1 + sqrt (1 - y*y* (4+pi)/(4*pi)))
+        phi = y * k/4
+
+eckert5P :: Projection
+eckert5P = Projection forward inverse
+  where
+    k = sqrt (2 + pi)
+    yLo = negate yHi
+    yHi = pi/k
+    xLo = negate xHi
+    xHi = tau/k
+    forward (LonLat lam phi) = XYCoord ((x-xLo)/(xHi-xLo)) ((y-yLo)/(yHi-yLo))
+      where
+        x = lam * (1 + cos phi) / k
+        y = 2 * phi / k
+    inverse (XYCoord x' y') = LonLat lam phi
+      where
+        x = fromToS xLo xHi x'
+        y = fromToS yLo yHi y'
+        lam = k * x / (1 + cos phi)
+        phi = y * k / 2
+
+faheyP :: Projection
+faheyP = Projection forward inverse
+  where
+    faheyK = cos (toRads 35)
+    yLo = negate yHi
+    yHi = 1 + faheyK
+    xLo = negate xHi
+    xHi = pi * faheyK * 16/9
+    forward (LonLat lam phi) = XYCoord ((x-xLo)/(xHi-xLo)) ((y-yLo)/(yHi-yLo))
+      where
+        t = tan (phi/2)
+        x = lam * faheyK * sqrt (1 - t*t)
+        y = (1 + faheyK) * t
+    inverse (XYCoord x' y') = LonLat lam phi
+      where
+        x = fromToS xLo xHi x'
+        y = fromToS yLo yHi y'
+        t = y / (1 + faheyK)
+        lam = x / (faheyK * sqrt (1 - t*t))
+        phi = 2 * atan2 y (1 + faheyK)
