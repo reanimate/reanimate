@@ -1,18 +1,20 @@
 module Reanimate.Svg.BoundingBox where
 
-import           Control.Arrow
-import           Control.Lens                 ((^.))
+import           Control.Arrow             ((***))
+import           Control.Lens              ((^.))
 import           Data.List
-import           Graphics.SvgTree             hiding (height, line, path, use,
-                                               width)
-import           Linear.V2                    hiding (angle)
+import           Data.Maybe                (mapMaybe)
+import           Graphics.SvgTree          hiding (height, line, path, use,
+                                            width)
+import           Linear.V2                 hiding (angle)
 import           Linear.Vector
 import           Reanimate.Constants
 import           Reanimate.Svg.LineCommand
-import qualified Reanimate.Transform          as Transform
+import qualified Reanimate.Transform       as Transform
 -- import qualified Geom2D.CubicBezier           as Bezier
 
--- (x,y,w,h)
+-- | Return bounding box of SVG tree.
+--  The four numbers returned are (minimal X-coordinate, minimal Y-coordinate, width, height)
 boundingBox :: Tree -> (Double, Double, Double, Double)
 boundingBox t =
     case svgBoundingPoints t of
@@ -59,9 +61,9 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
       FilterTree{}    -> []
       DefinitionTree{} -> []
       PathTree p      -> linePoints $ toLineCommands (p^.pathDefinition)
-      CircleTree{}    -> error "Bounding box: CircleTree"
-      PolyLineTree{}  -> error "Bounding box: PolyLineTree"
-      EllipseTree{}   -> error "Bounding box: EllipseTree"
+      CircleTree c    -> circleBoundingPoints c
+      PolyLineTree pl -> pl ^. polyLinePoints
+      EllipseTree e   -> ellipseBoundingPoints e
       LineTree line   -> map pointToRPoint [line^.linePoint1, line^.linePoint2]
       RectangleTree rect ->
         case pointToRPoint (rect^.rectUpperLeftCorner) of
@@ -84,3 +86,23 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
       case mapTuple (toUserUnit defaultDPI) p of
         (Num x, Num y) -> V2 x y
         _ -> error "Reanimate.Svg.svgBoundingPoints: Unrecognized number format."
+
+    circleBoundingPoints circ = 
+      let (xnum, ynum) = circ ^. circleCenter
+          rnum = circ ^. circleRadius
+      in case mapMaybe unpackNumber [xnum, ynum, rnum] of 
+        [x, y, r] -> [ V2 (x + r * cos angle) (y + r * sin angle) | angle <- [0, pi/10 .. 2 * pi]]
+        _  -> []
+
+    ellipseBoundingPoints e = 
+      let (xnum,ynum) = e ^. ellipseCenter
+          xrnum = e ^. ellipseXRadius
+          yrnum = e ^. ellipseYRadius
+      in case mapMaybe unpackNumber [xnum, ynum, xrnum, yrnum] of 
+        [x,y,xr,yr] -> [V2 (x + xr * cos angle) (y + yr * sin angle) | angle <- [0, pi/10 .. 2 * pi]]
+        _ -> []
+
+    unpackNumber n =
+      case toUserUnit defaultDPI n of
+        Num d -> Just d
+        _     -> Nothing
