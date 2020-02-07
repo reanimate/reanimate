@@ -60,10 +60,7 @@ interpP p1 p2 t = runST $ do
             y3 = round $ fromToS y1 y2 t * hMax
             lamX = round $ (lam+pi)/tau * wMax
             phiY = round $ (phi+halfPi)/pi * hMax
-            xCheck = fromIntegral (round (x2*wMax)) / wMax
-            yCheck = fromIntegral (round (y2*hMax)) / hMax
-            check = projectionInverse p2 (XYCoord xCheck yCheck)
-        when (validLonLat lonlat) $
+        when (validLonLat lonlat && validXYCoord (XYCoord x2' y2')) $ do
           when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $ do
             writePixel img x3 y3 (pixelAt equirectangular lamX phiY)
     forM_ [0..w-1] $ \x ->
@@ -77,9 +74,6 @@ interpP p1 p2 t = runST $ do
             y3 = round $ fromToS y1 y2 t * hMax
             lamX = round $ (lam+pi)/tau * wMax
             phiY = round $ (phi+halfPi)/pi * hMax
-            xCheck = fromIntegral (round (x1*wMax)) / wMax
-            yCheck = fromIntegral (round (y1*hMax)) / hMax
-            check = projectionInverse p1 (XYCoord xCheck yCheck)
             lst@(~[(x1,y1)]) = take 1
               [ (x', y')
               | let xi = round $ x1' * wMax
@@ -91,8 +85,8 @@ interpP p1 p2 t = runST $ do
                     y' = fromIntegral ay / hMax
               , validLonLat $ projectionInverse p1 (XYCoord x' y')
               ]
-            -- check = projectionInverse p1 (XYCoord x3 y3)
-        unless (not (validLonLat lonlat) || isNaN x1' || isNaN y1') $
+            --check = projectionInverse p1 (XYCoord x1' y1')
+        when (validLonLat lonlat && validXYCoord (XYCoord x1' y1')) $
           when (validLonLat lonlat {-&& validLonLat check && xCheck >= 0-}) $
             when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $
               writePixel img x3 y3 (pixelAt equirectangular lamX phiY)
@@ -126,6 +120,15 @@ interpP p1 p2 t = runST $ do
     hMax = fromIntegral (h-1)
 
 
+eqLonLat (LonLat x1 y1) (LonLat x2 y2)
+  = abs (x1-x2) < epsilon && abs (y1-y2) < epsilon
+  where
+    epsilon = 1.0e-9
+
+eqCoords (XYCoord x1 y1) (XYCoord x2 y2)
+  = abs (x1-x2) < epsilon && abs (y1-y2) < epsilon
+  where
+    epsilon = 1.0e-9
 
 {-
   1. equirectangular
@@ -137,67 +140,34 @@ interpP p1 p2 t = runST $ do
 -}
 main :: IO ()
 main = seq equirectangular $ reanimate $ sceneAnimation $ do
-    -- play $ pauseAtEnd 1 $ setDuration 1 $ animate $ \t ->
-    --   scaleToSize screenWidth screenHeight $
-    --   embedImage (project $ mergeP equirectangularP mollweideP $ curveS 2 t)
-    -- play $ pauseAtEnd 1 $ setDuration 1 $ animate $ \t ->
-    --   scaleToSize screenWidth screenHeight $
-    --   embedImage (project $ mergeP mollweideP (bottomleyP (toRads 30)) $ curveS 2 t)
-    -- play $ pauseAtEnd 1 $ setDuration 1 $ animate $ \t ->
-    --   scaleToSize screenWidth screenHeight $
-    --   embedImage (project $ mergeP mollweideP sinusoidalP $ curveS 2 t)
-    -- play $ pauseAtEnd 1 $ setDuration 1 $ animate $ \t ->
-    --   scaleToSize screenWidth screenHeight $
-    --   embedImage (project $ mergeP sinusoidalP equirectangularP $ curveS 2 t)
-    -- play $ pauseAtEnd 1 $ setDuration 1 $ animate $ \t ->
-    --   scaleToSize screenWidth screenHeight $
-    --   embedImage (project $ mergeP sinusoidalP (bottomleyP (toRads 30)) $ curveS 2 t)
-    -- play $ pauseAtEnd 1 $ setDuration 1 $ animate $ \t ->
-    --   scaleToSize screenWidth screenHeight $
-    --   embedImage (project $ mergeP sinusoidalP hammerP $ curveS 2 t)
-    -- play $ pauseAtEnd 1 $ setDuration 1 $ animate $ \t ->
-    --   scaleToSize screenWidth screenHeight $
-    --   embedImage (project $ mergeP hammerP mollweideP $ curveS 2 t)
-    -- play $ pauseAtEnd 1 $ setDuration 1 $ animate $ \t ->
-    --   scaleToSize screenWidth screenHeight $
-    --   embedImage (project $ mergeP mollweideP mercatorP $ curveS 2 t)
-    -- play $ pauseAtEnd 1 $ setDuration 1 $ animate $ \t ->
-    --   scaleToSize screenWidth screenHeight $
-    --   embedImage (project $ mergeP mercatorP lambertP $ curveS 2 t)
 
-    play $ pauseAtEnd 1 $ animate $ \t ->
-      scaleToSize screenWidth screenHeight $
-      embedImage $ interpP equirectangularP lambertP $ curveS 2 t
-    play $ pauseAtEnd 1 $ animate $ \t ->
-      scaleToSize screenWidth screenHeight $
-      embedImage $ project $ mergeP lambertP hammerP $ curveS 2 t
-    play $ pauseAtEnd 1 $ animate $ \t ->
-      scaleToSize screenWidth screenHeight $
-      embedImage $ project $ mergeP hammerP sinusoidalP $ curveS 2 t
-    play $ pauseAtEnd 1 $ animate $ \t ->
-      scaleToSize screenWidth screenHeight $
-      embedImage $ interpP sinusoidalP (bottomleyP (toRads 30)) $ curveS 2 t
-    play $ pauseAtEnd 1 $ animate $ \t ->
-      scaleToSize screenWidth screenHeight $
-      embedImage $ interpP (bottomleyP (toRads 30)) equirectangularP $ curveS 2 t
-    -- play $ animate $ \t ->
-    --   scaleToSize screenWidth screenHeight $
-    --   embedImage $ interpP (bottomleyP (toRads 30)) (flipYAxisP $ bottomleyP (toRads 30)) $ curveS 2 t
     -- play $ pauseAtEnd 1 $ animate $ \t ->
     --   scaleToSize screenWidth screenHeight $
-    --   embedImage $ interpP hammerP sinusoidalP $ curveS 2 t
+    --   embedImage $ interpP equirectangularP lambertP $ curveS 2 t
     -- play $ pauseAtEnd 1 $ animate $ \t ->
     --   scaleToSize screenWidth screenHeight $
-    --   embedImage $ interpP sinusoidalP wernerP $ curveS 2 t
+    --   embedImage $ project $ mergeP lambertP hammerP $ curveS 2 t
     -- play $ pauseAtEnd 1 $ animate $ \t ->
     --   scaleToSize screenWidth screenHeight $
-    --   embedImage $ interpP wernerP mollweideP $ curveS 2 t
+    --   embedImage $ project $ mergeP hammerP sinusoidalP $ curveS 2 t
     -- play $ pauseAtEnd 1 $ animate $ \t ->
     --   scaleToSize screenWidth screenHeight $
-    --   embedImage $ interpP mollweideP equirectangularP $ curveS 2 t
-    -- play $ animate $ \t ->
+    --   embedImage $ interpP sinusoidalP (bottomleyP (toRads 30)) $ curveS 2 t
+    -- play $ pauseAtEnd 1 $ animate $ \t ->
     --   scaleToSize screenWidth screenHeight $
-    --   embedImage $ project $ moveDownP 0.25 $ flipYAxisP wernerP
+    --   embedImage $ interpP (bottomleyP (toRads 30)) equirectangularP $ curveS 2 t
+    -- play $ pauseAtEnd 1 $ animate $ \t ->
+    --   scaleToSize screenWidth screenHeight $
+    --   embedImage $ interpP equirectangularP mercatorP $ curveS 2 t
+    -- play $ pauseAtEnd 1 $ animate $ \t ->
+    --   scaleToSize screenWidth screenHeight $
+    --   embedImage $ interpP mercatorP equirectangularP $ curveS 2 t
+    play $ pauseAtEnd 1 $ animate $ \t ->
+      scaleToSize screenWidth screenHeight $
+      embedImage $ interpP equirectangularP (orthoP 0 0) $ curveS 2 t
+    -- play $ pauseAtEnd 1 $ reverseA $ animate $ \t ->
+    --   scaleToSize screenWidth screenHeight $
+    --   embedImage $ interpP equirectangularP (orthoP 0 0) $ curveS 2 t
     return ()
 
 -- type RealProj s = MVector s Int
@@ -241,6 +211,9 @@ validLonLat :: LonLat -> Bool
 validLonLat (LonLat lam phi) =
   lam >= -pi && lam <= pi && phi >= -pi/2 && phi <= pi/2
 
+validXYCoord :: XYCoord -> Bool
+validXYCoord (XYCoord x y) = x >= 0 && x <= 1 && y >= 0 && y <= 1
+
 isValidP :: Projection -> Bool
 isValidP (Projection p pInv) = and
     [ check x y
@@ -256,7 +229,7 @@ isValidP (Projection p pInv) = and
           XYCoord outX outY = p lonlat
           diff = (x-outX)**2 + (y-outY)**2
           epsilon = 1.0e-9
-      in if not (validLonLat lonlat) || diff < epsilon
+      in if not (validLonLat lonlat) || not (validXYCoord (XYCoord outX outY)) || diff < epsilon
           then True
           else trace (show (x,y)) False
 
@@ -310,8 +283,9 @@ equirectangularP = Projection forward inverse
 mercatorP :: Projection
 mercatorP = Projection forward inverse
   where
-    -- forward is wrong.
-    forward (LonLat lam phi) = XYCoord ((lam+pi)/tau) (((pi-log(tan(pi/4+phi/2)))-pi)/tau)
+    forward (LonLat lam phi) =
+      XYCoord ((lam+pi)/tau)
+        (((log(tan(pi/4+phi/2))) + pi)/tau)
     inverse (XYCoord x y) = LonLat xPi (atan (sinh yPi))
       where
         xPi = fromToS (-pi) pi x
@@ -454,6 +428,10 @@ cot = recip . tan
 orthoP :: Double -> Double -> Projection
 orthoP lam_0 phi_0 = Projection forward inverse
   where
+    forward (LonLat lam phi)
+      | (lam+lam_0) < -halfPi || (lam+lam_0) > halfPi ||
+        (phi+phi_0) < -halfPi/2 || (phi+phi_0) > halfPi/2
+        = XYCoord (0/0) (0/0)
     forward (LonLat lam phi) =
         XYCoord ((x+(16/9))/(16/9*2)) ((y+1)/2)
       where
