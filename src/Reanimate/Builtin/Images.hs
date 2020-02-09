@@ -2,8 +2,10 @@ module Reanimate.Builtin.Images
   ( svgLogo
   , haskellLogo
   , githubIcon
+  , smallEarth
   ) where
 
+import           Codec.Picture
 import qualified Data.ByteString     as B
 import           Graphics.SvgTree    (parseSvgFile)
 import           Paths_reanimate
@@ -19,6 +21,14 @@ embedImage key = do
     Nothing  -> error "Malformed svg"
     Just svg -> return $ embedDocument svg
 
+loadJPG :: FilePath -> Image PixelRGB8
+loadJPG key = unsafePerformIO $ do
+  jpg_file <- getDataFileName key
+  dat <- B.readFile jpg_file
+  case decodeJpeg dat of
+    Left err  -> error err
+    Right img -> return $ convertRGB8 img
+
 -- | <<docs/gifs/doc_svgLogo.gif>>
 svgLogo :: SVG
 svgLogo = unsafePerformIO $ embedImage "data/svg-logo.svg"
@@ -30,3 +40,9 @@ haskellLogo = unsafePerformIO $ embedImage "data/haskell.svg"
 -- | <<docs/gifs/doc_githubIcon.gif>>
 githubIcon :: SVG
 githubIcon = unsafePerformIO $ embedImage "data/github-icon.svg"
+
+-- | 300x150 equirectangular earth
+--
+--   <<docs/gifs/doc_smallEarth.gif>>
+smallEarth :: Image PixelRGB8
+smallEarth = loadJPG "data/small_earth.jpg"
