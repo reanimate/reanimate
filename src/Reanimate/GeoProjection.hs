@@ -23,11 +23,14 @@ module Reanimate.GeoProjection
   , bonneP
   , orthoP
   , cassiniP
+  , augustP
   , collignonP
   , eckert1P
   , eckert3P
   , eckert5P
   , faheyP
+  , foucautP
+  , lagrangeP
   ) where
 
 import Data.List
@@ -37,12 +40,13 @@ import           Control.Monad.ST
 import           Control.Monad
 import           Data.Maybe
 import           Reanimate
+import Debug.Trace
 
 -- Constants
 halfPi, sqrtPi, epsilon, tau :: Double
 halfPi = pi/2
 sqrtPi = sqrt pi
-epsilon = 1.0e-14
+epsilon = 1.0e-12
 tau = pi*2
 
 toRads, cot :: Double -> Double
@@ -171,11 +175,10 @@ interpP src p1 p2 t = runST $ do
     wMax = fromIntegral (w-1)
     hMax = fromIntegral (h-1)
 
-{-
 eqLonLat :: LonLat -> LonLat -> Bool
 eqLonLat (LonLat x1 y1) (LonLat x2 y2)
   = eqDouble x1 x2 && eqDouble y1 y2
-
+{-
 eqCoords :: XYCoord -> XYCoord -> Bool
 eqCoords (XYCoord x1 y1) (XYCoord x2 y2)
   = eqDouble x1 x2 && eqDouble y1 y2
@@ -226,11 +229,10 @@ isValidP (Projection p pInv) = and
       let x = (fromIntegral xPx / fromIntegral (w-1))
           y = (fromIntegral yPx / fromIntegral (h-1))
           lonlat = pInv (XYCoord x y)
-          XYCoord outX outY = p lonlat
-          diff = (x-outX)**2 + (y-outY)**2
-      in if not (validLonLat lonlat) || not (validXYCoord (XYCoord outX outY)) || diff < epsilon
+          lonlat2 = pInv $ p lonlat
+      in if not (validLonLat lonlat) || eqLonLat lonlat lonlat2
           then True
-          else False
+          else trace (show (lonlat, lonlat2)) $ False
 
 moveBottomP :: Double -> Projection -> Projection
 moveBottomP offset (Projection p pInv) = Projection p' pInv'
@@ -474,12 +476,14 @@ cassiniP = Projection forward inverse
         lam = atan2 (tan x) (cos y)
         phi = asin (sin y * cos x)
 
-{-
--- incomplete
 augustP :: Projection
-augustP = Projection forward inverse
+augustP = scaleP 0.70 0.70 $ Projection forward inverse
   where
-    forward (LonLat lam phi) = XYCoord x2 y2
+    xHi = 16/3
+    xLo = -xHi
+    yHi = 8 / 3
+    yLo = -yHi
+    forward (LonLat lam phi) = XYCoord ((xPos-xLo)/(xHi-xLo)) ((yPos-yLo)/(yHi-yLo))
       where
         tanPhi = tan (phi/2)
         k = sqrt (1 - tanPhi * tanPhi)
@@ -488,8 +492,23 @@ augustP = Projection forward inverse
         y = tanPhi / c
         x2 = x*x
         y2 = y*y
-    inverse = undefined
--}
+        xPos = (4 / 3 * x * (3+x2 - 3*y2))
+        yPos = (4 / 3 * y * (3 + 3*x2 - y2))
+    inverse (XYCoord x' y') = LonLat lam phi
+      where
+        x = fromToS xLo xHi x' * 3 / 8
+        y = fromToS yLo yHi y' * 3 / 8
+        x2 = x*x
+        y2 = y*y
+        s = 1 + x2 + y2
+        sin3Eta = sqrt ((s - sqrt (s*s - 4 * y * y)) / 2)
+        eta = asin (sin3Eta) / 3
+        xi = if sin3Eta /= 0 then acosh (abs (y / sin3Eta)) / 3 else asinh (abs x) / 3
+        cosEta = cos eta
+        coshXi = cosh xi
+        d = coshXi * coshXi - cosEta * cosEta
+        lam = signum x * 2 * atan2 (sinh xi * cosEta) (0.25 - d)
+        phi = signum y * 2 * atan2 (coshXi * sin eta) (0.25 + d)
 
 -- | <<docs/gifs/doc_collignonP.gif>>
 collignonP :: Projection
@@ -593,3 +612,55 @@ faheyP = Projection forward inverse
         t = y / (1 + faheyK)
         lam = x / (faheyK * sqrt (1 - t*t))
         phi = 2 * atan2 y (1 + faheyK)
+
+foucautP :: Projection
+foucautP = Projection forward inverse
+  where
+    yLo = negate yHi
+    yHi = sqrtPi * tan (halfPi/2)
+    xLo = negate xHi
+    xHi = tau/sqrtPi
+    forward (LonLat lam phi) = XYCoord ((x-xLo)/(xHi-xLo)) ((y-yLo)/(yHi-yLo))
+      where
+        k = phi / 2
+        cosk = cos k
+        x = 2 * lam / sqrtPi * cos phi * cosk * cosk
+        y = sqrtPi * tan k
+    inverse (XYCoord x' y') = LonLat lam phi
+      where
+        x = fromToS xLo xHi x'
+        y = fromToS yLo yHi y'
+        k = atan (y / sqrtPi)
+        cosk = cos k
+        phi = 2 * k
+        lam = x * sqrtPi / 2 / (cos phi * cosk * cosk)
+
+lagrangeP :: Projection
+lagrangeP = Projection forward inverse
+  where
+    yLo = negate yHi
+    yHi = 2
+    xLo = negate xHi
+    xHi = 2
+    n = 0.5
+    forward (LonLat lam phi)
+        | abs (abs phi - halfPi) < epsilon = XYCoord 0.5 (if phi < 0 then 0 else 1)
+        | otherwise = XYCoord ((x-xLo)/(xHi-xLo)) ((y-yLo)/(yHi-yLo))
+      where
+        sinPhi = sin phi
+        v = ((1+sinPhi) / (1 - sinPhi))**(n/2)
+        c = 0.5 * (v + 1/v) + cos (lam*n)
+        x = 2 * sin (lam*n) / c
+        y = (v - 1/v) /c
+    inverse (XYCoord x' y')
+        | abs ((abs y')-1) < epsilon = LonLat 0 (signum y * halfPi)
+        | otherwise = LonLat lam phi
+      where
+        x = fromToS xLo xHi x' / 2
+        y = fromToS yLo yHi y' / 2
+        x2 = x * x
+        y2 = y * y
+        t = 2 * y / (1 + x2 + y2)
+        t' = ((1+t) / (1-t)) ** (1/n)
+        lam = atan2 (2*x) (1-x2-y2) / n
+        phi = asin ((t'-1)/(t'+1))
