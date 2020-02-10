@@ -33,14 +33,14 @@ module Reanimate.GeoProjection
   , lagrangeP
   ) where
 
-import Data.List
 import           Codec.Picture
 import           Codec.Picture.Types
-import           Control.Monad.ST
 import           Control.Monad
+import           Control.Monad.ST
+import           Data.List
 import           Data.Maybe
+import           Debug.Trace
 import           Reanimate
-import Debug.Trace
 
 -- Constants
 halfPi, sqrtPi, epsilon, tau :: Double
@@ -138,9 +138,10 @@ interpP src p1 p2 t = runST $ do
     let factor = 1
     forM_ [0..(w*factor)-1] $ \x ->
       forM_ [0..(h*factor)-1] $ \y -> do
-        let x1 = fromIntegral x / (wMax*fromIntegral factor)
-            y1 = fromIntegral y / (hMax*fromIntegral factor)
-            lonlat = projectionInverse p1 (XYCoord x1 y1)
+        let x1' = fromIntegral x / (wMax*fromIntegral factor)
+            y1' = fromIntegral y / (hMax*fromIntegral factor)
+            lonlat = projectionInverse p1 (XYCoord x1' y1')
+            XYCoord x1 y1 = projectionForward p1 lonlat
             XYCoord x2 y2 = findValidCoord src p2 $ projectionForward p2 lonlat
             x3 = round $ fromToS x1 x2 t * wMax
             y3 = round $ (1 - fromToS y1 y2 t) * hMax
@@ -149,9 +150,10 @@ interpP src p1 p2 t = runST $ do
             writePixel img x3 y3 (promotePixel $ srcPixel src lonlat)
     forM_ [0..(w*factor)-1] $ \x ->
       forM_ [0..(h*factor)-1] $ \y -> do
-        let x2 = fromIntegral x / (wMax*fromIntegral factor)
-            y2 = fromIntegral y / (hMax*fromIntegral factor)
-            lonlat = projectionInverse p2 (XYCoord x2 y2)
+        let x2' = fromIntegral x / (wMax*fromIntegral factor)
+            y2' = fromIntegral y / (hMax*fromIntegral factor)
+            lonlat = projectionInverse p2 (XYCoord x2' y2')
+            XYCoord x2 y2 = projectionForward p2 lonlat
             XYCoord x1 y1 = findValidCoord src p1 $ projectionForward p1 lonlat
             -- (x2,y2) = p2 lam phi
             x3 = round $ fromToS x1 x2 t * wMax
