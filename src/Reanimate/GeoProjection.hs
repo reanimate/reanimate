@@ -135,7 +135,7 @@ interpP src p1 p2 t = runST $ do
     --         y1 = 1 - fromIntegral y / (hMax)
     --     when (isInWorld (mergeP p1 p2 t) (XYCoord x1 y1)) $
     --       writePixel img x y $ PixelRGBA8 0xFF 0x00 0x00 0xFF
-    let factor = 1
+    let factor = 2
     forM_ [0..(w*factor)-1] $ \x ->
       forM_ [0..(h*factor)-1] $ \y -> do
         let x1' = fromIntegral x / (wMax*fromIntegral factor)
