@@ -1,29 +1,30 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
-{-# LANGUAGE OverloadedStrings, ApplicativeDo #-}
+{-# LANGUAGE ApplicativeDo     #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Main(main) where
 
-import qualified Data.Text as T
 import           Codec.Picture
 import           Codec.Picture.Jpg
 import           Codec.Picture.Types
-import           Control.Monad.ST
+import           Control.Lens            ((^.))
 import           Control.Monad
-import qualified Data.ByteString     as BS
-import           Reanimate
-import           Reanimate.Animation
-import           Reanimate.Scene
-import           Reanimate.GeoProjection
-import           System.IO.Unsafe
+import           Control.Monad.ST
+import           Data.Aeson
+import qualified Data.ByteString         as BS
+import           Data.Foldable
 import           Data.Geospatial         hiding (LonLat)
 import           Data.LinearRing
 import qualified Data.LineString         as Line
-import           Data.Aeson
 import           Data.Map                (Map)
 import qualified Data.Map                as Map
+import qualified Data.Text               as T
 import           Graphics.SvgTree        (PathCommand (..), Tree (None))
-import           Data.Foldable
-import           Control.Lens            ((^.))
+import           Reanimate
+import           Reanimate.Animation
+import           Reanimate.GeoProjection
+import           Reanimate.Scene
+import           System.IO.Unsafe
 
 
 main :: IO ()
@@ -82,7 +83,7 @@ main = seq equirectangular $ reanimate $ sceneAnimation $ do
     eckert <- newSpriteSVG $ renderLabel "Eckert"
     spriteZ eckert 2
     pushInterp "Eckert III" eckert3P
-    pushInterp "Eckert IV" eckert5P
+    pushInterp "Eckert V" eckert5P
     destroySprite eckert
     -- 7
     pushInterp "Fahey" faheyP
@@ -123,7 +124,6 @@ toRads dec = dec/180 * pi
 
 
 grid :: Projection -> SVG
--- grid p = None
 grid p =
 
   scaleXY
