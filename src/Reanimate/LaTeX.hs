@@ -87,6 +87,7 @@ mkTexScript latexExec latexArgs texHeaders tex = T.unlines $
   [ "% " <> T.pack (unwords (latexExec:latexArgs))
   , "\\documentclass[preview]{standalone}"
   , "\\usepackage{amsmath}"
+  , "\\usepackage{gensymb}"
   ] ++ texHeaders ++
   [ "\\usepackage[english]{babel}"
   , "\\linespread{1}"

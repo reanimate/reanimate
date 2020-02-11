@@ -12,11 +12,11 @@ import           Control.Monad       (forM_)
 import qualified Data.Text           as T
 import qualified Data.Text.IO        as T
 import           Graphics.SvgTree    (Number (..))
+import           Numeric
 import           Reanimate.Animation
 import           Reanimate.Misc
-import           System.FilePath     ((</>))
--- import           System.FilePath    (replaceExtension)
 import           System.Exit
+import           System.FilePath     ((</>))
 import           System.IO
 import           Text.Printf         (printf)
 
@@ -99,14 +99,14 @@ render ani target format width height fps = do
       RenderGif -> withTempFile "png" $ \palette -> do
         runCmd ffmpeg ["-i", template, "-y"
                       ,"-vf", "fps="++show fps++",scale=320:-1:flags=lanczos,palettegen"
-                      ,"-t", show (duration ani)
+                      ,"-t", showFFloat Nothing (duration ani) ""
                       , palette ]
         runCmd ffmpeg ["-i", template, "-y"
                       ,"-i", palette
                       ,"-progress", progress
                       ,"-filter_complex"
                       ,"fps="++show fps++",scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse"
-                      ,"-t", show (duration ani)
+                      ,"-t", showFFloat Nothing (duration ani) ""
                       , target]
       RenderWebm ->
         runCmd ffmpeg ["-r", show fps, "-i", template, "-y"
