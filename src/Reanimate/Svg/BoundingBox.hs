@@ -29,12 +29,12 @@ boundingBox t =
 svgHeight :: Tree -> Double
 svgHeight t = h
   where
-    (_w, h, _x, _y) = boundingBox t
+    (_x, _y, _w, h) = boundingBox t
 
 svgWidth :: Tree -> Double
 svgWidth t = w
   where
-    (w, _h, _x, _y) = boundingBox t
+    (_x, _y, w, _h) = boundingBox t
 
 linePoints :: [LineCommand] -> [RPoint]
 linePoints = worker zero
@@ -87,18 +87,18 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
         (Num x, Num y) -> V2 x y
         _ -> error "Reanimate.Svg.svgBoundingPoints: Unrecognized number format."
 
-    circleBoundingPoints circ = 
+    circleBoundingPoints circ =
       let (xnum, ynum) = circ ^. circleCenter
           rnum = circ ^. circleRadius
-      in case mapMaybe unpackNumber [xnum, ynum, rnum] of 
+      in case mapMaybe unpackNumber [xnum, ynum, rnum] of
         [x, y, r] -> [ V2 (x + r * cos angle) (y + r * sin angle) | angle <- [0, pi/10 .. 2 * pi]]
         _  -> []
 
-    ellipseBoundingPoints e = 
+    ellipseBoundingPoints e =
       let (xnum,ynum) = e ^. ellipseCenter
           xrnum = e ^. ellipseXRadius
           yrnum = e ^. ellipseYRadius
-      in case mapMaybe unpackNumber [xnum, ynum, xrnum, yrnum] of 
+      in case mapMaybe unpackNumber [xnum, ynum, xrnum, yrnum] of
         [x,y,xr,yr] -> [V2 (x + xr * cos angle) (y + yr * sin angle) | angle <- [0, pi/10 .. 2 * pi]]
         _ -> []
 

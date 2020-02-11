@@ -7,9 +7,9 @@ import           Reanimate.Svg
 import           Reanimate.Constants
 
 circlePlot :: Int -- ^ Pixels in the X-axis.
-           -> (Double -- ^ Angle in radians
-            -> Double -- ^ Radius in percent
-            -> PixelRGBA8) -> Tree
+           -> (Double -> Double -> PixelRGBA8)
+              -- ^ Angle and radius in radians percent respectively.
+           -> Tree
 circlePlot density fn =
     scaleToHeight screenHeight $ flipYAxis $
     embedImage $ generateImage gen density density

@@ -30,6 +30,7 @@ data-files:           viewer-elm/dist/index.html
                       data/CIE_XYZ.csv
                       data/cone_sensitivity_lms.csv
                       data/*.svg
+                      data/*.jpg
 
 Source-Repository head
     Type:      git
@@ -69,6 +70,7 @@ library
                       Reanimate.Parameters
                       Reanimate.Chiphunk
                       Reanimate.PolyShape
+                      Reanimate.GeoProjection
                       Reanimate.Builtin.Documentation
                       Reanimate.Builtin.Images
   other-modules:      Reanimate.Cache
