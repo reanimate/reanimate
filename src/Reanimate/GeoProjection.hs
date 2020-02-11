@@ -419,8 +419,9 @@ wernerP = moveTopP 0.23 $ Projection forward inverse
 -- | <<docs/gifs/doc_bonneP.gif>>
 bonneP :: Double -> Projection
 bonneP 0 = sinusoidalP
-bonneP phi_0 = moveTopP (-0.17) $ scaleP 1 0.65 $ Projection forward inverse
+bonneP phi_0 = moveTopP (-0.17*factor) $ scaleP 1 (fromToS 1 0.65 factor) $ Projection forward inverse
   where
+    factor = sin phi_0 / sin (pi/4)
     forward (LonLat lam phi ) = XYCoord ((x+pi)/tau) ((y+halfPi)/pi)
       where
         cotPhi0 = cot phi_0
