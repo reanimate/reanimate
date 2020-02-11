@@ -37,7 +37,7 @@ import           Codec.Picture
 import           Codec.Picture.Types
 import           Control.Monad
 import           Control.Monad.ST
-import           Data.List
+-- import           Data.List
 import           Data.Maybe
 import           Debug.Trace
 import           Reanimate
@@ -82,6 +82,7 @@ isInWorld :: Projection -> XYCoord -> Bool
 isInWorld p coord =
     odd $ length $ isInWorld' p coord
 
+isInWorld' :: Projection -> XYCoord -> [(Double, Double)]
 isInWorld' p (XYCoord x y) =
     [ (x1, y1)
     | (XYCoord x1 y1, XYCoord x2 y2) <- world
@@ -105,18 +106,19 @@ worldPolygon p =
         , apply (fromToS x1 x2 ((n+1)/steps), fromToS y1 y2 ((n+1)/steps)))
       | n <- [0..steps-1]]
 
--- findNearestPixel :: Image PixelRGB8 -> Int -> Int -> ST s PixelRGB8
-findNearestPixel src w h x y = worker
-    [ (x', y')
+findNearestPixel :: MutableImage s PixelRGBA8 -> Int -> Int -> Int -> Int -> ST s PixelRGBA8
+findNearestPixel src w h srcX srcY = worker
+    [ (x, y)
     | n <- [1..]
-    , x' <- [x-n .. x+n]
-    , y' <- if x' == x-n || x' == x+n then [y-n,y+n] else [y-n .. y+n]
-    , x' >= 0
-    , y' >= 0
-    , x' < w
-    , y' < h
+    , x <- [srcX-n .. srcY+n]
+    , y <- if x == srcX-n || x == srcX+n then [srcY-n,srcY+n] else [srcY-n .. srcY+n]
+    , x >= 0
+    , y >= 0
+    , x < w
+    , y < h
     ]
   where
+    worker [] = undefined
     worker ((x,y):rest) = do
       this <- readPixel src x y
       if this == blank
