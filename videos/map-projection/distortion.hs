@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings, ApplicativeDo #-}
 module Main(main) where
 
+import qualified Data.Text as T
 import           Codec.Picture
 import           Codec.Picture.Jpg
 import           Codec.Picture.Types
@@ -25,36 +26,14 @@ import           Data.Foldable
 import           Control.Lens            ((^.))
 
 
-{-
-  1. equirectangular
-  2. lambert
-  3. mercator
-  4. mollweide
-  5. hammer
-  6. sinusoidal
--}
 main :: IO ()
 main = seq equirectangular $ reanimate $ sceneAnimation $ do
     prevProj <- newVar equirectangularP
     txtVar <- newVar "Equirectangular"
-    txtS <- newSprite $ do
-      txt <- unVar txtVar
-      pure $
-        let ref = scale 1.5 $ latex "\\texttt{Tyg}"
-            glyphs = scale 1.5 $ latex ("\\texttt{" <> txt <> "}")
-            svgTxt = mkGroup
-              [ withStrokeColor "black" $ withFillColor "white" $
-                glyphs
-              , withFillColor "white" $
-                glyphs ]
-        in
-          translate (screenWidth*0.01) (screenHeight*0.02) $
-          translate (-screenWidth/2) (-screenHeight/2) $
-          translate 0 (svgHeight ref) svgTxt
+    txtS <- newSprite $ renderLabel <$> unVar txtVar
     txtFade <- spriteVar txtS 1 withGroupOpacity
     spriteZ txtS 2
-    let pushMerge = pushMerge' (\a b t -> project src $ mergeP a b t)
-        pushInterp = pushMerge' (\a b t -> interpP src a b t)
+    let pushInterp = pushMerge' (\a b t -> interpP src a b t)
         pushMerge' fn label proj = do
           fork $ do
             tweenVar txtFade 0.2 $ \v -> fromToS v 0 . curveS 2
@@ -68,6 +47,15 @@ main = seq equirectangular $ reanimate $ sceneAnimation $ do
                 embedImage $ fn prev proj t
               , grid $ mergeP prev proj t ]
           writeVar prevProj proj
+        pushT mkLabel mkProj = do
+          fork $ tweenVar txtVar morphT $ \v t -> if t > 0 then mkLabel t else v
+          play $ pauseAtEnd waitT $ signalA (curveS 2) $
+            mkAnimation morphT $ \t ->
+              mkGroup $
+              [ scaleToSize screenWidth screenHeight $
+                embedImage $ project src $ mkProj t
+              , grid $ mkProj t ]
+          writeVar prevProj (mkProj 1)
 
     play $ staticFrame (waitT/2) $
       mkGroup
@@ -75,48 +63,53 @@ main = seq equirectangular $ reanimate $ sceneAnimation $ do
         embedImage $ project src equirectangularP
       , grid equirectangularP ]
 
-    pushInterp "Lambert" lambertP
+    -- pushInterp "Lambert" lambertP
+    -- 1
     pushInterp "Web Mercator" mercatorP
+    -- 2
     pushInterp "Mollweide" mollweideP
-    pushInterp "Hammer" hammerP
+    -- 3
     pushInterp "Bottomley 30\\degree" (bottomleyP (toRads 30))
-    pushInterp "Sinusoidal" sinusoidalP
+    -- 4
     pushInterp "Werner" wernerP
+    -- 5
     pushInterp "Bonne 45\\degree" (bonneP (toRads 45))
-    pushInterp "Eckert v1" eckert1P
-    pushInterp "Eckert v3" eckert3P
-    pushInterp "Eckert v5" eckert5P
-    pushInterp "Collignon" collignonP
+    pushT
+      (\t -> "Bonne " <> T.pack (show $ round $ fromToS 45 0 t) <> "\\degree")
+      (bonneP . toRads . fromToS 45 0)
+    -- 6
+    pushInterp "Eckert I" eckert1P
+    eckert <- newSpriteSVG $ renderLabel "Eckert"
+    spriteZ eckert 2
+    pushInterp "Eckert III" eckert3P
+    pushInterp "Eckert IV" eckert5P
+    destroySprite eckert
+    -- 7
     pushInterp "Fahey" faheyP
+    -- 8
+    pushInterp "August" augustP
+    -- 9
+    pushInterp "Foucaut" foucautP
+    -- 10
+    pushInterp "Lagrange" lagrangeP
     pushInterp "Equirectangular" equirectangularP
-    -- pushInterp "Orthographic" (orthoP orthoStart 0)
-    --
-    -- play $ pauseAtEnd 1 $ signalA (curveS 2) $ mkAnimation orthoRotT $ \t ->
-    --   mkGroup
-    --   [ scaleToSize screenWidth screenHeight $
-    --     embedImage $ project src $ orthoP (fromToS orthoStart orthoEnd t) 0
-    --   , grid $ orthoP (fromToS orthoStart orthoEnd t) 0
-    --   ]
-
-    -- let toFahey = animate $ \t ->
-    --       mkGroup
-    --       [ scaleToSize screenWidth screenHeight $
-    --         embedImage $ project src $ mergeP (orthoP orthoEnd 0) faheyP t
-    --       , grid $ mergeP (orthoP orthoEnd 0) faheyP t ]
-    --     toEqui = animate $ \t ->
-    --       scaleToSize screenWidth screenHeight $
-    --       embedImage $ project src $ mergeP faheyP equirectangularP t
-    -- play $ setDuration orthoOutT $ signalA (curveS 2) (toFahey `seqA` toEqui)
   where
     src = equirectangular
     waitT = 1
     morphT = 1
-    orthoOutT = 3
-    orthoStart = -halfPi
-    orthoEnd = quartPi
-    orthoRotT = 4
-    quartPi = pi/4
-    halfPi = pi/2
+
+renderLabel label =
+  let ref = scale 1.5 $ latex "\\texttt{Tygv123}"
+      glyphs = scale 1.5 $ latex ("\\texttt{" <> label <> "}")
+      svgTxt = mkGroup
+        [ withStrokeColor "black" $ withFillColor "white" $
+          glyphs
+        , withFillColor "white" $
+          glyphs ]
+  in
+    translate (screenWidth*0.01) (screenHeight*0.02) $
+    translate (-screenWidth/2) (-screenHeight/2) $
+    translate 0 (svgHeight ref) svgTxt
 
 equirectangular :: Image PixelRGB8
 equirectangular = unsafePerformIO $ do
@@ -139,16 +132,17 @@ grid p =
    $
   translate (-1/2) (-1/2) $
   withStrokeWidth strokeWidth $
-  withStrokeColorPixel (PixelRGBA8 0x50 0x50 0x50 0x0) $
+
   withFillOpacity 0 $
   mkGroup
   [ mkGroup []
-  , withFillOpacity 0 $ mkGroup
+  , withStrokeColorPixel (PixelRGBA8 0x90 0x90 0x90 0x0) $
+    withFillOpacity 0 $ mkGroup
     [ geometryToSVG p geo
     | geo <- landBorders
     ]
-  , withStrokeColor "grey" $ mkGroup $ map mkLinePath $ latitudeLines p
-  , withStrokeColor "grey" $ mkGroup $ map mkLinePath $ longitudeLines p
+  , withStrokeColorPixel (PixelRGBA8 0x30 0x30 0x30 0x0) $
+    mkGroup $ map mkLinePath (latitudeLines p ++ longitudeLines p)
   ]
   where
     strokeWidth = defaultStrokeWidth * 0.02
@@ -172,7 +166,7 @@ latitudeLines p =
     [ latitudeLine (fromToS (-pi) pi (n/(latLines*2)))
     | n <- [0 .. latLines*2]]
   where
-    latLines = 7
+    latLines = 4
     segments = 100
     maxLat = atan (sinh pi)
     latitudeLine lam =
@@ -188,7 +182,7 @@ longitudeLines p =
     [ longitudeLine (fromToS (-halfPi) halfPi (n/(lonLines*2)))
     | n <- [0 .. lonLines*2]]
   where
-    lonLines = 7
+    lonLines = 4
     segments = 100
     maxLat = atan (sinh pi)
     longitudeLine phi =
