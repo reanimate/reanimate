@@ -95,8 +95,8 @@ main = seq equirectangular $ reanimate $ sceneAnimation $ do
     pushInterp "Equirectangular" equirectangularP
   where
     src = equirectangular
-    waitT = 1
-    morphT = 1
+    waitT = 2
+    morphT = 2
 
 renderLabel label =
   let ref = scale 1.5 $ latex "\\texttt{Tygv123}"
