@@ -101,7 +101,7 @@ render ani target format width height fps = do
                       ,"-vf", "fps="++show fps++",scale=320:-1:flags=lanczos,palettegen"
                       ,"-t", showFFloat Nothing (duration ani) ""
                       , palette ]
-        runCmd ffmpeg ["-i", template, "-y"
+        runCmd ffmpeg ["-framerate", show fps,"-i", template, "-y"
                       ,"-i", palette
                       ,"-progress", progress
                       ,"-filter_complex"
