@@ -28,39 +28,24 @@ import           Control.Lens            ((^.))
 
 main :: IO ()
 main = seq equirectangular $ reanimate $ sceneAnimation $ do
+    newSpriteSVG $ mkBackground "white"
     prevProj <- newVar equirectangularP
-    let pushInterp = pushMerge' (\a b t -> interpP src a b t)
-        pushMerge' fn label proj = do
+    let push label proj = do
           prev <- readVar prevProj
           play $ pauseAtEnd waitT $ signalA (curveS 2) $
             mkAnimation morphT $ \t ->
               mkGroup $
-              [ scaleToSize screenWidth screenHeight $
-                embedImage $ fn prev proj t
-              , grid $ mergeP prev proj t ]
+              [ grid $ mergeP prev proj t ]
           writeVar prevProj proj
-        pushT mkLabel mkProj = do
-          play $ pauseAtEnd waitT $ signalA (curveS 2) $
-            mkAnimation morphT $ \t ->
-              mkGroup $
-              [ scaleToSize screenWidth screenHeight $
-                embedImage $ project src $ mkProj t
-              , grid $ mkProj t ]
-          writeVar prevProj (mkProj 1)
 
-    play $ staticFrame (waitT/2) $
-      mkGroup
-      [ scaleToSize screenWidth screenHeight $
-        embedImage $ project src equirectangularP
-      , grid equirectangularP ]
+    -- play $ staticFrame morphT $
+    --   mkGroup
+    --   [ grid equirectangularP ]
 
-    -- pushInterp "Lambert" lambertP
-    -- 1
-    pushInterp "Web Mercator" mercatorP
-    -- 2
-    pushInterp "Mollweide" mollweideP
-    -- 3
-    -- pushInterp "Bottomley 30\\degree" (bottomleyP (toRads 30))
+    -- push "Lambert" lambertP
+    push "Web Mercator" mercatorP
+    push "Mollweide" mollweideP
+    -- push "Bottomley 30\\degree" (bottomleyP (toRads 30))
     -- 4
     -- pushInterp "Werner" wernerP
     -- 5
@@ -73,14 +58,17 @@ main = seq equirectangular $ reanimate $ sceneAnimation $ do
     -- pushInterp "Eckert III" eckert3P
     -- pushInterp "Eckert IV" eckert5P
     -- 7
-    pushInterp "Fahey" faheyP
+    -- push "Fahey" faheyP
     -- 8
-    -- pushInterp "August" augustP
+    push "August" augustP
     -- 9
-    pushInterp "Foucaut" foucautP
+    push "Foucaut" foucautP
     -- 10
-    pushInterp "Lagrange" lagrangeP
-    pushInterp "Equirectangular" equirectangularP
+    push "Lagrange" lagrangeP
+
+    prev <- readVar prevProj
+    play $ signalA (curveS 2) $
+      mkAnimation morphT $ grid . mergeP prev equirectangularP
   where
     src = equirectangular
     waitT = 0
@@ -100,27 +88,27 @@ toRads dec = dec/180 * pi
 grid :: Projection -> SVG
 -- grid p = None
 grid p =
-
+  withStrokeWidth strokeWidth $
+  lowerTransformations $
   scaleXY
     (screenWidth)
     (screenHeight)
    $
   translate (-1/2) (-1/2) $
-  withStrokeWidth strokeWidth $
 
   withFillOpacity 0 $
   mkGroup
   [ mkGroup []
-  , withStrokeColorPixel (PixelRGBA8 0x90 0x90 0x90 0x0) $
+  , withStrokeColor "black" $
     withFillOpacity 0 $ mkGroup
     [ geometryToSVG p geo
     | geo <- landBorders
     ]
-  , withStrokeColorPixel (PixelRGBA8 0x30 0x30 0x30 0x0) $
+  , withStrokeColor "black" $
     mkGroup $ map mkLinePath (latitudeLines p ++ longitudeLines p)
   ]
   where
-    strokeWidth = defaultStrokeWidth * 0.02
+    strokeWidth = defaultStrokeWidth * 0.5
 
 worldLine :: Projection -> SVG
 worldLine p =
@@ -141,7 +129,7 @@ latitudeLines p =
     [ latitudeLine (fromToS (-pi) pi (n/(latLines*2)))
     | n <- [0 .. latLines*2]]
   where
-    latLines = 4
+    latLines = 2
     segments = 100
     maxLat = atan (sinh pi)
     latitudeLine lam =
@@ -155,9 +143,9 @@ longitudeLines p =
     longitudeLine maxLat :
     longitudeLine (-maxLat) :
     [ longitudeLine (fromToS (-halfPi) halfPi (n/(lonLines*2)))
-    | n <- [0 .. lonLines*2]]
+    | n <- [1 .. lonLines*2-1] ]
   where
-    lonLines = 4
+    lonLines = 2
     segments = 100
     maxLat = atan (sinh pi)
     longitudeLine phi =
@@ -171,7 +159,7 @@ halfPi = pi/2
 
 landBorders :: [(GeospatialGeometry)]
 landBorders = unsafePerformIO $ do
-  Just geo <- decodeFileStrict "land.geojson"
+  Just geo <- decodeFileStrict "countries.json"
   return
     [ (feature ^. geometry)
     | feature <- toList $ geo ^. geofeatures
