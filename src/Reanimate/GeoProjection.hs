@@ -445,15 +445,17 @@ bonneP phi_0 = moveTopP (-0.17*factor) $ scaleP 1 (fromToS 1 0.65 factor) $ Proj
 orthoP :: Double -> Double -> Projection
 orthoP lam_0 phi_0 = Projection forward inverse
   where
+    -- forward (LonLat lam phi)
+    --   | (lam-lam_0) < -halfPi || (lam-lam_0) > halfPi ||
+    --     (phi-phi_0) < -halfPi || (phi-phi_0) > halfPi
+    --     = XYCoord (0/0) (0/0)
     forward (LonLat lam phi)
-      | (lam+lam_0) < -halfPi || (lam+lam_0) > halfPi ||
-        (phi+phi_0) < -halfPi/2 || (phi+phi_0) > halfPi/2
-        = XYCoord (0/0) (0/0)
-    forward (LonLat lam phi) =
-        XYCoord ((x+(16/9))/(16/9*2)) ((y+1)/2)
+        | cosc < 0  = XYCoord (0/0) (0/0)
+        | otherwise = XYCoord ((x+(16/9))/(16/9*2)) ((y+1)/2)
       where
         x = cos phi * sin (lam - lam_0)
         y = cos phi_0 * sin phi - sin phi_0 * cos phi * cos (lam - lam_0)
+        cosc = sin phi_0 * sin phi + cos phi_0 * cos phi * cos (lam-lam_0)
     inverse (XYCoord x' y') = LonLat lam phi
       where
         x = fromToS (-16/9) (16/9) x'
@@ -461,8 +463,8 @@ orthoP lam_0 phi_0 = Projection forward inverse
         lam = wrap (-pi) (pi) $
           lam_0 + atan2 (x * sin c) (rho * cos c * cos phi_0 - y * sin c * sin phi_0)
         phi = wrap (-pi/2) (pi/2) $
-          asin ((cos c * sin phi_0 + y * sin c * cos phi_0)/rho)
-        rho = sqrt (x**2 + y**2)
+          asin (cos c * sin phi_0 + (y * sin c * cos phi_0)/rho)
+        rho = sqrt (x*x + y*y)
         c = asin rho
         wrap lower upper v
           | v > upper = v-upper+lower
