@@ -66,6 +66,7 @@ animation source code, the browser window will automatically reload and show the
 
 The example gifs are displayed at 25 fps.
 
+![Map projections](gifs/map.gif)
 ![LaTeX wheel](gifs/latex_wheel.gif)
 ![Sunflower](gifs/sunflower.gif)
 ![Tangent](gifs/tangent.gif)
