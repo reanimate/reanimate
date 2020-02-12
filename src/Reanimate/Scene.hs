@@ -193,7 +193,7 @@ newSprite render = do
     return $ \d absT ->
       let relD = (if spriteDur < 0 then d else spriteDur)-now
           relT = absT-now in
-      if relT < 0 || relD < relT
+      if relT < 0 || (if relD+now==d then False else relD <= relT)
         then (None, 0)
         else spriteEffect relD relT (fn absT relD relT)
   return $ Sprite now ref
