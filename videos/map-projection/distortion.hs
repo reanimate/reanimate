@@ -125,7 +125,7 @@ toRads dec = dec/180 * pi
 
 grid :: Projection -> SVG
 grid p =
-
+  lowerTransformations $
   scaleXY
     (screenWidth)
     (screenHeight)
@@ -141,11 +141,11 @@ grid p =
     [ geometryToSVG p geo
     | geo <- landBorders
     ]
-  , withStrokeColorPixel (PixelRGBA8 0x30 0x30 0x30 0x0) $
+  , withStrokeColorPixel (PixelRGBA8 0x50 0x50 0x50 0x0) $
     mkGroup $ map mkLinePath (latitudeLines p ++ longitudeLines p)
   ]
   where
-    strokeWidth = defaultStrokeWidth * 0.02
+    strokeWidth = defaultStrokeWidth*0.5
 
 worldLine :: Projection -> SVG
 worldLine p =
