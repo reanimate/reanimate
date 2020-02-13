@@ -64,11 +64,12 @@ main = seq equirectangular $ reanimate $ sceneAnimation $ do
         embedImage $ project src equirectangularP
       , grid equirectangularP ]
 
-    -- pushInterp "Lambert" lambertP
+    pushInterp "Lambert" lambertP
     -- 1
     pushInterp "Web Mercator" mercatorP
     -- 2
     pushInterp "Mollweide" mollweideP
+    pushInterp "Hammer" hammerP
     -- 3
     pushInterp "Bottomley 30\\degree" (bottomleyP (toRads 30))
     -- 4
@@ -87,6 +88,7 @@ main = seq equirectangular $ reanimate $ sceneAnimation $ do
     destroySprite eckert
     -- 7
     pushInterp "Fahey" faheyP
+    pushInterp "Collignon" collignonP
     -- 8
     pushInterp "August" augustP
     -- 9
