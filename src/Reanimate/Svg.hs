@@ -13,6 +13,7 @@ import           Graphics.SvgTree             hiding (height, line, path, use,
                                                width)
 import           Linear.V2                    hiding (angle)
 import           Reanimate.Constants
+import           Reanimate.Animation (SVG)
 import           Reanimate.Svg.Constructors
 import           Reanimate.Svg.LineCommand
 import           Reanimate.Svg.BoundingBox
@@ -156,8 +157,9 @@ svgGlyphs = worker id defaultSvg
           in concatMap (worker acc' attr') (g ^. groupChildren)
         t -> [(acc, attr, t)]
 
-{-| Convert primitive SVG shapes (like those created by 'mkCircle', 'mkRect', 'mkLine' or 'mkEllipse') into SVG path.
-    This can be useful for creating animations of these shapes being drawn progressively with 'partialSvg'.
+{-| Convert primitive SVG shapes (like those created by 'mkCircle', 'mkRect', 'mkLine' or
+    'mkEllipse') into SVG path. This can be useful for creating animations of these shapes being
+    drawn progressively with 'partialSvg'.
 
     Example:
 
@@ -210,7 +212,8 @@ pathify = mapTree worker
           let points = pg ^. polygonPoints
           in PathTree $ defaultSvg
                & drawAttributes .~ pg ^. drawAttributes
-               -- Polygon automatically connects the last point to the first. For path we must do it explicitly
+               -- Polygon automatically connects the last point to the first. For path we must do
+               -- it explicitly
                & pathDefinition .~ (pointsToPathCommands points ++ [EndPath])
         EllipseTree elip | Just (cx,cy,rx,ry) <- unpackEllipse elip ->
           PathTree $ defaultSvg
@@ -225,7 +228,8 @@ pathify = mapTree worker
       liftM3 (,,) (unpackNumber x) (unpackNumber y) (unpackNumber $ circ ^. circleRadius)
     unpackEllipse elip = do
       let (x,y) = elip ^. ellipseCenter
-      liftM4 (,,,) (unpackNumber x) (unpackNumber y) (unpackNumber $ elip ^. ellipseXRadius) (unpackNumber $ elip ^. ellipseYRadius)
+      liftM4 (,,,) (unpackNumber x) (unpackNumber y) (unpackNumber $ elip ^. ellipseXRadius)
+                  (unpackNumber $ elip ^. ellipseYRadius)
     unpackLine line = do
       let (x1,y1) = line ^. linePoint1
           (x2,y2) = line ^. linePoint2
@@ -239,9 +243,34 @@ pathify = mapTree worker
       return (x,y,w,h)
     pointsToPathCommands points = case points of
       [] -> []
-      (p:ps) -> [ MoveTo OriginAbsolute [p] 
+      (p:ps) -> [ MoveTo OriginAbsolute [p]
                 , LineTo OriginAbsolute ps ]
     unpackNumber n =
       case toUserUnit defaultDPI n of
         Num d -> Just d
         _     -> Nothing
+
+mapSvgPaths :: ([PathCommand] -> [PathCommand]) -> SVG -> SVG
+mapSvgPaths fn = mapTree worker
+  where
+    worker =
+      \case
+        PathTree path -> PathTree $
+          path & pathDefinition %~ fn
+        t -> t
+
+mapSvgLines :: ([LineCommand] -> [LineCommand]) -> SVG -> SVG
+mapSvgLines fn = mapSvgPaths (lineToPath . fn . toLineCommands)
+
+-- Only maps points in paths
+mapSvgPoints :: (RPoint -> RPoint) -> SVG -> SVG
+mapSvgPoints fn = mapSvgLines (map worker)
+  where
+    worker (LineMove p) = LineMove (fn p)
+    worker (LineBezier ps) = LineBezier (map fn ps)
+    worker (LineEnd p) = LineEnd (fn p)
+
+svgPointsToRadians :: SVG -> SVG
+svgPointsToRadians = mapSvgPoints worker
+  where
+    worker (V2 x y) = V2 (x/180*pi) (y/180*pi)

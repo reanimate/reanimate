@@ -11,7 +11,6 @@ import           Control.Lens            ((^.))
 import           Control.Monad
 import           Control.Monad.ST
 import           Data.Aeson
-import Data.Maybe
 import qualified Data.ByteString         as BS
 import           Data.Foldable
 import           Data.Geospatial         hiding (LonLat)
@@ -19,6 +18,7 @@ import           Data.LinearRing
 import qualified Data.LineString         as Line
 import           Data.Map                (Map)
 import qualified Data.Map                as Map
+import           Data.Maybe
 import qualified Data.Text               as T
 import           Graphics.SvgTree        (PathCommand (..), Tree (None))
 import           Reanimate
@@ -38,8 +38,19 @@ main = seq equirectangular $ reanimate $ sceneAnimation $ do
     bg <- newSpriteSVG $ mkBackground "white"
     spriteZ bg (-1)
     -- newSpriteSVG $ grid (orthoP 0 0)
-    play $ setDuration 2 $ animate $ \t ->
-      grid (orthoP (fromToS (-pi) pi t) 1)
+    lam <- newVar (-pi)
+    phi <- newVar 1
+    -- newSprite $
+    --   grid <$> (orthoP <$> unVar lam <*> unVar phi)
+    --tweenVar lam (3) $ \v -> fromToS v (pi) . curveS 2
+    -- tweenVar phi 3 $ \v -> fromToS v halfPi . curveS 2
+    -- tweenVar phi 3 $ \v -> fromToS v (-halfPi) . curveS 2
+    -- tweenVar phi 3 $ \v -> fromToS v halfPi . curveS 2
+    -- tweenVar phi 3 $ \v -> fromToS v (-halfPi) . curveS 2
+    -- play $ staticFrame 1 $
+    --   grid equirectangularP
+    play $ pauseAtEnd 1 $ setDuration 2 $ animate $ \t ->
+      grid $ (orthoP 0 0)
     --wait 1
   where
     src = equirectangular
@@ -81,19 +92,28 @@ grid p =
   withStrokeWidth strokeWidth $
 
   withFillOpacity 0 $
+  -- withFillColor "black" $
   mkGroup
   [ mkGroup []
-  , withStrokeColorPixel (PixelRGBA8 0x90 0x90 0x90 0x0) $
-    withStrokeColor "black" $
-    withFillOpacity 0 $ mkGroup
-    [ geometryToSVG p geo
-    | (_,geo) <- landBorders
-    ]
-  -- , withStrokeColorPixel (PixelRGBA8 0x30 0x30 0x30 0x0) $
+  , withStrokeColor "black" $
+    applyProjection p $
+    svgPointsToRadians $
+    pathify $ gen annotate
+  -- , withStrokeColorPixel (PixelRGBA8 0x90 0x90 0x90 0x0) $
   --   withStrokeColor "black" $
-  --   mkGroup $ map mkLinePath (latitudeLines p ++ longitudeLines p)
+  --   withFillOpacity 0 $ mkGroup
+  --   [ geometryToSVG p geo
+  --   | (_,geo) <- landBorders
+  --   ]
+  , withStrokeColorPixel (PixelRGBA8 0x30 0x30 0x30 0x0) $
+    withStrokeColor "black" $
+    applyProjection p $ pathify $
+    mkGroup $ map mkLinePath (gridLines 15 15)
   ]
   where
+    gen = loadFeatureCollection "countries.json"
+    annotate :: Map String Value -> SVG -> SVG
+    annotate _ svg = svg
     strokeWidth = defaultStrokeWidth * 0.3
 
 worldLine :: Projection -> SVG
@@ -110,77 +130,25 @@ worldLine p =
       let XYCoord x y = projectionForward p $ LonLat lam phi
       in (x, y)
 
-gridLines :: Projection -> Int -> Int -> [[(Double, Double)]]
-gridLines p latLines lonLines =
-    longitudeLine maxLat :
-    longitudeLine (-maxLat) :
-    map longitudeLine (stepper (-halfPi) halfPi lonLines) ++ 
+gridLines :: Int -> Int -> [[(Double, Double)]]
+gridLines latLines lonLines =
+    map longitudeLine (stepper (-halfPi) halfPi lonLines) ++
     map latitudeLine (stepper (-pi) pi latLines)
   where
-    segments = 100
+    segments = 2
     stepper from to nMax =
-      [ fromToS from to (fromIntegral n / fromIntegral nMax)
-      | n <- [0 .. nMax] ]
-    maxLat = atan (sinh pi)
+      [ fromToS from to (fromIntegral n / fromIntegral (nMax+1))
+      | n <- [1 .. nMax] ]
+    maxLat = halfPi -- atan (sinh pi)
     latitudeLine lam =
-      [ (x, y)
+      [ (lam, phi)
       | n <- [0..segments]
-      , let phi = fromToS (-maxLat) maxLat (n/segments)
-      , let XYCoord x y = projectionForward p $ LonLat lam phi
-      , not (isNaN x || isNaN y) ]
+      , let phi = fromToS (-maxLat) maxLat (n/segments) ]
     longitudeLine phi =
-      [ (x, y)
+      [ (lam, phi)
       | n <- [0..segments]
-      , let lam = fromToS (-pi) pi (n/segments)
-      , let XYCoord x y = projectionForward p $ LonLat lam phi
-      , not (isNaN x || isNaN y) ]
+      , let lam = fromToS (-pi) pi (n/segments) ]
 
 
 halfPi :: Double
 halfPi = pi/2
-
-landBorders :: [([String], GeospatialGeometry)]
-landBorders = unsafePerformIO $ do
-  -- Just geo <- decodeFileStrict "land.geojson"
-  Just geo <- decodeFileStrict "countries.json"
-  Just geoStates <- decodeFileStrict "states.json"
-  return
-    [ (Map.keys p, feature ^. geometry)
-    | feature <- toList (geo ^. geofeatures) ++ toList (geoStates ^. geofeatures)
-    , let p = feature ^. properties :: Map String Value
-    -- , Map.lookup "admin" p == Just "United States of America"
-    -- , Map.lookup "adm0_name" p == Just "United States of America"
-    -- , Map.lookup "name" p /= Just "Alaska"
-    -- , Map.lookup "name" p /= Just "Hawaii"
-    -- , Map.lookup "TYPE" p == Just "Dependency"
-    ]
-
--- drawFeatureCollection :: GeoFeatureCollection a -> (a -> SVG -> SVG) -> SVG
--- loadFeatureColection :: FromJSON a => FilePath -> (a -> SVG -> SVG) -> SVG
--- modifyPoints :: ((Double,Double) -> (Double, Double)) -> SVG -> SVG
--- pointsToRadians :: SVG -> SVG
--- applyProjection :: Projection -> SVG -> SVG
-
-geometryToSVG :: Projection -> GeospatialGeometry -> SVG
-geometryToSVG p geometry =
-  case geometry of
-    MultiPolygon mpolygon ->
-      mkGroup $ map (geometryToSVG p . Polygon) $ toList (splitGeoMultiPolygon mpolygon)
-    Polygon poly ->
-      mkGroup
-      [ mkLinePath section
-      | section <- pure
-          [ (x', y')
-          | PointXY x y <- map retrieveXY (fromLinearRing (head (toList (poly^.unGeoPolygon))))
-          , let XYCoord x' y' = projectionForward p $ LonLat (x/180*pi) (y/180*pi)
-          ]
-      ]
-    Line line ->
-      mkLinePath
-      [ (x', y')
-      | PointXY x y <- map retrieveXY (Line.fromLineString (line ^. unGeoLine))
-      , let XYCoord x' y' = projectionForward p $ LonLat (x/180*pi) (y/180*pi)
-      ]
-    MultiLine ml ->
-      mkGroup $ map (geometryToSVG p . Line) $ toList (splitGeoMultiLine ml)
-    _ -> None

@@ -86,7 +86,8 @@ library
                        cubicbezier, websockets,
                        hashable, fsnotify, open-browser, random-shuffle, base64-bytestring,
                        vector, colour, cassava, ansi-wl-pprint, here, temporary,
-                       optparse-applicative, chiphunk >= 0.1.2.1
+                       optparse-applicative, chiphunk >= 0.1.2.1,
+                       geojson, aeson
   ghc-options: -Wall
 
 test-suite spec

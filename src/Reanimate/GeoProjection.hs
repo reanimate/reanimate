@@ -31,16 +31,32 @@ module Reanimate.GeoProjection
   , faheyP
   , foucautP
   , lagrangeP
+    -- * GeoJSON helpers
+  , drawFeatureCollection -- :: GeoFeatureCollection a -> (a -> SVG -> SVG) -> SVG
+  , loadFeatureCollection -- :: FromJSON a => FilePath -> (a -> SVG -> SVG) -> SVG
+  , applyProjection -- :: Projection -> SVG -> SVG
+  , renderGeometry
   ) where
 
 import           Codec.Picture
 import           Codec.Picture.Types
+import           Control.Lens        ((^.))
 import           Control.Monad
 import           Control.Monad.ST
--- import           Data.List
+import           Data.Aeson
+import           Data.Foldable
+import           Linear.V2                    hiding (angle)
+import Linear (lerp, distance)
+import           Data.Geospatial     hiding (LonLat)
+import           Data.LinearRing
+import qualified Data.LineString     as Line
 import           Data.Maybe
 import           Debug.Trace
+import           Graphics.SvgTree    (Tree (None))
 import           Reanimate
+import           Reanimate.Svg
+import           System.IO.Unsafe
+
 
 -- Constants
 halfPi, sqrtPi, epsilon, tau :: Double
@@ -405,7 +421,7 @@ wernerP = moveTopP 0.23 $ Projection forward inverse
         XYCoord ((x+pi)/tau) ((y+pi/2)/pi)
       where
         rho = pi/2 - phi
-        e = lam * sin rho / rho
+        e = if rho == 0 then rho else lam * sin rho / rho
         x = rho * sin e
         y = pi/2 - rho * cos e
     inverse (XYCoord x' y') = LonLat lam phi
@@ -450,7 +466,14 @@ orthoP lam_0 phi_0 = Projection forward inverse
     --     (phi-phi_0) < -halfPi || (phi-phi_0) > halfPi
     --     = XYCoord (0/0) (0/0)
     forward (LonLat lam phi)
-        | cosc < 0  = XYCoord (0/0) (0/0)
+        | cosc < 0  =
+            let ang = atan2 y x
+                xV = cos ang
+                yV = sin ang
+                xPos = 7/32 + ((xV+1)/2 * 9/16)
+            in --trace (show (x,y)) $
+              XYCoord xPos ((yV+1)/2)
+            --XYCoord (0/0) (0/0)
         | otherwise = XYCoord ((x+(16/9))/(16/9*2)) ((y+1)/2)
       where
         x = cos phi * sin (lam - lam_0)
@@ -671,3 +694,86 @@ lagrangeP = Projection forward inverse
         t' = ((1+t) / (1-t)) ** (1/n)
         lam = atan2 (2*x) (1-x2-y2) / n
         phi = asin ((t'-1)/(t'+1))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+drawFeatureCollection :: GeoFeatureCollection a -> (a -> SVG -> SVG) -> SVG
+drawFeatureCollection geo fn = mkGroup
+  [ fn (feature ^. properties) $ renderGeometry (feature ^. geometry)
+  | feature <- toList (geo ^. geofeatures)
+  ]
+
+{-# INLINE loadFeatureCollection #-}
+loadFeatureCollection :: FromJSON a => FilePath -> (a -> SVG -> SVG) -> SVG
+loadFeatureCollection path = unsafePerformIO $ do
+  mbGeo <- decodeFileStrict path
+  case mbGeo of
+    Nothing  -> error $ "loadFeatureCollection: Invalid GeoJSON: " ++ path
+    Just geo -> return (drawFeatureCollection geo)
+
+-- drawFeatureCollection :: GeoFeatureCollection a -> (a -> SVG -> SVG) -> SVG
+-- loadFeatureColection :: FromJSON a => FilePath -> (a -> SVG -> SVG) -> SVG
+-- modifyPoints :: ((Double,Double) -> (Double, Double)) -> SVG -> SVG
+-- pointsToRadians :: SVG -> SVG
+-- applyProjection :: Projection -> SVG -> SVG
+
+renderGeometry :: GeospatialGeometry -> SVG
+renderGeometry shape =
+  case shape of
+    MultiPolygon mpolygon ->
+      mkGroup $ map (renderGeometry . Polygon) $ toList (splitGeoMultiPolygon mpolygon)
+    Polygon poly ->
+      mkGroup
+      [ mkLinePath section
+      | section <- pure
+          [ (x, y)
+          | PointXY x y <- map retrieveXY (fromLinearRing (head (toList (poly^.unGeoPolygon))))
+          ]
+      ]
+    Line line ->
+      mkLinePath
+      [ (x, y)
+      | PointXY x y <- map retrieveXY (Line.fromLineString (line ^. unGeoLine))
+      ]
+    MultiLine ml ->
+      mkGroup $ map (renderGeometry . Line) $ toList (splitGeoMultiLine ml)
+    _ -> None
+
+
+applyProjection :: Projection -> SVG -> SVG
+applyProjection p = mapSvgLines start
+  where
+    start (LineMove p:rest) = LineMove (proj p) : worker p rest
+    start _ = []
+    worker a (LineEnd b : rest) =
+      let (p:ps) = reverse $ drop 1 $ mkChunks a b
+      in map (\v -> LineBezier [v]) (map proj $ reverse ps) ++ LineEnd (proj p) : start rest
+    worker a (LineBezier [b] : rest) =
+      let (p:ps) = reverse $ drop 1 $ mkChunks a b
+      in map (\v -> LineBezier [v]) (map proj $ reverse ps) ++ LineBezier [proj p] : worker p rest
+    worker _ (LineBezier ps : rest) =
+      LineBezier (map proj ps) : worker (last ps) rest
+    worker _ [] = []
+    tolerance = 0.01
+
+    proj (V2 lam phi) =
+      case projectionForward p $ LonLat lam phi of
+        XYCoord x y -> V2 x y
+    mkChunks a b =
+      let midway = lerp 0.5 a b in
+      if distance (proj a) (proj b) < tolerance
+        then [a, b]
+        else mkChunks a midway ++ drop 1 (mkChunks midway b)
