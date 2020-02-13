@@ -97,7 +97,7 @@ hasInkscape = checkMinVersion minVersion <$> inkscapeVersion
 hasConvert :: IO (Either String String)
 hasConvert = checkMinVersion minVersion <$> convertVersion
   where
-    minVersion = Version [7,0,0] []
+    minVersion = Version [6,9,0] []
 
 ffmpegVersion :: IO (Maybe Version)
 ffmpegVersion = extractVersion "ffmpeg" ["-version"] $ \line ->
