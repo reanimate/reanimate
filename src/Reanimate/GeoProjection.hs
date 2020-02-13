@@ -54,7 +54,6 @@ import           Data.Maybe
 import           Debug.Trace
 import           Graphics.SvgTree    (Tree (None))
 import           Reanimate
-import           Reanimate.Svg
 import           System.IO.Unsafe
 
 
@@ -756,16 +755,17 @@ renderGeometry shape =
 applyProjection :: Projection -> SVG -> SVG
 applyProjection p = mapSvgLines start
   where
-    start (LineMove p:rest) = LineMove (proj p) : worker p rest
+    start (LineMove x:rest) = LineMove (proj x) : worker x rest
     start _ = []
     worker a (LineEnd b : rest) =
-      let (p:ps) = reverse $ drop 1 $ mkChunks a b
-      in map (\v -> LineBezier [v]) (map proj $ reverse ps) ++ LineEnd (proj p) : start rest
+      let (x:xs) = reverse $ drop 1 $ mkChunks a b
+      in map (\v -> LineBezier [v]) (map proj $ reverse xs) ++ LineEnd (proj x) : start rest
     worker a (LineBezier [b] : rest) =
-      let (p:ps) = reverse $ drop 1 $ mkChunks a b
-      in map (\v -> LineBezier [v]) (map proj $ reverse ps) ++ LineBezier [proj p] : worker p rest
+      let (x:xs) = reverse $ drop 1 $ mkChunks a b
+      in map (\v -> LineBezier [v]) (map proj $ reverse xs) ++ LineBezier [proj x] : worker x rest
     worker _ (LineBezier ps : rest) =
       LineBezier (map proj ps) : worker (last ps) rest
+    worker _ (LineMove x:rest) = LineMove (proj x) : worker x rest
     worker _ [] = []
     tolerance = 0.01
 
