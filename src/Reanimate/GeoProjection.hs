@@ -457,8 +457,8 @@ bonneP phi_0 = moveTopP (-0.17*factor) $ scaleP 1 (fromToS 1 0.65 factor) $ Proj
         lam = rho / cos phi * atan2 x (cotPhi0-y)
 
 -- | <<docs/gifs/doc_orthoP.gif>>
-orthoP :: Double -> Double -> Projection
-orthoP lam_0 phi_0 = Projection forward inverse
+orthoP :: LonLat -> Projection
+orthoP (LonLat lam_0 phi_0) = Projection forward inverse
   where
     -- forward (LonLat lam phi)
     --   | (lam-lam_0) < -halfPi || (lam-lam_0) > halfPi ||
@@ -768,12 +768,13 @@ applyProjection p = mapSvgLines start
     worker _ (LineMove x:rest) = LineMove (proj x) : worker x rest
     worker _ [] = []
     tolerance = 0.01
+    lowTolerance = 0.00001
 
     proj (V2 lam phi) =
       case projectionForward p $ LonLat lam phi of
         XYCoord x y -> V2 x y
     mkChunks a b =
       let midway = lerp 0.5 a b in
-      if distance (proj a) (proj b) < tolerance
+      if distance (proj a) (proj b) < tolerance || distance a b < lowTolerance
         then [a, b]
         else mkChunks a midway ++ drop 1 (mkChunks midway b)

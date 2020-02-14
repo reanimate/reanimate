@@ -34,23 +34,57 @@ import           System.IO.Unsafe
 -}
 
 main :: IO ()
-main = seq equirectangular $ reanimate $ sceneAnimation $ do
+main = seq equirectangular $ reanimate $ pauseAtEnd 2 $
+  mapA (withStrokeColor "black") $ sceneAnimation $ do
     bg <- newSpriteSVG $ mkBackground "white"
     spriteZ bg (-1)
-    -- newSpriteSVG $ grid (orthoP 0 0)
-    lam <- newVar (-pi)
-    phi <- newVar 1
-    -- newSprite $
-    --   grid <$> (orthoP <$> unVar lam <*> unVar phi)
-    --tweenVar lam (3) $ \v -> fromToS v (pi) . curveS 2
-    -- tweenVar phi 3 $ \v -> fromToS v halfPi . curveS 2
-    -- tweenVar phi 3 $ \v -> fromToS v (-halfPi) . curveS 2
-    -- tweenVar phi 3 $ \v -> fromToS v halfPi . curveS 2
-    -- tweenVar phi 3 $ \v -> fromToS v (-halfPi) . curveS 2
-    -- play $ staticFrame 1 $
-    --   grid equirectangularP
-    play $ pauseAtEnd 1 $ setDuration 2 $ animate $ \t ->
-      grid $ (orthoP 0 0)
+    -- fork $ do
+    --   wait 2
+    --   play $ pauseAtEnd 6 $ setDuration 1 $ signalA (curveS 2) $ animate $ \t ->
+    --     translate (fromToS 0 (-6) t)
+    --               (fromToS 0 (3) t) $
+    --     america (orthoP usaLonLat)
+    -- play $ pauseAtEnd 1 $ setDuration 2 $ signalA (curveS 2) $ animate $ \t ->
+    --   grid $ orthoP $ fromToLonLat (LonLat 0 0) usaLonLat t
+    -- fork $ do
+    --   wait 2
+    --   play $ pauseAtEnd 3 $ setDuration 1 $ signalA (curveS 2) $ animate $ \t ->
+    --     translate (fromToS 0 (6) t)
+    --               (fromToS 0 (3) t) $
+    --     uk
+    -- play $ pauseAtEnd 1 $ setDuration 2 $ signalA (curveS 2) $ animate $ \t ->
+    --   grid $ orthoP $ fromToLonLat usaLonLat ukLonLat t
+    -- fork $ do
+    --   wait 2
+    --   play $ pauseAtEnd 0 $ setDuration 1 $ signalA (curveS 2) $ animate $ \t ->
+    --     translate (fromToS 0 (6) t)
+    --               (fromToS 0 (-2.5) t) $
+    --     australia
+    -- play $ pauseAtEnd 1 $ setDuration 2 $ signalA (curveS 2) $ animate $ \t ->
+    --   grid $ orthoP $ fromToLonLat ukLonLat ausLonLat t
+
+    let s = scaleP 0.75 0.75
+    play $ pauseAtEnd 1 $ animate $ \t ->
+      mkGroup
+      [ center $ withStrokeColor "red" $
+        america (mergeP (s $ orthoP usaLonLat) lambertP t)
+      , center $ america (s $ orthoP usaLonLat)
+      ]
+    play $ pauseAtEnd 1 $ animate $ \t ->
+      mkGroup
+      [ center $ withStrokeColor "red" $
+        america (mergeP lambertP mollweideP t)
+      , center $ america (s $ orthoP usaLonLat)
+      ]
+    play $ pauseAtEnd 1 $ animate $ \t ->
+      mkGroup
+      [ center $ withStrokeColor "red" $
+        america (mergeP mollweideP collignonP t)
+      , center $ america (s $ orthoP usaLonLat)
+      ]
+
+    -- play $ animate $ \t ->
+    --   grid $ orthoP $ LonLat 0 (halfPi+0.1)
     --wait 1
   where
     src = equirectangular
@@ -77,10 +111,81 @@ equirectangular = unsafePerformIO $ do
     Left err  -> error err
     Right img -> return $ convertRGB8 img
 
+usaLonLat = svgToLonLat americaE
+ukLonLat = svgToLonLat ukE
+ausLonLat = svgToLonLat australiaE
+
+svgToLonLat :: SVG -> LonLat
+svgToLonLat svg =
+    LonLat (cx / (screenWidth/2) * pi)
+           (cy / (screenHeight/2) * halfPi)
+  where
+    cx = x + w/2
+    cy = y + h/2
+    (x, y, w, h) = boundingBox svg
+
+fromToLonLat (LonLat lam1 phi1) (LonLat lam2 phi2) t =
+  LonLat (fromToS lam1 lam2 t) (fromToS phi1 phi2 t)
+
 toRads :: Double -> Double
 toRads dec = dec/180 * pi
 
+fetchCountry :: Projection -> (Map String Value -> SVG -> Maybe SVG) -> SVG
+fetchCountry p checker =
+    lowerTransformations $
+    scaleXY
+      (screenWidth)
+      (screenHeight)
+     $
+    translate (-1/2) (-1/2) $
+    withStrokeWidth strokeWidth $
 
+    withFillOpacity 0 $
+    mkGroup
+    [ mkGroup []
+    , applyProjection p $
+      svgPointsToRadians $
+      pathify $ gen annotate
+    ]
+  where
+    gen = loadFeatureCollection "countries.json"
+    annotate :: Map String Value -> SVG -> SVG
+    annotate props svg = fromMaybe None (checker props svg)
+    strokeWidth = defaultStrokeWidth * 0.3
+
+america :: Projection -> SVG
+america p = fetchCountry p $ \props svg -> do
+  "United States of America" <- Map.lookup "NAME" props
+  return $ snd $ splitGlyphs [75] svg
+
+americaE :: SVG
+americaE = fetchCountry equirectangularP $ \props svg -> do
+  "United States of America" <- Map.lookup "NAME" props
+  return $ snd $ splitGlyphs [75] svg
+
+uk :: SVG
+uk = fetchCountry (orthoP ukLonLat) $ \props svg -> do
+  name <- Map.lookup "NAME" props
+  guard (name `elem` ["United Kingdom"])
+  return svg
+
+ukE :: SVG
+ukE = fetchCountry equirectangularP $ \props svg -> do
+  "United Kingdom" <- Map.lookup "NAME" props
+  return svg
+
+australia :: SVG
+australia = fetchCountry (orthoP ausLonLat) $ \props svg -> do
+  "Australia" <- Map.lookup "NAME" props
+  return $ snd $ splitGlyphs [0] svg
+
+australiaE :: SVG
+australiaE = fetchCountry equirectangularP $ \props svg -> do
+  "Australia" <- Map.lookup "NAME" props
+  return $ snd $ splitGlyphs [0] svg
+
+-- Alaska: 16
+-- Continent: 75
 grid :: Projection -> SVG
 grid p =
   lowerTransformations $
@@ -99,49 +204,38 @@ grid p =
     applyProjection p $
     svgPointsToRadians $
     pathify $ gen annotate
-  -- , withStrokeColorPixel (PixelRGBA8 0x90 0x90 0x90 0x0) $
-  --   withStrokeColor "black" $
-  --   withFillOpacity 0 $ mkGroup
-  --   [ geometryToSVG p geo
-  --   | (_,geo) <- landBorders
-  --   ]
-  , withStrokeColorPixel (PixelRGBA8 0x30 0x30 0x30 0x0) $
-    withStrokeColor "black" $
+  , withStrokeColor "black" $
     applyProjection p $ pathify $
-    mkGroup $ map mkLinePath (gridLines 15 15)
+    mkGroup $ map mkLinePath (gridLines 8 4)
   ]
   where
     gen = loadFeatureCollection "countries.json"
     annotate :: Map String Value -> SVG -> SVG
-    annotate _ svg = svg
+    annotate props svg =
+      case Map.lookup "NAME" props of
+        Nothing -> None
+        Just name
+          | name `elem` [ "United Kingdom", "France", "Germany", "Denmark" ] ->
+            svg
+          | name `elem` [ "Australia" ] ->
+            svg -- snd $ splitGlyphs [0] svg
+          | name `elem` [ "United States of America" ] ->
+            snd $ splitGlyphs [75] svg
+          | otherwise -> None
     strokeWidth = defaultStrokeWidth * 0.3
-
-worldLine :: Projection -> SVG
-worldLine p =
-  mkLinePath $
-    map apply
-    [ (-pi, -halfPi)
-    , (-pi, halfPi)
-    , (pi, halfPi)
-    , (pi, -halfPi)
-    , (-pi, -halfPi) ]
-  where
-    apply (lam, phi) =
-      let XYCoord x y = projectionForward p $ LonLat lam phi
-      in (x, y)
 
 gridLines :: Int -> Int -> [[(Double, Double)]]
 gridLines latLines lonLines =
-    map longitudeLine (stepper (-halfPi) halfPi lonLines) ++
-    map latitudeLine (stepper (-pi) pi latLines)
+    map longitudeLine (stepper (-halfPi) halfPi (lonLines+1)) ++
+    map latitudeLine (stepper (-pi) pi (latLines))
   where
     segments = 2
     stepper from to nMax =
-      [ fromToS from to (fromIntegral n / fromIntegral (nMax+1))
-      | n <- [1 .. nMax] ]
+      [ fromToS from to (fromIntegral n / fromIntegral (nMax))
+      | n <- [0 .. nMax-1] ]
     maxLat = halfPi -- atan (sinh pi)
     latitudeLine lam =
-      [ (lam, phi)
+      [ (lam + pi/fromIntegral latLines, phi)
       | n <- [0..segments]
       , let phi = fromToS (-maxLat) maxLat (n/segments) ]
     longitudeLine phi =
