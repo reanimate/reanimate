@@ -38,6 +38,114 @@ main = seq equirectangular $ reanimate $ pauseAtEnd 2 $
   mapA (withStrokeColor "black") $ sceneAnimation $ do
     bg <- newSpriteSVG $ mkBackground "white"
     spriteZ bg (-1)
+
+-- play $ pauseAtEnd 1 $ animate $ \t ->
+--   mkGroup
+--   [ center $ withStrokeColor "red" $
+--     america (mergeP (s $ orthoP usaLonLat) lambertP t)
+--   , center $ america (s $ orthoP usaLonLat)
+--   ]
+
+    let offset = translate 0 (-screenHeight/2 * 0.25)
+        modP = scaleP 0.50 0.50
+        mapP = scaleP 0.70 0.70
+    loc <- newVar (LonLat 0 0)
+    world <- newSprite $ grid . modP . orthoP <$> unVar loc
+    spriteMap world offset
+
+    morph <- newVar 0
+    projs <- newVar (modP . orthoP, mapP equirectangularP)
+
+
+    tweenVar loc 2 $ \v -> fromToLonLat v usaLonLat . curveS 2
+    region1 <- newSprite $ do
+      pure $ offset $ america (modP $ orthoP usaLonLat)
+    region1Shadow <- newSprite $ do
+      ~(from, to) <- unVar projs
+      m <- unVar morph
+      pure (
+        translate ((-6))
+                  (3) $
+        mkGroup
+        [ center $ withStrokeColor "red" $
+          america (mergeP (from usaLonLat) to m)
+        ])
+    spriteTween region1 1 $ \t ->
+      translate (fromToS 0 (-6) t)
+                (fromToS 0 3 t) .
+      centerDelta t
+
+    tweenVar loc 2 $ \v -> fromToLonLat v ukLonLat . curveS 2
+    region2 <- newSprite $
+      pure $ offset $ uk (modP $ orthoP ukLonLat)
+    region2Shadow <- newSprite $ do
+      ~(from, to) <- unVar projs
+      m <- unVar morph
+      pure (
+        translate (0)
+                  (3) $
+        mkGroup
+        [ center $ withStrokeColor "red" $
+          uk (mergeP (from ukLonLat) to m)
+        ])
+    spriteTween region2 1 $ \t ->
+      translate (fromToS 0 0 t)
+                (fromToS 0 3 t) .
+      centerDelta t
+
+    tweenVar loc 2 $ \v -> fromToLonLat v ausLonLat . curveS 2
+    region3 <- newSprite $
+      pure $ offset $ australia (modP $ orthoP ausLonLat)
+    region3Shadow <- newSprite $ do
+      ~(from, to) <- unVar projs
+      m <- unVar morph
+      pure (
+        translate (6)
+                  (3) $
+        mkGroup
+        [ center $ withStrokeColor "red" $
+          australia (mergeP (from ausLonLat) to m)
+        ])
+    spriteTween region3 1 $ \t ->
+      translate (fromToS 0 (6) t)
+                (fromToS 0 3 t) .
+      centerDelta t
+
+    destroySprite world
+
+    mapS <- newSprite $ do
+      ~(from, to) <- unVar projs
+      m <- unVar morph
+      pure $ grid $ mergeP (from usaLonLat) to m
+    spriteMap mapS offset
+    tweenVar morph 1 $ \v t -> fromToS v 1 t
+
+    wait 1
+
+    writeVar projs (const $ mapP lambertP, mapP equirectangularP)
+    tweenVar morph 1 $ \v t -> fromToS v 0 t
+
+    wait 1
+
+    writeVar projs (const $ mapP lambertP, mapP hammerP)
+    tweenVar morph 1 $ \v t -> fromToS v 1 t
+
+    wait 1
+
+    writeVar projs (const $ mapP eckert1P, mapP hammerP)
+    tweenVar morph 1 $ \v t -> fromToS v 0 t
+
+    wait 1
+
+    writeVar projs (const $ mapP eckert1P, mapP faheyP)
+    tweenVar morph 1 $ \v t -> fromToS v 1 t
+
+    wait 1
+
+    writeVar projs (const $ mapP augustP, mapP faheyP)
+    tweenVar morph 1 $ \v t -> fromToS v 0 t
+    --wait 1
+
     -- fork $ do
     --   wait 2
     --   play $ pauseAtEnd 6 $ setDuration 1 $ signalA (curveS 2) $ animate $ \t ->
@@ -63,25 +171,25 @@ main = seq equirectangular $ reanimate $ pauseAtEnd 2 $
     -- play $ pauseAtEnd 1 $ setDuration 2 $ signalA (curveS 2) $ animate $ \t ->
     --   grid $ orthoP $ fromToLonLat ukLonLat ausLonLat t
 
-    let s = scaleP 0.75 0.75
-    play $ pauseAtEnd 1 $ animate $ \t ->
-      mkGroup
-      [ center $ withStrokeColor "red" $
-        america (mergeP (s $ orthoP usaLonLat) lambertP t)
-      , center $ america (s $ orthoP usaLonLat)
-      ]
-    play $ pauseAtEnd 1 $ animate $ \t ->
-      mkGroup
-      [ center $ withStrokeColor "red" $
-        america (mergeP lambertP mollweideP t)
-      , center $ america (s $ orthoP usaLonLat)
-      ]
-    play $ pauseAtEnd 1 $ animate $ \t ->
-      mkGroup
-      [ center $ withStrokeColor "red" $
-        america (mergeP mollweideP collignonP t)
-      , center $ america (s $ orthoP usaLonLat)
-      ]
+    -- let s = scaleP 0.75 0.75
+    -- play $ pauseAtEnd 1 $ animate $ \t ->
+    --   mkGroup
+    --   [ center $ withStrokeColor "red" $
+    --     america (mergeP (s $ orthoP usaLonLat) lambertP t)
+    --   , center $ america (s $ orthoP usaLonLat)
+    --   ]
+    -- play $ pauseAtEnd 1 $ animate $ \t ->
+    --   mkGroup
+    --   [ center $ withStrokeColor "red" $
+    --     america (mergeP lambertP mollweideP t)
+    --   , center $ america (s $ orthoP usaLonLat)
+    --   ]
+    -- play $ pauseAtEnd 1 $ animate $ \t ->
+    --   mkGroup
+    --   [ center $ withStrokeColor "red" $
+    --     america (mergeP mollweideP collignonP t)
+    --   , center $ america (s $ orthoP usaLonLat)
+    --   ]
 
     -- play $ animate $ \t ->
     --   grid $ orthoP $ LonLat 0 (halfPi+0.1)
@@ -90,6 +198,12 @@ main = seq equirectangular $ reanimate $ pauseAtEnd 2 $
     src = equirectangular
     waitT = 2
     morphT = 2
+
+centerDelta :: Double -> Tree -> Tree
+centerDelta d t = translate ((-x-w/2)*d) ((-y-h/2)*d) t
+  where
+    (x, y, w, h) = boundingBox t
+
 
 renderLabel label =
   let ref = scale 1.5 $ latex "\\texttt{Tygv123}"
@@ -159,30 +273,24 @@ america p = fetchCountry p $ \props svg -> do
   return $ snd $ splitGlyphs [75] svg
 
 americaE :: SVG
-americaE = fetchCountry equirectangularP $ \props svg -> do
-  "United States of America" <- Map.lookup "NAME" props
-  return $ snd $ splitGlyphs [75] svg
+americaE = america equirectangularP
 
-uk :: SVG
-uk = fetchCountry (orthoP ukLonLat) $ \props svg -> do
+uk :: Projection -> SVG
+uk p = fetchCountry p $ \props svg -> do
   name <- Map.lookup "NAME" props
   guard (name `elem` ["United Kingdom"])
   return svg
 
 ukE :: SVG
-ukE = fetchCountry equirectangularP $ \props svg -> do
-  "United Kingdom" <- Map.lookup "NAME" props
-  return svg
+ukE = uk equirectangularP
 
-australia :: SVG
-australia = fetchCountry (orthoP ausLonLat) $ \props svg -> do
+australia :: Projection -> SVG
+australia p = fetchCountry p $ \props svg -> do
   "Australia" <- Map.lookup "NAME" props
   return $ snd $ splitGlyphs [0] svg
 
 australiaE :: SVG
-australiaE = fetchCountry equirectangularP $ \props svg -> do
-  "Australia" <- Map.lookup "NAME" props
-  return $ snd $ splitGlyphs [0] svg
+australiaE = australia equirectangularP
 
 -- Alaska: 16
 -- Continent: 75
