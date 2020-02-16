@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns   #-}
 {-# LANGUAGE PackageImports #-}
 module Reanimate.Transform
   ( identity
@@ -26,7 +27,13 @@ fromList _             = error "Reanimate.Transform.fromList: bad input"
 transformPoint :: TMatrix -> RPoint -> RPoint
 transformPoint m (V2 x y) = V2 (a*x +c*y + e) (b*x + d*y +f)
   where
-    (a:c:e:b:d:f:_) = M.toList m
+    !a = M.unsafeGet 1 1 m
+    !c = M.unsafeGet 1 2 m
+    !e = M.unsafeGet 1 3 m
+    !b = M.unsafeGet 2 1 m
+    !d = M.unsafeGet 2 2 m
+    !f = M.unsafeGet 2 3 m
+    -- (a:c:e:b:d:f:_) = M.toList m
 
 mkMatrix :: Maybe [Transformation] -> TMatrix
 mkMatrix Nothing   = identity
