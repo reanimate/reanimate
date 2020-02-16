@@ -5,12 +5,12 @@
 
 packages:
 - completed:
-    hackage: reanimate-svg-0.9.4.0@sha256:6acada3f3fea83e8b5e8ae5c9960b2fafdde8e6a48c32f094e6aa346bc7cc226,2448
+    hackage: reanimate-svg-0.9.5.0@sha256:913c675f239b9af90c41425587ad47e65949db64b3daddde04880dfc1e659937,2507
     pantry-tree:
       size: 1117
-      sha256: 4cdd5f71443fc486f561b5a0d50b87d6890cd7fb5fbf1f8c0899b40a0e70d27e
+      sha256: 15edf93e9b776137d8920b0decc72371aece6464c2495314103e10ab49b4113e
   original:
-    hackage: reanimate-svg-0.9.4.0
+    hackage: reanimate-svg-0.9.5.0
 - completed:
     hackage: chiphunk-0.1.2.1@sha256:1e17e0e3d2fc91317e2cfcb8fd9f7add4a5038d76a4ae6b444641c0a2adec881,4619
     pantry-tree:
