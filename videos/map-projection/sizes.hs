@@ -2,6 +2,8 @@
 -- stack runghc --package reanimate
 {-# LANGUAGE ApplicativeDo     #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE RecordWildCards   #-}
 module Main(main) where
 
 import           Codec.Picture
@@ -19,10 +21,12 @@ import qualified Data.LineString         as Line
 import           Data.Map                (Map)
 import qualified Data.Map                as Map
 import           Data.Maybe
+import           Data.String.Here
 import qualified Data.Text               as T
 import           Graphics.SvgTree        (PathCommand (..), Tree (None))
 import           Reanimate
 import           Reanimate.Animation
+import           Reanimate.Blender
 import           Reanimate.GeoProjection
 import           Reanimate.Scene
 import           System.IO.Unsafe
@@ -33,167 +37,162 @@ import           System.IO.Unsafe
   Rotate
 -}
 
+earth :: FilePath
+-- earth = "earth-low.jpg"
+earth = "earth-high.jpg"
+
 main :: IO ()
-main = seq equirectangular $ reanimate $ pauseAtEnd 2 $
+main = reanimate mainScene
+
+testScene :: Animation
+testScene = sceneAnimation $ do
+    bg <- newSpriteSVG $ mkBackground "white"
+    spriteZ bg (-1)
+    -- play $ animate $ const $ scale (1/halfPi * (4/4.5)) $ scaleToSize screenWidth screenHeight $
+    --   embedImage $ project src (orthoP $ LonLat 0 0)
+    bend <- newVar 1
+    let LonLat lam phi = newzealandLonLat
+    rotX <- newVar 0
+    rotY <- newVar 0
+    draw <- newVar 0
+    _ <- newSprite $ do
+      getBend <- unVar bend
+      getRotX <- unVar rotX
+      getRotY <- unVar rotY
+      getDraw <- unVar draw
+      return $
+        scale (fromToS 1 ((9*pi)/16) getBend) $
+        mkGroup
+        [ blender (script earth getBend getRotX getRotY)
+        -- , lowerTransformations $ scale (1/halfPi * (4/4.5)) $
+        --   grid $ orthoP $ LonLat (getRotY) (getRotX)
+        ]
+    -- wait 1
+    -- tweenVar bend 1 $ \v -> fromToS v 0 . curveS 2
+    fork $ tweenVar rotY 1 $ \v -> fromToS v (lam) . curveS 2
+    tweenVar rotX 1 $ \v -> fromToS v (phi) . curveS 2
+    -- wait 1
+    fork $ tweenVar rotY 2 $ \v -> fromToS v 0 . curveS 2
+    fork $ tweenVar rotX 2 $ \v -> fromToS v 0 . curveS 2
+    wait 0.3
+    tweenVar bend 2 $ \v -> fromToS v 0 . curveS 2
+  where
+    src = equirectangular
+
+mainScene :: Animation
+mainScene = seq equirectangular $ -- takeA 10 $ dropA 20 $
   mapA (withStrokeColor "black") $ sceneAnimation $ do
     bg <- newSpriteSVG $ mkBackground "white"
     spriteZ bg (-1)
 
--- play $ pauseAtEnd 1 $ animate $ \t ->
---   mkGroup
---   [ center $ withStrokeColor "red" $
---     america (mergeP (s $ orthoP usaLonLat) lambertP t)
---   , center $ america (s $ orthoP usaLonLat)
---   ]
 
     let offset = translate 0 (-screenHeight/2 * 0.25)
-        modP = scaleP 0.50 0.50
-        mapP = scaleP 0.70 0.70
-    loc <- newVar (LonLat 0 0)
-    world <- newSprite $ grid . modP . orthoP <$> unVar loc
-    spriteMap world offset
+        orthoScale = 0.35
+        largeScale = 0.50
+    Globe{..} <- newGlobe
 
     morph <- newVar 0
-    projs <- newVar (modP . orthoP, mapP equirectangularP)
+    mapScale <- newVar orthoScale
+    projs <- newVar (orthoP, equirectangularP)
+
+    spriteModify globeSprite $ do
+      s <- unVar mapScale
+      pure $ \(svg, z) -> (scale s svg, z)
+    spriteMap globeSprite (offset)
+
+    let addRegion x y s proj lonlat = do
+          region1 <- newSpriteSVG $
+            offset $ lowerTransformations $ scale orthoScale $ proj (orthoP lonlat)
+          spriteZ region1 2
+          region1Shadow <- newSprite $ do
+            ~(from, to) <- unVar projs
+            m <- unVar morph
+            relScale <- unVar mapScale
+            pure (
+              offset $ lowerTransformations $ scale relScale $
+              mkGroup
+              [ withStrokeColor "red" $
+                proj (mergeP (from lonlat) to m)
+              ])
+          fork $ spriteTween region1Shadow 1 $ \t ->
+            translate (fromToS 0 x $ curveS 2 t)
+                      (fromToS 0 y $ curveS 2 t) .
+            centerDelta (curveS 2 t) .
+            lowerTransformations .
+            scale (fromToS 1 s $ curveS 2 t)
+          spriteTween region1 1 $ \t ->
+            translate (fromToS 0 x $ curveS 2 t)
+                      (fromToS 0 y $ curveS 2 t) .
+            centerDelta (curveS 2 t) .
+            lowerTransformations .
+            scale (fromToS 1 s $ curveS 2 t)
 
 
-    tweenVar loc 2 $ \v -> fromToLonLat v usaLonLat . curveS 2
-    region1 <- newSprite $ do
-      pure $ offset $ america (modP $ orthoP usaLonLat)
-    region1Shadow <- newSprite $ do
-      ~(from, to) <- unVar projs
-      m <- unVar morph
-      pure (
-        translate ((-6))
-                  (3) $
-        mkGroup
-        [ center $ withStrokeColor "red" $
-          america (mergeP (from usaLonLat) to m)
-        ])
-    spriteTween region1 1 $ \t ->
-      translate (fromToS 0 (-6) t)
-                (fromToS 0 3 t) .
-      centerDelta t
+    tweenVar globePosition 2 $ \v -> fromToLonLat v usaLonLat . curveS 2
+    fork $ addRegion (-5.5) 2.5 3 america usaLonLat
 
-    tweenVar loc 2 $ \v -> fromToLonLat v ukLonLat . curveS 2
-    region2 <- newSprite $
-      pure $ offset $ uk (modP $ orthoP ukLonLat)
-    region2Shadow <- newSprite $ do
-      ~(from, to) <- unVar projs
-      m <- unVar morph
-      pure (
-        translate (0)
-                  (3) $
-        mkGroup
-        [ center $ withStrokeColor "red" $
-          uk (mergeP (from ukLonLat) to m)
-        ])
-    spriteTween region2 1 $ \t ->
-      translate (fromToS 0 0 t)
-                (fromToS 0 3 t) .
-      centerDelta t
+    tweenVar globePosition 2 $ \v -> fromToLonLat v brazilLonLat . curveS 2
+    fork $ addRegion (-6) (-1) 3 brazil brazilLonLat
 
-    tweenVar loc 2 $ \v -> fromToLonLat v ausLonLat . curveS 2
-    region3 <- newSprite $
-      pure $ offset $ australia (modP $ orthoP ausLonLat)
-    region3Shadow <- newSprite $ do
-      ~(from, to) <- unVar projs
-      m <- unVar morph
-      pure (
-        translate (6)
-                  (3) $
-        mkGroup
-        [ center $ withStrokeColor "red" $
-          australia (mergeP (from ausLonLat) to m)
-        ])
-    spriteTween region3 1 $ \t ->
-      translate (fromToS 0 (6) t)
-                (fromToS 0 3 t) .
-      centerDelta t
+    tweenVar globePosition 2 $ \v -> fromToLonLat v ukLonLat . curveS 2
+    fork $ addRegion (-1) 3 6 uk ukLonLat
 
-    destroySprite world
+    tweenVar globePosition 2 $ \v -> fromToLonLat v germanyLonLat . curveS 2
+    fork $ addRegion 1 3 6 germany germanyLonLat
 
+    tweenVar globePosition 2 $ \v -> fromToLonLat v ausLonLat . curveS 2
+    fork $ addRegion 6 2.5 3 australia ausLonLat
+
+    tweenVar globePosition 2 $ \v -> fromToLonLat v newzealandLonLat . curveS 2
+    fork $ addRegion 6 (-1) 6 newzealand newzealandLonLat
+
+    fork $ tweenVar globePosition 3 $ \v -> fromToLonLat v (LonLat 0 0) . curveS 2
+    wait 1
+    fork $ tweenVar mapScale 2 $ \v -> fromToS v largeScale . curveS 2
+    fork $ tweenVar morph 2 $ \v -> fromToS v 1 . curveS 2
+    tweenVar globeBend 2 $ \v -> fromToS v 0 . curveS 2
+    destroySprite globeSprite
+
+
+    writeVar projs (const equirectangularP, equirectangularP)
     mapS <- newSprite $ do
       ~(from, to) <- unVar projs
       m <- unVar morph
-      pure $ grid $ mergeP (from usaLonLat) to m
+      relScale <- unVar mapScale
+      pure $ lowerTransformations $ scale relScale $ mkGroup
+        [ mkGroup []
+        , scaleToSize screenWidth screenHeight $
+          embedImage $ interpP src (from (LonLat 0 0)) to m
+        , grid $ mergeP (from (LonLat 0 0)) to m
+        ]
     spriteMap mapS offset
-    tweenVar morph 1 $ \v t -> fromToS v 1 t
 
     wait 1
 
-    writeVar projs (const $ mapP lambertP, mapP equirectangularP)
-    tweenVar morph 1 $ \v t -> fromToS v 0 t
+    let push proj = do
+          (_, prev) <- readVar projs
+          writeVar projs (const $ prev, proj)
+          writeVar morph 0
+          tweenVar morph 1 $ \v -> fromToS v 1 . curveS 2
+          wait 1
 
-    wait 1
+    push lambertP
+    push mercatorP
+    push mollweideP
+    push hammerP
+    push (bottomleyP $ 30/180*pi)
+    push sinusoidalP
+    push wernerP
+    push (bonneP $ 45/180*pi)
+    push augustP
+    push collignonP
+    push eckert1P
+    push eckert3P
+    push eckert5P
+    push faheyP
+    push foucautP
+    push lagrangeP
 
-    writeVar projs (const $ mapP lambertP, mapP hammerP)
-    tweenVar morph 1 $ \v t -> fromToS v 1 t
-
-    wait 1
-
-    writeVar projs (const $ mapP eckert1P, mapP hammerP)
-    tweenVar morph 1 $ \v t -> fromToS v 0 t
-
-    wait 1
-
-    writeVar projs (const $ mapP eckert1P, mapP faheyP)
-    tweenVar morph 1 $ \v t -> fromToS v 1 t
-
-    wait 1
-
-    writeVar projs (const $ mapP augustP, mapP faheyP)
-    tweenVar morph 1 $ \v t -> fromToS v 0 t
-    --wait 1
-
-    -- fork $ do
-    --   wait 2
-    --   play $ pauseAtEnd 6 $ setDuration 1 $ signalA (curveS 2) $ animate $ \t ->
-    --     translate (fromToS 0 (-6) t)
-    --               (fromToS 0 (3) t) $
-    --     america (orthoP usaLonLat)
-    -- play $ pauseAtEnd 1 $ setDuration 2 $ signalA (curveS 2) $ animate $ \t ->
-    --   grid $ orthoP $ fromToLonLat (LonLat 0 0) usaLonLat t
-    -- fork $ do
-    --   wait 2
-    --   play $ pauseAtEnd 3 $ setDuration 1 $ signalA (curveS 2) $ animate $ \t ->
-    --     translate (fromToS 0 (6) t)
-    --               (fromToS 0 (3) t) $
-    --     uk
-    -- play $ pauseAtEnd 1 $ setDuration 2 $ signalA (curveS 2) $ animate $ \t ->
-    --   grid $ orthoP $ fromToLonLat usaLonLat ukLonLat t
-    -- fork $ do
-    --   wait 2
-    --   play $ pauseAtEnd 0 $ setDuration 1 $ signalA (curveS 2) $ animate $ \t ->
-    --     translate (fromToS 0 (6) t)
-    --               (fromToS 0 (-2.5) t) $
-    --     australia
-    -- play $ pauseAtEnd 1 $ setDuration 2 $ signalA (curveS 2) $ animate $ \t ->
-    --   grid $ orthoP $ fromToLonLat ukLonLat ausLonLat t
-
-    -- let s = scaleP 0.75 0.75
-    -- play $ pauseAtEnd 1 $ animate $ \t ->
-    --   mkGroup
-    --   [ center $ withStrokeColor "red" $
-    --     america (mergeP (s $ orthoP usaLonLat) lambertP t)
-    --   , center $ america (s $ orthoP usaLonLat)
-    --   ]
-    -- play $ pauseAtEnd 1 $ animate $ \t ->
-    --   mkGroup
-    --   [ center $ withStrokeColor "red" $
-    --     america (mergeP lambertP mollweideP t)
-    --   , center $ america (s $ orthoP usaLonLat)
-    --   ]
-    -- play $ pauseAtEnd 1 $ animate $ \t ->
-    --   mkGroup
-    --   [ center $ withStrokeColor "red" $
-    --     america (mergeP mollweideP collignonP t)
-    --   , center $ america (s $ orthoP usaLonLat)
-    --   ]
-
-    -- play $ animate $ \t ->
-    --   grid $ orthoP $ LonLat 0 (halfPi+0.1)
-    --wait 1
   where
     src = equirectangular
     waitT = 2
@@ -220,14 +219,17 @@ renderLabel label =
 
 equirectangular :: Image PixelRGB8
 equirectangular = unsafePerformIO $ do
-  dat <- BS.readFile "earth.jpg"
+  dat <- BS.readFile earth
   case decodeJpeg dat of
     Left err  -> error err
     Right img -> return $ convertRGB8 img
 
 usaLonLat = svgToLonLat americaE
 ukLonLat = svgToLonLat ukE
+germanyLonLat = svgToLonLat $ germany equirectangularP
+newzealandLonLat = svgToLonLat $ newzealand equirectangularP
 ausLonLat = svgToLonLat australiaE
+brazilLonLat = svgToLonLat brazilE
 
 svgToLonLat :: SVG -> LonLat
 svgToLonLat svg =
@@ -259,13 +261,15 @@ fetchCountry p checker =
     [ mkGroup []
     , applyProjection p $
       svgPointsToRadians $
-      pathify $ gen annotate
+      pathify $ countriesGeo annotate
     ]
   where
-    gen = loadFeatureCollection "countries.json"
     annotate :: Map String Value -> SVG -> SVG
     annotate props svg = fromMaybe None (checker props svg)
     strokeWidth = defaultStrokeWidth * 0.3
+
+countriesGeo :: (Map String Value -> SVG -> SVG) -> SVG
+countriesGeo = loadFeatureCollection "countries.json"
 
 america :: Projection -> SVG
 america p = fetchCountry p $ \props svg -> do
@@ -284,6 +288,11 @@ uk p = fetchCountry p $ \props svg -> do
 ukE :: SVG
 ukE = uk equirectangularP
 
+germany :: Projection -> SVG
+germany p = fetchCountry p $ \props svg -> do
+  "Germany" <- Map.lookup "NAME" props
+  return svg
+
 australia :: Projection -> SVG
 australia p = fetchCountry p $ \props svg -> do
   "Australia" <- Map.lookup "NAME" props
@@ -291,6 +300,19 @@ australia p = fetchCountry p $ \props svg -> do
 
 australiaE :: SVG
 australiaE = australia equirectangularP
+
+newzealand :: Projection -> SVG
+newzealand p = fetchCountry p $ \props svg -> do
+  "New Zealand" <- Map.lookup "NAME" props
+  return $ snd $ splitGlyphs [0,1,2,3,4,5,6] svg
+
+brazil :: Projection -> SVG
+brazil p = fetchCountry p $ \props svg -> do
+  "Brazil" <- Map.lookup "NAME" props
+  return $ snd $ splitGlyphs [0] svg
+
+brazilE :: SVG
+brazilE = brazil equirectangularP
 
 -- Alaska: 16
 -- Continent: 75
@@ -311,33 +333,25 @@ grid p =
   , withStrokeColor "black" $
     applyProjection p $
     svgPointsToRadians $
-    pathify $ gen annotate
+    pathify $ landGeo annotate
   , withStrokeColor "black" $
     applyProjection p $ pathify $
-    mkGroup $ map mkLinePath (gridLines 8 4)
+    gridLines 7 4
   ]
   where
-    gen = loadFeatureCollection "countries.json"
     annotate :: Map String Value -> SVG -> SVG
-    annotate props svg =
-      case Map.lookup "NAME" props of
-        Nothing -> None
-        Just name
-          | name `elem` [ "United Kingdom", "France", "Germany", "Denmark" ] ->
-            svg
-          | name `elem` [ "Australia" ] ->
-            svg -- snd $ splitGlyphs [0] svg
-          | name `elem` [ "United States of America" ] ->
-            snd $ splitGlyphs [75] svg
-          | otherwise -> None
+    annotate props svg = svg
     strokeWidth = defaultStrokeWidth * 0.3
 
-gridLines :: Int -> Int -> [[(Double, Double)]]
-gridLines latLines lonLines =
+landGeo :: (Map String Value -> SVG -> SVG) -> SVG
+landGeo = loadFeatureCollection "land.geojson"
+
+gridLines :: Int -> Int -> SVG
+gridLines latLines lonLines = mkGroup $ map mkLinePath $
     map longitudeLine (stepper (-halfPi) halfPi (lonLines+1)) ++
     map latitudeLine (stepper (-pi) pi (latLines))
   where
-    segments = 2
+    segments = 100
     stepper from to nMax =
       [ fromToS from to (fromIntegral n / fromIntegral (nMax))
       | n <- [0 .. nMax-1] ]
@@ -354,3 +368,119 @@ gridLines latLines lonLines =
 
 halfPi :: Double
 halfPi = pi/2
+
+
+
+
+
+
+
+data Globe s = Globe
+  { globeSprite   :: Sprite s
+  , globePosition :: Var s LonLat
+  , globeBend     :: Var s Double
+  }
+
+newGlobe :: Scene s (Globe s)
+newGlobe = do
+  bend <- newVar 1
+  pos <- newVar $ LonLat 0 0
+  globe <- newSprite $ do
+    getBend <- unVar bend
+    ~(LonLat lam phi) <- unVar pos
+    pure $
+      scale (fromToS 1 ((9*pi)/16) getBend) $
+      blender $ script earth getBend phi lam
+  return $ Globe globe pos bend
+
+script :: FilePath -> Double -> Double -> Double -> T.Text
+script img bend rotX rotY = [iTrim|
+import os
+import math
+
+import bpy
+
+light = bpy.data.objects['Light']
+bpy.ops.object.select_all(action='DESELECT')
+light.select_set(True)
+bpy.ops.object.delete()
+
+cam = bpy.data.objects['Camera']
+cam.data.type = 'ORTHO'
+cam.data.ortho_scale = 16
+cam.location = (0,0,5)
+cam.rotation_euler = (0, 0, 0)
+bpy.ops.object.empty_add(location=(0.0, 0, 0))
+focus_target = bpy.context.object
+bpy.ops.object.select_all(action='DESELECT')
+cam.select_set(True)
+focus_target.select_set(True)
+bpy.ops.object.parent_set()
+
+focus_target.rotation_euler = (${negate rotX}, 0, 0)
+
+
+origin = bpy.data.objects['Cube']
+bpy.ops.object.select_all(action='DESELECT')
+origin.select_set(True)
+bpy.ops.object.delete()
+
+x = ${bend}
+bpy.ops.mesh.primitive_plane_add()
+plane = bpy.context.object
+plane.scale = (16/2,${fromToS (9/2) 4 bend},1)
+bpy.ops.object.shade_smooth()
+
+bpy.context.object.active_material = bpy.data.materials['Material']
+mat = bpy.context.object.active_material
+image_node = mat.node_tree.nodes.new('ShaderNodeTexImage')
+output = mat.node_tree.nodes['Material Output']
+mat.node_tree.links.new(image_node.outputs['Color'], output.inputs['Surface'])
+
+image_node.image = bpy.data.images.load('${T.pack img}')
+
+
+modifier = plane.modifiers.new(name='Subsurf', type='SUBSURF')
+modifier.levels = 7
+modifier.render_levels = 7
+modifier.subdivision_type = 'SIMPLE'
+
+bpy.ops.object.empty_add(type='ARROWS',rotation=(math.pi/2,0,0))
+empty = bpy.context.object
+
+bendUp = plane.modifiers.new(name='Bend up', type='SIMPLE_DEFORM')
+bendUp.deform_method = 'BEND'
+bendUp.origin = empty
+bendUp.deform_axis = 'X'
+bendUp.factor = -math.pi*x
+
+bendAround = plane.modifiers.new(name='Bend around', type='SIMPLE_DEFORM')
+bendAround.deform_method = 'BEND'
+bendAround.origin = empty
+bendAround.deform_axis = 'Z'
+bendAround.factor = -math.pi*2*x
+
+bpy.context.view_layer.objects.active = plane
+bpy.ops.object.modifier_apply(modifier='Subsurf')
+bpy.ops.object.modifier_apply(modifier='Bend up')
+bpy.ops.object.modifier_apply(modifier='Bend around')
+
+bpy.ops.object.select_all(action='DESELECT')
+plane.select_set(True);
+#bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
+bpy.ops.object.origin_clear()
+bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN')
+
+plane.rotation_euler = (0, ${negate rotY}, 0)
+
+scn = bpy.context.scene
+
+#scn.render.engine = 'CYCLES'
+#scn.render.resolution_percentage = 10
+
+scn.view_settings.view_transform = 'Standard'
+
+scn.render.film_transparent = True
+
+bpy.ops.render.render( write_still=True )
+|]

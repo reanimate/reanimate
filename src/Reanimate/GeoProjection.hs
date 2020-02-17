@@ -1,4 +1,5 @@
 {-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE BangPatterns #-}
 module Reanimate.GeoProjection
   ( Projection(..)
   , XYCoord(..)
@@ -35,6 +36,7 @@ module Reanimate.GeoProjection
   , drawFeatureCollection -- :: GeoFeatureCollection a -> (a -> SVG -> SVG) -> SVG
   , loadFeatureCollection -- :: FromJSON a => FilePath -> (a -> SVG -> SVG) -> SVG
   , applyProjection -- :: Projection -> SVG -> SVG
+  , applyProjection' -- :: Double -> Projection -> SVG -> SVG
   , renderGeometry
   ) where
 
@@ -72,26 +74,26 @@ srcPixel :: Image PixelRGB8 -> LonLat -> PixelRGB8
 srcPixel src (LonLat lam phi) =
     pixelAt src xPx yPx
   where
-    xPx = round $ ((lam+pi)/tau) * fromIntegral (imageWidth src-1)
-    yPx = round $ (1-((phi+halfPi)/pi)) * fromIntegral (imageHeight src-1)
+    !xPx = round $ ((lam+pi)/tau) * fromIntegral (imageWidth src-1)
+    !yPx = round $ (1-((phi+halfPi)/pi)) * fromIntegral (imageHeight src-1)
 
 findValidCoord :: Image PixelRGB8 -> Projection -> XYCoord -> XYCoord
 findValidCoord src p (XYCoord x y) = fromMaybe (XYCoord x y) $ listToMaybe
     [ XYCoord x' y'
-    | let xi = round $ x * wMax
-          yi = round $ y * hMax
+    | let !xi = round $ x * wMax
+          !yi = round $ y * hMax
     , ax <- [xi, xi-1, xi+1]
     , ay <- [yi, yi-1, yi+1]
     , (ax >= 0 && ax < w && ay >= 0 && ay < h)
-    , let x' = fromIntegral ax / wMax
-          y' = fromIntegral ay / hMax
+    , let !x' = fromIntegral ax / wMax
+          !y' = fromIntegral ay / hMax
     , validLonLat $ projectionInverse p (XYCoord x' y')
     ]
   where
-    w = imageWidth src
-    h = imageHeight src
-    wMax = fromIntegral (w-1)
-    hMax = fromIntegral (h-1)
+    !w = imageWidth src
+    !h = imageHeight src
+    !wMax = fromIntegral (w-1)
+    !hMax = fromIntegral (h-1)
 
 isInWorld :: Projection -> XYCoord -> Bool
 isInWorld p coord =
@@ -122,7 +124,7 @@ worldPolygon p =
       | n <- [0..steps-1]]
 
 findNearestPixel :: MutableImage s PixelRGBA8 -> Int -> Int -> Int -> Int -> ST s PixelRGBA8
-findNearestPixel src w h srcX srcY = worker
+findNearestPixel src w h srcX srcY = worker $ take 20
     [ (x, y)
     | n <- [1..]
     , x <- [srcX-n .. srcY+n]
@@ -133,7 +135,7 @@ findNearestPixel src w h srcX srcY = worker
     , y < h
     ]
   where
-    worker [] = undefined
+    worker [] = pure $ PixelRGBA8 0xFF 0x00 0x00 0xFF
     worker ((x,y):rest) = do
       this <- readPixel src x y
       if this == blank
@@ -155,44 +157,43 @@ interpP src p1 p2 t = runST $ do
     let factor = 2
     forM_ [0..(w*factor)-1] $ \x ->
       forM_ [0..(h*factor)-1] $ \y -> do
-        let x1' = fromIntegral x / (wMax*fromIntegral factor)
-            y1' = fromIntegral y / (hMax*fromIntegral factor)
-            lonlat = projectionInverse p1 (XYCoord x1' y1')
+        let !x1' = fromIntegral x / (wMax*fromIntegral factor)
+            !y1' = fromIntegral y / (hMax*fromIntegral factor)
+            !lonlat = projectionInverse p1 (XYCoord x1' y1')
             XYCoord x1 y1 = projectionForward p1 lonlat
             XYCoord x2 y2 = findValidCoord src p2 $ projectionForward p2 lonlat
-            x3 = round $ fromToS x1 x2 t * wMax
-            y3 = round $ (1 - fromToS y1 y2 t) * hMax
+            !x3 = round $ fromToS x1 x2 t * wMax
+            !y3 = round $ (1 - fromToS y1 y2 t) * hMax
         when (validLonLat lonlat && validXYCoord (XYCoord x2 y2)) $ do
           when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $ do
             writePixel img x3 y3 (promotePixel $ srcPixel src lonlat)
     forM_ [0..(w*factor)-1] $ \x ->
       forM_ [0..(h*factor)-1] $ \y -> do
-        let x2' = fromIntegral x / (wMax*fromIntegral factor)
-            y2' = fromIntegral y / (hMax*fromIntegral factor)
-            lonlat = projectionInverse p2 (XYCoord x2' y2')
+        let !x2' = fromIntegral x / (wMax*fromIntegral factor)
+            !y2' = fromIntegral y / (hMax*fromIntegral factor)
+            !lonlat = projectionInverse p2 (XYCoord x2' y2')
             XYCoord x2 y2 = projectionForward p2 lonlat
             XYCoord x1 y1 = findValidCoord src p1 $ projectionForward p1 lonlat
-            -- (x2,y2) = p2 lam phi
-            x3 = round $ fromToS x1 x2 t * wMax
-            y3 = round $ (1 - fromToS y1 y2 t) * hMax
+            !x3 = round $ fromToS x1 x2 t * wMax
+            !y3 = round $ (1 - fromToS y1 y2 t) * hMax
         when (validLonLat lonlat && validXYCoord (XYCoord x1 y1)) $
-          when (validLonLat lonlat) $
-            when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $
-              writePixel img x3 y3 (promotePixel $ srcPixel src lonlat)
-    forM_ [1..w-1] $ \x ->
-      forM_ [0..h-1] $ \y -> do
-        let x1 = fromIntegral x / (wMax)
-            y1 = 1 - fromIntegral y / (hMax)
-        this <- readPixel img x y
-        when (isBlank this) $
-          when (isInWorld (mergeP p1 p2 t) (XYCoord x1 y1)) $
-            writePixel img x y =<< findNearestPixel img w h x y
+          when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $
+            writePixel img x3 y3 (promotePixel $ srcPixel src lonlat)
+    when False $
+      forM_ [0..w-1] $ \x ->
+        forM_ [0..h-1] $ \y -> do
+          let x1 = fromIntegral x / (wMax)
+              y1 = 1 - fromIntegral y / (hMax)
+          this <- readPixel img x y
+          when (isBlank this) $
+            when (isInWorld (mergeP p1 p2 t) (XYCoord x1 y1)) $
+              writePixel img x y =<< findNearestPixel img w h x y
     unsafeFreezeImage img
   where
-    w = imageWidth src
-    h = imageHeight src
-    wMax = fromIntegral (w-1)
-    hMax = fromIntegral (h-1)
+    !w = imageWidth src
+    !h = imageHeight src
+    !wMax = fromIntegral (w-1)
+    !hMax = fromIntegral (h-1)
 
 eqLonLat :: LonLat -> LonLat -> Bool
 eqLonLat (LonLat x1 y1) (LonLat x2 y2)
@@ -205,9 +206,9 @@ eqCoords (XYCoord x1 y1) (XYCoord x2 y2)
 eqDouble :: Double -> Double -> Bool
 eqDouble a b = abs (a-b) < epsilon
 
-data XYCoord = XYCoord Double Double -- 0 to 1
+data XYCoord = XYCoord !Double !Double -- 0 to 1
   deriving (Read,Show,Eq,Ord)
-data LonLat = LonLat Double Double -- -pi to +pi, -halfPi to +halfPi
+data LonLat = LonLat !Double !Double -- -pi to +pi, -halfPi to +halfPi
   deriving (Read,Show,Eq,Ord)
 data Projection = Projection
   { projectionForward :: LonLat -> XYCoord
@@ -316,7 +317,7 @@ mercatorP = Projection forward inverse
   where
     forward (LonLat lam phi) =
       XYCoord ((lam+pi)/tau)
-        (((log(tan(pi/4+phi/2))) + pi)/tau)
+        (min 1 $ max (0) $ (((log(tan(pi/4+phi/2))) + pi)/tau))
     inverse (XYCoord x y) = LonLat xPi (atan (sinh yPi))
       where
         xPi = fromToS (-pi) pi x
@@ -460,17 +461,13 @@ bonneP phi_0 = moveTopP (-0.17*factor) $ scaleP 1 (fromToS 1 0.65 factor) $ Proj
 orthoP :: LonLat -> Projection
 orthoP (LonLat lam_0 phi_0) = Projection forward inverse
   where
-    -- forward (LonLat lam phi)
-    --   | (lam-lam_0) < -halfPi || (lam-lam_0) > halfPi ||
-    --     (phi-phi_0) < -halfPi || (phi-phi_0) > halfPi
-    --     = XYCoord (0/0) (0/0)
     forward (LonLat lam phi)
         | cosc < 0  =
             let ang = atan2 y x
                 xV = cos ang
                 yV = sin ang
                 xPos = 7/32 + ((xV+1)/2 * 9/16)
-            in --trace (show (x,y)) $
+            in -- trace (show (x,y)) $
               XYCoord xPos ((yV+1)/2)
             --XYCoord (0/0) (0/0)
         | otherwise = XYCoord ((x+(16/9))/(16/9*2)) ((y+1)/2)
@@ -753,7 +750,10 @@ renderGeometry shape =
 
 
 applyProjection :: Projection -> SVG -> SVG
-applyProjection p = mapSvgLines start
+applyProjection = applyProjection' 1e-2
+
+applyProjection' :: Double -> Projection -> SVG -> SVG
+applyProjection' tolerance p = mapSvgLines start
   where
     start (LineMove x:rest) = LineMove (proj x) : worker x rest
     start _ = []
@@ -767,8 +767,7 @@ applyProjection p = mapSvgLines start
       LineBezier (map proj ps) : worker (last ps) rest
     worker _ (LineMove x:rest) = LineMove (proj x) : worker x rest
     worker _ [] = []
-    tolerance = 0.01
-    lowTolerance = 0.00001
+    lowTolerance = tolerance*tolerance
 
     proj (V2 lam phi) =
       case projectionForward p $ LonLat lam phi of

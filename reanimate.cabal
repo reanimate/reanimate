@@ -81,7 +81,7 @@ library
                       Paths_reanimate
   build-depends:       base >=4.10 && <5,
                        time, text, filepath, process, directory,
-                       containers, reanimate-svg >= 0.9.4.0, xml, bytestring, lens, linear, mtl, matrix,
+                       containers, reanimate-svg >= 0.9.7.0, xml, bytestring, lens, linear, mtl, matrix,
                        JuicyPixels, attoparsec, parallel,
                        cubicbezier, websockets,
                        hashable, fsnotify, open-browser, random-shuffle, base64-bytestring,
