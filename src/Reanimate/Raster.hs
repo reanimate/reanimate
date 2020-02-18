@@ -3,6 +3,7 @@ module Reanimate.Raster
   , embedDynamicImage
   , embedPng
   , raster
+  , rasterSized
   , vectorize
   , vectorize_
   , svgAsPngFile
@@ -90,8 +91,11 @@ embedDynamicImage img = embedPng width height imgData
 
 
 raster :: Tree -> DynamicImage
-raster svg = unsafePerformIO $ do
-    png <- B.readFile (svgAsPngFile svg)
+raster = rasterSized 2560 1440
+
+rasterSized :: Int -> Int -> Tree -> DynamicImage
+rasterSized w h svg = unsafePerformIO $ do
+    png <- B.readFile (svgAsPngFile' w h svg)
     case decodePng png of
       Left{}    -> error "bad image"
       Right img -> return img
