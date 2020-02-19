@@ -121,7 +121,7 @@ generateFrames :: Animation -> Width -> Height -> FPS -> (FilePath -> IO a) -> I
 generateFrames ani width_ height_ rate action = withTempDir $ \tmp -> do
     done <- newMVar (0::Int)
     let frameName nth = tmp </> printf nameTemplate nth
-    concurrentForM_ frames $ \n -> do
+    handle h $ concurrentForM_ frames $ \n -> do
       writeFile (frameName n) $ renderSvg width height $ nthFrame n
       -- runCmd "inkscape"
       --   [ "--without-gui"
@@ -138,6 +138,11 @@ generateFrames ani width_ height_ rate action = withTempDir $ \tmp -> do
     -- action (tmp </> pngTemplate)
     action (tmp </> nameTemplate)
   where
+    h UserInterrupt = do
+      hPutStrLn stderr "\nCtrl-C detected. Trying to generate video with available frames. \
+                       \Hit ctrl-c again to abort."
+      return ()
+    h other = throwIO other
     width = Just $ Num $ fromIntegral width_
     height = Just $ Num $ fromIntegral height_
     frames = [0..frameCount-1]
