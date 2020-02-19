@@ -6,6 +6,7 @@ module Reanimate.Raster
   , vectorize
   , vectorize_
   , svgAsPngFile
+  , svgAsPngFile'
   ) where
 
 import           Codec.Picture.Types
@@ -129,8 +130,14 @@ vectorize_ args path = unsafePerformIO $ do
 -- imageAsFile img
 
 svgAsPngFile :: Tree -> FilePath
-svgAsPngFile _ | pNoExternals = "/svgAsPngFile/has/been/disabled"
-svgAsPngFile svg = unsafePerformIO $ cacheFile template $ \pngPath -> do
+svgAsPngFile = svgAsPngFile' width height
+  where
+    width = 2560
+    height = width * 9 `div` 16
+
+svgAsPngFile' :: Int -> Int -> Tree -> FilePath
+svgAsPngFile' _ _ _ | pNoExternals = "/svgAsPngFile/has/been/disabled"
+svgAsPngFile' width height svg = unsafePerformIO $ cacheFile template $ \pngPath -> do
     let svgPath = replaceExtension pngPath "svg"
     -- ffmpeg <- requireExecutable "ffmpeg"
     -- convert <- requireExecutable "convert"
@@ -140,6 +147,4 @@ svgAsPngFile svg = unsafePerformIO $ cacheFile template $ \pngPath -> do
     applyRaster RasterRSvg svgPath
   where
     template = show (hash rendered) <.> "png"
-    rendered = renderSvg (Just $ Num width) (Just $ Num height) svg
-    width = 2560
-    height = width * 9 / 16
+    rendered = renderSvg (Just $ Px $ fromIntegral width) (Just $ Px $ fromIntegral height) svg

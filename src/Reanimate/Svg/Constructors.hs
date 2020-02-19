@@ -42,13 +42,15 @@ module Reanimate.Svg.Constructors
   , flipXAxis
   , flipYAxis
   , aroundCenter
+  , aroundCenterX
+  , aroundCenterY
   , withTransformations
   -- * Other
   , mkColor
   , mkBackground
   , mkBackgroundPixel
   , gridLayout
-  
+
   ) where
 
 import           Codec.Picture                (PixelRGBA8 (..))
@@ -97,6 +99,20 @@ aroundCenter fn t =
     offsetX = -x-w/2
     offsetY = -y-h/2
     (x,y,w,h) = boundingBox t
+
+aroundCenterY :: (Tree -> Tree) -> Tree -> Tree
+aroundCenterY fn t =
+    translate 0 (-offsetY) $ fn $ translate 0 offsetY t
+  where
+    offsetY = -y-h/2
+    (_x,y,_w,h) = boundingBox t
+
+aroundCenterX :: (Tree -> Tree) -> Tree -> Tree
+aroundCenterX fn t =
+    translate (-offsetX) 0 $ fn $ translate offsetX 0 t
+  where
+    offsetX = -x-w/2
+    (x,_y,w,_h) = boundingBox t
 
 -- | Scale the image uniformly by given factor along both X and Y axes.
 -- For example @scale 2 image@  makes the image twice as large, while @scale 0.5 image@ makes it half the original size.

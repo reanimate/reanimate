@@ -14,11 +14,13 @@ import           Control.Monad       (forM_)
 import qualified Data.Text           as T
 import qualified Data.Text.IO        as T
 import           Graphics.SvgTree    (Number (..))
+import           Numeric
 import           Reanimate.Animation
 import           Reanimate.Misc
 import           System.FilePath     ((</>))
 import           System.FilePath    (replaceExtension)
 import           System.Exit
+import           System.FilePath     ((</>))
 import           System.IO
 import           Text.Printf         (printf)
 
@@ -110,14 +112,14 @@ render ani target raster format width height fps = do
       RenderGif -> withTempFile "png" $ \palette -> do
         runCmd ffmpeg ["-i", template, "-y"
                       ,"-vf", "fps="++show fps++",scale=320:-1:flags=lanczos,palettegen"
-                      ,"-t", show (duration ani)
+                      ,"-t", showFFloat Nothing (duration ani) ""
                       , palette ]
         runCmd ffmpeg ["-i", template, "-y"
                       ,"-i", palette
                       ,"-progress", progress
                       ,"-filter_complex"
                       ,"fps="++show fps++",scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse"
-                      ,"-t", show (duration ani)
+                      ,"-t", showFFloat Nothing (duration ani) ""
                       , target]
       RenderWebm ->
         runCmd ffmpeg ["-r", show fps, "-i", template, "-y"
@@ -134,7 +136,7 @@ generateFrames raster ani width_ height_ rate action = withTempDir $ \tmp -> do
     let frameName nth = tmp </> printf nameTemplate nth
     putStr $ "\r0/" ++ show frameCount
     hFlush stdout
-    concurrentForM_ frames $ \n -> do
+    handle h $ concurrentForM_ frames $ \n -> do
       writeFile (frameName n) $ renderSvg width height $ nthFrame n
       applyRaster raster (frameName n)
       modifyMVar_ done $ \nDone -> do
@@ -146,6 +148,11 @@ generateFrames raster ani width_ height_ rate action = withTempDir $ \tmp -> do
   where
     width = Just $ Px $ fromIntegral width_
     height = Just $ Px $ fromIntegral height_
+    h UserInterrupt = do
+      hPutStrLn stderr "\nCtrl-C detected. Trying to generate video with available frames. \
+                       \Hit ctrl-c again to abort."
+      return ()
+    h other = throwIO other
     frames = [0..frameCount-1]
     nthFrame nth = frameAt (recip (fromIntegral rate) * fromIntegral nth) ani
     frameCount = round (duration ani * fromIntegral rate) :: Int
