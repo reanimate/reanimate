@@ -20,7 +20,6 @@ import           Reanimate.Misc
 import           System.FilePath     ((</>))
 import           System.FilePath    (replaceExtension)
 import           System.Exit
-import           System.FilePath     ((</>))
 import           System.IO
 import           Text.Printf         (printf)
 
