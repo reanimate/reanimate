@@ -23,6 +23,7 @@ module Reanimate.Animation
   , mapA
   , takeA
   , dropA
+  , lastA
   , pauseAtEnd
   , pauseAtBeginning
   , pauseAround
@@ -316,7 +317,7 @@ freezeAtPercentage frac (Animation d genFrame) =
 signalA :: Signal -> Animation -> Animation
 signalA fn (Animation d gen) = Animation d $ gen . fn
 
--- | @takeA duration animation@ creates a new animation consisting of initial segment of 
+-- | @takeA duration animation@ creates a new animation consisting of initial segment of
 --   @animation@ of given @duration@, played at the same rate as the original animation.
 --
 --  The @duration@ parameter is clamped to be between 0 and @animation@'s duration.
@@ -337,6 +338,9 @@ dropA len (Animation d gen) = Animation len' $ \t ->
     gen (t * len'/d + len/d)
   where
     len' = d - clamp 0 d len
+
+lastA :: Duration -> Animation -> Animation
+lastA len a = dropA (duration a - len) a
 
 clamp :: Double -> Double -> Double -> Double
 clamp a b number
