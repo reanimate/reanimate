@@ -50,7 +50,6 @@ import           Data.Foldable
 import           Data.Geospatial     hiding (LonLat)
 import           Data.LinearRing
 import qualified Data.LineString     as Line
-import           Data.Maybe
 import           Debug.Trace
 import           Graphics.SvgTree    (Tree (None))
 import           Linear              (distance, lerp)
@@ -158,34 +157,38 @@ interpP !src !p1 !p2 !t = runST $ do
     --     when (isInWorld (mergeP p1 p2 t) (XYCoord x1 y1)) $
     --       writePixel img x y $ PixelRGBA8 0xFF 0x00 0x00 0xFF
     let factor = 2
-    loopTo (w*factor) $ \x -> do
-      loopTo (h*factor) $ \y -> do
-        let !x1' = fromIntegral x / (wMax*fromIntegral factor)
-            !y1' = fromIntegral y / (hMax*fromIntegral factor)
-            !lonlat = projectionInverse p1 $! XYCoord x1' y1'
-            XYCoord x1 y1 = projectionForward p1 lonlat
-            XYCoord x2 y2 = findValidCoord src p2 $ projectionForward p2 lonlat
-            !x3 = round $ fromToS x1 x2 t * wMax
-            !y3 = round $ (1 - fromToS y1 y2 t) * hMax
-        when (validLonLat lonlat && validXYCoord (XYCoord x2 y2)) $ do
-          when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $ do
-            let p = srcPixel src lonlat
-            unless (pixelOpacity p == 0) $
-              writePixel img x3 y3 p
-    loopTo (w*factor) $ \x ->
-      loopTo (h*factor) $ \y -> do
-        let !x2' = fromIntegral x / (wMax*fromIntegral factor)
-            !y2' = fromIntegral y / (hMax*fromIntegral factor)
-            !lonlat = projectionInverse p2 (XYCoord x2' y2')
-            XYCoord x2 y2 = projectionForward p2 lonlat
-            XYCoord x1 y1 = findValidCoord src p1 $ projectionForward p1 lonlat
-            !x3 = round $ fromToS x1 x2 t * wMax
-            !y3 = round $ (1 - fromToS y1 y2 t) * hMax
-        when (validLonLat lonlat && validXYCoord (XYCoord x1 y1)) $
-          when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $ do
-            let p = srcPixel src lonlat
-            unless (pixelOpacity p == 0) $
-              writePixel img x3 y3 p
+    let l1 =
+          loopTo (w*factor) $ \x -> do
+            loopTo (h*factor) $ \y -> do
+              let !x1' = fromIntegral x / (wMax*fromIntegral factor)
+                  !y1' = fromIntegral y / (hMax*fromIntegral factor)
+                  !lonlat = projectionInverse p1 $! XYCoord x1' y1'
+                  p = srcPixel src lonlat
+              when (validLonLat lonlat && pixelOpacity p /= 0) $ do
+                let XYCoord x1 y1 = projectionForward p1 lonlat
+                    XYCoord x2 y2 = findValidCoord src p2 $ projectionForward p2 lonlat
+                    !x3 = round $ fromToS x1 x2 t * wMax
+                    !y3 = round $ (1 - fromToS y1 y2 t) * hMax
+                when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $
+                  writePixel img x3 y3 p
+        l2 =
+          loopTo (w*factor) $ \x ->
+            loopTo (h*factor) $ \y -> do
+              let !x2' = fromIntegral x / (wMax*fromIntegral factor)
+                  !y2' = fromIntegral y / (hMax*fromIntegral factor)
+                  !lonlat = projectionInverse p2 (XYCoord x2' y2')
+                  p = srcPixel src lonlat
+              when (validLonLat lonlat && pixelOpacity p /= 0) $ do
+                let XYCoord x2 y2 = projectionForward p2 lonlat
+                    XYCoord x1 y1 = findValidCoord src p1 $ projectionForward p1 lonlat
+                    !x3 = round $ fromToS x1 x2 t * wMax
+                    !y3 = round $ (1 - fromToS y1 y2 t) * hMax
+                when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $ do
+                  writePixel img x3 y3 p
+    if t < 0.5
+      then l1 >> l2
+      else l2 >> l1
+
     when False $
       forM_ [0..w-1] $ \x ->
         forM_ [0..h-1] $ \y -> do

@@ -4,16 +4,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE BangPatterns   #-}
 module Main(main) where
 
 import           Codec.Picture
 import           Codec.Picture.Jpg
 import           Codec.Picture.Types
-import           Control.Lens            ((^.))
+import           Control.Lens            ((^.), (%~), (&))
 import           Control.Monad
 import           Control.Monad.ST
 import           Data.Aeson
 import qualified Data.ByteString         as BS
+import qualified Data.Sequence as Seq
+import           Data.Char
 import           Data.Foldable
 import           Data.Geospatial         hiding (LonLat)
 import           Data.LinearRing
@@ -23,12 +26,14 @@ import qualified Data.Map                as Map
 import           Data.Maybe
 import           Data.String.Here
 import qualified Data.Text               as T
-import           Graphics.SvgTree        (PathCommand (..), Tree (None))
+import           Graphics.SvgTree        (ElementRef (..), PathCommand (..),
+                                          Tree (None))
 import           Reanimate
 import           Reanimate.Animation
 import           Reanimate.Blender
 import           Reanimate.GeoProjection
 import           Reanimate.Scene
+import           Reanimate.Raster
 import           System.IO.Unsafe
 
 
@@ -39,7 +44,9 @@ import           System.IO.Unsafe
 
 earth :: FilePath
 -- earth = "earth-low.jpg"
-earth = "earth-high.jpg"
+-- earth = "earth-mid.jpg"
+-- earth = "earth-high.jpg"
+earth = "earth-extreme.jpg"
 
 main :: IO ()
 main = reanimate mainScene
@@ -80,7 +87,7 @@ testScene = sceneAnimation $ do
     src = equirectangular
 
 mainScene :: Animation
-mainScene = seq equirectangular $ -- takeA 10 $ dropA 20 $
+mainScene = seq equirectangular $ takeA 5 $ dropA 19 $
   mapA (withStrokeColor "black") $ sceneAnimation $ do
     bg <- newSpriteSVG $ mkBackground "white"
     spriteZ bg (-1)
@@ -99,52 +106,71 @@ mainScene = seq equirectangular $ -- takeA 10 $ dropA 20 $
       s <- unVar mapScale
       pure $ \(svg, z) -> (scale s svg, z)
     spriteMap globeSprite (offset)
+    -- destroySprite globeSprite
 
-    let addRegion x y s proj lonlat = do
-          region1 <- newSpriteSVG $
-            offset $ lowerTransformations $ scale orthoScale $ proj (orthoP lonlat)
+    let addRegion x y s proj lonlat@(LonLat lam phi) = do
+          let idName = filter isAlphaNum $ show lonlat
+              outline = lowerTransformations $ scale orthoScale $
+                        proj (orthoP lonlat)
+          region1 <- newSpriteSVG outline
+          destroySprite region1
+
           spriteZ region1 2
+          move <- newVar 0
           region1Shadow <- newSprite $ do
             ~(from, to) <- unVar projs
             m <- unVar morph
             relScale <- unVar mapScale
-            pure (
-              offset $ lowerTransformations $ scale relScale $
+
+            t <- unVar move
+
+            pure $
+              let srcWidth = imageWidth equirectangularExtreme
+                  srcHeight = imageHeight equirectangularExtreme
+                  !subImg = convertRGBA8 $ rasterSized srcWidth srcHeight $ mkGroup
+                        [ mkGroup []
+                        , mkClipPath idName $
+                          clipSvg
+                        , withClipPathRef (Ref idName) $
+                          scaleToSize screenWidth screenHeight $
+                          embedImage $ project equirectangularExtreme equirectangularP]
+                  setPos =
+                    translate (fromToS 0 x $ curveS 2 t)
+                    (fromToS 0 y $ curveS 2 t) .
+                    offset .
+                    scale (fromToS 1 s $ curveS 2 t)
+                  posSvg =
+                    lowerTransformations $ proj (mergeP (from lonlat) to m)
+                  clipSvg = removeGroups $
+                    lowerTransformations $ proj equirectangularP in
               mkGroup
-              [ withStrokeColor "red" $
-                proj (mergeP (from lonlat) to m)
-              ])
-          fork $ spriteTween region1Shadow 1 $ \t ->
-            translate (fromToS 0 x $ curveS 2 t)
-                      (fromToS 0 y $ curveS 2 t) .
-            centerDelta (curveS 2 t) .
-            lowerTransformations .
-            scale (fromToS 1 s $ curveS 2 t)
-          spriteTween region1 1 $ \t ->
-            translate (fromToS 0 x $ curveS 2 t)
-                      (fromToS 0 y $ curveS 2 t) .
-            centerDelta (curveS 2 t) .
-            lowerTransformations .
-            scale (fromToS 1 s $ curveS 2 t)
+              [ mkGroup []
+              , setPos $ scale relScale $ centerWithDelta 1 posSvg $
+                scaleToSize screenWidth screenHeight $
+                embedImage $ interpP subImg (from lonlat) to m
+              , lowerTransformations $ setPos $ scale orthoScale $ center $
+                proj (orthoP lonlat)
+              ]
+          fork $ tweenVar move 1 $ \v -> fromToS v 1 . curveS 2
 
 
     tweenVar globePosition 2 $ \v -> fromToLonLat v usaLonLat . curveS 2
-    fork $ addRegion (-5.5) 2.5 3 america usaLonLat
+    fork $ addRegion (-5.5) 4 3 america usaLonLat
 
     tweenVar globePosition 2 $ \v -> fromToLonLat v brazilLonLat . curveS 2
-    fork $ addRegion (-6) (-1) 3 brazil brazilLonLat
+    fork $ addRegion (-6) 0 3 brazil brazilLonLat
 
     tweenVar globePosition 2 $ \v -> fromToLonLat v ukLonLat . curveS 2
-    fork $ addRegion (-1) 3 6 uk ukLonLat
+    fork $ addRegion (-1) 4 5 uk ukLonLat
 
     tweenVar globePosition 2 $ \v -> fromToLonLat v germanyLonLat . curveS 2
-    fork $ addRegion 1 3 6 germany germanyLonLat
+    fork $ addRegion 1 4 5 germany germanyLonLat
 
     tweenVar globePosition 2 $ \v -> fromToLonLat v ausLonLat . curveS 2
-    fork $ addRegion 6 2.5 3 australia ausLonLat
+    fork $ addRegion 6 4 3 australia ausLonLat
 
     tweenVar globePosition 2 $ \v -> fromToLonLat v newzealandLonLat . curveS 2
-    fork $ addRegion 6 (-1) 6 newzealand newzealandLonLat
+    fork $ addRegion 6 0 4 newzealand newzealandLonLat
 
     fork $ tweenVar globePosition 3 $ \v -> fromToLonLat v (LonLat 0 0) . curveS 2
     wait 1
@@ -203,6 +229,16 @@ centerDelta d t = translate ((-x-w/2)*d) ((-y-h/2)*d) t
   where
     (x, y, w, h) = boundingBox t
 
+centerWithDelta :: Double -> Tree -> Tree -> Tree
+centerWithDelta d orig t = translate ((-x-w/2)*d) ((-y-h/2)*d) t
+  where
+    (x, y, w, h) = boundingBox orig
+
+centerXWithDelta :: Double -> Tree -> Tree -> Tree
+centerXWithDelta d orig t = translate ((-x-w/2)*d) 0 t
+  where
+    (x, y, w, h) = boundingBox orig
+
 
 renderLabel label =
   let ref = scale 1.5 $ latex "\\texttt{Tygv123}"
@@ -217,12 +253,19 @@ renderLabel label =
     translate (-screenWidth/2) (-screenHeight/2) $
     translate 0 (svgHeight ref) svgTxt
 
-equirectangular :: Image PixelRGB8
+equirectangular :: Image PixelRGBA8
 equirectangular = unsafePerformIO $ do
   dat <- BS.readFile earth
   case decodeJpeg dat of
     Left err  -> error err
-    Right img -> return $ convertRGB8 img
+    Right img -> return $ convertRGBA8 img
+
+equirectangularExtreme :: Image PixelRGBA8
+equirectangularExtreme = unsafePerformIO $ do
+  dat <- BS.readFile "earth-extreme.jpg"
+  case decodeJpeg dat of
+    Left err  -> error err
+    Right img -> return $ convertRGBA8 img
 
 usaLonLat = svgToLonLat americaE
 ukLonLat = svgToLonLat ukE
@@ -269,7 +312,29 @@ fetchCountry p checker =
     strokeWidth = defaultStrokeWidth * 0.3
 
 countriesGeo :: (Map String Value -> SVG -> SVG) -> SVG
-countriesGeo = loadFeatureCollection "countries.json"
+countriesGeo = loadFeatureCollection "countries-limited.json"
+
+filterCountries :: IO ()
+filterCountries = do
+  mbGeo <- decodeFileStrict "countries.json"
+  case mbGeo of
+    Nothing  -> return ()
+    Just geo -> do
+      let geo' :: GeoFeatureCollection (Map String Value)
+          geo' = geo & geofeatures %~ Seq.filter fn
+          fn feat =
+            case Map.lookup "NAME" (feat ^. properties) of
+              Nothing -> False
+              Just name -> name `elem` goodNames
+      encodeFile "countries-limited.json" geo'
+  where
+    goodNames =
+      [ "United States of America"
+      , "United Kingdom"
+      , "Germany"
+      , "New Zealand"
+      , "Australia"
+      , "Brazil" ]
 
 america :: Projection -> SVG
 america p = fetchCountry p $ \props svg -> do
