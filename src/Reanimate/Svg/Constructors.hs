@@ -214,7 +214,7 @@ withStrokeWidth width = strokeWidth .~ pure (Num width)
 withClipPathRef :: ElementRef -- ^ Reference to clip path defined previously (e.g. by 'mkClipPath')
                 -> Tree -- ^ Image that will be clipped by the referenced clip path
                 -> Tree
-withClipPathRef ref = clipPathRef .~ pure ref
+withClipPathRef ref sub = mkGroup [sub] & clipPathRef .~ pure ref
 
 -- | Assigns ID attribute to given image.
 withId :: String -> Tree -> Tree

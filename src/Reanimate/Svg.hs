@@ -39,6 +39,7 @@ lowerTransformations = worker Transform.identity
         GroupTree g -> GroupTree $
           g & groupChildren %~ map (worker m')
             & transform .~ Nothing
+        ClipPathTree{} -> t
         _ -> mkGroup [t] & transform .~ Just [ Transform.toTransformation m ]
 
 lowerIds :: Tree -> Tree
@@ -67,6 +68,28 @@ simplify root =
         dropNulls $
         GroupTree $ g & groupChildren %~ concatMap worker
     worker t = dropNulls t
+
+    dropNulls None = []
+    dropNulls (DefinitionTree d)
+      | null (d^.groupChildren) = []
+    dropNulls (GroupTree g)
+      | null (g^.groupChildren) = []
+    dropNulls t = [t]
+
+removeGroups :: Tree -> [Tree]
+removeGroups = worker defaultSvg
+  where
+    worker _attr None = []
+    worker _attr (DefinitionTree d) =
+      concatMap dropNulls $
+      [DefinitionTree $ d & groupChildren %~ concatMap (worker defaultSvg)]
+    worker attr (GroupTree g)
+      | g ^. drawAttributes == defaultSvg =
+        concatMap dropNulls $
+        concatMap (worker attr) (g^.groupChildren)
+      | otherwise =
+        concatMap (worker (attr <> g ^. drawAttributes)) (g^.groupChildren)
+    worker attr t = dropNulls (t & drawAttributes .~ attr)
 
     dropNulls None = []
     dropNulls (DefinitionTree d)
