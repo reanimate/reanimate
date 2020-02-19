@@ -1,6 +1,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Reanimate.Driver.Check
   ( checkEnvironment
+  , hasRSvg
+  , hasInkscape
+  , hasConvert
   ) where
 
 import           Control.Exception            (SomeException, handle)
@@ -25,6 +28,7 @@ checkEnvironment = do
     runCheck "Has dvisvgm" hasDvisvgm
     runCheck "Has povray" hasPovray
     runCheck "Has blender" hasBlender
+    runCheck "Has rsvg-convert" hasRSvg
     runCheck "Has inkscape" hasInkscape
     runCheck "Has convert" hasConvert
     runCheck "Has LaTeX" hasLaTeX
@@ -89,6 +93,11 @@ hasBlender = checkMinVersion minVersion <$> blenderVersion
   where
     minVersion = Version [2,80] []
 
+hasRSvg :: IO (Either String String)
+hasRSvg = checkMinVersion minVersion <$> rsvgVersion
+  where
+    minVersion = Version [2,44,0] []
+
 hasInkscape :: IO (Either String String)
 hasInkscape = checkMinVersion minVersion <$> inkscapeVersion
   where
@@ -97,7 +106,7 @@ hasInkscape = checkMinVersion minVersion <$> inkscapeVersion
 hasConvert :: IO (Either String String)
 hasConvert = checkMinVersion minVersion <$> convertVersion
   where
-    minVersion = Version [7,0,0] []
+    minVersion = Version [6,0,0] []
 
 ffmpegVersion :: IO (Maybe Version)
 ffmpegVersion = extractVersion "ffmpeg" ["-version"] $ \line ->
@@ -110,6 +119,12 @@ blenderVersion = extractVersion "blender" ["--version"] $ \line ->
     case take 2 (words line) of
       ["Blender", vs] -> vs
       _ -> ""
+
+rsvgVersion :: IO (Maybe Version)
+rsvgVersion = extractVersion "rsvg-convert" ["--version"] $ \line ->
+  case words line of
+    ["rsvg-convert", "version", vs] -> vs
+    _ -> ""
 
 inkscapeVersion :: IO (Maybe Version)
 inkscapeVersion = extractVersion "inkscape" ["--version"] $ \line ->

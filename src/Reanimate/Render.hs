@@ -3,7 +3,9 @@ module Reanimate.Render
   , renderSvgs
   , renderSnippets
   , Format(..)
+  , Raster(..)
   , Width, Height, FPS
+  , applyRaster
   ) where
 
 import           Control.Concurrent
@@ -15,8 +17,9 @@ import           Graphics.SvgTree    (Number (..))
 import           Numeric
 import           Reanimate.Animation
 import           Reanimate.Misc
-import           System.Exit
 import           System.FilePath     ((</>))
+import           System.FilePath    (replaceExtension)
+import           System.Exit
 import           System.IO
 import           Text.Printf         (printf)
 
@@ -68,6 +71,14 @@ filterFrameList seen nthFrame nFrames =
   where
     isSeen x = any (\y -> x `mod` y == 0) seen
 
+data Raster
+  = RasterNone
+  | RasterAuto
+  | RasterInkscape
+  | RasterRSvg
+  | RasterConvert
+  deriving (Show)
+
 data Format = RenderMp4 | RenderGif | RenderWebm
   deriving (Show)
 
@@ -77,15 +88,16 @@ type FPS = Int
 
 render :: Animation
        -> FilePath
+       -> Raster
        -> Format
        -> Width
        -> Height
        -> FPS
        -> IO ()
-render ani target format width height fps = do
+render ani target raster format width height fps = do
   printf "Starting render of animation: %.1f\n" (duration ani)
   ffmpeg <- requireExecutable "ffmpeg"
-  generateFrames ani width height fps $ \template ->
+  generateFrames raster ani width height fps $ \template ->
     withTempFile "txt" $ \progress -> writeFile progress "" >>
     case format of
       RenderMp4 ->
@@ -117,37 +129,56 @@ render ani target format width height fps = do
 ---------------------------------------------------------------------------------
 -- Helpers
 
-generateFrames :: Animation -> Width -> Height -> FPS -> (FilePath -> IO a) -> IO a
-generateFrames ani width_ height_ rate action = withTempDir $ \tmp -> do
+generateFrames :: Raster -> Animation -> Width -> Height -> FPS -> (FilePath -> IO a) -> IO a
+generateFrames raster ani width_ height_ rate action = withTempDir $ \tmp -> do
     done <- newMVar (0::Int)
     let frameName nth = tmp </> printf nameTemplate nth
-    concurrentForM_ frames $ \n -> do
+    putStr $ "\r0/" ++ show frameCount
+    hFlush stdout
+    handle h $ concurrentForM_ frames $ \n -> do
       writeFile (frameName n) $ renderSvg width height $ nthFrame n
-      -- runCmd "inkscape"
-      --   [ "--without-gui"
-      --   , "--file=" ++ frameName n
-      --   , "--export-png=" ++ replaceExtension (frameName n) "png" ]
-      -- runCmd "rsvg-convert"
-      --   [ frameName n
-      --   , "--output", replaceExtension (frameName n) "png" ]
+      applyRaster raster (frameName n)
       modifyMVar_ done $ \nDone -> do
         putStr $ "\r" ++ show (nDone+1) ++ "/" ++ show frameCount
         hFlush stdout
         return (nDone+1)
     putStrLn "\n"
-    -- action (tmp </> pngTemplate)
-    action (tmp </> nameTemplate)
+    action (tmp </> rasterTemplate raster)
   where
-    width = Just $ Num $ fromIntegral width_
-    height = Just $ Num $ fromIntegral height_
+    width = Just $ Px $ fromIntegral width_
+    height = Just $ Px $ fromIntegral height_
+    h UserInterrupt = do
+      hPutStrLn stderr "\nCtrl-C detected. Trying to generate video with available frames. \
+                       \Hit ctrl-c again to abort."
+      return ()
+    h other = throwIO other
     frames = [0..frameCount-1]
     nthFrame nth = frameAt (recip (fromIntegral rate) * fromIntegral nth) ani
     frameCount = round (duration ani * fromIntegral rate) :: Int
     nameTemplate :: String
     nameTemplate = "render-%05d.svg"
 
-    -- pngTemplate :: String
-    -- pngTemplate = "render-%05d.png"
+rasterTemplate :: Raster -> String
+rasterTemplate RasterNone = "render-%05d.svg"
+rasterTemplate _          = "render-%05d.png"
+
+applyRaster :: Raster -> FilePath -> IO ()
+applyRaster RasterNone _ = return ()
+applyRaster RasterAuto _ = return ()
+applyRaster RasterInkscape path =
+  runCmd "inkscape"
+    [ "--without-gui"
+    , "--file=" ++ path
+    , "--export-png=" ++ replaceExtension path "png" ]
+applyRaster RasterRSvg path =
+  runCmd "rsvg-convert"
+    [ path
+    , "--unlimited"
+    , "--output", replaceExtension path "png" ]
+applyRaster RasterConvert path =
+  runCmd "convert"
+    [ path
+    , replaceExtension path "png" ]
 
 concurrentForM_ :: [a] -> (a -> IO ()) -> IO ()
 concurrentForM_ lst action = do

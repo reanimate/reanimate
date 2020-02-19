@@ -401,7 +401,7 @@ scene2 = seqA scene2Intro $ seqA illustrateSpectrum $ sceneAnimation $ do
   fork $ spriteTween xyzSpace 1 $ \t -> withGroupOpacity (1-t)
   wait 2
 
-  fork $ spriteTween xyzGraph 1 $ \t -> withGroupOpacity (1-t)
+  fork $ spriteTween xyzGraph 0.5 $ \t -> withGroupOpacity (1-t)
 
   fork $ tweenVar labelXPos 1 $ \(x,y) t ->
     let (newX, newY) = (-1,3)
