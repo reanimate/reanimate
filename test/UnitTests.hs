@@ -22,7 +22,7 @@ unitTestFolder path = do
   files <- sort <$> getDirectoryContents path
   mbWDiff <- findExecutable "wdiff"
   let diff = case mbWDiff of
-        Nothing -> ["diff", "--ignore-trailing-space", "--strip-trailing-cr"]
+        Nothing -> ["diff", "--strip-trailing-cr"]
         Just wdiff -> [wdiff, "--no-common"]
   return $ testGroup "animate"
     [ goldenVsStringDiff file (\ref new -> diff ++ [ref, new]) fullPath (genGolden hsPath)
