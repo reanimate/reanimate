@@ -2,6 +2,7 @@
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE ApplicativeDo     #-}
+{- HLINT ignore -}
 module Reanimate.Builtin.Flip
   ( FlipSprite(..)
   , flipSprite
@@ -56,7 +57,7 @@ flipSprite front back = do
 type Transition = Animation -> Animation -> Animation
 
 signalT :: Signal -> Transition -> Transition
-signalT s t = \a b -> signalA s (t a b)
+signalT s t a b = signalA s (t a b)
 
 overlapTransition :: Double -> Transition -> Transition
 overlapTransition overlap t a b =

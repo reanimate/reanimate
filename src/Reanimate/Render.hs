@@ -8,7 +8,7 @@ module Reanimate.Render
 
 import           Control.Concurrent
 import           Control.Exception
-import           Control.Monad       (forM_)
+import           Control.Monad       (forM_, void)
 import qualified Data.Text           as T
 import qualified Data.Text.IO        as T
 import           Graphics.SvgTree    (Number (..))
@@ -44,7 +44,7 @@ renderSvgs ani = do
 
 -- XXX: Merge with 'renderSvgs'
 renderSnippets :: Animation ->  IO ()
-renderSnippets ani = do
+renderSnippets ani =
     forM_ [0..frameCount-1] $ \nth -> do
       let now = (duration ani / (fromIntegral frameCount-1)) * fromIntegral nth
           frame = frameAt now ani
@@ -64,7 +64,7 @@ frameOrder fps nFrames = worker [] fps
 
 filterFrameList :: [Int] -> Int -> Int -> [Int]
 filterFrameList seen nthFrame nFrames =
-    filter (not.isSeen) $ [0, nthFrame .. nFrames-1]
+    filter (not.isSeen) [0, nthFrame .. nFrames-1]
   where
     isSeen x = any (\y -> x `mod` y == 0) seen
 
@@ -165,5 +165,3 @@ concurrentForM_ lst action = do
   case mbE of
     Nothing -> return ()
     Just e  -> throwIO (e :: SomeException)
-  where
-    void x = x >> return ()

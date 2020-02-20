@@ -27,11 +27,11 @@ import           Data.Hashable
 
 povrayRaw :: [String] -> Text -> Tree
 povrayRaw args script =
-  (unsafePerformIO $ mkPovrayImage args script)
+  unsafePerformIO $ mkPovrayImage args script
 
 povrayRaw' :: [String] -> Text -> FilePath
 povrayRaw' args script =
-  (unsafePerformIO $ mkPovrayImage' args script)
+  unsafePerformIO $ mkPovrayImage' args script
 
 povray :: [String] -> Text -> Tree
 povray args = povrayRaw (["+H180","+W320", "+A"] ++ args)
@@ -77,4 +77,3 @@ mkPovrayImage' args script = cacheFile template $ \target -> do
   where
     template = show (hash key) <.> "png"
     key = T.concat (script:map T.pack args)
-

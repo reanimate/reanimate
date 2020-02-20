@@ -1,4 +1,3 @@
-{-# LANGUAGE ParallelListComp #-}
 module Reanimate.Morph where
 
 import           Control.Lens
@@ -65,13 +64,13 @@ splitLineLength alpha from cmd =
     LineEnd -> (LineEnd, LineEnd)
 -}
 interpolateLineCommands :: Double -> [LineCommand] -> [LineCommand] -> [LineCommand]
-interpolateLineCommands alpha x y = map worker (zip x y)
+interpolateLineCommands alpha = zipWith worker
   where
-    worker (LineMove p1, LineMove p2) = LineMove (lerp alpha p1 p2)
-    worker (LineBezier ps1, LineBezier ps2) =
+    worker (LineMove p1) (LineMove p2) = LineMove (lerp alpha p1 p2)
+    worker (LineBezier ps1) (LineBezier ps2) =
       LineBezier [lerp alpha x y | (x,y) <- merge ps1 ps2]
-    worker (LineEnd, LineEnd) = LineEnd
-    worker (x,y) = error (show (x,y))
+    worker LineEnd LineEnd = LineEnd
+    worker x y = error (show (x,y))
     merge [] []         = []
     merge [x] [y]       = [(x,y)]
     merge (x:xs) [y]    = (x,y) : merge xs [y]
@@ -264,7 +263,7 @@ loopIntersections (Loop start cs) point = worker start cs
     V2 pointX pointY = point
     mkPoint (V2 a1 a2) = Bezier.Point a1 a2
     fromPoint (Bezier.Point x y) = V2 x y
-    farPoint = (Bezier.Point 1000 pointY) -- FIXME
+    farPoint = Bezier.Point 1000 pointY -- FIXME
     -- line = Bezier.Line (mkPoint point) farPoint
     lineBezier = Bezier.CubicBezier (mkPoint point) farPoint farPoint farPoint
     worker from [] = []
