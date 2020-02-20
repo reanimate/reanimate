@@ -75,23 +75,27 @@ withTransformations transformations t =
 translate :: Double -> Double -> Tree -> Tree
 translate x y = withTransformations [Translate x y]
 
--- | @rotate angle image@ rotates the @image@ around origin @(0,0)@ counterclockwise by @angle@ given in degrees.
+-- | @rotate angle image@ rotates the @image@ around origin @(0,0)@ counterclockwise by @angle@
+--   given in degrees.
 rotate :: Double -> Tree -> Tree
 rotate a = withTransformations [Rotate a Nothing]
 
--- | @rotate angle point image@ rotates the @image@ around given @point@ counterclockwise by @angle@ given in degrees.
+-- | @rotate angle point image@ rotates the @image@ around given @point@ counterclockwise by
+--   @angle@ given in degrees.
 rotateAround :: Double -> RPoint -> Tree -> Tree
 rotateAround a (V2 x y) = withTransformations [Rotate a (Just (x,y))]
 
--- | @rotate angle image@ rotates the @image@ around the center of its bounding box counterclockwise by @angle@ given in degrees.
+-- | @rotate angle image@ rotates the @image@ around the center of its bounding box counterclockwise
+--   by @angle@ given in degrees.
 rotateAroundCenter :: Double -> Tree -> Tree
 rotateAroundCenter a t =
     rotateAround a (V2 (x+w/2) (y+h/2)) t
   where
     (x,y,w,h) = boundingBox t
 
--- | @arounCenter f image@ first moves the image so the center of its bounding box is at the origin @(0, 0)@,
--- applies transformation @f@ to it and then moves the transformed image back to its original position.
+-- | @aroundCenter f image@ first moves the image so the center of its bounding box is at the origin
+--   @(0, 0)@, applies transformation @f@ to it and then moves the transformed image back to its
+--   original position.
 aroundCenter :: (Tree -> Tree) -> Tree -> Tree
 aroundCenter fn t =
     translate (-offsetX) (-offsetY) $ fn $ translate offsetX offsetY t
@@ -115,26 +119,30 @@ aroundCenterX fn t =
     (x,_y,w,_h) = boundingBox t
 
 -- | Scale the image uniformly by given factor along both X and Y axes.
--- For example @scale 2 image@  makes the image twice as large, while @scale 0.5 image@ makes it half the original size.
--- Negative values are also allowed, and lead to flipping the image along both X and Y axes.
+-- For example @scale 2 image@  makes the image twice as large, while @scale 0.5 image@ makes it
+-- half the original size. Negative values are also allowed, and lead to flipping the image along
+-- both X and Y axes.
 scale :: Double -> Tree -> Tree
 scale a = withTransformations [Scale a Nothing]
 
--- | @scaleToSize width height@ resizes the image so that its bounding box has corresponding @width@ and @height@.
+-- | @scaleToSize width height@ resizes the image so that its bounding box has corresponding @width@
+--   and @height@.
 scaleToSize :: Double -> Double -> Tree -> Tree
 scaleToSize w h t =
     scaleXY (w/w') (h/h') t
   where
     (_x, _y, w', h') = boundingBox t
 
--- | @scaleToWidth width@ scales the image so that the width of its bounding box ends up having given @width@.
+-- | @scaleToWidth width@ scales the image so that the width of its bounding box ends up having
+--   given @width@.
 scaleToWidth :: Double -> Tree -> Tree
 scaleToWidth w t =
     scale (w/w') t
   where
     (_x, _y, w', _h') = boundingBox t
 
--- | @scaleToHeight height@ scales the image so that the height of its bounding box ends up having given @height@.
+-- | @scaleToHeight height@ scales the image so that the height of its bounding box ends up having
+--   given @height@.
 scaleToHeight :: Double -> Tree -> Tree
 scaleToHeight h t =
     scale (h/h') t
@@ -146,15 +154,18 @@ scaleXY :: Double -> Double -> Tree -> Tree
 scaleXY x y = withTransformations [Scale x (Just y)]
 
 
--- | Flip the image along vertical axis so that what was on the right will end up on left and vice versa.
+-- | Flip the image along vertical axis so that what was on the right will end up on left and vice
+--   versa.
 flipXAxis :: Tree -> Tree
 flipXAxis = scaleXY (-1) 1
 
--- | Flip the image along horizontal so that what was on the top will end up in the bottom and vice versa.
+-- | Flip the image along horizontal so that what was on the top will end up in the bottom and vice
+--   versa.
 flipYAxis :: Tree -> Tree
 flipYAxis = scaleXY 1 (-1)
 
--- | Translate given image so that the center of its bouding box coincides with coordinates @(0, 0)@.
+-- | Translate given image so that the center of its bouding box coincides with coordinates
+--   @(0, 0)@.
 center :: Tree -> Tree
 center t = translate (-x-w/2) (-y-h/2) t
   where
@@ -263,14 +274,16 @@ mkDefinitions forest = DefinitionTree $ defaultSvg
   & groupChildren .~ forest
 
 -- | Create an element by referring to existing element defined previously.
--- For example you can create a graphical element, assign ID to it using 'withId', wrap it in 'mkDefinitions' and then use it via @use "myId"@.
+-- For example you can create a graphical element, assign ID to it using 'withId', wrap it in
+-- 'mkDefinitions' and then use it via @use "myId"@.
 -- See <https://developer.mozilla.org/en-US/docs/Web/SVG/Element/use>
 mkUse :: String -> Tree
 mkUse name = UseTree (defaultSvg & useName .~ name) Nothing
 
 -- | A clip path restricts the region to which paint can be applied.
 -- See <https://developer.mozilla.org/en-US/docs/Web/SVG/Element/clipPath>
-mkClipPath :: String  -- ^ ID of the clip path, which can then be referred to by other elements using 'withClipPathRef'.
+mkClipPath :: String  -- ^ ID of the clip path, which can then be referred to by other elements
+                      --   using 'withClipPathRef'.
            -> [Tree] -- ^ List of shapes that will determine the final shape of the clipping region
            -> Tree
 mkClipPath idTag forest = withId idTag $ ClipPathTree $ defaultSvg
@@ -317,10 +330,11 @@ mkBackgroundPixel :: PixelRGBA8 -> Tree
 mkBackgroundPixel pixel =
     withFillColorPixel pixel $ mkRect screenWidth screenHeight
 
--- | Take list of rows, where each row consists of number of images and display them in regular grid structure.
+-- | Take list of rows, where each row consists of number of images and display them in regular
+--   grid structure.
 --   All rows will get equal amount of vertical space.
---   The images within each row will get equal amount of horizontal space, independent of the other rows.
---   Each row can contain different number of cells.
+--   The images within each row will get equal amount of horizontal space, independent of the other
+--   rows. Each row can contain different number of cells.
 gridLayout :: [[Tree]] -> Tree
 gridLayout rows = mkGroup
     [ translate (-screenWidth/2+colSep*nCol)
@@ -343,10 +357,12 @@ gridLayout rows = mkGroup
 --   <<docs/gifs/doc_mkText.gif>>
 mkText :: T.Text -> Tree
 mkText str =
-  (flipYAxis $
-  TextTree Nothing $ defaultSvg
+  flipYAxis
+  (TextTree Nothing $ defaultSvg
     & textRoot .~ span_
     & fontSize .~ pure (Num 2))
-    & textAnchor .~ pure (TextAnchorMiddle)
+    & textAnchor .~ pure TextAnchorMiddle
+    -- Note: TextAnchorMiddle is placed on the 'flipYAxis' group such that it can easily
+    -- be overwritten by the user.
   where
     span_ = defaultSvg & spanContent .~ [SpanText str]

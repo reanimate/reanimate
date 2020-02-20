@@ -29,14 +29,17 @@ loadJPG key = unsafePerformIO $ do
     Left err  -> error err
     Right img -> return $ convertRGB8 img
 
+{- HLINT ignore svgLogo -}
 -- | <<docs/gifs/doc_svgLogo.gif>>
 svgLogo :: SVG
 svgLogo = unsafePerformIO $ embedImage "data/svg-logo.svg"
 
+{- HLINT ignore haskellLogo -}
 -- | <<docs/gifs/doc_haskellLogo.gif>>
 haskellLogo :: SVG
 haskellLogo = unsafePerformIO $ embedImage "data/haskell.svg"
 
+{- HLINT ignore githubIcon -}
 -- | <<docs/gifs/doc_githubIcon.gif>>
 githubIcon :: SVG
 githubIcon = unsafePerformIO $ embedImage "data/github-icon.svg"

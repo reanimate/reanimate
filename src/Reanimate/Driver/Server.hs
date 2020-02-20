@@ -5,7 +5,6 @@ module Reanimate.Driver.Server
   ) where
 
 import           Control.Concurrent
-import           Control.Concurrent      (forkIO, killThread, threadDelay)
 import           Control.Exception       (SomeException, catch, finally)
 import           Control.Monad
 import           Control.Monad.Fix       (fix)

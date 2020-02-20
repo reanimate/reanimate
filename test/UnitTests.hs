@@ -20,8 +20,12 @@ import           Test.Tasty.HUnit
 unitTestFolder :: FilePath -> IO TestTree
 unitTestFolder path = do
   files <- sort <$> getDirectoryContents path
+  mbWDiff <- findExecutable "wdiff"
+  let diff = case mbWDiff of
+        Nothing -> ["diff", "--strip-trailing-cr"]
+        Just wdiff -> [wdiff, "--no-common"]
   return $ testGroup "animate"
-    [ goldenVsStringDiff file (\ref new -> ["diff", "--strip-trailing-cr", ref, new]) fullPath (genGolden hsPath)
+    [ goldenVsStringDiff file (\ref new -> diff ++ [ref, new]) fullPath (genGolden hsPath)
     | file <- files
     , let fullPath = path </> file
           hsPath = replaceExtension fullPath "hs"

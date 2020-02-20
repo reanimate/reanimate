@@ -49,9 +49,9 @@ renderBodyStore space store = do
         angle <- get $ bodyAngle body
         let bodySvg =
               translate posX posY $
-              rotate (angle/pi*180) $
+              rotate (angle/pi*180)
               svg
-        modifyIORef lst $ (bodySvg:)
+        modifyIORef lst (bodySvg:)
     ) nullPtr
   result <- readIORef lst
   return $ mkGroup result
@@ -72,7 +72,7 @@ simulate space store fps stepsPerFrame dur = do
     in frozen V.! key
 
 polyShapesToBody :: Space -> [PolyShape] -> IO Body
-polyShapesToBody space poly = do
+polyShapesToBody space poly =
     polygonsToBody space (map (map toVect) $ plDecompose poly)
   where
     toVect (V2 x y) = Vect x y
