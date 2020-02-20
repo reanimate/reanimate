@@ -360,7 +360,7 @@ mkText str =
   flipYAxis
   (TextTree Nothing $ defaultSvg
     & textRoot .~ span_
-    & fontSize .~ pure (Num 2))
-    & textAnchor .~ pure TextAnchorMiddle
+    & fontSize .~ pure (Num 2)
+    & textAnchor .~ pure TextAnchorMiddle)
   where
     span_ = defaultSvg & spanContent .~ [SpanText str]
