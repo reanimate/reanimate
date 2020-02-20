@@ -21,13 +21,13 @@ embedImage key = do
     Nothing  -> error "Malformed svg"
     Just svg -> return $ embedDocument svg
 
-loadJPG :: FilePath -> Image PixelRGB8
+loadJPG :: FilePath -> Image PixelRGBA8
 loadJPG key = unsafePerformIO $ do
   jpg_file <- getDataFileName key
   dat <- B.readFile jpg_file
   case decodeJpeg dat of
     Left err  -> error err
-    Right img -> return $ convertRGB8 img
+    Right img -> return $ convertRGBA8 img
 
 {- HLINT ignore svgLogo -}
 -- | <<docs/gifs/doc_svgLogo.gif>>
@@ -47,5 +47,5 @@ githubIcon = unsafePerformIO $ embedImage "data/github-icon.svg"
 -- | 300x150 equirectangular earth
 --
 --   <<docs/gifs/doc_smallEarth.gif>>
-smallEarth :: Image PixelRGB8
+smallEarth :: Image PixelRGBA8
 smallEarth = loadJPG "data/small_earth.jpg"
