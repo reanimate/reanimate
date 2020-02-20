@@ -1,4 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE MultiWayIf #-}
 module Reanimate.Driver ( reanimate ) where
 
 import           Control.Applicative      ((<|>))
@@ -14,6 +15,7 @@ import           Reanimate.Render         (FPS, Format (..), Height, Width,
 import           System.Directory
 import           System.FilePath
 import           Text.Printf
+import           Data.Either
 
 presetFormat :: Preset -> Format
 presetFormat Youtube    = RenderMp4
@@ -139,6 +141,7 @@ reanimate animation = do
             ,"--width", show width
             ,"--height", show height
             ,"--format", showFormat fmt
+            ,"--raster", showRaster renderRaster
             ,"--target", target
             ,"+RTS", "-N", "-RTS"]
         else do
@@ -152,9 +155,19 @@ reanimate animation = do
                  \  fmt:    %s\n\
                  \  target: %s\n"
             fps width height (showFormat fmt) target
-          render animation target fmt width height fps
+          raster <- selectRaster renderRaster
+          render animation target raster fmt width height fps
 
-
+selectRaster :: Raster -> IO Raster
+selectRaster RasterAuto = do
+  rsvg <- hasRSvg
+  ink <- hasInkscape
+  conv <- hasConvert
+  if | isRight rsvg -> pure RasterRSvg
+     | isRight ink  -> pure RasterInkscape
+     | isRight conv -> pure RasterConvert
+     | otherwise    -> pure RasterNone
+selectRaster r = pure r
 
 guessParameter :: Maybe a -> Maybe a -> a -> a
 guessParameter a b def = fromMaybe def (a <|> b)

@@ -24,6 +24,7 @@ import qualified Graphics.SvgTree            as Svg
 import           Reanimate.Animation
 import           Reanimate.Cache
 import           Reanimate.Misc
+import           Reanimate.Render
 import           Reanimate.Parameters
 import           Reanimate.Svg.Constructors
 import           Reanimate.Svg.Unuse
@@ -139,10 +140,10 @@ svgAsPngFile' width height svg = unsafePerformIO $ cacheFile template $ \pngPath
     let svgPath = replaceExtension pngPath "svg"
     -- ffmpeg <- requireExecutable "ffmpeg"
     -- convert <- requireExecutable "convert"
-    inkscape <- requireExecutable "inkscape"
+    -- inkscape <- requireExecutable "inkscape"
     writeFile svgPath rendered
-    -- runCmd convert [ "-background", "none", "-antialias", svgPath, pngPath ]
-    runCmd inkscape [ svgPath, "--export-png=" ++ pngPath, "--without-gui" ]
+    -- FIXME: raster should be configurable.
+    applyRaster RasterRSvg svgPath
   where
     template = show (hash rendered) <.> "png"
     rendered = renderSvg (Just $ Px $ fromIntegral width) (Just $ Px $ fromIntegral height) svg

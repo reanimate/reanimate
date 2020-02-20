@@ -8,6 +8,7 @@ module Reanimate.Builtin.Flip
   , flipSprite
   , Transition
   , signalT
+  , mapT
   , flipTransition
   , flipTransitionOpts
   , overlapTransition
@@ -57,7 +58,10 @@ flipSprite front back = do
 type Transition = Animation -> Animation -> Animation
 
 signalT :: Signal -> Transition -> Transition
-signalT s t a b = signalA s (t a b)
+signalT = mapT . signalA
+
+mapT :: (Animation -> Animation) -> Transition -> Transition
+mapT fn t = \a b -> fn (t a b)
 
 overlapTransition :: Double -> Transition -> Transition
 overlapTransition overlap t a b =

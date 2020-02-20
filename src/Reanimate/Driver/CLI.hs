@@ -4,14 +4,17 @@ module Reanimate.Driver.CLI
   , Command(..)
   , Preset(..)
   , Format(..)
+  , Raster(..)
   , showFormat
+  , showRaster
   ) where
 
 import           Data.Char
 import           Data.Monoid
 import           Options.Applicative
-import           Reanimate.Render    (Format (..), Width, Height, FPS)
 import           Prelude
+import           Reanimate.Render    (FPS, Format (..), Height, Raster (..),
+                                      Width)
 
 newtype Options = Options
   { optsCommand :: Command
@@ -30,11 +33,29 @@ data Command
     , renderCompile :: Bool
     , renderFormat  :: Maybe Format
     , renderPreset  :: Maybe Preset
+    , renderRaster  :: Raster
     }
    deriving (Show)
 
 data Preset = Youtube | ExampleGif | Quick | MediumQ | HighQ | LowFPS
   deriving (Show)
+
+readRaster :: String -> Maybe Raster
+readRaster raster =
+  case map toLower raster of
+    "none"     -> Just RasterNone
+    "auto"     -> Just RasterAuto
+    "inkscape" -> Just RasterInkscape
+    "rsvg"     -> Just RasterRSvg
+    "convert"  -> Just RasterConvert
+    _          -> Nothing
+
+showRaster :: Raster -> String
+showRaster RasterNone     = "none"
+showRaster RasterAuto     = "auto"
+showRaster RasterInkscape = "inkscape"
+showRaster RasterRSvg     = "rsvg"
+showRaster RasterConvert  = "convert"
 
 readFormat :: String -> Maybe Format
 readFormat fmt =
@@ -144,6 +165,11 @@ renderCommand = info parse
           (long "preset" <> showDefaultWith showPreset
           <> metavar "TYPE"
           <> help "Parameter presets: youtube, gif, quick, medium, high"))
+      <*> option (maybeReader readRaster)
+          (long "raster" <> showDefaultWith showRaster
+          <> metavar "RASTER"
+          <> value RasterNone
+          <> help "Raster engine: none, auto, inkscape, rsvg, convert")
 
 opts :: ParserInfo Options
 opts = info (options <**> helper )
