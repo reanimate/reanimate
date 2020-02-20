@@ -45,8 +45,8 @@ import           System.IO.Unsafe
 earth :: FilePath
 -- earth = "earth-low.jpg"
 -- earth = "earth-mid.jpg"
--- earth = "earth-high.jpg"
-earth = "earth-extreme.jpg"
+earth = "earth-high.jpg"
+-- earth = "earth-extreme.jpg"
 
 main :: IO ()
 main = reanimate mainScene
@@ -87,7 +87,7 @@ testScene = sceneAnimation $ do
     src = equirectangular
 
 mainScene :: Animation
-mainScene = seq equirectangular $ takeA 5 $ dropA 19 $
+mainScene = seq equirectangular $ -- takeA 5 $ dropA 19 $
   mapA (withStrokeColor "black") $ sceneAnimation $ do
     bg <- newSpriteSVG $ mkBackground "white"
     spriteZ bg (-1)
