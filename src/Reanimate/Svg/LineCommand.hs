@@ -9,6 +9,7 @@ import           Graphics.SvgTree             hiding (height, line, path, use,
 import           Linear.Metric
 import           Linear.V2                    hiding (angle)
 import           Linear.Vector
+import qualified Data.Vector.Unboxed as V
 import qualified Geom2D.CubicBezier           as Bezier
 
 type CmdM a = State RPoint a
@@ -219,14 +220,13 @@ convertSvgArc (V2 x0 y0) radiusX radiusY angle largeArcFlag sweepFlag (V2 x y)
                 dye = t * (sinPhi * rx * sinTheta2 - cosPhi * ry * cosTheta2)
 
 partialBezierPoints :: [RPoint] -> Double -> Double -> [RPoint]
-partialBezierPoints [p1,p2,p3,p4] a b =
-  let fromP (V2 i j) = Bezier.Point i j
-      toP (Bezier.Point i j) = V2 i j
-      c1 = Bezier.CubicBezier (fromP p1) (fromP p2) (fromP p3) (fromP p4)
-      Bezier.CubicBezier o1 o2 o3 o4 = Bezier.bezierSubsegment c1 a b
-  in [toP o1, toP o2, toP o3, toP o4]
-partialBezierPoints _ _ _ = error "partialBezierPoints needs to be updated!"
-
+partialBezierPoints ps a b =
+  let fromP (V2 i j) = (i, j)
+      toP (i, j) = V2 i j
+      c1 :: Bezier.AnyBezier Double
+      c1 = Bezier.unsafeFromVector (V.fromList $ map fromP ps)
+      os = V.toList $ Bezier.toVector $ Bezier.bezierSubsegment c1 a b
+  in map toP os
 
 interpolatePathCommands :: Double -> [PathCommand] -> [PathCommand]
 interpolatePathCommands alpha = lineToPath . partialLine alpha . toLineCommands
