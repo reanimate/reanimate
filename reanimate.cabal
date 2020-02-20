@@ -66,6 +66,7 @@ library
                       Reanimate.Builtin.TernaryPlot
                       Reanimate.Builtin.CirclePlot
                       Reanimate.Builtin.Flip
+                      Reanimate.Builtin.Slide
                       Reanimate.Constants
                       Reanimate.Parameters
                       Reanimate.Chiphunk
