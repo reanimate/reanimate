@@ -16,7 +16,7 @@ import           Reanimate.Svg.Constructors
 
 type Nanometer = Integer
 
-
+{-# NOINLINE lightXYZCoordinates #-}
 lightXYZCoordinates :: Map Nanometer (Double, Double, Double)
 lightXYZCoordinates = unsafePerformIO $ do
   dat <- BS.readFile =<< getDataFileName "data/CIExyz.csv"
@@ -25,6 +25,7 @@ lightXYZCoordinates = unsafePerformIO $ do
     Right vec -> return $ Map.fromList
       [ (nm, (x,y,z)) | (nm,x,y,z) <- V.toList vec, nm <= 700 ]
 
+{-# NOINLINE bigXYZCoordinates #-}
 bigXYZCoordinates :: Map Nanometer (Double, Double, Double)
 bigXYZCoordinates = unsafePerformIO $ do
   dat <- BS.readFile =<< getDataFileName "data/CIE_XYZ.csv"
@@ -41,7 +42,7 @@ nmToColor nm = do
 renderXYZCoordinates :: Tree
 renderXYZCoordinates =
   withFillOpacity 0 $
-  mkLinePath $
+  mkLinePath
   [ (x, 1-y)
   | (_nm, (x,y,_z)) <- Map.toList lightXYZCoordinates
   ]
@@ -54,11 +55,12 @@ lightLABCoordinates = Map.map fn lightXYZCoordinates
 renderLABCoordinates :: Tree
 renderLABCoordinates =
   withFillOpacity 0 $
-  mkLinePath $
+  mkLinePath
   [ (a/350, (1-b)/150)
   | (_nm, (_l,a,b)) <- Map.toList lightLABCoordinates
   ]
 
+{-# NOINLINE coneSensitivity #-}
 -- (Long, Medium, Short)
 coneSensitivity :: Map Nanometer (Double, Double, Double)
 coneSensitivity = unsafePerformIO $ do

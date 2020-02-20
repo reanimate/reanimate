@@ -31,7 +31,7 @@ fromListS fns t = worker 0 fns
 --
 --   <<docs/gifs/doc_constantS.gif>>
 constantS :: Double -> Signal
-constantS x = const x
+constantS = const
 
 -- | Signal with new starting and end values.
 --

@@ -43,9 +43,10 @@ import           Debug.Trace
 import           Reanimate
 
 -- Constants
-halfPi, sqrtPi, epsilon, tau :: Double
+halfPi, sqrtPi, sqrt2, epsilon, tau :: Double
 halfPi = pi/2
 sqrtPi = sqrt pi
+sqrt2 = sqrt2
 epsilon = 1.0e-12
 tau = pi*2
 
@@ -60,6 +61,7 @@ srcPixel src (LonLat lam phi) =
     xPx = round $ ((lam+pi)/tau) * fromIntegral (imageWidth src-1)
     yPx = round $ (1-((phi+halfPi)/pi)) * fromIntegral (imageHeight src-1)
 
+{- HLINT ignore -}
 findValidCoord :: Image PixelRGB8 -> Projection -> XYCoord -> XYCoord
 findValidCoord src p (XYCoord x y) = fromMaybe (XYCoord x y) $ listToMaybe
     [ XYCoord x' y'
@@ -67,7 +69,7 @@ findValidCoord src p (XYCoord x y) = fromMaybe (XYCoord x y) $ listToMaybe
           yi = round $ y * hMax
     , ax <- [xi, xi-1, xi+1]
     , ay <- [yi, yi-1, yi+1]
-    , (ax >= 0 && ax < w && ay >= 0 && ay < h)
+    , ax >= 0 && ax < w && ay >= 0 && ay < h
     , let x' = fromIntegral ax / wMax
           y' = fromIntegral ay / hMax
     , validLonLat $ projectionInverse p (XYCoord x' y')
@@ -147,8 +149,8 @@ interpP src p1 p2 t = runST $ do
             XYCoord x2 y2 = findValidCoord src p2 $ projectionForward p2 lonlat
             x3 = round $ fromToS x1 x2 t * wMax
             y3 = round $ (1 - fromToS y1 y2 t) * hMax
-        when (validLonLat lonlat && validXYCoord (XYCoord x2 y2)) $ do
-          when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $ do
+        when (validLonLat lonlat && validXYCoord (XYCoord x2 y2)) $
+          when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $
             writePixel img x3 y3 (promotePixel $ srcPixel src lonlat)
     forM_ [0..(w*factor)-1] $ \x ->
       forM_ [0..(h*factor)-1] $ \y -> do
@@ -166,8 +168,8 @@ interpP src p1 p2 t = runST $ do
               writePixel img x3 y3 (promotePixel $ srcPixel src lonlat)
     forM_ [1..w-1] $ \x ->
       forM_ [0..h-1] $ \y -> do
-        let x1 = fromIntegral x / (wMax)
-            y1 = 1 - fromIntegral y / (hMax)
+        let x1 = fromIntegral x / wMax
+            y1 = 1 - fromIntegral y / hMax
         this <- readPixel img x y
         when (isBlank this) $
           when (isInWorld (mergeP p1 p2 t) (XYCoord x1 y1)) $
@@ -234,9 +236,8 @@ isValidP (Projection p pInv) = and
           y = (fromIntegral yPx / fromIntegral (h-1))
           lonlat = pInv (XYCoord x y)
           lonlat2 = pInv $ p lonlat
-      in if not (validLonLat lonlat) || eqLonLat lonlat lonlat2
-          then True
-          else trace (show (lonlat, lonlat2)) $ False
+      in not (validLonLat lonlat) || eqLonLat lonlat lonlat2
+          || trace (show (lonlat, lonlat2)) False
 
 moveBottomP :: Double -> Projection -> Projection
 moveBottomP offset (Projection p pInv) = Projection p' pInv'
@@ -301,7 +302,7 @@ mercatorP = Projection forward inverse
   where
     forward (LonLat lam phi) =
       XYCoord ((lam+pi)/tau)
-        (((log(tan(pi/4+phi/2))) + pi)/tau)
+        ((log(tan(pi/4+phi/2)) + pi)/tau)
     inverse (XYCoord x y) = LonLat xPi (atan (sinh yPi))
       where
         xPi = fromToS (-pi) pi x
@@ -314,7 +315,6 @@ mollweideP = Projection forward inverse
     forward (LonLat lam phi) =
         XYCoord ((x+sqrt2*2)/(4*sqrt2)) ((y+sqrt2)/(2*sqrt2))
       where
-        sqrt2 = sqrt 2
         x = (2*sqrt2)/pi * lam * cos theta
         y = sqrt2*sin theta
         theta = find_theta 100
@@ -326,10 +326,10 @@ mollweideP = Projection forward inverse
           in sub - (2*sub+sin (2*sub)-pi*sin phi)/(2+2*cos(2*sub))
     inverse (XYCoord x' y') = LonLat lam phi
       where
-        x = fromToS (-2*sqrt(2)) (2*sqrt(2)) x'
-        y = fromToS (-sqrt 2) (sqrt 2) y'
-        theta = asin (y/sqrt(2))
-        lam = pi*x/(2*sqrt(2)*cos theta)
+        x = fromToS (-2*sqrt2) (2*sqrt2) x'
+        y = fromToS (-sqrt2) sqrt2 y'
+        theta = asin (y/sqrt2)
+        lam = pi*x/(2*sqrt2*cos theta)
         phi = asin ((2*theta+sin(2*theta))/pi)
 
 -- | <<docs/gifs/doc_hammerP.gif>>
@@ -339,13 +339,12 @@ hammerP = Projection forward inverse
     forward (LonLat lam phi) =
         XYCoord ((x+sqrt2*2)/(4*sqrt2)) ((y+sqrt2)/(2*sqrt2))
       where
-        sqrt2 = sqrt 2
-        x = (2*sqrt2*cos phi*sin (lam/2))/(sqrt (1+cos phi*cos (lam/2)))
-        y = (sqrt2*sin phi)/(sqrt (1+cos phi*cos (lam/2)))
+        x = (2*sqrt2*cos phi*sin (lam/2))/sqrt (1+cos phi*cos (lam/2))
+        y = (sqrt2*sin phi)/ sqrt (1+cos phi*cos (lam/2))
     inverse (XYCoord x' y') = LonLat lam phi
       where
-        x = fromToS (-2*sqrt(2)) (2*sqrt(2)) x'
-        y = fromToS (-sqrt 2) (sqrt 2) y'
+        x = fromToS (-2*sqrt2) (2*sqrt2) x'
+        y = fromToS (-sqrt2) sqrt2 y'
         z = sqrt (1 - (x/4)**2 - (y/2)**2)
         lam = 2 * atan2 (z*x) (2*(2*z**2-1))
         phi = asin (z*y)
@@ -358,7 +357,7 @@ lambertP = Projection forward inverse
       XYCoord ((lam+pi)/tau) ((sin phi+1)/2)
     inverse (XYCoord x' y') = LonLat x (asin y)
       where
-        x = fromToS (-pi) (pi) x'
+        x = fromToS (-pi) pi x'
         y = fromToS (-1) 1 y'
 
 -- | <<docs/gifs/doc_bottomleyP.gif>>
@@ -374,7 +373,7 @@ bottomleyP phi_1 = Projection forward inverse
         e = lam * sin phi_1 * sin rho / rho
     inverse (XYCoord x' y') = LonLat lam phi
       where
-        x = fromToS (-pi) (pi) x'
+        x = fromToS (-pi) pi x'
         y = fromToS (-pi/2) (pi/2) y'
         x1 = x * sin phi_1
         y1 = pi/2 - y
@@ -394,7 +393,7 @@ sinusoidalP = Projection forward inverse
         y = phi
     inverse (XYCoord x' y') = LonLat (x/cos y) y
       where
-        x = fromToS (-pi) (pi) x'
+        x = fromToS (-pi) pi x'
         y = fromToS (-pi/2) (pi/2) y'
 
 -- | <<docs/gifs/doc_wernerP.gif>>
@@ -410,7 +409,7 @@ wernerP = moveTopP 0.23 $ Projection forward inverse
         y = pi/2 - rho * cos e
     inverse (XYCoord x' y') = LonLat lam phi
       where
-        x = fromToS (-pi) (pi) x'
+        x = fromToS (-pi) pi x'
         y = fromToS (-pi/2) (pi/2) y'
         rho = sqrt (x**2 + (pi/2 - y)**2)
         e = atan2 x (pi/2 -y)
@@ -433,7 +432,7 @@ bonneP phi_0 = moveTopP (-0.17*factor) $ scaleP 1 (fromToS 1 0.65 factor) $ Proj
         y = cotPhi0 - rho * cos e
     inverse (XYCoord x' y') = LonLat lam phi
       where
-        x = fromToS (-pi) (pi) x'
+        x = fromToS (-pi) pi x'
         y = fromToS (-pi/2) (pi/2) y'
         cotPhi0 = cot phi_0
         rho = sqrt (x*x + (cot phi_0 - y)**2)
@@ -457,8 +456,8 @@ orthoP lam_0 phi_0 = Projection forward inverse
     inverse (XYCoord x' y') = LonLat lam phi
       where
         x = fromToS (-16/9) (16/9) x'
-        y = fromToS (-1) (1) y'
-        lam = wrap (-pi) (pi) $
+        y = fromToS (-1) 1 y'
+        lam = wrap (-pi) pi $
           lam_0 + atan2 (x * sin c) (rho * cos c * cos phi_0 - y * sin c * sin phi_0)
         phi = wrap (-pi/2) (pi/2) $
           asin ((cos c * sin phi_0 + y * sin c * cos phi_0)/rho)
@@ -477,7 +476,7 @@ cassiniP = Projection forward inverse
     inverse (XYCoord x' y') = LonLat lam phi
       where
         x = fromToS (-halfPi) halfPi x'
-        y = fromToS (-pi) (pi) y'
+        y = fromToS (-pi) pi y'
         lam = atan2 (tan x) (cos y)
         phi = asin (sin y * cos x)
 
@@ -497,8 +496,8 @@ augustP = scaleP 0.70 0.70 $ Projection forward inverse
         y = tanPhi / c
         x2 = x*x
         y2 = y*y
-        xPos = (4 / 3 * x * (3+x2 - 3*y2))
-        yPos = (4 / 3 * y * (3 + 3*x2 - y2))
+        xPos = 4 / 3 * x * (3+x2 - 3*y2)
+        yPos = 4 / 3 * y * (3 + 3*x2 - y2)
     inverse (XYCoord x' y') = LonLat lam phi
       where
         x = fromToS xLo xHi x' * 3 / 8
@@ -507,7 +506,7 @@ augustP = scaleP 0.70 0.70 $ Projection forward inverse
         y2 = y*y
         s = 1 + x2 + y2
         sin3Eta = sqrt ((s - sqrt (s*s - 4 * y * y)) / 2)
-        eta = asin (sin3Eta) / 3
+        eta = asin sin3Eta / 3
         xi = if sin3Eta /= 0 then acosh (abs (y / sin3Eta)) / 3 else asinh (abs x) / 3
         cosEta = cos eta
         coshXi = cosh xi
@@ -520,9 +519,9 @@ collignonP :: Projection
 collignonP = Projection forward inverse
   where
     yHi = sqrtPi
-    yLo = sqrtPi * (1 - sqrt 2)
-    xLo = -pi*(2/sqrtPi)*(sqrt 2)
-    xHi = pi*(2/sqrtPi)*(sqrt 2)
+    yLo = sqrtPi * (1 - sqrt2)
+    xLo = -pi*(2/sqrtPi)*sqrt2
+    xHi = pi*(2/sqrtPi)*sqrt2
     forward (LonLat lam phi) = XYCoord ((x-xLo)/(xHi-xLo)) ((y-yLo)/(yHi-yLo))
       where
         alpha = sqrt (1 - sin phi)
@@ -658,7 +657,7 @@ lagrangeP = Projection forward inverse
         x = 2 * sin (lam*n) / c
         y = (v - 1/v) /c
     inverse (XYCoord x' y')
-        | abs ((abs y')-1) < epsilon = LonLat 0 (signum y * halfPi)
+        | abs (abs y'-1) < epsilon = LonLat 0 (signum y * halfPi)
         | otherwise = LonLat lam phi
       where
         x = fromToS xLo xHi x' / 2

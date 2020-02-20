@@ -17,6 +17,8 @@ import           Graphics.SvgTree
 import           System.Random
 import           System.Random.Shuffle
 
+-- spritePercent = (/) <$> spriteT <*> spriteDur
+
 main :: IO ()
 main = seq texture $ reanimate $ pauseAtEnd 1 $ parA bg $ sceneAnimation $ do
     bend <- newVar 0
@@ -33,17 +35,17 @@ main = seq texture $ reanimate $ pauseAtEnd 1 $ parA bg $ sceneAnimation $ do
       return $ seq (texture (t/dur)) $
         blender (script (texture (t/dur)) getBend getTrans getRotX getRotY)
     wait 2
-    tweenVar trans 5 (\t v -> fromToS v (-2) $ curveS 2 (t/5))
-    tweenVar bend 5 (\t v -> fromToS v 1 $ curveS 2 (t/5))
-    tweenVar rotY 15 (\t v -> fromToS v (pi*2*2) $ curveS 2 (t/15))
+    tweenVar trans 5 (\t v -> fromToS v (-2) $ curveS 2 t)
+    tweenVar bend 5 (\t v -> fromToS v 1 $ curveS 2 t)
+    tweenVar rotY 15 (\t v -> fromToS v (pi*2*2) $ curveS 2 t)
     fork $ do
-      tweenVar rotX 5 (\t v -> fromToS v (-pi/5) $ curveS 2 (t/5))
+      tweenVar rotX 5 (\t v -> fromToS v (-pi/5) $ curveS 2 t)
       wait 5
-      tweenVar rotX 5 (\t v -> fromToS v (pi/5) $ curveS 2 (t/5))
+      tweenVar rotX 5 (\t v -> fromToS v (pi/5) $ curveS 2 t)
     wait (15-5)
-    tweenVar bend 5 (\t v -> fromToS v 0 $ curveS 2 (t/5))
-    tweenVar rotX 5 (\t v -> fromToS v 0 $ curveS 2 (t/5))
-    tweenVar trans 5 (\t v -> fromToS v 0 $ curveS 2 (t/5))
+    tweenVar bend 5 (\t v -> fromToS v 0 $ curveS 2 t)
+    tweenVar rotX 5 (\t v -> fromToS v 0 $ curveS 2 t)
+    tweenVar trans 5 (\t v -> fromToS v 0 $ curveS 2 t)
     wait 4
     -- tweenVar trans 1 (\t v -> fromToS v 0 $ curveS 2 t)
     wait 1

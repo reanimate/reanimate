@@ -137,7 +137,7 @@ tweenVar :: Var s a -> Duration -> (a -> Time -> a) -> Scene s ()
 tweenVar (Var ref) dur fn = do
   now <- queryNow
   liftST $ modifySTRef ref $ \prev t ->
-    fn (prev t) ((max 0 $ min dur $ t-now)/dur)
+    fn (prev t) (max 0 (min dur $ t-now)/dur)
   wait dur
 
 unVar :: Var s a -> Frame s a
@@ -152,7 +152,7 @@ findVar cond (v:vs) = do
   if cond val then return v else findVar cond vs
 
 applyVar :: Var s a -> Sprite s -> (a -> SVG -> SVG) -> Scene s ()
-applyVar var sprite fn = do
+applyVar var sprite fn =
   spriteModify sprite $ do
     varFn <- unVar var
     return $ \(svg, zindex) ->
@@ -193,7 +193,7 @@ newSprite render = do
     return $ \d absT ->
       let relD = (if spriteDur < 0 then d else spriteDur)-now
           relT = absT-now in
-      if relT < 0 || (if relD+now==d then False else relD <= relT)
+      if relT < 0 || (relD+now/=d && relD <= relT)
         then (None, 0)
         else spriteEffect relD relT (fn absT relD relT)
   return $ Sprite now ref
