@@ -247,8 +247,8 @@ validLonLat :: LonLat -> Bool
 validLonLat (LonLat lam phi) =
   lam >= -pi && lam <= pi && phi >= -pi/2 && phi <= pi/2
 
-validXYCoord :: XYCoord -> Bool
-validXYCoord (XYCoord x y) = x >= 0 && x <= 1 && y >= 0 && y <= 1
+_validXYCoord :: XYCoord -> Bool
+_validXYCoord (XYCoord x y) = x >= 0 && x <= 1 && y >= 0 && y <= 1
 
 isValidP :: Projection -> Bool
 isValidP (Projection p pInv) = and
