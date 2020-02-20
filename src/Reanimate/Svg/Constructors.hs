@@ -360,7 +360,9 @@ mkText str =
   flipYAxis
   (TextTree Nothing $ defaultSvg
     & textRoot .~ span_
-    & fontSize .~ pure (Num 2)
-    & textAnchor .~ pure TextAnchorMiddle)
+    & fontSize .~ pure (Num 2))
+    & textAnchor .~ pure TextAnchorMiddle
+    -- Note: TextAnchorMiddle is placed on the 'flipYAxis' group such that it can easily
+    -- be overwritten by the user.
   where
     span_ = defaultSvg & spanContent .~ [SpanText str]
