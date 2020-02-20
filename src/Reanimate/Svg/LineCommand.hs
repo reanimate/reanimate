@@ -1,15 +1,15 @@
-{-# LANGUAGE LambdaCase #-}
 module Reanimate.Svg.LineCommand where
 
 import           Control.Lens                 ((%~), (&), (.~))
 import           Control.Monad.Fix
 import           Control.Monad.State
+import Data.Functor
 import           Graphics.SvgTree             hiding (height, line, path, use,
                                                width)
 import           Linear.Metric
 import           Linear.V2                    hiding (angle)
 import           Linear.Vector
--- import qualified Geom2D.CubicBezier           as Bezier
+import qualified Geom2D.CubicBezier           as Bezier
 
 type CmdM a = State RPoint a
 
@@ -57,7 +57,7 @@ partialLine alpha cmds = evalState (worker 0 cmds) zero
 adjustLineLength :: Double -> RPoint -> LineCommand -> LineCommand
 adjustLineLength alpha from cmd =
   case cmd of
-    LineBezier points -> LineBezier $ drop 1 $ partial_bezier_points (from:points) 0 alpha
+    LineBezier points -> LineBezier $ drop 1 $ partialBezierPoints (from:points) 0 alpha
     LineMove p -> LineMove p
     -- LineDraw t -> LineDraw (lerp alpha t from)
     LineEnd p -> LineBezier [lerp alpha p from]
@@ -65,7 +65,7 @@ adjustLineLength alpha from cmd =
 lineLength :: LineCommand -> CmdM Double
 lineLength cmd =
   case cmd of
-    LineMove to       -> pure 0 <* put to
+    LineMove to       -> 0 <$ put to
     -- LineDraw to       -> gets (distance to) <* put to
     LineBezier points -> gets (distance (last points)) <* put (last points)
     LineEnd to        -> gets (distance to) <* put to
@@ -90,12 +90,12 @@ mkStraightLine :: RPoint -> LineCommand
 mkStraightLine p = LineBezier [p]
 
 toLineCommand :: RPoint -> Maybe RPoint -> PathCommand -> CmdM [LineCommand]
-toLineCommand startPos mbPrevControlPt cmd = do
+toLineCommand startPos mbPrevControlPt cmd =
   case cmd of
     MoveTo OriginAbsolute []  -> pure []
     MoveTo OriginAbsolute lst -> put (last lst) *> gets (pure.LineMove)
     MoveTo OriginRelative lst -> modify (+ sum lst) *> gets (pure.LineMove)
-    LineTo OriginAbsolute lst -> forM lst (\to -> put to *> pure (mkStraightLine to))
+    LineTo OriginAbsolute lst -> forM lst (\to -> put to $> mkStraightLine to)
     LineTo OriginRelative lst -> forM lst (\to -> modify (+to) *> gets mkStraightLine)
     HorizontalTo OriginAbsolute lst ->
       forM lst $ \x -> modify (_x .~ x) *> gets mkStraightLine
@@ -105,9 +105,9 @@ toLineCommand startPos mbPrevControlPt cmd = do
       forM lst $ \y -> modify (_y .~ y) *> gets mkStraightLine
     VerticalTo OriginRelative lst ->
       forM lst $ \y -> modify (_y %~ (+y)) *> gets mkStraightLine
-    CurveTo OriginAbsolute quads -> do
-      forM quads $ \(a,b,c) -> put c *> pure (LineBezier [a,b,c])
-    CurveTo OriginRelative quads -> do
+    CurveTo OriginAbsolute quads ->
+      forM quads $ \(a,b,c) -> put c $> LineBezier [a,b,c]
+    CurveTo OriginRelative quads ->
       forM quads $ \(a,b,c) -> do
         from <- get <* modify (+c)
         pure $ LineBezier $ map (+from) [a,b,c]
@@ -117,9 +117,9 @@ toLineCommand startPos mbPrevControlPt cmd = do
         from <- get <* adjustPosition o to
         let c1 = maybe (makeAbsolute o from c2) (mirrorPoint from) mbControl
         pure $ LineBezier [c1,makeAbsolute o from c2,makeAbsolute o from to]
-    QuadraticBezier OriginAbsolute pairs -> do
-      forM pairs $ \(a,b) -> put b *> pure (LineBezier [a,b])
-    QuadraticBezier OriginRelative pairs -> do
+    QuadraticBezier OriginAbsolute pairs ->
+      forM pairs $ \(a,b) -> put b $> LineBezier [a,b]
+    QuadraticBezier OriginRelative pairs ->
       forM pairs $ \(a,b) -> do
         from <- get <* modify (+b)
         pure $ LineBezier $ map (+from) [a,b]
@@ -130,10 +130,10 @@ toLineCommand startPos mbPrevControlPt cmd = do
         let c1 = maybe from (mirrorPoint from) mbControl
         pure $ LineBezier [c1,makeAbsolute o from to]
     EllipticalArc o points -> concat <$>
-      (forM points $ \(rotX, rotY, angle, largeArc, sweepFlag, to) -> do
+      forM points (\(rotX, rotY, angle, largeArc, sweepFlag, to) -> do
         from <- get <* adjustPosition o to
         return $ convertSvgArc from rotX rotY angle largeArc sweepFlag (makeAbsolute o from to))
-    EndPath -> put startPos *> pure [LineEnd startPos]
+    EndPath -> put startPos $> [LineEnd startPos]
   where
     mirrorPoint c p = c*2-p
     adjustPosition OriginRelative p = modify (+p)
@@ -153,6 +153,7 @@ calculateVectorAngle ux uy vx vy
         tb = atan2 vy vx
 
 -- ported from: https://github.com/vvvv/SVG/blob/master/Source/Paths/SvgArcSegment.cs
+{- HLINT ignore convertSvgArc -}
 convertSvgArc :: RPoint -> Coord -> Coord -> Coord -> Bool -> Bool -> RPoint -> [LineCommand]
 convertSvgArc (V2 x0 y0) radiusX radiusY angle largeArcFlag sweepFlag (V2 x y)
     | x0 == x && y0 == y
@@ -188,7 +189,7 @@ convertSvgArc (V2 x0 y0) radiusX radiusY angle largeArcFlag sweepFlag (V2 x y)
         dtheta' = calculateVectorAngle ((x1dash - cxdash) / rx) ((y1dash - cydash) / ry) ((-x1dash - cxdash) / rx) ((-y1dash - cydash) / ry)
         dtheta  = if (not sweepFlag && dtheta' > 0)
                     then  (dtheta' - 2 * pi)
-                    else  (if (sweepFlag && dtheta' < 0) then (dtheta' + 2 * pi) else dtheta')
+                    else  (if (sweepFlag && dtheta' < 0) then dtheta' + 2 * pi else dtheta')
 
         segments' = ceiling (abs (dtheta / (pi / 2.0)))
         delta = dtheta / fromInteger segments'
@@ -217,24 +218,14 @@ convertSvgArc (V2 x0 y0) radiusX radiusY angle largeArcFlag sweepFlag (V2 x y)
                 dxe = t * (cosPhi * rx * sinTheta2 + sinPhi * ry * cosTheta2)
                 dye = t * (sinPhi * rx * sinTheta2 - cosPhi * ry * cosTheta2)
 
-
--- Algorithm taken from manim. It's magic.
-bezier :: [RPoint] -> Double -> RPoint
-bezier points t = sum
-    [ point ^* (((1-t)**(fromIntegral $ n-k)) * (t**fromIntegral k) * fromIntegral (choose n k))
-    | (k, point) <- zip [0..] points
-    , let n = length points-1 ]
-  where
-    choose n k = product [n,n-1 .. n-k+1] `div` product [1..k]
-
-partial_bezier_points :: [RPoint] -> Double -> Double -> [RPoint]
-partial_bezier_points points a b
-  | isNaN end_prop || isInfinite end_prop = replicate (length points) (last points)
-  | otherwise = [ bezier (take (i+1) a_to_1) end_prop | i <- [0..length points-1] ]
-  where
-    a_to_1 = [ bezier (drop i points) a | i <- [0..length points-1] ]
-    end_prop = (b-a) / (1-a)
-
+partialBezierPoints :: [RPoint] -> Double -> Double -> [RPoint]
+partialBezierPoints [p1,p2,p3,p4] a b =
+  let fromP (V2 i j) = Bezier.Point i j
+      toP (Bezier.Point i j) = V2 i j
+      c1 = Bezier.CubicBezier (fromP p1) (fromP p2) (fromP p3) (fromP p4)
+      Bezier.CubicBezier o1 o2 o3 o4 = Bezier.bezierSubsegment c1 a b
+  in [toP o1, toP o2, toP o3, toP o4]
+partialBezierPoints _ _ _ = error "partialBezierPoints needs to be updated!"
 
 
 interpolatePathCommands :: Double -> [PathCommand] -> [PathCommand]

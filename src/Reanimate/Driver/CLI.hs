@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 module Reanimate.Driver.CLI
   ( getDriverOptions
   , Options(..)
@@ -14,7 +13,7 @@ import           Options.Applicative
 import           Reanimate.Render    (Format (..), Width, Height, FPS)
 import           Prelude
 
-data Options = Options
+newtype Options = Options
   { optsCommand :: Command
   } deriving (Show)
 
@@ -85,7 +84,7 @@ commandP = subparser(command "raw" rawCommand
   <|> infoParser viewCommand
 
 rawCommand :: ParserInfo Command
-rawCommand = info (parse)
+rawCommand = info parse
     (progDesc "Output raw SVGs for animation at 60 fps. Used internally by viewer.")
   where
     parse = pure Raw
