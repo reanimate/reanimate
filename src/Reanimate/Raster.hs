@@ -10,7 +10,6 @@ module Reanimate.Raster
   , svgAsPngFile'
   ) where
 
-import           Codec.Picture.Types
 import           Codec.Picture
 import           Codec.Picture.Types         (dynamicMap)
 import           Control.Lens                ((&), (.~))

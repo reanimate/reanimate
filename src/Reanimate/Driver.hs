@@ -126,15 +126,12 @@ reanimate animation = do
             RenderWebm -> replaceExtension self "webm"
         Just target -> makeAbsolute target
 
-      let fps = guessParameter renderFPS (fmap presetFPS renderPreset) $
-                (formatFPS fmt)
+      let fps = guessParameter renderFPS (fmap presetFPS renderPreset) $ formatFPS fmt
           (width, height) =
-            case userPreferredDimensions renderWidth renderHeight of
-              Just userPref -> userPref
-              Nothing ->
-                ( maybe (formatWidth fmt) presetWidth renderPreset
-                , maybe (formatHeight fmt) presetHeight renderPreset
-                )
+            fromMaybe
+              ( maybe (formatWidth fmt) presetWidth renderPreset
+              , maybe (formatHeight fmt) presetHeight renderPreset )
+              (userPreferredDimensions renderWidth renderHeight)
 
       if renderCompile
         then

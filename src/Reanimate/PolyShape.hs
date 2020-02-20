@@ -31,7 +31,7 @@ module Reanimate.PolyShape
 
 import           Chiphunk.Low
 import           Control.Lens        ((&), (.~))
-import           Data.List           (nub, partition, sortBy, minimumBy)
+import           Data.List           (minimumBy, nub, partition, sortOn)
 import           Data.Ord
 import           Debug.Trace
 import           Geom2D.CubicBezier  (ClosedPath (..), CubicBezier (..), DPoint,
@@ -39,9 +39,9 @@ import           Geom2D.CubicBezier  (ClosedPath (..), CubicBezier (..), DPoint,
                                       arcLength, arcLengthParam,
                                       bezierIntersection, bezierSubsegment,
                                       closedPathCurves, closest, colinear,
-                                      curvesToClosed, curvesToClosed,
-                                      evalBezier, interpolateVector, reorient,
-                                      splitBezier, union, vectorDistance)
+                                      curvesToClosed, evalBezier,
+                                      interpolateVector, reorient, splitBezier,
+                                      union, vectorDistance)
 import           Graphics.SvgTree    (PathCommand (..), RPoint, Tree (..),
                                       defaultSvg, pathDefinition)
 import           Linear.V2
@@ -144,7 +144,7 @@ plGroupTouching pls = worker [polyShapeOrigin (head pls)] pls
       let (touching, notTouching) = partition (isTouching seen) shapes
       in if null touching
         then plGroupTouching notTouching
-        else map ((,)seen) (map (changeOrigin seen) touching) :
+        else map ((,) seen . changeOrigin seen) touching   :
              worker (seen ++ concatMap plPoints touching) notTouching
     isTouching pts = any (`elem` pts) . plPoints
     changeOrigin seen (PolyShape (ClosedPath segments)) = PolyShape $ ClosedPath $ helper [] segments
@@ -164,9 +164,7 @@ plDecompose = plDecompose' 0.001
 -- | Deconstruct a polyshape into non-intersecting, convex polygons.
 plDecompose' :: Double -> [PolyShape] -> [[RPoint]]
 plDecompose' tol =
-  concatMap decomposePolygon .
-  map (plPolygonify tol) .
-  map mergePolyShapeHoles .
+  concatMap (decomposePolygon . plPolygonify tol . mergePolyShapeHoles) .
   plGroupShapes .
   unionPolyShapes
 
@@ -240,12 +238,12 @@ cmdsToPolyShapes cmds =
       finalize ((toGPoint from, JoinLine):acc) $
       worker dst [] xs
     worker _from acc (LineEnd{}:LineMove dst:xs) =
-      finalize (acc) $
+      finalize acc $
       worker dst [] xs
     worker from acc [LineEnd orig] | from /= orig =
       finalize ((toGPoint from, JoinLine):acc) []
     worker _from acc [LineEnd{}] =
-      finalize (acc) []
+      finalize acc []
     worker from acc (LineBezier [x]:xs) =
       worker x ((toGPoint from, JoinLine) : acc) xs
     worker from acc (LineBezier [a,b,c]:xs) =
@@ -306,7 +304,7 @@ plGroupShapes = worker
               { polyShapeParent = s
               , polyShapeHoles  = holes }
         in prime : worker nonHoles
-      | otherwise = trace ("Found hole, putting back") $ worker (rest ++ [s])
+      | otherwise = trace "Found hole, putting back" $ worker (rest ++ [s])
     worker [] = []
 
     parents :: PolyShape -> [PolyShape] -> [PolyShape]
@@ -325,7 +323,7 @@ mergePolyShapeHoles (PolyShapeWithHoles parent (child:children)) =
 mergePolyShapeHole :: PolyShape -> PolyShape -> PolyShape
 mergePolyShapeHole parent child =
   snd $ head $
-  sortBy (comparing fst)
+  sortOn fst
   [ cutSingleHole newParent child
   | newParent <- polyShapePermutations parent ]
 
@@ -379,7 +377,7 @@ cutSingleHole parent child =
     -- straight line from child origin
     x2p = lineBetween childOrigin p
 
-    lineBetween a b = CubicBezier a a a b
+    lineBetween a = CubicBezier a a a
 
 plCurves :: PolyShape -> [CubicBezier Double]
 plCurves = closedPathCurves . unPolyShape

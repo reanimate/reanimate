@@ -62,7 +62,7 @@ overInterval :: Time -- ^ time after start of animation when the effect should s
              -> Time -- ^ time after start of the animation when the effect should finish
              -> Effect  -- ^ The Effect to modify
              -> Effect -- ^ Effect which will only affect the specified interval within the animation
-overInterval start end effect _d t = 
+overInterval start end effect _d t =
   if start <= t && t <= end
     then effect dur ((t - start) / dur)
     else id
@@ -71,11 +71,11 @@ overInterval start end effect _d t =
 
 -- | @reverseE effect@ starts where the @effect@ ends and vice versa.
 reverseE :: Effect -> Effect
-reverseE fn = \d t -> fn d (d-t)
+reverseE fn d t = fn d (d-t)
 
 -- | Delay the effect so that it only starts after specified duration and then runs till the end of animation.
 delayE :: Duration -> Effect -> Effect
-delayE delayT fn = \d t -> overEnding (d-delayT) fn d t
+delayE delayT fn d = overEnding (d-delayT) fn d
 
 -- | Modify the animation by applying the effect. If desired, you can apply multiple effects to single animation by calling this function multiple times.
 applyE :: Effect -> Animation -> Animation
@@ -123,7 +123,7 @@ scaleE target d t = scale (1 + (target-1) * t/d)
 translateE :: Double -> Double -> Effect
 translateE x y d t = translate (x * t/d) (y * t/d)
 
--- | Transform the effect so that the image passed to the effect's image-modifying 
+-- | Transform the effect so that the image passed to the effect's image-modifying
 -- function has coordinates (0, 0) shifted to the center of its bounding box.
 -- Also see 'aroundCenter'.
 aroundCenterE :: Effect -> Effect

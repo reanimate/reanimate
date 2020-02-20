@@ -46,7 +46,7 @@ linePoints = worker zero
         -- LineDraw to     -> from:to:worker to xs
         -- FIXME: Use approximation from Geom2D.Bezier
         LineBezier ctrl -> -- approximation
-          [ last (partial_bezier_points (from:ctrl) 0 (recip chunks*i)) | i <- [0..chunks]] ++
+          [ last (partialBezierPoints (from:ctrl) 0 (recip chunks*i)) | i <- [0..chunks]] ++
           worker (last ctrl) xs
         LineEnd p -> p : worker p xs
     chunks = 10

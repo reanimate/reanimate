@@ -7,7 +7,7 @@ module Reanimate.Svg
   , module Reanimate.Svg.Unuse
   ) where
 
-import           Control.Lens                 ((%~), (&), (.~), (^.))
+import           Control.Lens                 ((%~), (&), (.~), (^.), (?~))
 import           Control.Monad.State
 import           Graphics.SvgTree             hiding (height, line, path, use,
                                                width)
@@ -40,7 +40,7 @@ lowerTransformations = worker Transform.identity
           g & groupChildren %~ map (worker m')
             & transform .~ Nothing
         ClipPathTree{} -> t
-        _ -> mkGroup [t] & transform .~ Just [ Transform.toTransformation m ]
+        _ -> mkGroup [t] & transform ?~ [ Transform.toTransformation m ]
 
 lowerIds :: Tree -> Tree
 lowerIds = mapTree worker
@@ -58,7 +58,7 @@ simplify root =
   where
     worker None = []
     worker (DefinitionTree d) =
-      concatMap dropNulls $
+      concatMap dropNulls
       [DefinitionTree $ d & groupChildren %~ concatMap worker]
     worker (GroupTree g)
       | g ^. drawAttributes == defaultSvg =
@@ -224,8 +224,8 @@ pathify = mapTree worker
             & drawAttributes .~ circ ^. drawAttributes
             & pathDefinition .~
               [MoveTo OriginAbsolute [V2 (x-r) y]
-              ,EllipticalArc OriginRelative [(r, r, 0,True,False,(V2 (r*2) 0))
-                                            ,(r, r, 0,True,False,(V2 (-r*2) 0))]]
+              ,EllipticalArc OriginRelative [(r, r, 0,True,False,V2 (r*2) 0)
+                                            ,(r, r, 0,True,False,V2 (-r*2) 0)]]
         PolyLineTree pl ->
           let points = pl ^. polyLinePoints
           in PathTree $ defaultSvg
@@ -243,8 +243,8 @@ pathify = mapTree worker
              & drawAttributes .~ elip ^. drawAttributes
              & pathDefinition .~
                [ MoveTo OriginAbsolute [V2 (cx-rx) cy]
-               , EllipticalArc OriginRelative [(rx, ry, 0,True,False,(V2 (rx*2) 0))
-                                              ,(rx, ry, 0,True,False,(V2 (-rx*2) 0))]]
+               , EllipticalArc OriginRelative [(rx, ry, 0,True,False,V2 (rx*2) 0)
+                                              ,(rx, ry, 0,True,False,V2 (-rx*2) 0)]]
         t -> t
     unpackCircle circ = do
       let (x,y) = circ ^. circleCenter

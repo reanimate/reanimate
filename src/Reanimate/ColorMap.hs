@@ -163,9 +163,9 @@ sinebow t = PixelRGB8 r g b
     pi_1_3 = pi / 3
     pi_2_3 = pi * 2 / 3
     x = (0.5 - t) * pi
-    r = round $ 255 * sin(x)**2
-    g = round $ 255 * sin(x+pi_1_3)**2
-    b = round $ 255 * sin(x+pi_2_3)**2
+    r = round $ 255 * sin x**2
+    g = round $ 255 * sin (x+pi_1_3)**2
+    b = round $ 255 * sin (x+pi_2_3)**2
 
 -- | Given a number t in the range [0,1], returns the corresponding color from
 --   the “cividis” color vision deficiency-optimized color scheme designed by
@@ -499,7 +499,7 @@ colors = V.fromList . map (toColor . map (fromIntegral . digitToInt) . T.unpack)
     toColor _ = error "Reanimate.ColorMap.colors: Broken data"
 
 ramp :: Vector PixelRGB8 -> Double -> PixelRGB8
-ramp v = \t -> v V.! (max 0 $ min (len-1) $ round $ t * (len'-1))
+ramp v = \t -> v V.! max 0 (min (len-1) $ round $ t * (len'-1))
   where
     len = V.length v
     len' = fromIntegral len

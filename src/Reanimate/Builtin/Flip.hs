@@ -2,6 +2,7 @@
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE ApplicativeDo     #-}
+{- HLINT ignore -}
 module Reanimate.Builtin.Flip
   ( FlipSprite(..)
   , flipSprite

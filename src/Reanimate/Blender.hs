@@ -22,11 +22,11 @@ import           Data.Hashable
 
 blender :: Text -> SVG
 blender script =
-  (unsafePerformIO $ mkBlenderImage script)
+  unsafePerformIO $ mkBlenderImage script
 
 blender' :: Text -> FilePath
 blender' script =
-  (unsafePerformIO $ mkBlenderImage' script)
+  unsafePerformIO $ mkBlenderImage' script
 
 mkBlenderImage :: Text -> IO Tree
 mkBlenderImage script | pNoExternals = pure $ mkText script
