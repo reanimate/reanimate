@@ -7,12 +7,8 @@ import           Data.Complex
 import qualified Data.Text as T
 
 import           Graphics.SvgTree
-import           Reanimate.Driver (reanimate)
+import           Reanimate
 import           Reanimate.LaTeX  (latex)
-import           Reanimate.Animation
-import           Reanimate.Svg
-import           Reanimate.Signal
-import           Reanimate.Constants
 
 waveMultiplier :: Int
 -- waveMultiplier = 1 -- Sawtooth wave

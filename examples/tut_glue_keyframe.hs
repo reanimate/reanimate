@@ -24,7 +24,7 @@ mainScene = sceneAnimation $ mdo
     fork $ play $ drawCircle
       # freezeAtPercentage 1
       # setDuration rotDur
-    rotDur <- withSceneDuration $ waitAll $
+    rotDur <- withSceneDuration $ waitOn $
       forM_ svgs $ \svg -> do
         fork $ play $ drawTick
           # setDuration rotateT

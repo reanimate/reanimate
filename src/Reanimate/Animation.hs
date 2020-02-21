@@ -34,6 +34,10 @@ module Reanimate.Animation
   , signalA
   , freezeAtPercentage
   , addStatic
+  -- * Misc
+  , (#)
+  , getAnimationFrame
+  , Sync(..)
   -- * Rendering
   , renderTree
   , renderSvg
@@ -357,3 +361,22 @@ clamp :: Double -> Double -> Double -> Double
 clamp a b number
   | a < b     = max a (min b number)
   | otherwise = max b (min a number)
+
+(#) :: a -> (a -> b) -> b
+o # f = f o
+
+getAnimationFrame :: Sync -> Animation -> Time -> Duration -> SVG
+getAnimationFrame sync (Animation aDur aGen) t d =
+  case sync of
+    SyncStretch -> aGen (t/d)
+    SyncLoop    -> aGen (takeFrac $ t/aDur)
+    SyncDrop    -> if t > aDur then None else aGen (t/aDur)
+    SyncFreeze  -> aGen (min 1 $ t/aDur)
+  where
+    takeFrac f = snd (properFraction f :: (Int, Double))
+
+data Sync
+  = SyncStretch
+  | SyncLoop
+  | SyncDrop
+  | SyncFreeze
