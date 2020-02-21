@@ -25,6 +25,12 @@ mapT fn t = \a b -> fn (t a b)
 
 -- | Apply transition only to @overlap@ seconds of the first
 --   animation and to the last @overlap@ seconds of the second animation.
+--
+--   Example:
+--
+--   > overlapT 0.5 fadeT drawBox drawCircle
+--
+--   <<docs/gifs/doc_overlapT.gif>>
 overlapT :: Double -> Transition -> Transition
 overlapT overlap t a b =
     aBefore `seqA` t aOverlap bOverlap `seqA` bAfter
@@ -42,10 +48,22 @@ effectT :: Effect -- ^ Effect to be applied to the first animation.
 effectT eA eB a b = applyE eA a `parA` applyE eB b
 
 -- | Combine a list of animations using a given transition.
+--
+--   Example:
+--
+--   > chainT (overlapT 0.5 fadeT) [drawBox, drawCircle, drawProgress]
+--
+--   <<docs/gifs/doc_chainT.gif>>
 chainT :: Transition -> [Animation] -> Animation
 chainT _ [] = pause 0
 chainT t (x:xs) = foldl t x xs
 
 -- | Fade out left-hand-side animation while fading in right-hand-side animation.
+--
+--   Example:
+--
+--   > drawBox `fadeT` drawCircle
+--
+--   <<docs/gifs/doc_fadeT.gif>>
 fadeT :: Transition
 fadeT = effectT fadeOutE fadeInE
