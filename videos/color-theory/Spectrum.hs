@@ -562,7 +562,7 @@ scene2 = seqA scene2Intro $ seqA illustrateSpectrum $ sceneAnimation $ do
   writeVar cmDelta 0
   tweenVar cmDelta 5 $ \d -> fromToS d 1
 
-  wait 1
+  wait 3
 
   return ()
   where

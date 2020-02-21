@@ -23,6 +23,7 @@ import           Reanimate.Animation
 import           Reanimate.ColorMap
 import           Reanimate.ColorSpace
 import           Reanimate.Builtin.Flip
+import           Reanimate.Builtin.Slide
 import           Reanimate.Constants
 import           Reanimate.Driver      (reanimate)
 import           Reanimate.Effect
@@ -69,8 +70,8 @@ main :: IO ()
 main = reanimate $ --  takeA 10 $ dropA 55 $
   parA (staticFrame 1 $ mkBackground "black") $
   monalisaScene `seqA`
-  falseColorScene `seqA`
-  scene2 `seqA`
+  falseColorScene `transition`
+  scene2 `transition`
   (parA (staticFrame 1 $ mkBackground "aliceblue") $
   overlapTransition 2 (signalT (curveS 2) flipTransition)
     (parA (staticFrame 1 $ mkBackground "black") $ gridScene)
@@ -80,6 +81,8 @@ main = reanimate $ --  takeA 10 $ dropA 55 $
   -- interpolation
   -- spacesA
   -- clipPathTest
+  where
+    transition = overlapTransition 2 (signalT (curveS 2) slide)
 
 
 monalisaScene :: Animation

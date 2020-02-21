@@ -48,6 +48,8 @@ gridScene = sceneAnimation $ do
   sPlasma <- monalisaSprite 0 (-1) "plasma"
   sHSV <- monalisaSprite 1 (-1) "hsv"
 
+  wait 3
+
   showMap sViridis
   showMap sCividis
   showMap sParula
