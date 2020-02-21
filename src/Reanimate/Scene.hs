@@ -120,6 +120,13 @@ sceneAnimation action =
 
 -- | Execute actions in a scene without advancing the clock. Note that scenes do not end before
 --   all forked actions have completed.
+--
+--   Example:
+--
+--   > do fork $ play drawBox
+--   >    play drawCircle
+--
+--   <<docs/gifs/doc_fork.gif>>
 fork :: Scene s a -> Scene s a
 fork (M action) = M $ \t -> do
   (a, s, p, gens) <- action t
@@ -127,14 +134,37 @@ fork (M action) = M $ \t -> do
 
 -- | Play an animation once and then remove it. This advances the clock by the duration of the
 --   animation.
+--
+--   Example:
+--
+--   > do play drawBox
+--   >    play drawCircle
+--
+--   <<docs/gifs/doc_play.gif>>
 play :: Animation -> Scene s ()
 play ani = newSpriteA ani >>= destroySprite
 
 -- | Query the current clock timestamp.
+--
+--   Example:
+--
+--   > do now <- play drawCircle *> queryNow
+--   >    play $ staticFrame 1 $ scale 2 $ withStrokeWidth 0.05 $
+--   >      mkText $ "Now=" <> T.pack (show now)
+--
+--   <<docs/gifs/doc_queryNow.gif>>
 queryNow :: Scene s Time
 queryNow = M $ \t -> return (t, 0, 0, [])
 
 -- | Advance the clock by a given number of seconds.
+--
+--   Example:
+--
+--   > do fork $ play drawBox
+--   >    wait 1
+--   >    play drawCircle
+--
+--   <<docs/gifs/doc_wait.gif>>
 wait :: Duration -> Scene s ()
 wait d = M $ \_ ->
   return ((), d, 0, [])
@@ -146,6 +176,13 @@ waitUntil tNew = do
   wait (max 0 (tNew - now))
 
 -- | Wait until all forked and sequential animations have finished.
+--
+--   Examples:
+--
+--   > do waitOn $ fork $ play drawBox
+--   >    play drawCircle
+--
+--   <<docs/gifs/doc_waitOn.gif>>
 waitOn :: Scene s a -> Scene s a
 waitOn (M action) = M $ \t -> do
   (a, s, p, gens) <- action t
@@ -226,6 +263,13 @@ tweenVarUnclamped (Var ref) dur fn = do
 
 -- | Create and render a variable. The rendering will be born at the current timestamp
 --   and will persist until the end of the scene.
+--
+--   Example:
+--
+--   > do var <- simpleVar mkCircle 0
+--   >    tweenVar var 2 $ \val -> fromToS val (screenHeight/2)
+--
+--   <<docs/gifs/doc_simpleVar.gif>>
 simpleVar :: (a -> SVG) -> a -> Scene s (Var s a)
 simpleVar render def = do
   v <- newVar def
@@ -292,23 +336,47 @@ newSprite render = do
         else spriteEffect relD relT (fn absT relD relT)
   return $ Sprite now ref
 
--- | Create a new sprite from an animation. This advances the clock by the duration of the
---   animation. Unless otherwise specified using 'destroySprite', the sprite will die at
---   the end of the scene.
+-- | Create a new sprite from an animation. This advances the clock by the
+--   duration of the animation. Unless otherwise specified using
+--   'destroySprite', the sprite will die at the end of the scene.
 --
---   Note: If the scene doesn't end immediately after the duration of the animation, the animation
---         will be stretched to match the lifetime of the sprite. See 'newSpriteA''.
+--   Note: If the scene doesn't end immediately after the duration of the
+--   animation, the animation will be stretched to match the lifetime of the
+--   sprite. See 'newSpriteA'' and 'play'.
+--
+--   Example:
+--
+--   > do fork $ newSpriteA drawCircle
+--   >    play drawBox
+--   >    play $ reverseA drawBox
+--
+--   <<docs/gifs/doc_newSpriteA.gif>>
 newSpriteA :: Animation -> Scene s (Sprite s)
 newSpriteA = newSpriteA' SyncStretch
 
 -- | Create a new sprite from an animation and specify the synchronization policy. This advances
 --   the clock by the duration of the animation.
+--
+--   Example:
+--
+--   > do fork $ newSpriteA' SyncFreeze drawCircle
+--   >    play drawBox
+--   >    play $ reverseA drawBox
+--
+--   <<docs/gifs/doc_newSpriteA'.gif>>
 newSpriteA' :: Sync -> Animation -> Scene s (Sprite s)
 newSpriteA' sync animation =
   newSprite (getAnimationFrame sync animation <$> spriteT <*> spriteDuration)
     <* wait (duration animation)
 
 -- | Create a sprite from a static SVG image.
+--
+--   Example:
+--
+--   > do newSpriteSVG $ mkBackground "lightblue"
+--   >    play drawCircle
+--
+--   <<docs/gifs/doc_newSpriteSVG.gif>>
 newSpriteSVG :: SVG -> Scene s (Sprite s)
 newSpriteSVG = newSprite . pure
 
@@ -323,6 +391,14 @@ applyVar var sprite fn =
 
 -- | Destroy a sprite, preventing it from being rendered in the future of the scene.
 --   If 'destroySprite' is invoked multiple times, the earliest time-of-death is used.
+--
+--   Example:
+--
+--   > do s <- newSpriteSVG $ withFillOpacity 1 $ mkCircle 1
+--   >    fork $ wait 1 >> destroySprite s
+--   >    play drawBox
+--
+--   <<docs/gifs/doc_destroySprite.gif>>
 destroySprite :: Sprite s -> Scene s ()
 destroySprite (Sprite _ ref) = do
   now <- queryNow
@@ -341,10 +417,30 @@ spriteModify (Sprite born ref) modFn =
         in modRender absT relD relT . render relD relT)
 
 -- | Map the SVG output of a sprite.
+--
+--   Example:
+--
+--   > do s <- fork $ newSpriteA drawCircle
+--   >    wait 1
+--   >    spriteMap s flipYAxis
+--
+--   <<docs/gifs/doc_spriteMap.gif>>
 spriteMap :: Sprite s -> (SVG -> SVG) -> Scene s ()
-spriteMap sprite fn = spriteModify sprite $ pure $ \(svg, zindex) -> (fn svg, zindex)
+spriteMap sprite@(Sprite born _) fn = do
+    now <- queryNow
+    let tDelta = now - born
+    spriteModify sprite $ do
+      t <- spriteT
+      return $ \(svg, zindex) -> (if (t-tDelta) < 0 then svg else fn svg, zindex)
 
 -- | Modify the output of a sprite between @now@ and @now+duration@.
+--
+--   Example:
+--
+--   > do s <- fork $ newSpriteA drawCircle
+--   >    spriteTween s 1 $ \val -> translate (screenWidth*0.3*val) 0
+--
+--   <<docs/gifs/doc_spriteTween.gif>>
 spriteTween :: Sprite s -> Duration -> (Double -> SVG -> SVG) -> Scene s ()
 spriteTween sprite@(Sprite born _) dur fn = do
     now <- queryNow
@@ -361,6 +457,14 @@ spriteTween sprite@(Sprite born _) dur fn = do
       | otherwise = v
 
 -- | Create a new variable and apply it to a sprite.
+--
+--   Example:
+--
+--   > do s <- fork $ newSpriteA drawBox
+--   >    v <- spriteVar s 0 rotate
+--   >    tweenVar v 2 $ \val -> fromToS val 90
+--
+--   <<docs/gifs/doc_spriteVar.gif>>
 spriteVar :: Sprite s -> a -> (a -> SVG -> SVG) -> Scene s (Var s a)
 spriteVar sprite def fn = do
   v <- newVar def
@@ -368,6 +472,14 @@ spriteVar sprite def fn = do
   return v
 
 -- | Apply an effect to a sprite.
+--
+--   Example:
+--
+--   > do s <- fork $ newSpriteA drawCircle
+--   >    spriteE s $ overBeginning 1 fadeInE
+--   >    spriteE s $ overEnding 0.5 fadeOutE
+--
+--   <<docs/gifs/doc_spriteE.gif>>
 spriteE :: Sprite s -> Effect -> Scene s ()
 spriteE (Sprite born ref) effect = do
   now <- queryNow
@@ -379,6 +491,16 @@ spriteE (Sprite born ref) effect = do
         in (delayE (max 0 $ now-born) effect d t svg', z))
 
 -- | Set new ZIndex of a sprite.
+--
+--   Example:
+--
+--   > do s1 <- newSpriteSVG $ withFillOpacity 1 $ withFillColor "blue" $ mkCircle 3
+--   >    newSpriteSVG $ withFillOpacity 1 $ withFillColor "red" $ mkRect 8 3
+--   >    wait 1
+--   >    spriteZ s1 1
+--   >    wait 1
+--
+--   <<docs/gifs/doc_spriteZ.gif>>
 spriteZ :: Sprite s -> ZIndex -> Scene s ()
 spriteZ (Sprite born ref) zindex = do
   now <- queryNow

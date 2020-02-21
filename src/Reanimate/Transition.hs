@@ -23,8 +23,8 @@ signalT = mapT . signalA
 mapT :: (Animation -> Animation) -> Transition -> Transition
 mapT fn t = \a b -> fn (t a b)
 
--- | Apply transition only to @overlap@ seconds of the first
---   animation and to the last @overlap@ seconds of the second animation.
+-- | Apply transition only to @N@ seconds of the first
+--   animation and to the last @N@ seconds of the second animation.
 --
 --   Example:
 --
