@@ -9,4 +9,4 @@ import           Reanimate.Builtin.Images
 main :: IO ()
 main = reanimate $ animate $
   const $ scaleToSize screenWidth screenHeight $
-  embedImage $ project smallEarth (orthoP 0 0)
+  embedImage $ project smallEarth (orthoP $ LonLat 0 0)
