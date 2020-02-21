@@ -31,6 +31,7 @@ module Reanimate
     Animation(..),
     mkAnimation,
     animate,
+    staticFrame,
     duration,
     frameAt,
     -- ** Composition
@@ -50,6 +51,7 @@ module Reanimate
     playThenReverseA,
     repeatA,
     freezeAtPercentage,
+    addStatic,
     signalA,
     -- ** Signals
     Signal,

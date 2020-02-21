@@ -324,10 +324,12 @@ mkLinePath ((startX, startY):rest) =
 --
 --   <<docs/gifs/doc_mkBackground.gif>>
 mkBackground :: String -> Tree
-mkBackground color = withFillColor color $ mkRect screenWidth screenHeight
+mkBackground color = withFillOpacity 1 $  withStrokeWidth 0 $
+  withFillColor color $ mkRect screenWidth screenHeight
 
 mkBackgroundPixel :: PixelRGBA8 -> Tree
 mkBackgroundPixel pixel =
+    withFillOpacity 1 $ withStrokeWidth 0 $
     withFillColorPixel pixel $ mkRect screenWidth screenHeight
 
 -- | Take list of rows, where each row consists of number of images and display them in regular

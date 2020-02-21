@@ -33,6 +33,7 @@ module Reanimate.Animation
   , playThenReverseA
   , signalA
   , freezeAtPercentage
+  , addStatic
   -- * Rendering
   , renderTree
   , renderSvg
@@ -306,6 +307,16 @@ freezeAtPercentage :: Time  -- ^ value between 0 and 1. The frame displayed at t
                    -> Animation -- ^ new animation consisting of static frame displayed for the duration of the original animation
 freezeAtPercentage frac (Animation d genFrame) =
   Animation d $ const $ genFrame frac
+
+-- | Overlay animation on top of static SVG image.
+--
+--  Example:
+--
+--  > addStatic (mkBackground "lightblue") drawCircle
+--
+--  <<docs/gifs/doc_addStatic.gif>>
+addStatic :: SVG -> Animation -> Animation
+addStatic static = mapA (\frame -> mkGroup [static, frame])
 
 -- | Modify the time component of an animation. Animation duration is unchanged.
 --
