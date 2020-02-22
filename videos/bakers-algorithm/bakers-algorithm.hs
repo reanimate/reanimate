@@ -7,7 +7,7 @@ module Main (main) where
 import           Control.Lens
 
 import           Graphics.SvgTree
-import           Reanimate.Driver (reanimate)
+import           Reanimate
 import           Reanimate.LaTeX
 import           Reanimate.Animation
 import           Reanimate.Svg
