@@ -7,5 +7,5 @@ import Reanimate.Builtin.Documentation
 
 main :: IO ()
 main = reanimate $ docEnv $ sceneAnimation $ do
-  newSpriteSVG $ mkBackground "lightblue"
+  _ <- newSpriteSVG $ mkBackground "lightblue"
   play drawCircle

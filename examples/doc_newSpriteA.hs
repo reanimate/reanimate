@@ -7,6 +7,6 @@ import Reanimate.Builtin.Documentation
 
 main :: IO ()
 main = reanimate $ docEnv $ sceneAnimation $ do
-  fork $ newSpriteA drawCircle
+  _ <- fork $ newSpriteA drawCircle
   play drawBox
   play $ reverseA drawBox
