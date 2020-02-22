@@ -7,7 +7,6 @@ module Main (main) where
 import           Control.Monad    (forM_)
 import           Graphics.SvgTree (Tree)
 import           Reanimate
-import           Reanimate.Driver (reanimate)
 
 main :: IO ()
 main = reanimate $ bg `parA` mainScene
@@ -22,7 +21,7 @@ mainScene = sceneAnimation $ mdo
     fork $ play $ drawCircle
       # freezeAtPercentage 1
       # setDuration rotDur
-    rotDur <- withSceneDuration $ waitAll $
+    rotDur <- withSceneDuration $ waitOn $
       forM_ svgs $ \svg -> do
         fork $ play $ drawTick
           # setDuration rotateT

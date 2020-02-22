@@ -52,7 +52,6 @@ library
                       Reanimate.Svg.LineCommand
                       -- Reanimate.Diagrams
                       Reanimate.Transform
-                      Reanimate.Driver
                       Reanimate.Misc
                       Reanimate.Raster
                       Reanimate.ColorMap
@@ -62,6 +61,7 @@ library
                       Reanimate.Scene
                       Reanimate.Povray
                       Reanimate.Blender
+                      Reanimate.Transition
                       Reanimate.Effect
                       Reanimate.Builtin.TernaryPlot
                       Reanimate.Builtin.CirclePlot
@@ -74,6 +74,7 @@ library
                       Reanimate.Builtin.Documentation
                       Reanimate.Builtin.Images
   other-modules:      Reanimate.Cache
+                      Reanimate.Driver
                       Reanimate.Driver.Check
                       Reanimate.Driver.CLI
                       Reanimate.Driver.Server

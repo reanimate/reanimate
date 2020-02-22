@@ -4,6 +4,7 @@
 module Main(main) where
 
 import           Reanimate
+import           Reanimate.Transition
 
 import           Codec.Picture.Types
 import           Data.Text           (Text)
@@ -19,10 +20,11 @@ transitionTime = 0.5
 
 main :: IO ()
 main = reanimate $ bg `parA`
-    transitions fadeInE fadeOutE transitionTime
+    chainT transition
     [animateCircleR, animateCircleP, animateRectR, animateColor
     ,signalA (constantS 0) $ setDuration transitionTime animateCircleR]
   where
+    transition = overlapT transitionTime fadeT
     bg = animate $ const $ mkBackgroundPixel bgColor
 
 animateCircleR :: Animation

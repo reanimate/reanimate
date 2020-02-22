@@ -33,7 +33,6 @@ import qualified Reanimate.Builtin.TernaryPlot   as Ternary
 import           Reanimate.ColorMap
 import           Reanimate.ColorSpace
 import           Reanimate.Constants
-import           Reanimate.Driver                (reanimate)
 import           Reanimate.Effect
 import           Reanimate.Interpolate
 import           Reanimate.LaTeX
