@@ -229,6 +229,16 @@ readVar :: Var s a -> Scene s a
 readVar (Var ref) = liftST (readSTRef ref) <*> queryNow
 
 -- | Write the value of a variable at the current timestamp.
+--
+--   Example:
+--
+--   > do v <- newVar 0
+--   >    newSprite $ mkCircle <$> unVar v
+--   >    writeVar v 1; wait 1
+--   >    writeVar v 2; wait 1
+--   >    writeVar v 3; wait 1
+--
+--   <<docs/gifs/doc_writeVar.gif>>
 writeVar :: Var s a -> a -> Scene s ()
 writeVar var val = modifyVar var (const val)
 
@@ -304,6 +314,15 @@ instance Applicative (Frame s) where
       m1 real_t d t (m2 real_t d t)
 
 -- | Dereference a variable as a Sprite frame.
+--
+--   Example:
+--
+--   > do v <- newVar 0
+--   >    newSprite $ mkCircle <$> unVar v
+--   >    tweenVar v 1 $ \val -> fromToS val 3
+--   >    tweenVar v 1 $ \val -> fromToS val 0
+--
+--   <<docs/gifs/doc_unVar.gif>>
 unVar :: Var s a -> Frame s a
 unVar (Var ref) = Frame $ do
   fn <- readSTRef ref
@@ -320,6 +339,13 @@ spriteDuration = Frame $ return (\_real_t d _t -> d)
 
 -- | Create new sprite defined by a frame generator. Unless otherwise specified using
 --   'destroySprite', the sprite will die at the end of the scene.
+--
+--   Example:
+--
+--   > do newSprite $ mkCircle <$> spriteT -- Circle sprite where radius=time.
+--   >    wait 2
+--
+--   <<docs/gifs/doc_newSprite.gif>>
 newSprite :: Frame s SVG -> Scene s (Sprite s)
 newSprite render = do
   now <- queryNow
@@ -382,6 +408,15 @@ newSpriteSVG = newSprite . pure
 
 -- | Change the rendering of a sprite using data from a variable. If data from several variables
 --   is needed, use a frame generator instead.
+--
+--   Example:
+--
+--   > do s <- fork $ newSpriteA drawBox
+--   >    v <- newVar 0
+--   >    applyVar v s rotate
+--   >    tweenVar v 2 $ \val -> fromToS val 90
+--
+--   <<docs/gifs/doc_applyVar.gif>>
 applyVar :: Var s a -> Sprite s -> (a -> SVG -> SVG) -> Scene s ()
 applyVar var sprite fn =
   spriteModify sprite $ do
