@@ -3,13 +3,12 @@
 module Main(main) where
 
 import Reanimate
-import Reanimate.Animation
 import Reanimate.Builtin.Documentation
 import Reanimate.Builtin.Slide
-import Reanimate.Builtin.Flip
+import Reanimate.Transition
 
 main :: IO ()
-main = reanimate $ docEnv $ signalT (curveS 2) slide left right
+main = reanimate $ docEnv $ signalT (curveS 2) slideT left right
   where
     left = drawCircle
     right = staticFrame 1 (withFillOpacity 1 $ mkBackground "black") `parA`

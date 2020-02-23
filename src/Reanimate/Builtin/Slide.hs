@@ -1,14 +1,14 @@
 module Reanimate.Builtin.Slide where
 
-import Reanimate.Builtin.Flip
+import Reanimate.Transition
 import Reanimate.Scene
 import Reanimate.Animation
 import Reanimate.Constants
 import Reanimate.Svg
 
 -- | <<docs/gifs/doc_slide.gif>>
-slide :: Transition
-slide a b = sceneAnimation $ do
+slideT :: Transition
+slideT a b = sceneAnimation $ do
   s1 <- fork $ newSpriteA a
   s2 <- fork $ newSpriteA b
   fork $ spriteTween s1 dur $ \t -> translate (-screenWidth*t) 0

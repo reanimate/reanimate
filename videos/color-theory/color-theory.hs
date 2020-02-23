@@ -82,7 +82,7 @@ main = reanimate $ --  takeA 10 $ dropA 55 $
   -- spacesA
   -- clipPathTest
   where
-    transition = overlapTransition 2 (signalT (curveS 2) slide)
+    transition = overlapT 2 (signalT (curveS 2) slideT)
 
 
 monalisaScene :: Animation
