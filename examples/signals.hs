@@ -9,10 +9,7 @@ import           Graphics.SvgTree    hiding (Text)
 import           Numeric
 import           Reanimate.Animation
 import           Reanimate.Constants
-import           Reanimate.Driver    (reanimate)
-import           Reanimate.LaTeX
-import           Reanimate.Signal
-import           Reanimate.Svg
+import           Reanimate
 
 main :: IO ()
 main = reanimate $ pauseAtEnd 5 $

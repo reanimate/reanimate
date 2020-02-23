@@ -33,6 +33,11 @@ module Reanimate.Animation
   , playThenReverseA
   , signalA
   , freezeAtPercentage
+  , addStatic
+  -- * Misc
+  , (#)
+  , getAnimationFrame
+  , Sync(..)
   -- * Rendering
   , renderTree
   , renderSvg
@@ -307,6 +312,16 @@ freezeAtPercentage :: Time  -- ^ value between 0 and 1. The frame displayed at t
 freezeAtPercentage frac (Animation d genFrame) =
   Animation d $ const $ genFrame frac
 
+-- | Overlay animation on top of static SVG image.
+--
+--  Example:
+--
+--  > addStatic (mkBackground "lightblue") drawCircle
+--
+--  <<docs/gifs/doc_addStatic.gif>>
+addStatic :: SVG -> Animation -> Animation
+addStatic static = mapA (\frame -> mkGroup [static, frame])
+
 -- | Modify the time component of an animation. Animation duration is unchanged.
 --
 --   Example:
@@ -346,3 +361,22 @@ clamp :: Double -> Double -> Double -> Double
 clamp a b number
   | a < b     = max a (min b number)
   | otherwise = max b (min a number)
+
+(#) :: a -> (a -> b) -> b
+o # f = f o
+
+getAnimationFrame :: Sync -> Animation -> Time -> Duration -> SVG
+getAnimationFrame sync (Animation aDur aGen) t d =
+  case sync of
+    SyncStretch -> aGen (t/d)
+    SyncLoop    -> aGen (takeFrac $ t/aDur)
+    SyncDrop    -> if t > aDur then None else aGen (t/aDur)
+    SyncFreeze  -> aGen (min 1 $ t/aDur)
+  where
+    takeFrac f = snd (properFraction f :: (Int, Double))
+
+data Sync
+  = SyncStretch
+  | SyncLoop
+  | SyncDrop
+  | SyncFreeze

@@ -25,7 +25,6 @@ import           Reanimate.Animation
 import           Reanimate.ColorMap
 import           Reanimate.ColorSpace
 import           Reanimate.Constants
-import           Reanimate.Driver      (reanimate)
 import           Reanimate.Effect
 import           Reanimate.LaTeX
 import           Reanimate.Raster
