@@ -67,11 +67,11 @@ import           EndScene
 highdef = True
 
 main :: IO ()
-main = reanimate $ --  takeA 10 $ dropA 55 $
+main = reanimate $ -- takeA 10 $ dropA 38 $
   parA (staticFrame 1 $ mkBackground "black") $
   monalisaScene `seqA`
-  falseColorScene `transition`
-  scene2 `transition`
+  falseColorScene `transition1`
+  scene2 `transition2`
   (parA (staticFrame 1 $ mkBackground "aliceblue") $
   overlapT 2 (signalT (curveS 2) flipTransition)
     (parA (staticFrame 1 $ mkBackground "black") $ gridScene)
@@ -82,7 +82,8 @@ main = reanimate $ --  takeA 10 $ dropA 55 $
   -- spacesA
   -- clipPathTest
   where
-    transition = overlapT 2 (signalT (curveS 2) slideT)
+    transition1 = overlapT 1 (signalT (curveS 2) slideDownT)
+    transition2 = overlapT 1 (signalT (curveS 2) slideUpT)
 
 
 monalisaScene :: Animation

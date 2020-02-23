@@ -1,17 +1,28 @@
 module Reanimate.Builtin.Slide where
 
 import Reanimate.Transition
-import Reanimate.Scene
-import Reanimate.Animation
 import Reanimate.Constants
 import Reanimate.Svg
+import Reanimate.Effect
 
--- | <<docs/gifs/doc_slide.gif>>
-slideT :: Transition
-slideT a b = sceneAnimation $ do
-  s1 <- fork $ newSpriteA a
-  s2 <- fork $ newSpriteA b
-  fork $ spriteTween s1 dur $ \t -> translate (-screenWidth*t) 0
-  fork $ spriteTween s2 dur $ \t -> translate (screenWidth-screenWidth*t) 0
+-- | <<docs/gifs/doc_slideLeftT.gif>>
+slideLeftT :: Transition
+slideLeftT = effectT slideLeft (andE slideLeft moveRight)
   where
-    dur = max (duration a) (duration b)
+    slideLeft = translateE (-screenWidth) 0
+    moveRight = constE (translate screenHeight 0)
+    andE a b d t = a d t . b d t
+
+slideDownT :: Transition
+slideDownT = effectT slideDown (andE slideDown moveUp)
+  where
+    slideDown = translateE 0 (-screenHeight)
+    moveUp = constE (translate 0 screenHeight)
+    andE a b d t = a d t . b d t
+
+slideUpT :: Transition
+slideUpT = effectT slideUp (andE slideUp moveDown)
+  where
+    slideUp = translateE 0 (screenHeight)
+    moveDown = constE (translate 0 (-screenHeight))
+    andE a b d t = a d t . b d t

@@ -169,13 +169,13 @@ colorSpacesScene = sceneAnimation $ mdo
     drawStagger = 1
     drawPause = 4
 -}
-drawLabelS = drawLabel "S" blueName
-drawLabelM = drawLabel "M" greenName
-drawLabelL = drawLabel "L" redName
+drawLabelS = drawLabelSVG "S" blueName
+drawLabelM = drawLabelSVG "M" greenName
+drawLabelL = drawLabelSVG "L" redName
 
-drawLabelZ = drawLabel "Z" blueName
-drawLabelY = drawLabel "Y" greenName
-drawLabelX = drawLabel "X" redName
+drawLabelZ = drawLabelSVG "Z" blueName
+drawLabelY = drawLabelSVG "Y" greenName
+drawLabelX = drawLabelSVG "X" redName
 
 scene2Intro :: Animation
 scene2Intro = staticFrame 10 (spectrumGrid False)
@@ -218,17 +218,17 @@ scene2 = seqA scene2Intro $ seqA illustrateSpectrum $ sceneAnimation $ do
   destroySprite oldGrid
 
   -- SML labels and timings.
-  labelS <- newSpriteSVG $ drawLabelSVG "S" blueName
+  labelS <- newSpriteSVG $ drawLabelS
   spriteMap labelS $ uncurry translate (labelPosition short)
 
   labelM <- fork $ do
     wait 2.1
-    newSpriteA $ drawLabelM
+    newSpriteSVG $ drawLabelM
   spriteMap labelM $ uncurry translate (labelPosition medium)
 
   labelL <- fork $ do
     wait 3.5
-    newSpriteA $ drawLabelL
+    newSpriteSVG $ drawLabelL
   spriteMap labelL $ uncurry translate (labelPosition long)
 
   forM_ [labelS, labelM, labelL] $ \label -> do
@@ -245,15 +245,15 @@ scene2 = seqA scene2Intro $ seqA illustrateSpectrum $ sceneAnimation $ do
 
   -- XYZ labels and timings
   wait (duration drawMorphingSensitivities)
-  labelZ <- fork $ newSpriteA $ drawLabelZ
+  labelZ <- fork $ newSpriteSVG $ drawLabelZ
   spriteE labelZ $ overBeginning 0.3 fadeInE
   labelZPos <- spriteVar labelZ (labelPosition zCoords) $ uncurry translate
 
-  labelY <- fork $ newSpriteA $ drawLabelY
+  labelY <- fork $ newSpriteSVG $ drawLabelY
   spriteE labelY $ overBeginning 0.3 fadeInE
   labelYPos <- spriteVar labelY (labelPosition yCoords) $ uncurry translate
 
-  labelX <- fork $ newSpriteA $ drawLabelX
+  labelX <- fork $ newSpriteSVG $ drawLabelX
   spriteE labelX $ overBeginning 0.3 fadeInE
   labelXPos <- spriteVar labelX (labelPosition xCoords) $ uncurry translate
 
@@ -1008,19 +1008,19 @@ spectrumGrid includeSensitivity =
     ]
   , if includeSensitivity
     then withFillColor "white" $
-         translate (-spectrumWidth*0.5 + svgWidth sensitivity*1.2) 0 $
+         translate (-spectrumWidth*0.5 - svgWidth sensitivity*0.7) 0 $
          sensitivity
     else None
   , withFillColor "white" $
-    translate 0 (-spectrumHeight*0.5 + svgHeight wavelength*1.2) $
+    translate 0 (-spectrumHeight*0.5 - svgHeight wavelength*0.7) $
     wavelength
   , withFillColor "white" $
-    translate (-spectrumWidth*0.5 - svgWidth shortWaves)
-              (-spectrumHeight*0.5 + svgHeight shortWaves*1.2) $
+    translate (-spectrumWidth*0.5 + svgWidth shortWaves*0.5)
+              (-spectrumHeight*0.5 - svgHeight shortWaves*0.7) $
     shortWaves
   , withFillColor "white" $
-    translate (spectrumWidth*0.5 - svgWidth longWaves)
-              (-spectrumHeight*0.5 + svgHeight longWaves*1.2) $
+    translate (spectrumWidth*0.5 + svgWidth longWaves*0.5)
+              (-spectrumHeight*0.5 - svgHeight longWaves*0.7) $
     longWaves
   ]
   where
@@ -1105,20 +1105,9 @@ labelPosition dat =
     lastNM = 700
     percent = (fromIntegral nm-initNM)/(lastNM-initNM)
 
-drawLabel :: Text -> String -> Animation
-drawLabel label c = animate $ const $
-    translate (0) (-svgHeight labelSVG * 1.5) $
-    withFillColor c $
-    labelSVG
-  where
-    labelSVG =
-      center $
-      scale 1 $
-      latex label
-
 drawLabelSVG :: Text -> String -> SVG
 drawLabelSVG label c =
-    translate (0) (-svgHeight labelSVG * 1.5) $
+    translate (0) (svgHeight labelSVG * 0.7) $
     withFillColor c $
     labelSVG
   where
