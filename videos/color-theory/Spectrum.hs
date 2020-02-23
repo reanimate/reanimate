@@ -178,10 +178,12 @@ drawLabelY = drawLabelSVG "Y" greenName
 drawLabelX = drawLabelSVG "X" redName
 
 scene2Intro :: Animation
-scene2Intro = staticFrame 10 (spectrumGrid False)
+scene2Intro = staticFrame 10 $ mkGroup [spectrumGridIntensity, spectrumGrid False]
 
 illustrateSpectrum :: Animation
 illustrateSpectrum = sceneAnimation $ do
+    intensity <- newSpriteSVG spectrumGridIntensity
+    spriteE intensity $ overEnding 0.2 fadeOutE
     grid <- newSpriteSVG $ spectrumGrid False
     spriteZ grid 1
     forM_ (zip [0 ..] spectrum) $ \(nth, intensity) -> do
@@ -982,6 +984,16 @@ wavelengthAxis =
     nTicksX = 24
     nTicksY = fromIntegral (round (spectrumHeight/spectrumWidth * nTicksX))
     tickLength = spectrumHeight*0.02
+
+spectrumGridIntensity :: SVG
+spectrumGridIntensity =
+    withFillColor "white" $
+    translate (-spectrumWidth*0.5 - svgWidth svg*0.7) 0 $
+    svg
+  where
+    svg =
+      center $ scale 0.7 $ rotate 90 $
+      latex "Intensity $\\rightarrow$"
 
 spectrumGrid :: Bool -> Tree
 spectrumGrid includeSensitivity =
