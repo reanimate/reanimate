@@ -67,7 +67,7 @@ import           EndScene
 highdef = True
 
 main :: IO ()
-main = reanimate $ -- takeA 10 $ dropA 38 $
+main = reanimate $ takeA 25 $ dropA 15 $
   parA (staticFrame 1 $ mkBackground "black") $
   monalisaScene `seqA`
   falseColorScene `transition1`
@@ -170,12 +170,13 @@ falseColorScene = sceneAnimation $ do
         <*> spriteT
 
     pushCM "greyscale" greyscale
-    pushCM "jet" jet
-    pushCM "turbo" turbo
     pushCM "sinebow" sinebow
+    pushCM "jet" jet
+    wait 8
     pushCM "parula" parula
     pushCM "viridis" viridis
     pushCM "cividis" cividis
+    pushCM "turbo" turbo
 
     wait 2
     return ()

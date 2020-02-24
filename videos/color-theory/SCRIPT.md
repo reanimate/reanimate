@@ -32,7 +32,7 @@ this space has a position for the color that only stimulates the M-cone but no
 light can stimulate that cone without also stimulating one or two other cones.
 So, to make colors easier, the LMS space was stretched and
 squeezed into a new shape, called the XYZ space.
-Taking a 2D slice of this space gives us a pyramid of colors with reds to the
+Taking a 2D slice of this space gives a pyramid of colors with reds to the
 right, greens at the top, and blues to the left.
 This space still contains non-sensible colors but we can filter them out by
 mapping each wavelength of visible light.
