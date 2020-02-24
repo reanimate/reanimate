@@ -177,7 +177,7 @@ waitUntil tNew = do
 
 -- | Wait until all forked and sequential animations have finished.
 --
---   Examples:
+--   Example:
 --
 --   > do waitOn $ fork $ play drawBox
 --   >    play drawCircle
