@@ -70,18 +70,22 @@ compileTestFolder path = do
 
 compileVideoFolder :: FilePath -> IO TestTree
 compileVideoFolder path = do
-  files <- sort <$> getDirectoryContents path
-  return $ testGroup "videos"
-    [ testCase dir $ do
-        (ret, _stdout, err) <- readProcessWithExitCode "stack" (["ghc","--", "-i"++path</>dir, fullPath] ++ ghcOpts) ""
-        _ <- evaluate (length err)
-        case ret of
-          ExitFailure{} -> assertFailure $ "Failed to compile:\n" ++ err
-          ExitSuccess   -> return ()
-    | dir <- files
-    , let fullPath = path </> dir </> dir <.> "hs"
-    , dir /= "." && dir /= ".."
-    ]
+  exist <- doesDirectoryExist path
+  if exist
+    then do
+      files <- sort <$> getDirectoryContents path
+      return $ testGroup "videos"
+        [ testCase dir $ do
+            (ret, _stdout, err) <- readProcessWithExitCode "stack" (["ghc","--", "-i"++path</>dir, fullPath] ++ ghcOpts) ""
+            _ <- evaluate (length err)
+            case ret of
+              ExitFailure{} -> assertFailure $ "Failed to compile:\n" ++ err
+              ExitSuccess   -> return ()
+        | dir <- files
+        , let fullPath = path </> dir </> dir <.> "hs"
+        , dir /= "." && dir /= ".."
+        ]
+    else return $ testGroup "videos" []
   where
     ghcOpts = ["-fno-code", "-O0"]
 
