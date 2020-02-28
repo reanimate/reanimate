@@ -18,15 +18,17 @@ import Debug.Trace
 import qualified Data.Text as T
 
 main :: IO ()
-main = reanimate $ addStatic (mkBackground "black") $
-  mkAnimation 10 $ \t -> lowerTransformations $ scale 3 $ pathify $ center $
+main = reanimate $ playThenReverseA $ pauseAround 2.5 2.5 $ addStatic (mkBackground "black") $
+  signalA (curveS 2) $ mkAnimation 5 $ \t -> lowerTransformations $ scale 3 $ pathify $ center $
   mkGroup
   [ translate 1.7 0 $ drawTrig points1 group1
-  , translate (-1.7) 0 $ drawTrig points2 group1
-  , translate 0 0 $ drawTrig (zipWith (lerp t) points1 points2) group1
+  -- , translate (-1.7) 0 $ drawTrig points2 group1
+  , translate (-1.7) 0 $ drawTrig (zipWith (lerp (1-t)) points1 points2) group1
+  , let pointsNew = trigMorph points1 points2 group1 t
+    in drawTrig pointsNew group1
   ]
 
-sqrt3 = 97/56
+sqrt3 = sqrt 3
 points1 =
   [ V2 1 0
   , V2 (-1/2) (sqrt3 / 2)
@@ -68,7 +70,7 @@ drawTrig points gs = withStrokeColor "white" $ withFillColor "red" $
     , translate ax ay $ mkCircle 0.02
     , translate bx by $ mkCircle 0.02
     , translate cx cy $ mkCircle 0.02
-    , withStrokeWidth (defaultStrokeWidth/8) $ withFillColor "green" $ mkGroup
+    , withStrokeWidth (defaultStrokeWidth/5) $ withFillColor "green" $ mkGroup
       [ translate ax ay $ ppNum a
       , translate bx by $ ppNum b
       , translate cx cy $ ppNum c ]
@@ -171,6 +173,24 @@ getExteriorPoly ((a,b):rest) = worker [a] a b rest
           case lookup this (map swap xs) of
             Just next -> worker (this:acc) start next (delete (next, this) xs)
             Nothing   -> Nothing
+
+trigMorph pointsA pointsB group t =
+    case linearSolve mM bM of
+      Nothing -> error "Failed to find solutions"
+      Just ret ->
+        take 3 pointsA ++
+        worker (toLists ret)
+  where
+    worker [] = []
+    worker ([x]:[y]:rest) = V2 x y : worker rest
+    worker _ = error "invalid result"
+    interp a b = fromToS a b t
+    mM = (h><w) (zipWith interp (concat mA) (concat mB))
+    bM = (h><1) (zipWith interp bA bB)
+    h = length mA
+    w = length (head mA)
+    (mA, bA) = unzip $ toParameters pointsA group
+    (mB, bB) = unzip $ toParameters pointsB group
 
 test points group = do
     disp 3 mM
