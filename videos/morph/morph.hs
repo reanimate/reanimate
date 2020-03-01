@@ -2,88 +2,135 @@
 -- stack --resolver lts-13.14 runghc --package reanimate
 module Main where
 
-import Control.Lens
-import Data.Maybe
-import Control.Monad
-import Reanimate
-import Linear.V2
-import Linear.V3
-import Linear.Matrix hiding (trace)
-import Linear.Vector
-import Numeric.LinearAlgebra hiding (scale)
-import Numeric.LinearAlgebra.HMatrix hiding (scale)
-import Data.List (delete)
-import Data.Tuple
-import Debug.Trace
-import qualified Data.Text as T
+import           Codec.Picture.Types
+import           Control.Lens
+import           Control.Monad
+import           Data.List                     (delete, nub, partition)
+import           Data.Maybe
+import qualified Data.Text                     as T
+import           Data.Tuple
+import qualified Data.Vector                   as V
+import           Debug.Trace
+import           Linear.Matrix                 hiding (trace)
+import           Linear.V2
+import           Linear.V3
+import           Linear.Vector
+import           Numeric.LinearAlgebra         hiding (scale, (<>))
+import qualified Numeric.LinearAlgebra         as Matrix
+import           Numeric.LinearAlgebra.HMatrix hiding (scale, (<>))
+import           Reanimate
+
+type Points = V.Vector (V2 Double)
+type Edges = [(Int, Int, Int)]
+data Mesh = Mesh { meshPoints :: Points, meshEdges :: Edges }
+data MeshPair = MeshPair Points Points Edges
+-- The points in a RelMesh are:
+--   relMeshStatic ++ x where Ax = B
+data RelMesh = RelMesh
+  { relMeshStatic :: Points
+  , relMeshEdges  :: Edges
+  , relMeshA      :: Matrix Double
+  , relMeshB      :: Matrix Double
+  }
+data RelMeshPair = RelMeshPair Points Edges (Matrix Double) (Matrix Double) (Matrix Double) (Matrix Double)
+-- Linear interpolation on RelMesh gives smooth morph.
+-- solveMesh :: RelMesh -> Mesh
+-- mkRelative :: Mesh -> RelMesh
+-- mkRelativePair :: MeshPair -> RelMeshPair
+-- triangulate :: Polygon -> Polygon -> MeshPair ?
+-- embed :: MeshPair -> MeshPair
+-- compatible :: Mesh -> Mesh -> Maybe MeshPair
+-- linearInterpolate :: MeshPair -> Double -> Mesh
+-- convexInterpolate :: RelMeshPair -> Double -> RelMesh
 
 main :: IO ()
-main = reanimate $ playThenReverseA $ pauseAround 2.5 2.5 $ addStatic (mkBackground "black") $
+main = reanimate $ playThenReverseA $ pauseAround 1 1 $ addStatic (mkBackground "black") $
   signalA (curveS 2) $ mkAnimation 5 $ \t -> lowerTransformations $ scale 3 $ pathify $ center $
   mkGroup
-  [ translate 1.7 0 $ drawTrig points1 group1
+  [ translate 1.7 0 $ drawTrig example1
   -- , translate (-1.7) 0 $ drawTrig points2 group1
-  , translate (-1.7) 0 $ drawTrig (zipWith (lerp (1-t)) points1 points2) group1
-  , let pointsNew = trigMorph points1 points2 group1 t
-    in drawTrig pointsNew group1
-  ]
-
-sqrt3 = sqrt 3
-points1 =
-  [ V2 1 0
-  , V2 (-1/2) (sqrt3 / 2)
-  , V2 (-1/2) (-sqrt3 / 2)
-  , 3 * points1!!0 ^/ 4
-  , 3 * points1!!1 ^/ 4
-  , 3 * points1!!2 ^/ 4
-  , points1!!0 ^/ 2
-  , points1!!1 ^/ 2
-  , points1!!2 ^/ 2
-  ]
-points2 =
-  [ V2 1 0
-  , V2 (-1/2) (sqrt3 / 2)
-  , V2 (-1/2) (-sqrt3 / 2)
-  , 3 * points2!!2 ^/ 4
-  , 3 * points2!!0 ^/ 4
-  , 3 * points2!!1 ^/ 4
-  , points2!!1 ^/ 2
-  , points2!!2 ^/ 2
-  , points2!!0 ^/ 2
-  ]
-group1 =
-  [ (1,5,4), (1,2,5), (2,6,5), (2,3,6), (3,4,6), (3,1,4)
-  , (4,8,7), (4,5,8), (5,9,8), (5,6,9), (6,7,9), (6,4,7), (7,8,9)]
-
-mesh1 :: [(P,P,P)]
-mesh1 =
-  [ (points1 !! (a-1), points1 !! (b-1), points1 !! (c-1))
-  | (a, b, c) <- group1
-  ]
-
-drawTrig points gs = withStrokeColor "white" $ withFillColor "red" $
-  withStrokeWidth (defaultStrokeWidth/2) $ mkGroup
-  [ mkGroup
-    [ mkLine (ax, ay) (bx, by)
-    , mkLine (bx, by) (cx, cy)
-    , mkLine (cx, cy) (ax, ay)
-    , translate ax ay $ mkCircle 0.02
-    , translate bx by $ mkCircle 0.02
-    , translate cx cy $ mkCircle 0.02
-    , withStrokeWidth (defaultStrokeWidth/5) $ withFillColor "green" $ mkGroup
-      [ translate ax ay $ ppNum a
-      , translate bx by $ ppNum b
-      , translate cx cy $ ppNum c ]
-    ]
-  | (a, b, c) <- gs
-  , let V2 ax ay = points!!(a-1)
-        V2 bx by = points!!(b-1)
-        V2 cx cy = points!!(c-1)
+  , translate (-1.7) 0 $ drawTrig (linearInterpolate meshPair t)
+  , drawTrig $ solveMesh $ convexInterpolate (mkRelativePair meshPair) t
   ]
   where
-    ppNum n =
-      let svg = scale 0.2 $ center $ latex $ T.pack $ "\\texttt{" ++ show n ++ "}"
-      in translate 0 (svgHeight svg/2 + 0.04) svg
+    meshPair = fromJust $ compatible example1 example2
+
+-- FIXME: Check that the triangles are all anticlockwise.
+-- FIXME: Check that the edges connect all the points.
+-- FIXME: Check that the edgse leave no gaps.
+compatible :: Mesh -> Mesh -> Maybe MeshPair
+compatible a b =
+  if meshEdges a == meshEdges b && V.length (meshPoints a) == V.length (meshPoints b)
+    then Just $ MeshPair (meshPoints a) (meshPoints b) (meshEdges a)
+    else Nothing
+
+linearInterpolate :: MeshPair -> Double -> Mesh
+linearInterpolate (MeshPair aP bP edges) t = Mesh
+    { meshPoints = V.zipWith (lerp (1-t)) aP bP
+    , meshEdges = edges }
+
+example1 :: Mesh
+example1 = Mesh points edges
+  where
+    points = V.fromList
+      [ V2 1 0
+      , V2 (-1/2) (sqrt 3 / 2)
+      , V2 (-1/2) (-sqrt 3 / 2)
+      , 3 * points V.! 0 ^/ 4
+      , 3 * points V.! 1 ^/ 4
+      , 3 * points V.! 2 ^/ 4
+      , points V.! 0 ^/ 2
+      , points V.! 1 ^/ 2
+      , points V.! 2 ^/ 2
+      ]
+    edges =
+      [ (1,5,4), (1,2,5), (2,6,5), (2,3,6), (3,4,6), (3,1,4)
+      , (4,8,7), (4,5,8), (5,9,8), (5,6,9), (6,7,9), (6,4,7), (7,8,9)]
+
+example2 :: Mesh
+example2 = Mesh points edges
+  where
+    points = V.fromList
+      [ V2 1 0
+      , V2 (-1/2) (sqrt 3 / 2)
+      , V2 (-1/2) (-sqrt 3 / 2)
+      , 3 * points V.! 2 ^/ 4
+      , 3 * points V.! 0 ^/ 4
+      , 3 * points V.! 1 ^/ 4
+      , points V.! 1  ^/ 2
+      , points V.! 2 ^/ 2
+      , points V.! 0 ^/ 2
+      ]
+    edges = meshEdges example1
+
+drawTrig (Mesh points gs) = withStrokeColor "grey" $ withFillColor "white" $
+  withStrokeWidth (defaultStrokeWidth/2) $ mkGroup
+  [ mkGroup
+    [ mkGroup
+      [ mkLine (ax, ay) (bx, by)
+      , mkLine (bx, by) (cx, cy)
+      , mkLine (cx, cy) (ax, ay)
+      ]
+    | (a, b, c) <- gs
+    , let V2 ax ay = points V.! (a-1)
+          V2 bx by = points V.! (b-1)
+          V2 cx cy = points V.! (c-1)
+    ]
+  , mkGroup $ concat
+    [ [ colored v $ translate ax ay $ mkCircle circR
+      , withStrokeWidth (defaultStrokeWidth*0.0) $
+        withStrokeColor "white" $ withFillColor "black" $ mkGroup
+        [ translate ax ay $ ppNum v ]
+      ]
+    | v <- nub $ concat [ [a,b,c] | (a,b,c) <- gs]
+    , let V2 ax ay = points V.! (v-1)
+    ]]
+  where
+    colored n =
+      let c = promotePixel $ turbo (fromIntegral n / fromIntegral (length gs-1))
+      in withStrokeColorPixel c . withFillColorPixel c
+    circR = 0.05
+    ppNum n = scaleToHeight (circR*1.5) $ center $ latex $ T.pack $ "\\texttt{" ++ show n ++ "}"
 
 area (V2 a1 a2) (V2 b1 b2) (V2 c1 c2) =
   1/2 * det33 (V3 (V3 1 1 1) (V3 a1 b1 c2) (V3 a2 b2 c2))
@@ -146,18 +193,8 @@ findStarNeighbours allTrig self =
   , self == c
   ]
 
-isInteriorNeighbours :: Eq a => [(a, a)] -> Bool
-isInteriorNeighbours [] = False
-isInteriorNeighbours ((a,b):rest) = worker a b rest
-  where
-    worker start this [] = start == this
-    worker start this xs =
-      case lookup this xs of
-        Just next -> worker start next (delete (this,next) xs)
-        Nothing   ->
-          case lookup this (map swap xs) of
-            Just next -> worker start next (delete (next, this) xs)
-            Nothing   -> False
+isInterior :: Eq a => [(a, a)] -> Bool
+isInterior = isJust . getExteriorPoly
 
 getExteriorPoly :: Eq a => [(a, a)] -> Maybe [a]
 getExteriorPoly [] = Nothing
@@ -174,67 +211,71 @@ getExteriorPoly ((a,b):rest) = worker [a] a b rest
             Just next -> worker (this:acc) start next (delete (next, this) xs)
             Nothing   -> Nothing
 
-trigMorph pointsA pointsB group t =
-    case linearSolve mM bM of
-      Nothing -> error "Failed to find solutions"
-      Just ret ->
-        take 3 pointsA ++
-        worker (toLists ret)
+convexInterpolate :: RelMeshPair -> Double -> RelMesh
+convexInterpolate (RelMeshPair static edges leftM leftB rightM rightB) t =
+  RelMesh
+  { relMeshStatic = static
+  , relMeshEdges  = edges
+  , relMeshA      = Matrix.scale (1-t) leftM +
+                    Matrix.scale t rightM
+  , relMeshB      = Matrix.scale (1-t) leftB +
+                    Matrix.scale t rightB
+  }
+
+solveMesh :: RelMesh -> Mesh
+solveMesh (RelMesh static edges m b) =
+  case linearSolve m b of
+    Nothing -> error "Failed to solve mesh"
+    Just ret ->
+      Mesh (static <> V.fromList (worker (toLists ret))) edges
   where
-    worker [] = []
+    worker []             = []
     worker ([x]:[y]:rest) = V2 x y : worker rest
-    worker _ = error "invalid result"
-    interp a b = fromToS a b t
-    mM = (h><w) (zipWith interp (concat mA) (concat mB))
-    bM = (h><1) (zipWith interp bA bB)
-    h = length mA
-    w = length (head mA)
-    (mA, bA) = unzip $ toParameters pointsA group
-    (mB, bB) = unzip $ toParameters pointsB group
+    worker _              = error "invalid result"
 
-test points group = do
-    disp 3 mM
-    disp 3 bM
-    let Just ret = linearSolve mM bM
-    disp 3 ret
-    disp 3 (mul mM ret)
+mkRelative :: Mesh -> RelMesh
+mkRelative (Mesh points edges) = RelMesh (V.fromList exteriorPoints) edges mM bM
   where
-    mM = (h><w) (concat m)
-    bM = (h><1) b
-    h = length m
-    w = length (head m)
-    (m, b) = unzip $ toParameters points group
+    mM = (s><s) (concat m)
+    bM = (s><1) b
+    (s,exterior, (m, b)) = toParameters points edges
+    exteriorPoints =
+      [ points V.! (i-1)
+      | i <- exterior
+      ]
 
-toParameters points groups = concat
+mkRelativePair :: MeshPair -> RelMeshPair
+mkRelativePair (MeshPair p1 p2 edges) =
+  let RelMesh static edges leftM leftB = mkRelative (Mesh p1 edges)
+      RelMesh _ _ rightM rightB = mkRelative (Mesh p1 edges)
+  in RelMeshPair static edges leftM leftB rightM rightB
+
+toParameters points groups = (length interior*2,exterior,unzip $ concat
   [ let lst = [(if i == j then -1 else t)
               | j <- interior
-              , let t = lookupLam_ij points groups i j
+              , let t = fromMaybe 0 $ lookup (i,j) lam_ij_cache
               ]
         pos = negate $ sum
            [ pj ^* t
            | j <- exterior
-           , let t = lookupLam_ij points groups i j
-                 pj = points !! (j-1)
+           , let t = fromMaybe 0 $ lookup (i,j) lam_ij_cache
+                 pj = points V.! (j-1)
            ]
     in [ (dupX lst, pos ^. _x)
        , (dupY lst, pos ^. _y)]
-  | i <- interior ]
+  | i <- interior ])
   where
-    dupX [] = []
+    lam_ij_cache = lam_ij points groups
+    dupX []     = []
     dupX (x:xs) = x:0:dupX xs
-    dupY [] = []
+    dupY []     = []
     dupY (x:xs) = 0:x:dupY xs
-    interior = filter (isInteriorNeighbours . findStarNeighbours group1) [1 .. length points1]
-    exterior = filter (not . isInteriorNeighbours . findStarNeighbours group1) [1 .. length points1]
+    (interior, exterior) =
+      partition (isInterior . findStarNeighbours groups) [1 .. length points]
 
-lookupLam_ij points groups i j = fromMaybe 0 $ listToMaybe
-  [ t
-  | (i', j', t) <- lam_ij points groups
-  , i==i', j==j'
-  ]
 lam_ij points groups =
-  [ (i, j, t)
-  | i <- [1..length points]
+  [ ((i, j), t)
+  | i <- [1..V.length points]
   , (j, t) <- lam_j points groups i
   ]
 lam_j points groups p =
@@ -249,19 +290,19 @@ calcMu points groups p = concat
       , (b, nP, t3) ]
       -- (nP, a, b)
     | {-p <- [1..length points]-}
-      let selfVert = points !! (p-1)
+      let selfVert = points V.! (p-1)
           n = findStarNeighbours groups p
           nPoints :: [Int]
           nPoints = fromMaybe [] $ getExteriorPoly n
     , (i, nP) <- zip [1 .. ] nPoints
-    , let vert = points !! (nP-1)
+    , let vert = points V.! (nP-1)
     , let line = (vert, selfVert)
     , let (a,b,aP,bP) = head $
             [ (a,b,aP,bP)
             | (a,b) <- n
-            , let aP = points !! (a-1)
-                  bP = points !! (b-1)
-                  segment = (points !! (a-1), points !! (b-1))
+            , let aP = points V.! (a-1)
+                  bP = points V.! (b-1)
+                  segment = (points V.! (a-1), points V.! (b-1))
                   cross = lineIntersect line segment
             , isBetween cross segment
             , a /= nP
@@ -269,12 +310,3 @@ calcMu points groups p = concat
     -- , b == (nPoints ++ nPoints) !! i
     , let (t1,t2,t3) = bCoords vert aP bP selfVert
     ]
-  where
-
-{-
-What we want is 'lambda i j'.
-'i' is interior node. 'j' is neighbour.
-
-
-
--}
