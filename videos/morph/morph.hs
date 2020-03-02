@@ -246,8 +246,8 @@ mkRelative (Mesh points edges) = RelMesh (V.fromList exteriorPoints) edges mM bM
 
 mkRelativePair :: MeshPair -> RelMeshPair
 mkRelativePair (MeshPair p1 p2 edges) =
-  let RelMesh static edges leftM leftB = mkRelative (Mesh p1 edges)
-      RelMesh _ _ rightM rightB = mkRelative (Mesh p1 edges)
+  let RelMesh static _ leftM leftB = mkRelative (Mesh p1 edges)
+      RelMesh _ _ rightM rightB = mkRelative (Mesh p2 edges)
   in RelMeshPair static edges leftM leftB rightM rightB
 
 toParameters points groups = (length interior*2,exterior,unzip $ concat
