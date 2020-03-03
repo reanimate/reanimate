@@ -15,10 +15,11 @@ import           Linear.Matrix                 hiding (trace)
 import           Linear.V2
 import           Linear.V3
 import           Linear.Vector
-import           Numeric.LinearAlgebra         hiding (scale, (<>))
+import           Numeric.LinearAlgebra         hiding (scale, (<>), polar)
 import qualified Numeric.LinearAlgebra         as Matrix
-import           Numeric.LinearAlgebra.HMatrix hiding (scale, (<>))
+import           Numeric.LinearAlgebra.HMatrix hiding (scale, (<>), polar)
 import           Reanimate
+import Data.Function
 
 type Points = V.Vector (V2 Double)
 type Edges = [(Int, Int, Int)]
@@ -310,3 +311,56 @@ calcMu points groups p = concat
     -- , b == (nPoints ++ nPoints) !! i
     , let (t1,t2,t3) = bCoords vert aP bP selfVert
     ]
+
+polar :: V2 Double -> Double
+polar (V2 x y) =
+  let ang = atan2 y x in
+  if ang < 0 then 2*pi+ang
+    else ang
+
+displacement :: [P] -> [Double]
+displacement [] = []
+displacement (v:vs) =
+    fix (\self -> polar v : zipWith (worker 0) vs self)
+  where
+    worker k cur prev =
+      let p = polar cur + 2*pi*k in
+      if abs (p-prev) < pi
+        then p
+        else worker (k+1) cur prev
+
+direction :: P -> P -> P -> Double
+direction p1 p2 p3 = crossZ (p3-p1) (p2-p1)
+
+-- Straight lines are counted as left turns.
+isLeftTurn :: P -> P -> P -> Bool
+isLeftTurn p1 p2 p3 = direction p1 p2 p3 <= 0
+
+isRightTurn :: P -> P -> P -> Bool
+isRightTurn p1 p2 p3 = not $ isLeftTurn p1 p2 p3
+
+vispol z ((v0,a0):(v1,a1):rest)
+  | isLeftTurn z v0 v1 = left [v1,v0] ((v1,a1):rest)
+  | otherwise          = scana [v0] ((v1,a1):rest)
+  where
+    left stack [] = reverse stack
+    left stack [v] = v:reverse stack
+    left stack ((vi,ai):(vj,aj):rest)
+      | isLeftTurn z ai aj
+        = left (vj:vi:stack) ((vj,aj):rest)
+      | isRightTurn z ai aj && isRightTurn (stack!!1) ai aj
+        = scan_a stack ((vj,aj):rest)
+      | otherwise
+        = right stack ((vj,aj):rest)
+
+    right (sj:sji:ss) ((vi,ai):(vj,aj):rest)
+      | isRightTurn z sj vi && isLeftTurn z sji vi =
+          let sj' = intersection of (sji,sj) (z,vi) in
+          if isRightTurn z vi vj then
+            ... right
+          else if isLeftTurn z vi vj && isRightTurn vPrev vi vj then
+            ... left
+          else
+            ... scan_d
+      | isForwardMove z sji sj && (vPrev,vi) intersects (sji,sj) = ...
+      | otherwise right (sji:ss) ((vi,ai):rest)
