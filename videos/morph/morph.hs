@@ -134,7 +134,9 @@ drawTrig (Mesh points gs) = withStrokeColor "grey" $ withFillColor "white" $
     ppNum n = scaleToHeight (circR*1.5) $ center $ latex $ T.pack $ "\\texttt{" ++ show n ++ "}"
 
 area (V2 a1 a2) (V2 b1 b2) (V2 c1 c2) =
-  1/2 * det33 (V3 (V3 1 1 1) (V3 a1 b1 c2) (V3 a2 b2 c2))
+  1/2 * det33 (V3 (V3 a1 a2 1)
+                  (V3 b1 b2 1)
+                  (V3 c1 c2 1))
 
 -- Anticlockwise. No duplicate vertices. length >= 3
 type Polygon = [V2 Double]
