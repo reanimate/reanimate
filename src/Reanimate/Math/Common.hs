@@ -2,12 +2,15 @@
 module Reanimate.Math.Common where
 
 import           Control.Applicative
+import           Data.List           (tails)
 import           Data.List.Split
 import           Data.Vector         (Vector)
 import qualified Data.Vector         as V
 import           Linear.Matrix
+import           Linear.Metric
 import           Linear.V2
 import           Linear.V3
+import           Linear.Vector
 import           Text.Printf
 
 type P = V2 Double
@@ -18,8 +21,36 @@ triangle = [V2 1 1, V2 0 0, V2 2 0]
 triangle' :: [P]
 triangle' = reverse [V2 1 1, V2 0 0, V2 2 0]
 
+shape1 :: [P]
+shape1 =
+  [ V2 0 0, V2 2 0
+  , V2 2 1, V2 2 2, V2 2 3, V2 2 4, V2 2 5, V2 2 6
+  , V2 1 1, V2 0 1 ]
+
+shape2 :: [P]
+shape2 =
+  [ V2 0 0, V2 1 0, V2 1 1, V2 2 1, V2 2 (-1), V2 0 (-1), V2 0 (-2)
+  , V2 3 (-2), V2 3 2, V2 0 2]
+
+shape3 :: [P]
+shape3 =
+  [ V2 0 0, V2 1 0, V2 1 1, V2 2 1, V2 2 2, V2 0 2]
+
+shape4 :: [P]
+shape4 =
+  [ V2 0 0, V2 1 0, V2 1 1, V2 2 1, V2 2 (-1), V2 3 (-1),V2 3 2, V2 0 2]
+
+shape5 :: [P]
+shape5 = cyclePolygons shape4 !! 2
+
 concave :: [P]
 concave = [V2 0 0, V2 2 0, V2 2 2, V2 1 1, V2 0 2]
+
+cyclePolygons :: [P] -> [[P]]
+cyclePolygons p = take (length p) $ map (take (length p)) $ tails (cycle p)
+
+interpFirst (x:y:xs) t =
+  lerp t y x : y : xs ++ [x]
 
 area :: P -> P -> P -> Double
 area a b c = 1/2 * area2X a b c
@@ -58,12 +89,15 @@ isEarCorner polygon a b c =
 epsilon :: Double
 epsilon = 1e-9
 
+epsEq :: Double -> Double -> Bool
+epsEq a b = abs (a-b) < epsilon
+
 -- Left turn or straight.
 isLeftTurn :: P -> P -> P -> Bool
 isLeftTurn p1 p2 p3 =
   let d = direction p1 p2 p3 in
   if abs d < epsilon
-    then True -- colinear
+    then True -- False -- colinear
     else d < 0
 
 isRightTurn :: P -> P -> P -> Bool
@@ -87,3 +121,21 @@ barycentricCoords (V2 x1 y1) (V2 x2 y2) (V2 x3 y3) (V2 x y) =
     lam2 = ((y3-y1)*(x-x3) + (x1-x3)*(y-y3)) /
            ((y2-y3)*(x1-x3) + (x3-x2)*(y1-y3))
     lam3 = 1 - lam1 - lam2
+
+
+rayIntersect :: Fractional a => (V2 a,V2 a) -> (V2 a,V2 a) -> V2 a
+rayIntersect (V2 x1 y1,V2 x2 y2) (V2 x3 y3, V2 x4 y4) =
+    V2 (xTop/xBot) (yTop/yBot)
+  where
+    xTop = (x1*y2 - y1*x2)*(x3-x4) - (x1 - x2)*(x3*y4-y3*x4)
+    xBot = (x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)
+    yTop = (x1*y2 - y1*x2)*(y3-y4) - (y1-y2)*(x3*y4-y3*x4)
+    yBot = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4)
+
+isBetween :: V2 Double -> (V2 Double,V2 Double) -> Bool
+isBetween (V2 x y) (V2 x1 y1, V2 x2 y2) =
+  ((y1 > y) /= (y2 > y) || epsEq y y1||epsEq y y2) && -- y is between y1 and y2
+  ((x1 > x) /= (x2 > x) || epsEq x x1||epsEq x x2)
+
+distSquared :: P -> P -> Double
+distSquared a b = quadrance (a ^-^ b)

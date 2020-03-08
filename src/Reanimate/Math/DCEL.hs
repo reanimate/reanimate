@@ -129,11 +129,7 @@ fromSimplePolygon pts = DCEL
   where
     n = length pts
 
-triangle :: [V2 Double]
-triangle = [V2 1 1, V2 0 0, V2 2 0]
-
-triangle' :: [V2 Double]
-triangle' = reverse [V2 1 1, V2 0 0, V2 2 0]
-
-concave :: [V2 Double]
-concave = [V2 0 0, V2 2 0, V2 2 2, V2 1 1, V2 0 2]
+-- addEdge :: VertexIdx -> VertexIdx -> DCEL -> DCEL ->
+-- addEdge a b dcel =
+--   add edge, vertex=a, face=a
+--   add twin

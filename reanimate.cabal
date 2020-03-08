@@ -58,6 +58,10 @@ library
                       -- Reanimate.Diagrams
                       Reanimate.Transform
                       Reanimate.Misc
+                      Reanimate.Math.Common
+                      Reanimate.Math.DCEL
+                      Reanimate.Math.EarClip
+                      Reanimate.Math.Visibility
                       Reanimate.Raster
                       Reanimate.ColorMap
                       Reanimate.ColorSpace
@@ -94,7 +98,7 @@ library
                        vector, colour, cassava, ansi-wl-pprint, here, temporary,
                        optparse-applicative, chiphunk >= 0.1.2.1,
                        geojson, aeson >= 1.3.0.0, hmatrix,
-                       hgeometry
+                       split
   ghc-options: -Wall
 
 test-suite spec

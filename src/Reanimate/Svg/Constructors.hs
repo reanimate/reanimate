@@ -9,6 +9,7 @@ module Reanimate.Svg.Constructors
   , mkPathString
   , mkPathText
   , mkLinePath
+  , mkLinePathClosed
   , mkClipPath
   , mkText
   -- * Grouping shapes and definitions
@@ -30,6 +31,7 @@ module Reanimate.Svg.Constructors
   , center
   , centerX
   , centerY
+  , centerUsing
   , translate
   , rotate
   , rotateAroundCenter
@@ -167,9 +169,7 @@ flipYAxis = scaleXY 1 (-1)
 -- | Translate given image so that the center of its bouding box coincides with coordinates
 --   @(0, 0)@.
 center :: Tree -> Tree
-center t = translate (-x-w/2) (-y-h/2) t
-  where
-    (x, y, w, h) = boundingBox t
+center t = centerUsing t t
 
 -- | Translate given image so that the X-coordinate of the center of its bouding box is 0.
 centerX :: Tree -> Tree
@@ -182,6 +182,11 @@ centerY :: Tree -> Tree
 centerY t = translate 0 (-y-h/2) t
   where
     (_x, y, _w, h) = boundingBox t
+
+centerUsing :: Tree -> Tree -> Tree
+centerUsing a = translate (-x-w/2) (-y-h/2)
+  where
+    (x, y, w, h) = boundingBox a
 
 -- | Create 'Texture' based on SVG color name.
 --   See <https://en.wikipedia.org/wiki/Web_colors#X11_color_names> for the list of available names.
@@ -315,6 +320,16 @@ mkLinePath ((startX, startY):rest) =
   where
     cmds = [ MoveTo OriginAbsolute [V2 startX startY]
            , LineTo OriginAbsolute [ V2 x y | (x, y) <- rest ] ]
+
+-- | Create a path from a list of @(x, y)@ coordinates of points along the path.
+mkLinePathClosed :: [(Double, Double)] -> Tree
+mkLinePathClosed [] = mkGroup []
+mkLinePathClosed ((startX, startY):rest) =
+    PathTree $ defaultSvg & pathDefinition .~ cmds
+  where
+    cmds = [ MoveTo OriginAbsolute [V2 startX startY]
+           , LineTo OriginAbsolute [ V2 x y | (x, y) <- rest ]
+           , EndPath ]
 
 -- | Rectangle with a uniform color and the same size as the screen.
 --
