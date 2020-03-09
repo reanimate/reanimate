@@ -17,7 +17,7 @@ import           Graphics.SvgTree      (Number (..), Tree)
 import           Numeric
 import           Reanimate.Animation
 import           Reanimate.ColorMap
-import           Reanimate.Driver      (reanimate)
+import           Reanimate
 import           Reanimate.LaTeX
 import           Reanimate.Signal
 import           Reanimate.Svg

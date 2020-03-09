@@ -3,7 +3,7 @@ cabal-version:       1.18
 --  see http://haskell.org/cabal/users-guide/
 
 name:                reanimate
-version:             0.1.9.0
+version:             0.2.0.2
 -- synopsis:
 -- description:
 license:             PublicDomain
@@ -36,6 +36,11 @@ Source-Repository head
     Type:      git
     Location:  git://github.com/lemmih/reanimate.git
 
+Flag test
+  Description: Enable testing (requires stack)
+  Default:     False
+  Manual:      True
+
 library
   hs-source-dirs:     src
   default-language:   Haskell2010
@@ -52,7 +57,6 @@ library
                       Reanimate.Svg.LineCommand
                       -- Reanimate.Diagrams
                       Reanimate.Transform
-                      Reanimate.Driver
                       Reanimate.Misc
                       Reanimate.Raster
                       Reanimate.ColorMap
@@ -62,6 +66,7 @@ library
                       Reanimate.Scene
                       Reanimate.Povray
                       Reanimate.Blender
+                      Reanimate.Transition
                       Reanimate.Effect
                       Reanimate.Builtin.TernaryPlot
                       Reanimate.Builtin.CirclePlot
@@ -74,6 +79,7 @@ library
                       Reanimate.Builtin.Documentation
                       Reanimate.Builtin.Images
   other-modules:      Reanimate.Cache
+                      Reanimate.Driver
                       Reanimate.Driver.Check
                       Reanimate.Driver.CLI
                       Reanimate.Driver.Server
@@ -97,6 +103,9 @@ test-suite spec
   other-modules:
     UnitTests
   hs-source-dirs: test
+  if !flag(test) {
+    Buildable: False
+  }
   build-depends:
     base,
     directory,

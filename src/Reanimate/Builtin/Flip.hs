@@ -6,12 +6,8 @@
 module Reanimate.Builtin.Flip
   ( FlipSprite(..)
   , flipSprite
-  , Transition
-  , signalT
-  , mapT
   , flipTransition
   , flipTransitionOpts
-  , overlapTransition
   ) where
 
 import           Reanimate.Animation
@@ -19,6 +15,7 @@ import           Reanimate.Blender
 import           Reanimate.Raster
 import           Reanimate.Scene
 import           Reanimate.Signal
+import           Reanimate.Transition
 import           Reanimate.Svg.Constructors
 
 import           Data.String.Here
@@ -54,23 +51,6 @@ flipSprite front back = do
       , fsBend = bend
       , fsZoom = trans
       , fsWobble = rotX }
-
-type Transition = Animation -> Animation -> Animation
-
-signalT :: Signal -> Transition -> Transition
-signalT = mapT . signalA
-
-mapT :: (Animation -> Animation) -> Transition -> Transition
-mapT fn t = \a b -> fn (t a b)
-
-overlapTransition :: Double -> Transition -> Transition
-overlapTransition overlap t a b =
-    aBefore `seqA` t aOverlap bOverlap `seqA` bAfter
-  where
-    aBefore  = takeA (duration a - overlap) a
-    aOverlap = dropA (duration a - overlap) a
-    bOverlap = takeA overlap b
-    bAfter   = dropA overlap b
 
 flipTransitionOpts :: Double -> Double -> Double -> Transition
 flipTransitionOpts bend zoom wobble a b = sceneAnimation $ do

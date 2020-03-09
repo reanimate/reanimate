@@ -24,12 +24,12 @@ import           Reanimate.ColorMap
 import           Reanimate.ColorSpace
 import           Reanimate.Builtin.Flip
 import           Reanimate.Constants
-import           Reanimate.Driver      (reanimate)
 import           Reanimate.Effect
 import           Reanimate.LaTeX
 import           Reanimate.Raster
 import           Reanimate.Scene
 import           Reanimate.Signal
+import           Reanimate.Transition
 import           Reanimate.Interpolate
 import           Reanimate.Svg
 import           System.IO.Unsafe
@@ -72,7 +72,7 @@ main = reanimate $ --  takeA 10 $ dropA 55 $
   falseColorScene `seqA`
   scene2 `seqA`
   (parA (staticFrame 1 $ mkBackground "aliceblue") $
-  overlapTransition 2 (signalT (curveS 2) flipTransition)
+  overlapT 2 (signalT (curveS 2) flipTransition)
     (parA (staticFrame 1 $ mkBackground "black") $ gridScene)
     (parA (staticFrame 1 $ mkBackground "black") $ endScene))
   -- scene3
@@ -96,7 +96,7 @@ monalisaScene =
     -- Schedule monalisa fade-in
     let PixelRGB8 minR _ _ = minPixel monalisa
         PixelRGB8 maxR _ _ = maxPixel monalisa
-    waitAll $ do
+    waitOn $ do
       -- Show colormap as monalisa fades in
       play $ showColorMap (fromIntegral minR/255) ((fromIntegral maxR+1)/255)
         # setDuration 2

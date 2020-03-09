@@ -62,7 +62,7 @@ import           System.IO.Unsafe
 halfPi, sqrtPi, sqrt2, epsilon, tau :: Double
 halfPi = pi/2
 sqrtPi = sqrt pi
-sqrt2 = sqrt2
+sqrt2 = sqrt 2
 epsilon = 1.0e-12
 tau = pi*2
 

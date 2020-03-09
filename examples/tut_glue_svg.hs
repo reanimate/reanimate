@@ -4,6 +4,7 @@
 module Main (main) where
 
 import           Reanimate
+import           Reanimate.Transition
 import           Reanimate.Builtin.Images
 
 import           Codec.Picture
@@ -21,7 +22,7 @@ transitionTime :: Double
 transitionTime = 0.5
 
 main :: IO ()
-main = reanimate $ bg `parA` transitions fadeInE fadeOutE transitionTime
+main = reanimate $ bg `parA` chainT (overlapT transitionTime fadeT)
       [comp1, comp2, comp3, comp4, comp5, comp6, comp7, setDuration transitionTime comp1]
   where
     bg = animate $ const $ mkBackgroundPixel bgColor
