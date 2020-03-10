@@ -1,17 +1,29 @@
 module Reanimate.Math.EarClip where
 
 
+import           Data.List
+import           Data.Maybe
+import qualified Data.Set              as Set
+import qualified Data.Vector           as V
 import           Linear.V2
-import qualified Data.Set as Set
 
-import Reanimate.Math.Common
-import Reanimate.Math.DCEL
+import           Reanimate.Math.Common
+import           Reanimate.Math.DCEL
 
-import Debug.Trace
+import           Debug.Trace
+
+
+edgesToTriangulation :: [P] -> [(Int,Int)] -> Triangulation
+edgesToTriangulation p edges = V.fromList
+  [ nub $ [ e2 | (e1,e2) <- edges, i == e1 ] ++ [ e1 | (e1,e2) <- edges, i == e2 ]
+  | i <- [0.. length p-1]
+  ]
+  where
+    pToI v = fromJust (elemIndex v p)
 
 -- Triangulation by ear clipping. O(n^2)
--- earClip :: [P] -> DCEL
-earClip pts =
+earClip :: [P] -> Triangulation
+earClip pts = edgesToTriangulation pts $
   let dcel = fromSimplePolygon pts
       ears = Set.fromList [ i
              | i <- [0..dcelSize dcel]
@@ -25,16 +37,18 @@ earClip pts =
       | x `Set.member` ears =
         let dq = dropQ queue
             v0 = getPoint (prevQ 1 queue) dcel
-            v1 = getPoint (prevQ 0 queue) dcel
-            v3 = getPoint (peekQ dq) dcel
+            v1i = prevQ 0 queue
+            v1 = getPoint v1i dcel
+            v3i = peekQ dq
+            v3 = getPoint v3i dcel
             v4 = getPoint (peekQ (nextQ dq)) dcel
             e1 = if isEarCorner (map (flip getPoint dcel) $ toList dq) v0 v1 v3
-                  then Set.insert (prevQ 0 queue) ears
+                  then Set.insert v1i ears
                   else ears
             e2 = if isEarCorner (map (flip getPoint dcel) $ toList dq) v1 v3 v4
-                  then Set.insert (peekQ dq) e1
+                  then Set.insert v3i e1
                   else e1
-        in (v1,v3) : worker dcel e2 dq
+        in (v1i,v3i) : worker dcel e2 dq
       | otherwise = worker dcel ears (nextQ queue)
       where
         x = peekQ queue
@@ -54,17 +68,17 @@ isSimple :: PolyQueue a -> Bool
 isSimple (PolyQueue xs ys _) =
   case xs ++ ys of
     [_,_,_] -> True
-    _ -> False
+    _       -> False
 
 peekQ :: PolyQueue a -> a
 peekQ (PolyQueue (x:_) _ _) = x
 
 nextQ :: PolyQueue a -> PolyQueue a
-nextQ (PolyQueue [x] ys p) = PolyQueue (reverse (x:ys)) [] (x:p)
+nextQ (PolyQueue [x] ys p)    = PolyQueue (reverse (x:ys)) [] (x:p)
 nextQ (PolyQueue (x:xs) ys p) = PolyQueue xs (x:ys) (x:p)
 
 dropQ :: PolyQueue a -> PolyQueue a
-dropQ (PolyQueue [x] ys p) = PolyQueue (reverse ys) [] p
+dropQ (PolyQueue [x] ys p)    = PolyQueue (reverse ys) [] p
 dropQ (PolyQueue (x:xs) ys p) = PolyQueue xs ys p
 
 prevQ :: Int -> PolyQueue a -> a

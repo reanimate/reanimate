@@ -13,7 +13,11 @@ import           Linear.V3
 import           Linear.Vector
 import           Text.Printf
 
+type Polygon = V.Vector P
 type P = V2 Double
+
+type Triangulation = V.Vector [Int]
+
 
 triangle :: [P]
 triangle = [V2 1 1, V2 0 0, V2 2 0]
@@ -42,6 +46,10 @@ shape4 =
 
 shape5 :: [P]
 shape5 = cyclePolygons shape4 !! 2
+
+-- square
+shape6 :: [P]
+shape6 = [ V2 0 0, V2 1 0, V2 1 1, V2 0 1 ]
 
 concave :: [P]
 concave = [V2 0 0, V2 2 0, V2 2 2, V2 1 1, V2 0 2]
@@ -86,18 +94,25 @@ isEarCorner polygon a b c =
     | k <- polygon, k /= a && k /= b && k /= c
     ]
 
-epsilon :: Double
+epsilon :: Fractional a => a
 epsilon = 1e-9
 
-epsEq :: Double -> Double -> Bool
+epsEq :: (Ord a, Fractional a) => a -> a -> Bool
 epsEq a b = abs (a-b) < epsilon
 
--- Left turn or straight.
+-- Left turn.
 isLeftTurn :: P -> P -> P -> Bool
 isLeftTurn p1 p2 p3 =
   let d = direction p1 p2 p3 in
   if abs d < epsilon
-    then True -- False -- colinear
+    then False -- colinear
+    else d < 0
+
+isLeftTurnOrLinear :: P -> P -> P -> Bool
+isLeftTurnOrLinear p1 p2 p3 =
+  let d = direction p1 p2 p3 in
+  if abs d < epsilon
+    then True -- colinear
     else d < 0
 
 isRightTurn :: P -> P -> P -> Bool
@@ -132,10 +147,16 @@ rayIntersect (V2 x1 y1,V2 x2 y2) (V2 x3 y3, V2 x4 y4) =
     yTop = (x1*y2 - y1*x2)*(y3-y4) - (y1-y2)*(x3*y4-y3*x4)
     yBot = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4)
 
-isBetween :: V2 Double -> (V2 Double,V2 Double) -> Bool
+isBetween :: (Ord a, Fractional a) => V2 a -> (V2 a, V2 a) -> Bool
 isBetween (V2 x y) (V2 x1 y1, V2 x2 y2) =
   ((y1 > y) /= (y2 > y) || epsEq y y1||epsEq y y2) && -- y is between y1 and y2
   ((x1 > x) /= (x2 > x) || epsEq x x1||epsEq x x2)
+
+lineIntersect :: (Ord a, Fractional a) => (V2 a, V2 a) -> (V2 a, V2 a) -> Maybe (V2 a)
+lineIntersect a b
+  | isBetween u a && isBetween u b = Just u
+  | otherwise     = Nothing
+  where u = rayIntersect a b
 
 distSquared :: P -> P -> Double
 distSquared a b = quadrance (a ^-^ b)
