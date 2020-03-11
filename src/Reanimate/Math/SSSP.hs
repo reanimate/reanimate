@@ -9,30 +9,32 @@ import qualified Data.Map as Map
 import Linear.Metric
 import Linear.V2
 import Data.List
+import Debug.Trace
 
-visibleFrom :: Int -> [P] -> [Int]
+type SSSP = V.Vector Int
+
+visibleFrom :: Int -> Polygon -> [Int]
 visibleFrom y p =
-  [ (i)
-  | (i,z) <- zip [0..] p
+  [ i
+  | i <- [0..]
   , i /= y
   , if i < y
-    then isLeftTurnOrLinear (p!!i) (p!!((y-1) `mod` n)) (p!!y) || i+1==y || i-1==y
-    else isLeftTurnOrLinear (p!!y) (p!!((y+1) `mod` n)) (p!!i) || i+1==y || i-1==y
+    then isLeftTurnOrLinear (p V.! i) (p V.! ((y-1) `mod` n)) (p V.! y) || i+1==y || i-1==y
+    else isLeftTurnOrLinear (p V.! y) (p V.! ((y+1) `mod` n)) (p V.! i) || i+1==y || i-1==y
   , let myEdges = [(e1,e2) | (e1,e2) <- edges, e1/=y, e1/=i, e2/=y,e2/=i]
-  , let b = all (isNothing . lineIntersect (elt,z))
-          [ (p!!e1,p!!e2) | (e1,e2) <- myEdges ]
-  , b ]
+  , all (isNothing . lineIntersect (elt,p V.! i))
+          [ (p V.! e1,p V.! e2) | (e1,e2) <- myEdges ]]
   where
     n = length p
-    elt = p!!y
+    elt = p V.! y
     edges = zip [0..n-1] (tail [0..n-1] ++ [0])
 
 -- O(n^3 log n)
-naive :: [P] -> V.Vector Int
-naive p@(x:xs) =
+naive :: Polygon -> SSSP
+naive p =
     V.fromList $ Map.elems $
     Map.map (fromMaybe 0 . listToMaybe) $
-    worker initial [1.. length p-1]
+    worker initial [1.. V.length p-1]
   where
     initial = Map.fromList
       [ (v,[])
@@ -47,8 +49,8 @@ naive p@(x:xs) =
             | v <- vs ]
       in worker (Map.unionWith f m m') xs
     pathLength [] = 0
-    pathLength [v] = distance (p!!v) x
-    pathLength (x:y:xs) = distance (p!!x) (p!!y) + pathLength (y:xs)
+    pathLength [v] = distance (p V.! v) (p V.! 0)
+    pathLength (x:y:xs) = distance (p V.! x) (p V.! y) + pathLength (y:xs)
     f a b =
         case compare (pathLength a) (pathLength b) of
           LT -> a
@@ -56,33 +58,92 @@ naive p@(x:xs) =
 
 type Triangle = (P,P,P)
 -- Dual of triangulated polygon
-data Dual = Dual (Int,Int,Int) DualTree DualTree
+data Dual = Dual (Int,Int,Int) -- (a,b,c)
+                  DualTree -- borders ca
+                  DualTree -- borders bc
   deriving (Show)
+
 data DualTree
   = EmptyDual
-  | NodeDual Int DualTree DualTree
+  | NodeLeaf Int
+  | NodeDual Int -- axb triangle, a and b are from parent.
+      DualTree -- borders ba
+      DualTree -- borders xb
+  | NodeDualL Int DualTree
+  | NodeDualR Int DualTree
   deriving (Show)
+
+-- Dual path:
+-- (Int,Int,Int) + V.Vector Int + V.Vector LeftOrRight
+
+simplifyDual :: DualTree -> DualTree
+simplifyDual (NodeDual x EmptyDual EmptyDual) = NodeLeaf x
+simplifyDual (NodeDual x l EmptyDual) = NodeDualL x l
+simplifyDual (NodeDual x EmptyDual r) = NodeDualR x r
+simplifyDual dual = dual
 
 dual :: Triangulation -> Dual
 dual t =
   case t V.! 0 of
-    [] -> Dual (0,1,V.length t-1) (dualTree t (1, (V.length t-1)) 0) EmptyDual
-    (x:_) -> Dual (0,1,x) (dualTree t (1,x) 0) (dualTree t (x,0) 1)
+    [] -> Dual (0,1,V.length t-1) EmptyDual (dualTree t (1, (V.length t-1)) 0)
+    (x:_) -> Dual (0,1,x) (dualTree t (x,0) 1) (dualTree t (1,x) 0)
 
 dualTree :: Triangulation -> (Int,Int) -> Int -> DualTree
-dualTree t (a,b) e =
+dualTree t (a,b) e = -- simplifyDual $
     case hasTriangle of
-      Nothing -> EmptyDual
-      Just (x,y,z) ->
-        let [ab] = [x,y,z] \\ [a,b]
-        in NodeDual ab (dualTree t (a,ab) b) (dualTree t (ab,b) a)
+      [] -> EmptyDual
+      [(ab)] ->
+        NodeDual ab (dualTree t (ab,b) a) (dualTree t (a,ab) b)
+      _ -> error "Invalid triangulation"
   where
-    hasTriangle = listToMaybe (intersect (findTriangles a) (findTriangles b))
+    hasTriangle = nub $ (findTriangles a b) ++ (findTriangles b a)
     n = V.length t
-    findTriangles x =
-      [ if (x+1)`mod` n == (v-1)`mod`n
-          then (x,(x+1)`mod`n,v)
-          else (v,(v+1)`mod`n,x)
-      | v <- t V.! x
-      , v /= e
-      ]
+    next x = (x+1) `mod` n
+    prev x = (x-1) `mod` n
+    -- Find diagonals of 'f'
+    -- that are next to 'g' (+1 or -1, mod n)
+    findTriangles f g
+      | next f == prev g && next f /= e = [next f]
+      | next g == prev f && next g /= e = [next g]
+    findTriangles f g =
+      [ v | v <- t V.! f
+      , v /= e , v == next g || v == prev g ]
+
+
+--toDualTree (Dual (a,b,c) l r) = NodeDual c l r
+-- O(n)
+-- sssp :: Dual -> SSSP
+sssp (Dual (a,b,c) l r) =
+    worker [c] [b] a r ++
+    loopLeft c l
+  where
+    loopLeft outer l =
+      case l of
+        EmptyDual -> []
+        NodeDual x l' r' ->
+          worker [x] [outer] a r' ++
+          loopLeft x l'
+    worker _ _ _ EmptyDual = []
+    worker f1 f2 cusp (NodeDual x l r)
+      | x is visible from cusp =
+        (x, cusp) :
+        worker f1 [x] cusp l ++
+        worker [x] f cusp r
+      | (f1Hi, v, f1Lo) <- v is along f1 =
+        (x, v) :
+        worker f1Hi [x] v l ++
+        worker [x] fiLo cusp r
+      | (f2Hi, v, f2Lo) <- v is along f2 =
+        (x, v) :
+        worker f2Hi [x] cusp l ++
+        worker [x] f2Lo v
+
+{-
+(7,0)
+(1,0)
+funnel: 7,0  0  0,1
+2 is neither to the left of the left funnel or to the right of the right funnel,
+therefore it is visible from 0.
+(2,0)
+
+-}

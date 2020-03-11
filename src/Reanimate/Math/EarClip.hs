@@ -13,6 +13,8 @@ import           Reanimate.Math.DCEL
 import           Debug.Trace
 
 
+-- FIXME: Move to Common or a Triangulation module
+-- O(n^2), can be improved to O(n)
 edgesToTriangulation :: [P] -> [(Int,Int)] -> Triangulation
 edgesToTriangulation p edges = V.fromList
   [ nub $ [ e2 | (e1,e2) <- edges, i == e1 ] ++ [ e1 | (e1,e2) <- edges, i == e2 ]

@@ -13,9 +13,19 @@ import           Linear.V3
 import           Linear.Vector
 import           Text.Printf
 
+-- Generate random polygons, options:
+--   1. put corners around a circle. Vary the radius.
+--   2. close a hilbert curve
 type Polygon = V.Vector P
+type RPolygon = V.Vector (V2 Rational)
 type P = V2 Double
 
+-- Max edges: n-2
+-- Each edge is represented twice: 2n-4
+-- Flat structure:
+--   edges   :: V.Vector Int -- max length (2n-4)
+--   offsets :: V.Vector Int -- length n
+-- Combine the two vectors? < n => offsets, >= n => edges?
 type Triangulation = V.Vector [Int]
 
 
