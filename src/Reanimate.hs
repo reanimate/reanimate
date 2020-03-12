@@ -62,6 +62,7 @@ module Reanimate
     bellS,
     oscillateS,
     fromListS,
+    cubicBezierS,
     -- ** Scenes
     (#),
     Scene

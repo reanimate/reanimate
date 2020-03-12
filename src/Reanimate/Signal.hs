@@ -8,6 +8,7 @@ module Reanimate.Signal
   , bellS
   , oscillateS
   , fromListS
+  , cubicBezierS
   ) where
 
 -- | Signals are time-varying variables. Signals can be composed using function
@@ -91,3 +92,16 @@ oscillateS t =
 --   <<docs/gifs/doc_bellS.gif>>
 bellS :: Double -> Signal
 bellS steepness = curveS steepness . oscillateS
+
+-- | Cubic Bezier signal. Gives you a fair amount of control over how the
+--   signal will 'curve'.
+--
+--   Example:
+--
+--   > signalA (cubicBezierS (0.0, 0.8, 0.9, 1.0)) drawProgress
+--   
+--   <<docs/gifs/doc_cubicBezierS.gif>>
+cubicBezierS :: Double -> Signal
+cubicBezierS (x1, x2, x3, x4) s = 
+  let ms = 1-s
+  in x1*ms^3 + 3*x2*ms^2*s + 3*x3*ms*s^2 + x4*s^3
