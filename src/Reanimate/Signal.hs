@@ -104,4 +104,4 @@ bellS steepness = curveS steepness . oscillateS
 cubicBezierS :: (Double, Double, Double, Double) -> Signal
 cubicBezierS (x1, x2, x3, x4) s = 
   let ms = 1-s
-  in x1*ms^3 + 3*x2*ms^2*s + 3*x3*ms*s^2 + x4*s^3
+  in x1*ms^(3::Int) + 3*x2*ms^(2::Int)*s + 3*x3*ms*s^(2::Int) + x4*s^(3::Int)
