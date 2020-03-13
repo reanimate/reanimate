@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Reanimate.Math.SSSP where
 
 import Reanimate.Math.Common
@@ -10,13 +11,15 @@ import Linear.Metric
 import Linear.V2
 import Data.List
 import Debug.Trace
+import qualified Data.FingerTree as F
+import Data.FingerTree (SearchResult(..), search, (|>), (<|))
 
 type SSSP = V.Vector Int
 
 visibleFrom :: Int -> Polygon -> [Int]
 visibleFrom y p =
   [ i
-  | i <- [0..]
+  | i <- [0.. n-1]
   , i /= y
   , if i < y
     then isLeftTurnOrLinear (p V.! i) (p V.! ((y-1) `mod` n)) (p V.! y) || i+1==y || i-1==y
@@ -26,7 +29,7 @@ visibleFrom y p =
           [ (p V.! e1,p V.! e2) | (e1,e2) <- myEdges ]]
   where
     n = length p
-    elt = p V.! y
+    elt = pAccess p y
     edges = zip [0..n-1] (tail [0..n-1] ++ [0])
 
 -- O(n^3 log n)
@@ -109,35 +112,74 @@ dualTree t (a,b) e = -- simplifyDual $
       [ v | v <- t V.! f
       , v /= e , v == next g || v == prev g ]
 
+data MinMax = MinMax Int Int | MinMaxEmpty deriving (Show)
+instance Semigroup MinMax where
+  MinMaxEmpty <> b = b
+  a <> MinMaxEmpty = a
+  MinMax a b <> MinMax c d = MinMax (min a c) (max b d)
+instance Monoid MinMax where
+  mempty = MinMaxEmpty
+
+instance F.Measured MinMax Int where
+  measure i = MinMax i i
+
+-- Return True if '3' is part of 'a'.
+searchFn MinMaxEmpty _ = False
+searchFn (MinMax a b) _ = b >= negate 300
 
 --toDualTree (Dual (a,b,c) l r) = NodeDual c l r
 -- O(n)
--- sssp :: Dual -> SSSP
-sssp (Dual (a,b,c) l r) =
-    worker [c] [b] a r ++
+sssp :: Polygon -> Dual -> SSSP
+sssp p (Dual (a,b,c) l r) = toSSSP $
+    (a, a) :
+    (b, a) :
+    (c, a) :
+    worker (F.singleton c) (F.singleton b) a r ++
     loopLeft c l
   where
+    toSSSP = V.fromList . map snd . sortOn fst
     loopLeft outer l =
       case l of
         EmptyDual -> []
         NodeDual x l' r' ->
-          worker [x] [outer] a r' ++
+          worker (F.singleton x) (F.singleton outer) a r' ++
           loopLeft x l'
+    searchFn cusp x MinMaxEmpty _ = False
+    searchFn cusp x (MinMax a b) _ =
+      isLeftTurn (p V.! cusp) (p V.! b) (p V.! x)
+    searchFn2 cusp x _ MinMaxEmpty = True
+    searchFn2 cusp x _ (MinMax a b) =
+      isLeftTurn (p V.! cusp) (p V.! a) (p V.! x)
     worker _ _ _ EmptyDual = []
-    worker f1 f2 cusp (NodeDual x l r)
-      | x is visible from cusp =
-        (x, cusp) :
-        worker f1 [x] cusp l ++
-        worker [x] f cusp r
-      | (f1Hi, v, f1Lo) <- v is along f1 =
-        (x, v) :
-        worker f1Hi [x] v l ++
-        worker [x] fiLo cusp r
-      | (f2Hi, v, f2Lo) <- v is along f2 =
-        (x, v) :
-        worker f2Hi [x] cusp l ++
-        worker [x] f2Lo v
-
+    worker f1 f2 cusp (NodeDual x l r) =
+        -- trace ("Funnel: " ++ show (f1,cusp,f2)) $
+        case F.search (searchFn cusp x) f1 of
+          Position f1Hi v f1Lo ->
+            -- trace ("To the left") $
+            (x, v::Int) :
+            worker f1Hi (F.singleton x) v l ++
+            worker (x <| v <| f1Lo) f2 cusp r
+          OnRight ->
+            case F.search (searchFn2 cusp x) f2 of
+              OnLeft ->
+                --trace ("Visble from cusp") $
+                (x, cusp::Int) :
+                worker f1 (F.singleton x) cusp l ++
+                worker (F.singleton x) f2 cusp r
+              Position f2Lo v f2Hi ->
+                -- trace ("To the right") $
+                (x, v::Int) :
+                worker f1 (f2Lo |> v |> x) cusp l ++
+                worker (F.singleton x) f2Hi v r
+              -- OnRight ->
+              --   case F.viewr f2 of
+              --     F.EmptyR -> error "emptyR"
+              --     f2Lo F.:> v ->
+              --       trace ("To the far right") $
+              --       (x, v) :
+              --       worker f1 (f2Lo |> v |> x) cusp l ++
+              --       worker (F.singleton x) F.empty v r
+              e -> error $ "Unhandled: " ++ show e
 {-
 (7,0)
 (1,0)

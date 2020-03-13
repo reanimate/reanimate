@@ -29,6 +29,15 @@ type P = V2 Double
 type Triangulation = V.Vector [Int]
 
 
+pNext :: Polygon -> Int -> Int
+pNext p i = (i+1) `mod` V.length p
+
+pPrev :: Polygon -> Int -> Int
+pPrev p i = (i-1) `mod` V.length p
+
+pAccess :: Polygon -> Int -> P
+pAccess p i = p V.! i
+
 triangle :: [P]
 triangle = [V2 1 1, V2 0 0, V2 2 0]
 
@@ -50,11 +59,11 @@ shape3 :: [P]
 shape3 =
   [ V2 0 0, V2 1 0, V2 1 1, V2 2 1, V2 2 2, V2 0 2]
 
-shape4 :: [P]
-shape4 =
+shape4 :: Polygon
+shape4 = V.fromList
   [ V2 0 0, V2 1 0, V2 1 1, V2 2 1, V2 2 (-1), V2 3 (-1),V2 3 2, V2 0 2]
 
-shape5 :: [P]
+shape5 :: Polygon
 shape5 = cyclePolygons shape4 !! 2
 
 -- square
@@ -64,43 +73,49 @@ shape6 = [ V2 0 0, V2 1 0, V2 1 1, V2 0 1 ]
 concave :: [P]
 concave = [V2 0 0, V2 2 0, V2 2 2, V2 1 1, V2 0 2]
 
-cyclePolygons :: [P] -> [[P]]
-cyclePolygons p = take (length p) $ map (take (length p)) $ tails (cycle p)
+cyclePolygons :: Polygon -> [Polygon]
+cyclePolygons p =
+  [ V.take (len-n) p <> V.take n p
+  | n <- [0 .. len-1]]
+  where
+    len = V.length p
 
 interpFirst (x:y:xs) t =
   lerp t y x : y : xs ++ [x]
 
-area :: P -> P -> P -> Double
+area :: Fractional a => V2 a -> V2 a -> V2 a -> a
 area a b c = 1/2 * area2X a b c
 
-area2X :: P -> P -> P -> Double
+area2X :: Fractional a => V2 a -> V2 a -> V2 a -> a
 area2X (V2 a1 a2) (V2 b1 b2) (V2 c1 c2) =
   det33 (V3 (V3 a1 a2 1)
             (V3 b1 b2 1)
             (V3 c1 c2 1))
 
-isConvex :: [P] -> Bool
-isConvex vertices = and
-  [ area2X (vertices!!i) (vertices!!j) (vertices!!k) > 0
+isConvex :: Polygon -> Bool
+isConvex p = and
+  [ area2X (pAccess p i) (pAccess p j) (pAccess p k) > 0
   | i <- [0..n-1]
   , j <- [i+1..n-1]
   , k <- [j+1..n-1]
   ]
-  where n = length vertices
+  where n = V.length p
 
-isCCW :: [P] -> Bool
-isCCW [] = False
-isCCW (x:xs) = sum (zipWith fn (x:xs) (xs++[x])) < 0
+isCCW :: Polygon -> Bool
+isCCW p | V.null p = False
+isCCW p =
+    (V.sum (V.zipWith fn p (V.drop 1 p)) + fn (V.last p) (V.head p)) < 0
   where
     fn (V2 x1 y1) (V2 x2 y2) = (x2-x1)*(y2+y1)
 
 -- O(n)
 -- Returns true if ac can be cut from polygon. That is, true if 'b' is an ear.
 -- isEarCorner polygon a b c = True iff ac can be cut
-isEarCorner :: [P] -> P -> P -> P -> Bool
-isEarCorner polygon a b c =
-    isLeftTurn a b c && -- If it is a right turn then the line ac will be outside the polygon
-    and [ not (isInside a b c k)
+isEarCorner :: Polygon -> [Int] -> Int -> Int -> Int -> Bool
+isEarCorner p polygon a b c =
+    isLeftTurn (pAccess p a) (pAccess p b) (pAccess p c) &&
+    -- If it is a right turn then the line ac will be outside the polygon
+    and [ not (isInside (pAccess p a) (pAccess p b) (pAccess p c) (pAccess p k))
     | k <- polygon, k /= a && k /= b && k /= c
     ]
 
@@ -111,33 +126,33 @@ epsEq :: (Ord a, Fractional a) => a -> a -> Bool
 epsEq a b = abs (a-b) < epsilon
 
 -- Left turn.
-isLeftTurn :: P -> P -> P -> Bool
+isLeftTurn :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
 isLeftTurn p1 p2 p3 =
   let d = direction p1 p2 p3 in
   if abs d < epsilon
     then False -- colinear
     else d < 0
 
-isLeftTurnOrLinear :: P -> P -> P -> Bool
+isLeftTurnOrLinear :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
 isLeftTurnOrLinear p1 p2 p3 =
   let d = direction p1 p2 p3 in
   if abs d < epsilon
     then True -- colinear
     else d < 0
 
-isRightTurn :: P -> P -> P -> Bool
-isRightTurn a b c = not (isLeftTurn a b c)
+isRightTurn :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+isRightTurn a b c = not (isLeftTurnOrLinear a b c)
 
-direction :: P -> P -> P -> Double
+direction :: Fractional a => V2 a -> V2 a -> V2 a -> a
 direction p1 p2 p3 = crossZ (p3-p1) (p2-p1)
 
-isInside :: P -> P -> P -> P -> Bool
+isInside :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> V2 a -> Bool
 isInside a b c d =
     s >= 0 && s <= 1 && t >= 0 && t <= 1
   where
     (s, t, _) = barycentricCoords a b c d
 
-barycentricCoords :: P -> P -> P -> P -> (Double, Double, Double)
+barycentricCoords :: Fractional a => V2 a -> V2 a -> V2 a -> V2 a -> (a, a, a)
 barycentricCoords (V2 x1 y1) (V2 x2 y2) (V2 x3 y3) (V2 x y) =
     (lam1, lam2, lam3)
   where
@@ -168,5 +183,5 @@ lineIntersect a b
   | otherwise     = Nothing
   where u = rayIntersect a b
 
-distSquared :: P -> P -> Double
+distSquared :: (Fractional a) => V2 a -> V2 a -> a
 distSquared a b = quadrance (a ^-^ b)

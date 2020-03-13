@@ -105,7 +105,7 @@ points: pts
 -}
 fromSimplePolygon :: [V2 Double] -> DCEL
 fromSimplePolygon [] = error "empty polygon"
-fromSimplePolygon pts | not (isCCW pts) = error "Polygon not counter-clockwise"
+fromSimplePolygon pts | not (isCCW $ V.fromList pts) = error "Polygon not counter-clockwise"
 fromSimplePolygon pts = DCEL
     { dcelFaces = V.fromList [0,1]
     , dcelVertices = V.fromList [0..n-1]
