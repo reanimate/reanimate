@@ -145,6 +145,8 @@ reanimate animation = do
             ,"--target", target
             ,"+RTS", "-N", "-RTS"]
         else do
+          raster <- selectRaster renderRaster
+          setRaster raster
           setFPS fps
           setWidth width
           setHeight height
@@ -153,9 +155,10 @@ reanimate animation = do
                  \  width:  %d\n\
                  \  height: %d\n\
                  \  fmt:    %s\n\
-                 \  target: %s\n"
-            fps width height (showFormat fmt) target
-          raster <- selectRaster renderRaster
+                 \  target: %s\n\
+                 \  raster: %s\n"
+            fps width height (showFormat fmt) target (show raster)
+
           render animation target raster fmt width height fps
 
 selectRaster :: Raster -> IO Raster
