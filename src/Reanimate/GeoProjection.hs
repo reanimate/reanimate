@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE MagicHash    #-}
 {-# LANGUAGE MultiWayIf   #-}
 module Reanimate.GeoProjection
   ( Projection(..)
@@ -6,6 +7,7 @@ module Reanimate.GeoProjection
   , LonLat(..)
   , project
   , interpP
+  , interpBBP
   , mergeP
   , isValidP
   , scaleP
@@ -17,6 +19,7 @@ module Reanimate.GeoProjection
   , mercatorP
   , mollweideP
   , hammerP
+  , cylindricalEqualAreaP
   , lambertP
   , bottomleyP
   , sinusoidalP
@@ -42,22 +45,35 @@ module Reanimate.GeoProjection
 
 import           Codec.Picture
 import           Codec.Picture.Types
-import           Control.Lens        ((^.))
+import           Control.Lens            ((^.))
 import           Control.Monad
 import           Control.Monad.ST
+import           Control.Monad.ST.Unsafe
 import           Data.Aeson
 import           Data.Foldable
-import           Data.Geospatial     hiding (LonLat)
+import           Data.Geospatial         hiding (LonLat)
+import           Data.Hashable
 import           Data.LinearRing
-import qualified Data.LineString     as Line
+import qualified Data.LineString         as Line
+import           Data.Time
+import           Data.Vector.Storable    (unsafeWith)
+import qualified Data.Vector.Unboxed     as V
 import           Debug.Trace
-import           Graphics.SvgTree    (Tree (None))
-import           Linear              (distance, lerp)
-import           Linear.V2           hiding (angle)
+import           Foreign
+import           GHC.Exts                (Double (..), cosDouble#, sinDouble#,
+                                          (*##), (+##), (-##), (/##))
+import           Graphics.SvgTree        (Tree (None))
+import           Linear                  (distance, lerp)
+import           Linear.V2               hiding (angle)
 import           Reanimate
 import           System.IO.Unsafe
+import           Text.Printf
 
-
+{-# INLINE halfPi #-}
+{-# INLINE sqrtPi #-}
+{-# INLINE sqrt2 #-}
+{-# INLINE epsilon #-}
+{-# INLINE tau #-}
 -- Constants
 halfPi, sqrtPi, sqrt2, epsilon, tau :: Double
 halfPi = pi/2
@@ -70,136 +86,225 @@ toRads, cot :: Double -> Double
 toRads dec = dec/180 * pi
 cot = recip . tan
 
+
 srcPixel :: Pixel pixel => Image pixel -> LonLat -> pixel
 srcPixel src (LonLat lam phi) =
-    pixelAt src xPx yPx
+    -- pixelAt src xPx yPx
+    unsafePixelAt (imageData src) (pixelBaseIndex src xPx yPx)
   where
     !xPx = round $ ((lam+pi)/tau) * fromIntegral (imageWidth src-1)
     !yPx = round $ (1-((phi+halfPi)/pi)) * fromIntegral (imageHeight src-1)
 
+
+srcPixelFast :: Image PixelRGBA8 -> Double -> Double -> LonLat -> ST s PixelRGBA8
+srcPixelFast src wMax hMax (LonLat lam phi) = unsafeIOToST $
+    unsafeWith (imageData src) $ \ptr -> do
+      let ptr' = plusPtr ptr idx
+      r <- peek ptr'
+      g <- peek $ plusPtr ptr' 1
+      b <- peek $ plusPtr ptr' 2
+      a <- peek $ plusPtr ptr' 3
+      return $ PixelRGBA8 r g b a
+  where
+    !idx = pixelBaseIndex src xPx yPx
+    !xPx = round $ ((lam+pi)/tau) * wMax
+    !yPx = round $ (1-((phi+halfPi)/pi)) * hMax
+
 {- HLINT ignore -}
-findValidCoord :: Image pixel -> Projection -> XYCoord -> XYCoord
-findValidCoord !src !p (XYCoord x y) = foldr const (XYCoord x y)
-    [ XYCoord x' y'
-    | let !xi = round $ x * wMax
-          !yi = round $ y * hMax
-    , !ax <- [xi, xi-1, xi+1]
-    , ax >= 0
-    , ax < w
-    , let !x' = fromIntegral ax / wMax
-    , !ay <- [yi, yi-1, yi+1]
-    , ay >= 0
-    , ay < h
-    , let !y' = fromIntegral ay / hMax
-    , validLonLat $! projectionInverse p $! XYCoord x' y'
-    ]
-  where
-    !w = imageWidth src
-    !h = imageHeight src
-    !wMax = fromIntegral (w-1)
-    !hMax = fromIntegral (h-1)
+-- findValidCoord :: Int -> Int -> Double -> Double -> (XYCoord -> LonLat) -> XYCoord -> XYCoord
+-- findValidCoord !w !h !wMax !hMax !p_inv (XYCoord x y) = foldr const (XYCoord x y)
+--     [ XYCoord x' y'
+--     | let !xi = round $ x * wMax
+--           !yi = round $ y * hMax
+--     , !ax <- [xi, xi-1, xi+1]
+--     , ax >= 0
+--     , ax < w
+--     , let !x' = fromIntegral ax / wMax
+--     , !ay <- [yi, yi-1, yi+1]
+--     , ay >= 0
+--     , ay < h
+--     , let !y' = fromIntegral ay / hMax
+--     , validLonLat $! p_inv $! XYCoord x' y'
+--     ]
 
-isInWorld :: Projection -> XYCoord -> Bool
-isInWorld p coord =
-    odd $ length $ isInWorld' p coord
+-- isInWorld :: Projection -> XYCoord -> Bool
+-- isInWorld p coord =
+--     odd $ length $ isInWorld' p coord
+--
+-- isInWorld' :: Projection -> XYCoord -> [(Double, Double)]
+-- isInWorld' p (XYCoord x y) =
+--     [ (x1, y1)
+--     | (XYCoord x1 y1, XYCoord x2 y2) <- world
+--     , (y1 > y) /= (y2 > y) -- y is between y1 and y2
+--     , x < (x2 - x1) * (y - y1) / (y2 - y1) + x1 -- x is to the left of the line
+--     ]
+--   where
+--     world = worldPolygon p
+--
+-- worldPolygon :: Projection -> [(XYCoord, XYCoord)]
+-- worldPolygon p =
+--     interp (-pi, -halfPi) (-pi, halfPi) ++
+--     interp (-pi, halfPi) (pi, halfPi) ++
+--     interp (pi, halfPi) (pi, -halfPi) ++
+--     interp (pi, -halfPi) (-pi, -halfPi)
+--   where
+--     apply (lam, phi) = projectionForward p $ LonLat lam phi
+--     steps = 100
+--     interp (x1, y1) (x2,y2) =
+--       [ ( apply (fromToS x1 x2 (n/steps), fromToS y1 y2 (n/steps))
+--         , apply (fromToS x1 x2 ((n+1)/steps), fromToS y1 y2 ((n+1)/steps)))
+--       | n <- [0..steps-1]]
 
-isInWorld' :: Projection -> XYCoord -> [(Double, Double)]
-isInWorld' p (XYCoord x y) =
-    [ (x1, y1)
-    | (XYCoord x1 y1, XYCoord x2 y2) <- world
-    , (y1 > y) /= (y2 > y) -- y is between y1 and y2
-    , x < (x2 - x1) * (y - y1) / (y2 - y1) + x1 -- x is to the left of the line
-    ]
-  where
-    world = worldPolygon p
+-- findNearestPixel :: MutableImage s PixelRGBA8 -> Int -> Int -> Int -> Int -> ST s PixelRGBA8
+-- findNearestPixel src w h srcX srcY = worker $ take 20
+--     [ (x, y)
+--     | n <- [1..]
+--     , x <- [srcX-n .. srcY+n]
+--     , y <- if x == srcX-n || x == srcX+n then [srcY-n,srcY+n] else [srcY-n .. srcY+n]
+--     , x >= 0
+--     , y >= 0
+--     , x < w
+--     , y < h
+--     ]
+--   where
+--     worker [] = pure $ PixelRGBA8 0xFF 0x00 0x00 0xFF
+--     worker ((x,y):rest) = do
+--       this <- readPixel src x y
+--       if this == blank
+--         then worker rest
+--         else return this
+--     blank = PixelRGBA8 0x00 0x00 0x00 0x00
 
-worldPolygon :: Projection -> [(XYCoord, XYCoord)]
-worldPolygon p =
-    interp (-pi, -halfPi) (-pi, halfPi) ++
-    interp (-pi, halfPi) (pi, halfPi) ++
-    interp (pi, halfPi) (pi, -halfPi) ++
-    interp (pi, -halfPi) (-pi, -halfPi)
-  where
-    apply (lam, phi) = projectionForward p $ LonLat lam phi
-    steps = 100
-    interp (x1, y1) (x2,y2) =
-      [ ( apply (fromToS x1 x2 (n/steps), fromToS y1 y2 (n/steps))
-        , apply (fromToS x1 x2 ((n+1)/steps), fromToS y1 y2 ((n+1)/steps)))
-      | n <- [0..steps-1]]
 
-findNearestPixel :: MutableImage s PixelRGBA8 -> Int -> Int -> Int -> Int -> ST s PixelRGBA8
-findNearestPixel src w h srcX srcY = worker $ take 20
-    [ (x, y)
-    | n <- [1..]
-    , x <- [srcX-n .. srcY+n]
-    , y <- if x == srcX-n || x == srcX+n then [srcY-n,srcY+n] else [srcY-n .. srcY+n]
-    , x >= 0
-    , y >= 0
-    , x < w
-    , y < h
-    ]
-  where
-    worker [] = pure $ PixelRGBA8 0xFF 0x00 0x00 0xFF
-    worker ((x,y):rest) = do
-      this <- readPixel src x y
-      if this == blank
-        then worker rest
-        else return this
-    blank = PixelRGBA8 0x00 0x00 0x00 0x00
+-- Original version:        134,925 pixels/second
+-- Inlined projections:     136,332 pixels/second
+-- TEST: no write pixels:   134,288 pixels/second !!!
+-- Fast theta:            1,489,719 pixels/second
+-- Cached theta:          3,622,254 pixels/second
+
+-- to equirectangularP:   9,015,326 pixels/second
+--                        9,680,217
+--                        9,466,744
+--                       14,830,330
+-- to lambertP:           6,735,973
+-- to mercatorP:          4,248,927
+-- to mollweideP:         3,593,545
+-- to hammerP:            3,237,699
+-- to bottomleyP:         3,864,848
+-- to sinusoidalP:        7,020,756
+-- to wernerP:            4,433,295
+-- to bonneP:             4,071,187
+-- to augustP:            2,553,177
+-- to collignonP:         5,486,849
+-- to eckert1P:           7,428,849
+-- to eckert3P:           6,666,936
+-- to eckert5P:           6,106,492
+-- to faheyP:             5,137,291
+-- to foucautP:           3,983,151
+-- to lagrangeP:          3,850,611
+-- interpFastP :: Image PixelRGBA8 -> Projection -> Projection -> Double -> Image PixelRGBA8
+-- interpFastP !src (Projection _ p1 p1_inv) (Projection _ p2 p2_inv) !t = runST $ do
+--     unsafeIOToST $ putStrLn "Allocating new array"
+--     !img <- newMutableImage w h
+--     unsafeIOToST $ putStrLn "done"
+--     start <- unsafeIOToST $ getCurrentTime
+--     let factor = 2
+--         total = w*factor * h*factor
+--     let l1 =
+--           loopTo (w*factor) $ \x -> do
+--             loopTo (h*factor) $ \y -> do
+--               let thisIndex = (x*h*factor+y)
+--               when (thisIndex `mod` 1000000 == 0) $ unsafeIOToST $ do
+--                 now <- getCurrentTime
+--                 let diff = realToFrac (diffUTCTime now start):: Double
+--                 printf "%.2f pixels/second\n" (fromIntegral (total-thisIndex) / diff)
+--               let !x1' = fromIntegral x / (wMax*fromIntegral factor)
+--                   !y1' = fromIntegral y / (hMax*fromIntegral factor)
+--                   !lonlat = p1_inv $! XYCoord x1' y1'
+--                   -- p = srcPixel src lonlat
+--               -- unsafeIOToST (evaluate lonlat)
+--
+--               when (validLonLat lonlat) $ do
+--                 p <- srcPixelFast src wMax hMax lonlat
+--                 when (pixelOpacity p /= 0) $ do
+--                   let XYCoord !x1 !y1 = p1 lonlat
+--                       -- !coord = p2 lonlat
+--                       XYCoord !x2 !y2 = p2 lonlat -- findValidCoord w h wMax hMax p2_inv $ p2 lonlat
+--                       !x3 = round $ fromToS x1 x2 t * wMax
+--                       !y3 = round $ (1 - fromToS y1 y2 t) * hMax :: Int
+--                   -- unsafeIOToST (evaluate coord)
+--                   -- return ()
+--                   when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $
+--                     writePixel img x3 y3 p
+--     l1
+--     unsafeFreezeImage img
+--   where
+--     loopTo m fn = go m
+--       where go 0 = return ()
+--             go n = fn (n-1) >> go (n-1)
+--     !w = imageWidth src
+--     !h = imageHeight src
+--     !wMax = fromIntegral (w-1)
+--     !hMax = fromIntegral (h-1)
 
 interpP :: Image PixelRGBA8 -> Projection -> Projection -> Double -> Image PixelRGBA8
-interpP !src !p1 !p2 !t = runST $ do
+interpP src p1 _ 0 = project src p1
+interpP src _ p2 1 = project src p2
+interpP !src (Projection label1 p1 p1_inv) !(Projection label2 p2 p2_inv) !t = runST $ do
     !img <- newMutableImage w h
-    let blank = PixelRGBA8 0x00 0x00 0x00 0x00
-    let isBlank pixel = pixel == blank
-    -- forM_ [0..w-1] $ \x ->
-    --   forM_ [0..h-1] $ \y -> do
-    --     let x1 = fromIntegral x / (wMax)
-    --         y1 = 1 - fromIntegral y / (hMax)
-    --     when (isInWorld (mergeP p1 p2 t) (XYCoord x1 y1)) $
-    --       writePixel img x y $ PixelRGBA8 0xFF 0x00 0x00 0xFF
+
     let factor = 2
-    let l1 =
+        total = w*factor * h*factor
+    let l1 = do
+          -- start <- unsafeIOToST $ getCurrentTime
           loopTo (w*factor) $ \x -> do
             loopTo (h*factor) $ \y -> do
+              -- let thisIndex = (x*h*factor+y)
+              -- when (thisIndex `mod` 1000000 == 0) $ unsafeIOToST $ do
+              --   now <- getCurrentTime
+              --   let diff = realToFrac (diffUTCTime now start):: Double
+              --   printf "%.2f pixels/second: %s\n" (fromIntegral (total-thisIndex) / diff) label1
               let !x1' = fromIntegral x / (wMax*fromIntegral factor)
                   !y1' = fromIntegral y / (hMax*fromIntegral factor)
-                  !lonlat = projectionInverse p1 $! XYCoord x1' y1'
-                  p = srcPixel src lonlat
-              when (validLonLat lonlat && pixelOpacity p /= 0) $ do
-                let XYCoord x1 y1 = projectionForward p1 lonlat
-                    XYCoord x2 y2 = findValidCoord src p2 $ projectionForward p2 lonlat
-                    !x3 = round $ fromToS x1 x2 t * wMax
-                    !y3 = round $ (1 - fromToS y1 y2 t) * hMax
-                when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $
-                  writePixel img x3 y3 p
-        l2 =
+                  !lonlat = p1_inv $! XYCoord x1' y1'
+                  -- p = srcPixel src lonlat
+
+              when (validLonLat lonlat) $ do
+                p <- srcPixelFast src wMax hMax lonlat
+                when (pixelOpacity p /= 0) $ do
+                  let XYCoord x1 y1 = p1 lonlat
+                      -- XYCoord x2 y2 = findValidCoord w h wMax hMax p2_inv $ p2 lonlat
+                      XYCoord x2 y2 = p2 lonlat
+                      !x3 = round $ fromToS x1 x2 t * wMax
+                      !y3 = round $ (1 - fromToS y1 y2 t) * hMax
+                  when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $
+                    writePixel img x3 y3 p
+        l2 = do
+          -- start <- unsafeIOToST $ getCurrentTime
           loopTo (w*factor) $ \x ->
             loopTo (h*factor) $ \y -> do
+              -- let thisIndex = (x*h*factor+y)
+              -- when (thisIndex `mod` 1000000 == 0) $ unsafeIOToST $ do
+              --   now <- getCurrentTime
+              --   let diff = realToFrac (diffUTCTime now start):: Double
+              --   printf "%.2f pixels/second: %s\n" (fromIntegral (total-thisIndex) / diff) label2
               let !x2' = fromIntegral x / (wMax*fromIntegral factor)
                   !y2' = fromIntegral y / (hMax*fromIntegral factor)
-                  !lonlat = projectionInverse p2 (XYCoord x2' y2')
-                  p = srcPixel src lonlat
-              when (validLonLat lonlat && pixelOpacity p /= 0) $ do
-                let XYCoord x2 y2 = projectionForward p2 lonlat
-                    XYCoord x1 y1 = findValidCoord src p1 $ projectionForward p1 lonlat
-                    !x3 = round $ fromToS x1 x2 t * wMax
-                    !y3 = round $ (1 - fromToS y1 y2 t) * hMax
-                when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $ do
-                  writePixel img x3 y3 p
+                  !lonlat = p2_inv (XYCoord x2' y2')
+                  -- p = srcPixel src lonlat
+              when (validLonLat lonlat) $ do
+                p <- srcPixelFast src wMax hMax lonlat
+                when (pixelOpacity p /= 0) $ do
+                  let XYCoord x2 y2 = p2 lonlat
+                      -- XYCoord x1 y1 = findValidCoord w h wMax hMax p1_inv $ p1 lonlat
+                      XYCoord x1 y1 = p1 lonlat
+                      !x3 = round $ fromToS x1 x2 t * wMax
+                      !y3 = round $ (1 - fromToS y1 y2 t) * hMax
+                  when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $ do
+                    writePixel img x3 y3 p
     if t < 0.5
       then l1 >> l2
       else l2 >> l1
-
-    when False $
-      forM_ [0..w-1] $ \x ->
-        forM_ [0..h-1] $ \y -> do
-          let x1 = fromIntegral x / (wMax)
-              y1 = 1 - fromIntegral y / (hMax)
-          this <- readPixel img x y
-          when (isBlank this) $
-            when (isInWorld (mergeP p1 p2 t) (XYCoord x1 y1)) $
-              writePixel img x y =<< findNearestPixel img w h x y
     unsafeFreezeImage img
   where
     loopTo m fn = go m
@@ -209,6 +314,76 @@ interpP !src !p1 !p2 !t = runST $ do
     !h = imageHeight src
     !wMax = fromIntegral (w-1)
     !hMax = fromIntegral (h-1)
+
+interpBBP :: Image PixelRGBA8 -> Projection -> Projection ->
+            (Double,Double,Double,Double) -> (Double,Double,Double,Double) -> Double -> Image PixelRGBA8
+interpBBP !src (Projection _ p1 p1_inv) !(Projection _ p2 p2_inv) (fx,fy,fw,fh) (tx, ty, tw, th) !t = runST $ do
+    !img <- newMutableImage w h
+    let factor = 2
+    let l1 =
+          loopTo (w*factor) $ \x -> do
+            loopTo (h*factor) $ \y -> do
+              let !x1' = fromIntegral x / (wMax*fromIntegral factor)
+                  !y1' = fromIntegral y / (hMax*fromIntegral factor)
+              when (x1' >= fx && x1' <= fx+fw && y1' >= fy && y1' <= fy+fh) $ do
+                let !lonlat = p1_inv $! XYCoord x1' y1'
+                      -- p = srcPixel src lonlat
+
+                when (validLonLat lonlat) $ do
+                    -- let LonLat lam phi = lonlat
+                    --     !xPx = ((lam+pi)/tau)
+                    --     !yPx = (((phi+halfPi)/pi))
+                    -- when (xPx >= fx && xPx <= fx+fw && yPx >= fy && yPx <= fy+fh) $ do
+                    p <- srcPixelFast src wMax hMax lonlat
+                    when (pixelOpacity p /= 0) $ do
+                      let XYCoord x1 y1 = p1 lonlat
+                          XYCoord x2 y2 = p2 lonlat
+                          -- XYCoord x2 y2 = findValidCoord w h wMax hMax p2_inv $ p2 lonlat
+                          !x3 = round $ fromToS x1 x2 t * wMax
+                          !y3 = round $ (1 - fromToS y1 y2 t) * hMax
+                      when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $
+                        writePixel img x3 y3 p
+        l2 =
+          loopTo (w*factor) $ \x ->
+            loopTo (h*factor) $ \y -> do
+              let !x2' = fromIntegral x / (wMax*fromIntegral factor)
+                  !y2' = fromIntegral y / (hMax*fromIntegral factor)
+              when (x2' >= tx && x2' <= tx+tw && y2' >= ty && y2' <= ty+th) $ do
+                let !lonlat = p2_inv (XYCoord x2' y2')
+                    -- p = srcPixel src lonlat
+                when (validLonLat lonlat) $ do
+                  p <- srcPixelFast src wMax hMax lonlat
+                  when (pixelOpacity p /= 0) $ do
+                    let XYCoord x2 y2 = p2 lonlat
+                        -- XYCoord x1 y1 = findValidCoord w h wMax hMax p1_inv $ p1 lonlat
+                        XYCoord x1 y1 = p1 lonlat
+                        !x3 = round $ fromToS x1 x2 t * wMax
+                        !y3 = round $ (1 - fromToS y1 y2 t) * hMax
+                    when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $ do
+                      writePixel img x3 y3 p
+    if t < 0.5
+      then l1 >> l2
+      else l2 >> l1
+
+    -- when False $
+    --   forM_ [0..w-1] $ \x ->
+    --     forM_ [0..h-1] $ \y -> do
+    --       let x1 = fromIntegral x / (wMax)
+    --           y1 = 1 - fromIntegral y / (hMax)
+    --       this <- readPixel img x y
+    --       when (isBlank this) $
+    --         when (isInWorld (mergeP p1 p2 t) (XYCoord x1 y1)) $
+    --           writePixel img x y =<< findNearestPixel img w h x y
+    unsafeFreezeImage img
+  where
+    loopTo m fn = go m
+      where go 0 = return ()
+            go n = fn (n-1) >> go (n-1)
+    !w = imageWidth src
+    !h = imageHeight src
+    !wMax = fromIntegral (w-1)
+    !hMax = fromIntegral (h-1)
+
 
 eqLonLat :: LonLat -> LonLat -> Bool
 eqLonLat (LonLat x1 y1) (LonLat x2 y2)
@@ -225,14 +400,19 @@ data XYCoord = XYCoord !Double !Double -- 0 to 1
   deriving (Read,Show,Eq,Ord)
 data LonLat = LonLat !Double !Double -- -pi to +pi, -halfPi to +halfPi
   deriving (Read,Show,Eq,Ord)
+instance Hashable LonLat where
+  hashWithSalt s (LonLat a b) = hashWithSalt s (a,b)
 data Projection = Projection
-  { projectionForward :: !(LonLat -> XYCoord)
+  { projectionLabel   :: String
+  , projectionForward :: !(LonLat -> XYCoord)
+    --
+    -- (Double# -> Double# -> (# Double#, Double# #))
   , projectionInverse :: !(XYCoord -> LonLat)
   }
 
 -- FIXME: Verify that 'src' has an aspect ratio of 2:1.
 project :: Image PixelRGBA8 -> Projection -> Image PixelRGBA8
-project src (Projection _ pInv) = generateImage fn w h
+project src (Projection label _ pInv) = generateImage fn w h
   where
     w = imageWidth src
     h = imageHeight src
@@ -253,7 +433,7 @@ _validXYCoord :: XYCoord -> Bool
 _validXYCoord (XYCoord x y) = x >= 0 && x <= 1 && y >= 0 && y <= 1
 
 isValidP :: Projection -> Bool
-isValidP (Projection p pInv) = and
+isValidP (Projection _label p pInv) = and
     [ check x y
     | x <- [0..w-1::Int]
     , y <- [0..h-1::Int] ]
@@ -269,7 +449,7 @@ isValidP (Projection p pInv) = and
           || trace (show (lonlat, lonlat2)) False
 
 moveBottomP :: Double -> Projection -> Projection
-moveBottomP offset (Projection p pInv) = Projection p' pInv'
+moveBottomP offset (Projection label p pInv) = Projection label p' pInv'
   where
     p' (LonLat lon lat) =
       case p (LonLat lon lat) of
@@ -280,7 +460,7 @@ moveTopP :: Double -> Projection -> Projection
 moveTopP offset = flipYAxisP . moveBottomP offset . flipYAxisP
 
 flipYAxisP :: Projection -> Projection
-flipYAxisP (Projection p pInv) = Projection p' pInv'
+flipYAxisP (Projection label p pInv) = Projection label p' pInv'
   where
     p' (LonLat lam phi) =
       let XYCoord x y = p (LonLat lam (negate phi))
@@ -290,18 +470,17 @@ flipYAxisP (Projection p pInv) = Projection p' pInv'
       in LonLat lam (negate phi)
 
 scaleP :: Double -> Double -> Projection -> Projection
-scaleP xScale yScale (Projection p pInv) = Projection forward inverse
+scaleP xScale yScale (Projection label p pInv) = Projection label forward inverse
   where
     forward lonlat =
       case p lonlat of
         XYCoord x y -> XYCoord ((x-0.5)*xScale+0.5) ((y-0.5)*yScale+0.5)
     inverse (XYCoord x y) =
-      let new = XYCoord ((x-0.5)/xScale+0.5) ((y-0.5)/yScale+0.5)
-      in pInv new
+      pInv $ XYCoord ((x-0.5)/xScale+0.5) ((y-0.5)/yScale+0.5)
 
 
 mergeP :: Projection -> Projection -> Double -> Projection
-mergeP p1 p2 t = Projection p pInv
+mergeP p1 p2 t = Projection (projectionLabel p1 ++ "/" ++ projectionLabel p2) p pInv
   where
     p lonlat =
       let XYCoord x1 y1 = projectionForward p1 lonlat
@@ -317,7 +496,7 @@ mergeP p1 p2 t = Projection p pInv
 
 -- | <<docs/gifs/doc_equirectangularP.gif>>
 equirectangularP :: Projection
-equirectangularP = Projection forward inverse
+equirectangularP = Projection "equirectangular" forward inverse
   where
     forward (LonLat lam phi) = XYCoord ((lam+pi)/tau) ((phi+pi/2)/pi)
     inverse (XYCoord x y) = LonLat xPi yPi
@@ -327,7 +506,7 @@ equirectangularP = Projection forward inverse
 
 -- | <<docs/gifs/doc_mercatorP.gif>>
 mercatorP :: Projection
-mercatorP = Projection forward inverse
+mercatorP = Projection "mercator" forward inverse
   where
     forward (LonLat lam phi) =
       XYCoord ((lam+pi)/tau)
@@ -337,33 +516,65 @@ mercatorP = Projection forward inverse
         xPi = fromToS (-pi) pi x
         yPi = fromToS (-pi) pi y
 
+thetas :: V.Vector Double
+thetas = V.fromList $
+  map (find_theta_fast . fromIndex) [0 .. granularity]
+
+granularity :: Int
+granularity = 50000
+
+toIndex :: Double -> Int
+toIndex phi = round ((phi+halfPi)/pi * fromIntegral granularity)
+fromIndex :: Int -> Double
+fromIndex x = fromToS (-halfPi) halfPi (fromIntegral x / fromIntegral granularity)
+granualize :: Double -> Double
+granualize = fromIndex . toIndex
+
+{-# INLINE mollweideP #-}
 -- | <<docs/gifs/doc_mollweideP.gif>>
 mollweideP :: Projection
-mollweideP = Projection forward inverse
+mollweideP = Projection "mollweide" forward inverse
   where
-    forward (LonLat lam phi) =
+    forward (LonLat !lam !phi) =
         XYCoord ((x+sqrt2*2)/(4*sqrt2)) ((y+sqrt2)/(2*sqrt2))
       where
         x = (2*sqrt2)/pi * lam * cos theta
         y = sqrt2*sin theta
-        theta = find_theta 100
-        find_theta :: Int -> Double
-        find_theta 0 = phi
-        find_theta _ | abs phi == pi/2 = signum phi * pi/2
-        find_theta n =
-          let sub = find_theta (n-1)
-          in sub - (2*sub+sin (2*sub)-pi*sin phi)/(2+2*cos(2*sub))
+        theta = thetas V.! toIndex phi
+        -- find_theta :: Int -> Double
+        -- find_theta 0 = phi
+        -- find_theta _ | abs phi == pi/2 = signum phi * pi/2
+        -- find_theta n =
+        --   let !sub = find_theta (n-1)
+        --   in sub - (2*sub+sin (2*sub)-pi*sin phi)/(2+2*cos(2*sub))
     inverse (XYCoord x' y') = LonLat lam phi
       where
         x = fromToS (-2*sqrt2) (2*sqrt2) x'
-        y = fromToS (-sqrt2) sqrt2 y'
-        theta = asin (y/sqrt2)
+        y = fromToS (-1) 1 y'
+        theta = granualize (asin y)
         lam = pi*x/(2*sqrt2*cos theta)
         phi = asin ((2*theta+sin(2*theta))/pi)
 
+find_theta_fast :: Double -> Double
+find_theta_fast !phi | abs phi == pi/2 = signum phi * halfPi
+find_theta_fast !(D# phi) = go phi
+  where
+    !(D# pi#) = pi
+    go acc =
+      let c = cosDouble# (acc +## acc)
+          s = sinDouble# (acc +## acc)
+          next =
+            acc -##
+            (acc +## acc +## s -## pi# *## (sinDouble# phi))
+            /## (2.0## +## c +## c) in
+      if abs (D# (next -## acc)) < epsilon
+        then D# next
+        else go next
+
+
 -- | <<docs/gifs/doc_hammerP.gif>>
 hammerP :: Projection
-hammerP = Projection forward inverse
+hammerP = Projection "hammer" forward inverse
   where
     forward (LonLat lam phi) =
         XYCoord ((x+sqrt2*2)/(4*sqrt2)) ((y+sqrt2)/(2*sqrt2))
@@ -378,9 +589,20 @@ hammerP = Projection forward inverse
         lam = 2 * atan2 (z*x) (2*(2*z**2-1))
         phi = asin (z*y)
 
+cylindricalEqualAreaP :: Double -> Projection
+cylindricalEqualAreaP phi0 = Projection "lambert" forward inverse
+  where
+    cosPhi0 = cos phi0
+    forward (LonLat lam phi) =
+      XYCoord ((lam+pi)/tau) ((sin phi/cosPhi0+1/cosPhi0)/2/cosPhi0)
+    inverse (XYCoord x' y') = LonLat x (asin y / (asin cosPhi0 / halfPi))
+      where
+        x = fromToS (-pi) pi x'
+        y = fromToS (-1) 1 y' * cosPhi0
+
 -- | <<docs/gifs/doc_lambertP.gif>>
 lambertP :: Projection
-lambertP = Projection forward inverse
+lambertP = Projection "lambert" forward inverse
   where
     forward (LonLat lam phi) =
       XYCoord ((lam+pi)/tau) ((sin phi+1)/2)
@@ -391,7 +613,7 @@ lambertP = Projection forward inverse
 
 -- | <<docs/gifs/doc_bottomleyP.gif>>
 bottomleyP :: Double -> Projection
-bottomleyP !phi_1 = Projection forward inverse
+bottomleyP !phi_1 = Projection "bottomley" forward inverse
   where
     forward (LonLat lam phi) =
         XYCoord ((x+pi)/tau) ((y+pi/2)/pi)
@@ -413,7 +635,7 @@ bottomleyP !phi_1 = Projection forward inverse
 
 -- | <<docs/gifs/doc_sinusoidalP.gif>>
 sinusoidalP :: Projection
-sinusoidalP = Projection forward inverse
+sinusoidalP = Projection "sinusoidal" forward inverse
   where
     forward (LonLat lam phi) =
         XYCoord ((x+pi)/tau) ((y+pi/2)/pi)
@@ -427,7 +649,7 @@ sinusoidalP = Projection forward inverse
 
 -- | <<docs/gifs/doc_wernerP.gif>>
 wernerP :: Projection
-wernerP = moveTopP 0.23 $ Projection forward inverse
+wernerP = moveTopP 0.23 $ Projection "werner" forward inverse
   where
     forward (LonLat lam phi) =
         XYCoord ((x+pi)/tau) ((y+pi/2)/pi)
@@ -449,7 +671,8 @@ wernerP = moveTopP 0.23 $ Projection forward inverse
 -- | <<docs/gifs/doc_bonneP.gif>>
 bonneP :: Double -> Projection
 bonneP 0 = sinusoidalP
-bonneP phi_0 = moveTopP (-0.17*factor) $ scaleP 1 (fromToS 1 0.65 factor) $ Projection forward inverse
+bonneP phi_0 = moveTopP (-0.17*factor) $ scaleP 1 (fromToS 1 0.65 factor) $
+    Projection "bonne" forward inverse
   where
     factor = sin phi_0 / sin (pi/4)
     forward (LonLat lam phi ) = XYCoord ((x+pi)/tau) ((y+halfPi)/pi)
@@ -471,7 +694,7 @@ bonneP phi_0 = moveTopP (-0.17*factor) $ scaleP 1 (fromToS 1 0.65 factor) $ Proj
 
 -- | <<docs/gifs/doc_orthoP.gif>>
 orthoP :: LonLat -> Projection
-orthoP (LonLat lam_0 phi_0) = Projection forward inverse
+orthoP (LonLat lam_0 phi_0) = Projection "ortho" forward inverse
   where
     forward (LonLat lam phi)
         | cosc < 0  =
@@ -503,7 +726,7 @@ orthoP (LonLat lam_0 phi_0) = Projection forward inverse
           | otherwise = v
 
 cassiniP :: Projection
-cassiniP = Projection forward inverse
+cassiniP = Projection "cassini" forward inverse
   where
     forward (LonLat lam phi) =
       XYCoord ((asin (cos phi * sin lam)+halfPi)/pi) ((atan2 (tan phi) (cos lam)+pi)/tau)
@@ -514,8 +737,9 @@ cassiniP = Projection forward inverse
         lam = atan2 (tan x) (cos y)
         phi = asin (sin y * cos x)
 
+
 augustP :: Projection
-augustP = scaleP 0.70 0.70 $ Projection forward inverse
+augustP = scaleP 0.70 0.70 $ Projection "august"  forward inverse
   where
     xHi = 16/3
     xLo = -xHi
@@ -550,7 +774,7 @@ augustP = scaleP 0.70 0.70 $ Projection forward inverse
 
 -- | <<docs/gifs/doc_collignonP.gif>>
 collignonP :: Projection
-collignonP = Projection forward inverse
+collignonP = Projection "collignon" forward inverse
   where
     yHi = sqrtPi
     yLo = sqrtPi * (1 - sqrt2)
@@ -571,7 +795,7 @@ collignonP = Projection forward inverse
 
 -- | <<docs/gifs/doc_eckert1P.gif>>
 eckert1P :: Projection
-eckert1P = Projection forward inverse
+eckert1P = Projection "eckert1" forward inverse
   where
     alpha = sqrt (8 / (3*pi))
     yLo = -alpha * halfPi
@@ -591,7 +815,7 @@ eckert1P = Projection forward inverse
 
 -- | <<docs/gifs/doc_eckert3P.gif>>
 eckert3P :: Projection
-eckert3P = Projection forward inverse
+eckert3P = Projection "eckert3" forward inverse
   where
     k = sqrt (pi * (4 + pi))
     yLo = negate yHi
@@ -611,7 +835,7 @@ eckert3P = Projection forward inverse
 
 -- | <<docs/gifs/doc_eckert5P.gif>>
 eckert5P :: Projection
-eckert5P = Projection forward inverse
+eckert5P = Projection "eckert5" forward inverse
   where
     k = sqrt (2 + pi)
     yLo = negate yHi
@@ -629,9 +853,10 @@ eckert5P = Projection forward inverse
         lam = k * x / (1 + cos phi)
         phi = y * k / 2
 
+{-# INLINE faheyP #-}
 -- | <<docs/gifs/doc_faheyP.gif>>
 faheyP :: Projection
-faheyP = Projection forward inverse
+faheyP = Projection "fahey" forward inverse
   where
     faheyK = cos (toRads 35)
     yLo = negate yHi
@@ -651,8 +876,9 @@ faheyP = Projection forward inverse
         lam = x / (faheyK * sqrt (1 - t*t))
         phi = 2 * atan2 y (1 + faheyK)
 
+{-# INLINE foucautP #-}
 foucautP :: Projection
-foucautP = Projection forward inverse
+foucautP = Projection "foucaut" forward inverse
   where
     yLo = negate yHi
     yHi = sqrtPi * tan (halfPi/2)
@@ -673,8 +899,9 @@ foucautP = Projection forward inverse
         phi = 2 * k
         lam = x * sqrtPi / 2 / (cos phi * cosk * cosk)
 
+{-# INLINE lagrangeP #-}
 lagrangeP :: Projection
-lagrangeP = Projection forward inverse
+lagrangeP = Projection "lagrange" forward inverse
   where
     yLo = negate yHi
     yHi = 2
@@ -691,7 +918,9 @@ lagrangeP = Projection forward inverse
         x = 2 * sin (lam*n) / c
         y = (v - 1/v) /c
     inverse (XYCoord x' y')
-        | abs (abs y'-1) < epsilon = LonLat 0 (signum y * halfPi)
+        | abs (y'-1) < epsilon
+          -- = LonLat 0 (signum y * halfPi)
+          = LonLat 100 100
         | otherwise = LonLat lam phi
       where
         x = fromToS xLo xHi x' / 2
