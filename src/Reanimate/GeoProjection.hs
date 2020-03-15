@@ -55,7 +55,6 @@ import           Data.Geospatial         hiding (LonLat)
 import           Data.Hashable
 import           Data.LinearRing
 import qualified Data.LineString         as Line
-import           Data.Time
 import           Data.Vector.Storable    (unsafeWith)
 import qualified Data.Vector.Unboxed     as V
 import           Debug.Trace
@@ -67,7 +66,6 @@ import           Linear                  (distance, lerp)
 import           Linear.V2               hiding (angle)
 import           Reanimate
 import           System.IO.Unsafe
-import           Text.Printf
 
 {-# INLINE halfPi #-}
 {-# INLINE sqrtPi #-}
@@ -250,11 +248,11 @@ srcPixelFast src wMax hMax (LonLat lam phi) = unsafeIOToST $
 interpP :: Image PixelRGBA8 -> Projection -> Projection -> Double -> Image PixelRGBA8
 interpP src p1 _ 0 = project src p1
 interpP src _ p2 1 = project src p2
-interpP !src (Projection label1 p1 p1_inv) !(Projection label2 p2 p2_inv) !t = runST $ do
+interpP !src (Projection _label1 p1 p1_inv) !(Projection _label2 p2 p2_inv) !t = runST $ do
     !img <- newMutableImage w h
 
     let factor = 2
-        total = w*factor * h*factor
+        -- total = w*factor * h*factor
     let l1 = do
           -- start <- unsafeIOToST $ getCurrentTime
           loopTo (w*factor) $ \x -> do
@@ -412,7 +410,7 @@ data Projection = Projection
 
 -- FIXME: Verify that 'src' has an aspect ratio of 2:1.
 project :: Image PixelRGBA8 -> Projection -> Image PixelRGBA8
-project src (Projection label _ pInv) = generateImage fn w h
+project src (Projection _label _ pInv) = generateImage fn w h
   where
     w = imageWidth src
     h = imageHeight src

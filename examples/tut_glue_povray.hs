@@ -6,7 +6,7 @@
 module Main (main) where
 
 import           Reanimate
-import           Reanimate.Povray      (povraySlow,povraySlow')
+import           Reanimate.Povray      (povraySlow')
 import           Reanimate.Raster
 
 import           Codec.Picture
@@ -33,8 +33,8 @@ main = reanimate $ parA bg $ sceneAnimation $ do
       t <- spriteT
       dur <- spriteDuration
       pure $
-        mkImage screenWidth screenHeight  (povraySlow' [] $
-        script $ svgAsPngFile (texture (t/dur))) transZ getX getZ
+        mkImage screenWidth screenHeight $ povraySlow' [] $
+        script (svgAsPngFile (texture (t/dur))) transZ getX getZ
     wait 2
     fork $ tweenVar zPos 9 $ \v -> fromToS v 8
     fork $ tweenVar xRot 9 $ \v -> fromToS v 360 . curveS 2
