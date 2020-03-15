@@ -1,5 +1,7 @@
 module Reanimate.Raster
-  ( embedImage
+  ( mkImage
+  , cacheImage
+  , embedImage
   , embedDynamicImage
   , embedPng
   , raster
@@ -35,6 +37,26 @@ import           System.IO
 import           System.IO.Temp
 import           System.IO.Unsafe
 
+-- FIXME: Embed the image data as inline base64 iff no raster engine is specified.
+mkImage :: Double -> Double -> FilePath -> SVG
+mkImage width height path = unsafePerformIO $ do
+    exists <- doesFileExist target
+    unless exists $ copyFile path target
+    return $ flipYAxis $ ImageTree $ defaultSvg
+      & Svg.imageWidth .~ Svg.Num width
+      & Svg.imageHeight .~ Svg.Num height
+      & Svg.imageHref .~ ("file://"++target)
+      & Svg.imageCornerUpperLeft .~ (Svg.Num (-width/2), Svg.Num (-height/2))
+      & Svg.imageAspectRatio .~ Svg.PreserveAspectRatio False Svg.AlignNone Nothing
+  where
+    target = pRootDirectory </> show hashPath <.> takeExtension path
+    hashPath = hash path
+
+cacheImage :: (PngSavable pixel, Hashable a) => a -> Image pixel -> FilePath
+cacheImage key gen = unsafePerformIO $ cacheFile template $ \path ->
+    writePng path gen
+  where
+    template = show (hash key) <.> "png"
 
 {-# INLINE embedImage #-}
 embedImage :: PngSavable a => Image a -> Tree
