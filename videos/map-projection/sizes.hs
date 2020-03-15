@@ -1,21 +1,21 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
 {-# LANGUAGE ApplicativeDo     #-}
+{-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE BangPatterns   #-}
 module Main(main) where
 
 import           Codec.Picture
 import           Codec.Picture.Jpg
 import           Codec.Picture.Types
-import           Control.Lens            ((^.), (%~), (&))
+import           Control.Exception
+import           Control.Lens            ((%~), (&), (^.))
 import           Control.Monad
 import           Control.Monad.ST
 import           Data.Aeson
 import qualified Data.ByteString         as BS
-import qualified Data.Sequence as Seq
 import           Data.Char
 import           Data.Foldable
 import           Data.Geospatial         hiding (LonLat)
@@ -24,18 +24,26 @@ import qualified Data.LineString         as Line
 import           Data.Map                (Map)
 import qualified Data.Map                as Map
 import           Data.Maybe
+import qualified Data.Sequence           as Seq
 import           Data.String.Here
 import qualified Data.Text               as T
+import           Debug.Trace
 import           Graphics.SvgTree        (ElementRef (..), PathCommand (..),
                                           Tree (None))
 import           Reanimate
 import           Reanimate.Animation
 import           Reanimate.Blender
 import           Reanimate.GeoProjection
-import           Reanimate.Scene
+import           Reanimate.Memo
 import           Reanimate.Raster
+import           Reanimate.Scene
+import           Reanimate.Transition
+import           Reanimate.Builtin.Flip
 import           System.IO.Unsafe
 
+import EndScene
+
+quick = False
 
 {-
   Show the earth.
@@ -45,57 +53,66 @@ import           System.IO.Unsafe
 earth :: FilePath
 -- earth = "earth-low.jpg"
 -- earth = "earth-mid.jpg"
-earth = "earth-high.jpg"
+-- earth = "earth-high.jpg"
 -- earth = "earth-extreme.jpg"
+earth = "earth-1440.png"
+
+earthMax :: FilePath
+earthMax = "earth-max.jpg"
 
 main :: IO ()
-main = reanimate mainScene
+main = do
+  -- putStrLn "Loading earth"
+  -- _ <- evaluate equirectangular
+  -- print (imageWidth equirectangular, imageHeight equirectangular)
+  -- putStrLn "Interpolating"
+  -- evaluate $ interpFastP equirectangular equirectangularP augustP 0.1
+  -- return ()
+  -- reanimate testScene
+  reanimate $
+    parA (staticFrame 1 $ mkBackground "darkgrey") $
+    overlapT 2 (signalT (curveS 2) flipTransition)
+      mainScene
+      endScene
+
 
 testScene :: Animation
 testScene = sceneAnimation $ do
-    bg <- newSpriteSVG $ mkBackground "white"
-    spriteZ bg (-1)
-    -- play $ animate $ const $ scale (1/halfPi * (4/4.5)) $ scaleToSize screenWidth screenHeight $
-    --   embedImage $ project src (orthoP $ LonLat 0 0)
-    bend <- newVar 1
-    let LonLat lam phi = newzealandLonLat
-    rotX <- newVar 0
-    rotY <- newVar 0
-    draw <- newVar 0
-    _ <- newSprite $ do
-      getBend <- unVar bend
-      getRotX <- unVar rotX
-      getRotY <- unVar rotY
-      getDraw <- unVar draw
-      return $
-        scale (fromToS 1 ((9*pi)/16) getBend) $
-        mkGroup
-        [ blender (script earth getBend getRotX getRotY)
-        -- , lowerTransformations $ scale (1/halfPi * (4/4.5)) $
-        --   grid $ orthoP $ LonLat (getRotY) (getRotX)
+    newSpriteSVG $ mkBackground "white"
+    grid <- newSpriteSVG $ mkGroup
+      [ withStrokeWidth (defaultStrokeWidth*0.2) $ withStrokeColor "black" $ mkGroup
+        [ mkLine (0,screenHeight) (0,-screenHeight)
+        , mkLine (screenHeight/2,screenHeight) (screenHeight/2,-screenHeight)
+        , mkLine (-screenHeight/2,screenHeight) (-screenHeight/2,-screenHeight)
         ]
+      ]
+    spriteZ grid 1
+    Globe{..} <- newGlobe
+    let pos = brazilLonLat
+    writeVar globePosition pos
+    tweenVar globePosition 1 $ \v -> fromToLonLat v (LonLat 0 0) . curveS 2
+    tweenVar globeBend 2 $ \v -> fromToS v 0 . curveS 2
+    wait 1
+    -- destroySprite globeSprite
+    -- newSpriteSVG $
+    --   mkGroup
+    --   [ scaleToSize screenWidth screenHeight $
+    --     embedImage $ project src (orthoP pos)
+    --   ]
     -- wait 1
-    -- tweenVar bend 1 $ \v -> fromToS v 0 . curveS 2
-    fork $ tweenVar rotY 1 $ \v -> fromToS v (lam) . curveS 2
-    tweenVar rotX 1 $ \v -> fromToS v (phi) . curveS 2
-    -- wait 1
-    fork $ tweenVar rotY 2 $ \v -> fromToS v 0 . curveS 2
-    fork $ tweenVar rotX 2 $ \v -> fromToS v 0 . curveS 2
-    wait 0.3
-    tweenVar bend 2 $ \v -> fromToS v 0 . curveS 2
   where
     src = equirectangular
 
 mainScene :: Animation
-mainScene = seq equirectangular $ -- takeA 5 $ dropA 19 $
+mainScene = seq equirectangular $ -- takeA 10 $ dropA 21 $
   mapA (withStrokeColor "black") $ sceneAnimation $ do
     bg <- newSpriteSVG $ mkBackground "white"
     spriteZ bg (-1)
 
 
-    let offset = translate 0 (-screenHeight/2 * 0.25)
-        orthoScale = 0.35
-        largeScale = 0.50
+    let offset = translate 0 (-screenHeight/2 * 0.20)
+        orthoScale = 0.50
+        largeScale = 0.75
     Globe{..} <- newGlobe
 
     morph <- newVar 0
@@ -104,18 +121,24 @@ mainScene = seq equirectangular $ -- takeA 5 $ dropA 19 $
 
     spriteModify globeSprite $ do
       s <- unVar mapScale
-      pure $ \(svg, z) -> (scale s svg, z)
+      pure $ \(svg, z) -> (scale orthoScale svg, z)
     spriteMap globeSprite (offset)
-    -- destroySprite globeSprite
 
-    let addRegion x y s proj lonlat@(LonLat lam phi) = do
+    let addRegion x y s proj lonlat@(LonLat lam phi) label = do
           let idName = filter isAlphaNum $ show lonlat
-              outline = lowerTransformations $ scale orthoScale $
-                        proj (orthoP lonlat)
-          region1 <- newSpriteSVG outline
-          destroySprite region1
+              srcWidth = imageWidth equirectangularMax
+              srcHeight = imageHeight equirectangularMax
+              subImg = trace ("subImg for: " ++ T.unpack label) $
+                convertRGBA8 $ rasterSized srcWidth srcHeight $ mkGroup
+                    [ mkGroup []
+                    , mkClipPath idName $
+                      clipSvg
+                    , withClipPathRef (Ref idName) $
+                      scaleToSize screenWidth screenHeight $
+                      embedImage equirectangularMax]
+              clipSvg = removeGroups $
+                lowerTransformations $ proj equirectangularP
 
-          spriteZ region1 2
           move <- newVar 0
           region1Shadow <- newSprite $ do
             ~(from, to) <- unVar projs
@@ -125,15 +148,21 @@ mainScene = seq equirectangular $ -- takeA 5 $ dropA 19 $
             t <- unVar move
 
             pure $
-              let srcWidth = imageWidth equirectangularExtreme
-                  srcHeight = imageHeight equirectangularExtreme
-                  !subImg = convertRGBA8 $ rasterSized srcWidth srcHeight $ mkGroup
-                        [ mkGroup []
-                        , mkClipPath idName $
-                          clipSvg
-                        , withClipPathRef (Ref idName) $
-                          scaleToSize screenWidth screenHeight $
-                          embedImage $ project equirectangularExtreme equirectangularP]
+              let
+                  (bx,by,bw,bh) = boundingBox $ proj (from lonlat)
+                  fx = (bx+screenWidth/2)/screenWidth
+                  fy = (by+screenHeight/2)/screenHeight
+                  fw = bw/screenWidth
+                  fh = bh/screenHeight
+                  (bx',by',bw',bh') = boundingBox $ proj to
+                  fx' = (bx'+screenWidth/2)/screenWidth
+                  fy' = (by'+screenHeight/2)/screenHeight
+                  fw' = bw'/screenWidth
+                  fh' = bh'/screenHeight
+                  imgKey = (projectionLabel (from lonlat), projectionLabel to, lonlat, earthMax, m)
+                  imgFile = cacheImage imgKey $
+                    trace ("interp for:" ++ show imgKey) $
+                    interpBBP subImg (from lonlat) to (fx,fy,fw,fh) (fx',fy',fw',fh') m
                   setPos =
                     translate (fromToS 0 x $ curveS 2 t)
                     (fromToS 0 y $ curveS 2 t) .
@@ -141,36 +170,50 @@ mainScene = seq equirectangular $ -- takeA 5 $ dropA 19 $
                     scale (fromToS 1 s $ curveS 2 t)
                   posSvg =
                     lowerTransformations $ proj (mergeP (from lonlat) to m)
-                  clipSvg = removeGroups $
-                    lowerTransformations $ proj equirectangularP in
+                  finalSvg =
+                    lowerTransformations $ proj to
+                  toCenter = if projectionLabel (from lonlat) == "ortho"
+                    then centerWithDelta m finalSvg
+                    else centerWithDelta 1 posSvg
+                  -- targetXY
+                  -- translate ((-x-w/2)*d) ((-y-h/2)*d) t
+                  in
               mkGroup
               [ mkGroup []
-              , setPos $ scale relScale $ centerWithDelta 1 posSvg $
-                scaleToSize screenWidth screenHeight $
-                embedImage $ interpP subImg (from lonlat) to m
-              , lowerTransformations $ setPos $ scale orthoScale $ center $
-                proj (orthoP lonlat)
+              , setPos $ scale relScale $ toCenter $
+                mkImage screenWidth screenHeight imgFile
+              , withStrokeWidth (fromToS 0 (defaultStrokeWidth*0.3) t) $
+                lowerTransformations $ setPos $ scale orthoScale $
+                  (proj (orthoP lonlat))
               ]
+          -- destroySprite region1Shadow
           fork $ tweenVar move 1 $ \v -> fromToS v 1 . curveS 2
+          fork $ play $ (staticFrame 2 $
+            withStrokeWidth 0 $
+            translate 0 (-screenHeight*0.40) $
+            center $ latex label)
+            # applyE (overBeginning 0.2 fadeInE)
+            # applyE (overEnding 0.2 fadeOutE)
+
 
 
     tweenVar globePosition 2 $ \v -> fromToLonLat v usaLonLat . curveS 2
-    fork $ addRegion (-5.5) 4 3 america usaLonLat
+    fork $ addRegion (-5.5) 3.5 2 america usaLonLat "USA"
 
     tweenVar globePosition 2 $ \v -> fromToLonLat v brazilLonLat . curveS 2
-    fork $ addRegion (-6) 0 3 brazil brazilLonLat
+    fork $ addRegion (-6) (-0.5) 2 brazil brazilLonLat "Brazil"
 
     tweenVar globePosition 2 $ \v -> fromToLonLat v ukLonLat . curveS 2
-    fork $ addRegion (-1) 4 5 uk ukLonLat
+    fork $ addRegion (-1) 4 4 uk ukLonLat "UK, scaled 200\\%"
 
     tweenVar globePosition 2 $ \v -> fromToLonLat v germanyLonLat . curveS 2
-    fork $ addRegion 1 4 5 germany germanyLonLat
+    fork $ addRegion 1 4 4 germany germanyLonLat "Germany, scaled 200\\%"
 
     tweenVar globePosition 2 $ \v -> fromToLonLat v ausLonLat . curveS 2
-    fork $ addRegion 6 4 3 australia ausLonLat
+    fork $ addRegion 6 3.5 2 australia ausLonLat "Australia"
 
     tweenVar globePosition 2 $ \v -> fromToLonLat v newzealandLonLat . curveS 2
-    fork $ addRegion 6 0 4 newzealand newzealandLonLat
+    fork $ addRegion 6 (-0.5) 3 newzealand newzealandLonLat "New Zealand, scaled 150\\%"
 
     fork $ tweenVar globePosition 3 $ \v -> fromToLonLat v (LonLat 0 0) . curveS 2
     wait 1
@@ -184,45 +227,65 @@ mainScene = seq equirectangular $ -- takeA 5 $ dropA 19 $
     mapS <- newSprite $ do
       ~(from, to) <- unVar projs
       m <- unVar morph
-      relScale <- unVar mapScale
-      pure $ lowerTransformations $ scale relScale $ mkGroup
-        [ mkGroup []
-        , scaleToSize screenWidth screenHeight $
-          embedImage $ interpP src (from (LonLat 0 0)) to m
-        , grid $ mergeP (from (LonLat 0 0)) to m
-        ]
+      -- relScale <- unVar mapScale
+      t <- spriteT
+      pure $
+        let imgKey = (projectionLabel (from (LonLat 0 0)), projectionLabel to, earth, m
+                     ,"global"::String)
+            imgFile = cacheImage imgKey $
+              trace ("global map for: " ++ show imgKey) $
+              interpP src (from (LonLat 0 0)) to m
+        in lowerTransformations $ scale orthoScale $ mkGroup
+          [ mkGroup []
+          , if quick then None else
+            mkImage screenWidth screenHeight imgFile
+          , withStrokeWidth (fromToS 0 (defaultStrokeWidth*0.2) $ min t 1) $
+            grid $ mergeP (from (LonLat 0 0)) to m
+          ]
     spriteMap mapS offset
 
-    wait 1
+    play $ (staticFrame (projMorphT+projWaitT) $
+      withStrokeWidth 0 $
+      translate 0 (-screenHeight*0.43) $
+      center $ latex "Equirectangular")
+      # applyE (overBeginning 0.2 fadeInE)
+      # applyE (overEnding 0.2 fadeOutE)
 
-    let push proj = do
+    let push proj label = do
+          fork $ play $ (staticFrame (projMorphT+projWaitT) $
+            withStrokeWidth 0 $
+            translate 0 (-screenHeight*0.43) $
+            center $ latex label)
+            # applyE (overBeginning 0.2 fadeInE)
+            # applyE (overEnding 0.2 fadeOutE)
           (_, prev) <- readVar projs
           writeVar projs (const $ prev, proj)
           writeVar morph 0
-          tweenVar morph 1 $ \v -> fromToS v 1 . curveS 2
-          wait 1
+          tweenVar morph projMorphT $ \v -> fromToS v 1 . curveS 2
+          wait projWaitT
 
-    push lambertP
-    push mercatorP
-    push mollweideP
-    push hammerP
-    push (bottomleyP $ 30/180*pi)
-    push sinusoidalP
-    push wernerP
-    push (bonneP $ 45/180*pi)
-    push augustP
-    push collignonP
-    push eckert1P
-    push eckert3P
-    push eckert5P
-    push faheyP
-    push foucautP
-    push lagrangeP
+    push lambertP "Lambert"
+    push mercatorP "Mercator"
+    push mollweideP "Mollweide"
+    push hammerP "Hammer"
+    push (bottomleyP $ 30/180*pi) "Bottomley"
+    push sinusoidalP "Sinusoidal"
+    push wernerP "Werner"
+    push (bonneP $ 45/180*pi) "Bonne"
+    push augustP "August"
+    push collignonP "Collignon"
+    push eckert1P "Eckert 1"
+    push eckert3P "Eckert 3"
+    push eckert5P "Eckert 5"
+    push faheyP "Fahey"
+    push foucautP "Foucaut"
+    push lagrangeP "Lagrange"
 
+    wait 5
   where
     src = equirectangular
-    waitT = 2
-    morphT = 2
+    projMorphT = 2
+    projWaitT = 3
 
 centerDelta :: Double -> Tree -> Tree
 centerDelta d t = translate ((-x-w/2)*d) ((-y-h/2)*d) t
@@ -256,14 +319,14 @@ renderLabel label =
 equirectangular :: Image PixelRGBA8
 equirectangular = unsafePerformIO $ do
   dat <- BS.readFile earth
-  case decodeJpeg dat of
+  case decodeImage dat of
     Left err  -> error err
     Right img -> return $ convertRGBA8 img
 
-equirectangularExtreme :: Image PixelRGBA8
-equirectangularExtreme = unsafePerformIO $ do
-  dat <- BS.readFile "earth-extreme.jpg"
-  case decodeJpeg dat of
+equirectangularMax :: Image PixelRGBA8
+equirectangularMax = unsafePerformIO $ do
+  dat <- BS.readFile earthMax
+  case decodeImage dat of
     Left err  -> error err
     Right img -> return $ convertRGBA8 img
 
@@ -297,7 +360,6 @@ fetchCountry p checker =
       (screenHeight)
      $
     translate (-1/2) (-1/2) $
-    withStrokeWidth strokeWidth $
 
     withFillOpacity 0 $
     mkGroup
@@ -324,7 +386,7 @@ filterCountries = do
           geo' = geo & geofeatures %~ Seq.filter fn
           fn feat =
             case Map.lookup "NAME" (feat ^. properties) of
-              Nothing -> False
+              Nothing   -> False
               Just name -> name `elem` goodNames
       encodeFile "countries-limited.json" geo'
   where
@@ -389,13 +451,12 @@ grid p =
     (screenHeight)
    $
   translate (-1/2) (-1/2) $
-  withStrokeWidth strokeWidth $
 
   withFillOpacity 0 $
   -- withFillColor "black" $
   mkGroup
   [ mkGroup []
-  , withStrokeColor "black" $
+  , withStrokeColor "grey" $
     applyProjection p $
     svgPointsToRadians $
     pathify $ landGeo annotate
@@ -455,7 +516,8 @@ newGlobe = do
     ~(LonLat lam phi) <- unVar pos
     pure $
       scale (fromToS 1 ((9*pi)/16) getBend) $
-      blender $ script earth getBend phi lam
+      mkImage screenWidth screenHeight $
+      blender' $ script earthMax getBend phi lam
   return $ Globe globe pos bend
 
 script :: FilePath -> Double -> Double -> Double -> T.Text
@@ -482,7 +544,7 @@ cam.select_set(True)
 focus_target.select_set(True)
 bpy.ops.object.parent_set()
 
-focus_target.rotation_euler = (${negate rotX}, 0, 0)
+focus_target.rotation_euler = (${negate rotX}, ${rotY}, 0)
 
 
 origin = bpy.data.objects['Cube']
@@ -494,7 +556,7 @@ x = ${bend}
 bpy.ops.mesh.primitive_plane_add()
 plane = bpy.context.object
 plane.scale = (16/2,${fromToS (9/2) 4 bend},1)
-bpy.ops.object.shade_smooth()
+#bpy.ops.object.shade_smooth()
 
 bpy.context.object.active_material = bpy.data.materials['Material']
 mat = bpy.context.object.active_material
@@ -536,7 +598,7 @@ plane.select_set(True);
 bpy.ops.object.origin_clear()
 bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN')
 
-plane.rotation_euler = (0, ${negate rotY}, 0)
+#plane.rotation_euler = (${negate rotX}, ${negate rotY}, 0)
 
 scn = bpy.context.scene
 
@@ -546,6 +608,8 @@ scn = bpy.context.scene
 scn.view_settings.view_transform = 'Standard'
 
 scn.render.film_transparent = True
+scn.render.resolution_x = ${pWidth} #3200
+scn.render.resolution_y = ${pHeight} #1800
 
 bpy.ops.render.render( write_still=True )
 |]

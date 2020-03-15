@@ -10,16 +10,18 @@ module Reanimate.Render
 
 import           Control.Concurrent
 import           Control.Exception
-import           Control.Monad       (forM_, void)
+import           Control.Monad       (forM_, void, unless, forever)
 import qualified Data.Text           as T
 import qualified Data.Text.IO        as T
+import           Data.Time
 import           Graphics.SvgTree    (Number (..))
 import           Numeric
 import           Reanimate.Animation
 import           Reanimate.Misc
-import           System.FilePath     ((</>))
-import           System.FilePath    (replaceExtension)
+import           Reanimate.Parameters
 import           System.Exit
+import           System.FilePath     ((</>))
+import           System.FilePath     (replaceExtension)
 import           System.IO
 import           Text.Printf         (printf)
 
@@ -71,20 +73,8 @@ filterFrameList seen nthFrame nFrames =
   where
     isSeen x = any (\y -> x `mod` y == 0) seen
 
-data Raster
-  = RasterNone
-  | RasterAuto
-  | RasterInkscape
-  | RasterRSvg
-  | RasterConvert
-  deriving (Show)
-
 data Format = RenderMp4 | RenderGif | RenderWebm
   deriving (Show)
-
-type Width = Int
-type Height = Int
-type FPS = Int
 
 render :: Animation
        -> FilePath
@@ -131,18 +121,35 @@ render ani target raster format width height fps = do
 
 generateFrames :: Raster -> Animation -> Width -> Height -> FPS -> (FilePath -> IO a) -> IO a
 generateFrames raster ani width_ height_ rate action = withTempDir $ \tmp -> do
+    setRootDirectory tmp
     done <- newMVar (0::Int)
     let frameName nth = tmp </> printf nameTemplate nth
-    putStr $ "\r0/" ++ show frameCount
+    putStr $ "\rFrames rendered: 0/" ++ show frameCount ++ "\27[K\r"
     hFlush stdout
-    handle h $ concurrentForM_ frames $ \n -> do
-      writeFile (frameName n) $ renderSvg width height $ nthFrame n
-      applyRaster raster (frameName n)
-      modifyMVar_ done $ \nDone -> do
-        putStr $ "\r" ++ show (nDone+1) ++ "/" ++ show frameCount
-        hFlush stdout
-        return (nDone+1)
-    putStrLn "\n"
+    start <- getCurrentTime
+    let statusPrinter = forever $ do
+          nDone <- readMVar done
+          now <- getCurrentTime
+          let spent = diffUTCTime now start
+              remaining = (spent / (fromIntegral nDone / fromIntegral frameCount)) - spent
+          putStr $ "\rFrames rendered: " ++ show nDone ++ "/" ++ show frameCount
+          putStr $ ", time spent: " ++ ppDiff spent
+          unless (nDone==0) $ do
+            putStr $ ", time remaining: " ++ ppDiff remaining
+            putStr $ ", total time: " ++ ppDiff (remaining+spent)
+          putStr $ "\27[K\r"
+          hFlush stdout
+          threadDelay 1000000
+    withBackgroundThread statusPrinter $ do
+      handle h $ concurrentForM_ frames $ \n -> do
+        writeFile (frameName n) $ renderSvg width height $ nthFrame n
+        applyRaster raster (frameName n)
+        modifyMVar_ done $ \nDone -> return (nDone+1)
+    now <- getCurrentTime
+    let spent = diffUTCTime now start
+    putStr $ "\rFrames rendered: " ++ show frameCount ++ "/" ++ show frameCount
+    putStr $ ", time spent: " ++ ppDiff spent
+    putStr $ "\27[K\n"
     action (tmp </> rasterTemplate raster)
   where
     width = Just $ Px $ fromIntegral width_
@@ -152,11 +159,24 @@ generateFrames raster ani width_ height_ rate action = withTempDir $ \tmp -> do
                        \Hit ctrl-c again to abort."
       return ()
     h other = throwIO other
-    frames = [0..frameCount-1]
+    -- frames = [0..frameCount-1]
+    frames = frameOrder rate frameCount
     nthFrame nth = frameAt (recip (fromIntegral rate) * fromIntegral nth) ani
     frameCount = round (duration ani * fromIntegral rate) :: Int
     nameTemplate :: String
     nameTemplate = "render-%05d.svg"
+
+withBackgroundThread :: IO () -> IO a -> IO a
+withBackgroundThread t = bracket (forkIO t) killThread . const
+
+ppDiff :: NominalDiffTime -> String
+ppDiff diff
+  | hours == 0 && mins == 0 = show secs ++ "s"
+  | hours == 0 = printf "%.2d:%.2d" mins secs
+  | otherwise  = printf "%.2d:%.2d:%.2d" hours mins secs
+  where
+    (osecs, secs) = round diff `divMod` (60::Int)
+    (hours, mins) = osecs `divMod` 60
 
 rasterTemplate :: Raster -> String
 rasterTemplate RasterNone = "render-%05d.svg"
