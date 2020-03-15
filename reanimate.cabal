@@ -62,6 +62,7 @@ library
                       Reanimate.Math.DCEL
                       Reanimate.Math.EarClip
                       Reanimate.Math.Visibility
+                      Reanimate.Math.SSSP
                       Reanimate.Raster
                       Reanimate.ColorMap
                       Reanimate.ColorSpace

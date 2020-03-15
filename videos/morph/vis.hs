@@ -2,16 +2,14 @@
 -- stack --resolver lts-13.14 runghc --package reanimate
 module Main where
 
-import           Algorithms.Geometry.DelaunayTriangulation.DivideAndConquer (delaunayTriangulation)
-import           Algorithms.Geometry.DelaunayTriangulation.Types
 import           Codec.Picture.Types
 import           Control.Lens
 import           Control.Monad
-import           Data.Function
-import           Data.List
-import           Data.Geometry.Point
+import           Data.CircularList                                          as CL
 import           Data.Ext
-import Data.CircularList as CL
+import           Data.Function
+import           Data.Geometry.Point
+import           Data.List
 import           Data.List.NonEmpty                                         (NonEmpty)
 import qualified Data.List.NonEmpty                                         as NE
 import           Data.Maybe
@@ -21,10 +19,10 @@ import qualified Data.Vector                                                as V
 import           Debug.Trace
 import           Linear.Matrix                                              hiding
                                                                              (trace)
+import           Linear.Metric
 import           Linear.V2
 import           Linear.V3
 import           Linear.Vector
-import           Linear.Metric
 import           Numeric.LinearAlgebra                                      hiding
                                                                              (polar,
                                                                              scale,
@@ -35,23 +33,38 @@ import           Numeric.LinearAlgebra.HMatrix                              hidi
                                                                              scale,
                                                                              (<>))
 import           Reanimate
-import           Reanimate.Math.Visibility
 import           Reanimate.Math.Common
+import           Reanimate.Math.Visibility
+import           Reanimate.Math.SSSP
 
 main :: IO ()
-main = reanimate $ setDuration 10 $ sceneAnimation $ do
-  -- play $ renderPoly $ cyclePolygons shape2 !! 9
-  forM_ (cyclePolygons shape2  ) $ play . renderPoly
+main = reanimate $ sceneAnimation $ do
+  _ <- newSpriteSVG $ mkBackground "black"
+  -- play $ drawVisibleFrom triangle
+  -- play $ drawVisibleFrom shape1
+  -- play $ drawVisibleFrom shape2
+  -- play $ drawVisibleFrom shape3
+  -- play $ drawVisibleFrom shape4
+  -- play $ drawVisibleFrom shape5
+  -- play $ drawVisibleFrom shape6
+  -- play $ drawSSSP triangle naive
+  -- play $ drawSSSP shape1 naive
+  -- play $ drawSSSP shape2 naive
+  -- play $ drawSSSP shape3 naive
+  play $ drawSSSP shape4 naive
+  play $ drawSSSP shape5 naive
+  -- play $ drawSSSP shape6 naive
+  return ()
 
-renderPoly p'@(x:y:_) = addStatic (mkBackground "black") $ mkAnimation (distance x y) $ \t ->
-  let p = interpFirst p' t in
+renderPoly p' = addStatic (mkBackground "black") $ mkAnimation 5 $ \t ->
+  let p = cyclePolygon p' t in
   centerUsing outline $
   mkGroup
   [ outline
   , withFillColor "white" $ mkLinePathClosed
-    [ (x,y) | V2 x y <- visibility p ]
+    [ (x,y) | V2 x y <- visibility (V.toList p) ]
   , withFillOpacity 0 $ outline
-  , let V2 x y = head p in
+  , let V2 x y = pAccess p 0 in
     translate x y $ withFillColor "red" $ mkCircle 0.1
   -- , withFillColor "blue" $ latex $ T.pack $ show (t)
   ]
@@ -59,4 +72,51 @@ renderPoly p'@(x:y:_) = addStatic (mkBackground "black") $ mkAnimation (distance
     outline =
       {-withStrokeColor "grey" $-}
       withFillColor "grey" $ mkLinePathClosed
-        [ (x,y) | V2 x y <- p' ++ [head p'] ]
+        [ (x,y) | V2 x y <- V.toList p' ++ [pAccess p' 0] ]
+
+polygonShape :: Polygon -> SVG
+polygonShape p = mkLinePathClosed
+  [ (x,y) | V2 x y <- V.toList p  ++ [pAccess p 0] ]
+
+polygonDots :: Polygon -> SVG
+polygonDots p = mkGroup
+  [ translate x y $ mkCircle 0.1 | V2 x y <- V.toList p ]
+
+drawSSSP :: Polygon -> (Polygon -> SSSP) -> Animation
+drawSSSP p gen = mkAnimation 5 $ \t -> centerUsing outline $ mkGroup
+  [ outline
+  , renderSSSP (cyclePolygon p t) (gen (cyclePolygon p t))
+  , let V2 x y = pAccess (cyclePolygon p t) 0 in
+    translate x y $ withFillColor "red" $ mkCircle 0.1
+  ]
+  where
+    outline =
+      withFillColor "grey" $ mkLinePathClosed
+        [ (x,y) | V2 x y <- V.toList p  ++ [pAccess p 0] ]
+
+renderSSSP :: Polygon -> SSSP -> SVG
+renderSSSP p s = withStrokeColor "white" $ mkGroup
+  [ mkLine (ax,ay) (bx,by)
+  | i <- [0 .. length s-1]
+  , let V2 ax ay = pAccess p i
+        V2 bx by = pAccess p (s V.! i)
+  ]
+
+drawVisibleFrom :: Polygon -> Animation
+drawVisibleFrom p = mkAnimation 5 $ \t -> centerUsing (polygonShape p) $ mkGroup
+  [ withFillColor "grey" $ polygonShape p
+  , withFillColor "grey" $ polygonDots p
+  , renderVisibleFrom (cyclePolygon p t)
+  , let V2 x y = pAccess (cyclePolygon p t) 0 in
+    translate x y $ withFillColor "red" $ mkCircle 0.1
+  ]
+
+
+renderVisibleFrom :: Polygon -> SVG
+renderVisibleFrom p = withStrokeColor "white" $ withFillColor "white" $ mkGroup
+  [ mkGroup
+    [ mkLine (ax,ay) (bx,by)
+    , translate bx by $ mkCircle 0.1 ]
+  | i <- visibleFrom 0 p
+  , let V2 ax ay = pAccess p 0
+        V2 bx by = pAccess p i ]

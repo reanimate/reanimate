@@ -1,23 +1,19 @@
 {-# LANGUAGE RecordWildCards #-}
 module Reanimate.Math.Common where
 
-import           Control.Applicative
-import           Data.List           (tails)
-import           Data.List.Split
 import           Data.Vector         (Vector)
 import qualified Data.Vector         as V
-import           Linear.Matrix
+import           Linear.Matrix       (det33)
 import           Linear.Metric
 import           Linear.V2
 import           Linear.V3
 import           Linear.Vector
-import           Text.Printf
 
 -- Generate random polygons, options:
 --   1. put corners around a circle. Vary the radius.
 --   2. close a hilbert curve
-type Polygon = V.Vector P
-type RPolygon = V.Vector (V2 Rational)
+type Polygon = Vector P
+type RPolygon = Vector (V2 Rational)
 type P = V2 Double
 
 -- Max edges: n-2
@@ -38,25 +34,25 @@ pPrev p i = (i-1) `mod` V.length p
 pAccess :: Polygon -> Int -> P
 pAccess p i = p V.! i
 
-triangle :: [P]
-triangle = [V2 1 1, V2 0 0, V2 2 0]
+triangle :: Polygon
+triangle = V.fromList [V2 1 1, V2 0 0, V2 2 0]
 
 triangle' :: [P]
 triangle' = reverse [V2 1 1, V2 0 0, V2 2 0]
 
-shape1 :: [P]
-shape1 =
+shape1 :: Polygon
+shape1 = V.fromList
   [ V2 0 0, V2 2 0
   , V2 2 1, V2 2 2, V2 2 3, V2 2 4, V2 2 5, V2 2 6
   , V2 1 1, V2 0 1 ]
 
-shape2 :: [P]
-shape2 =
+shape2 :: Polygon
+shape2 = V.fromList
   [ V2 0 0, V2 1 0, V2 1 1, V2 2 1, V2 2 (-1), V2 0 (-1), V2 0 (-2)
   , V2 3 (-2), V2 3 2, V2 0 2]
 
-shape3 :: [P]
-shape3 =
+shape3 :: Polygon
+shape3 = V.fromList
   [ V2 0 0, V2 1 0, V2 1 1, V2 2 1, V2 2 2, V2 0 2]
 
 shape4 :: Polygon
@@ -67,21 +63,44 @@ shape5 :: Polygon
 shape5 = cyclePolygons shape4 !! 2
 
 -- square
-shape6 :: [P]
-shape6 = [ V2 0 0, V2 1 0, V2 1 1, V2 0 1 ]
+shape6 :: Polygon
+shape6 = V.fromList [ V2 0 0, V2 1 0, V2 1 1, V2 0 1 ]
 
-concave :: [P]
-concave = [V2 0 0, V2 2 0, V2 2 2, V2 1 1, V2 0 2]
+concave :: Polygon
+concave = V.fromList [V2 0 0, V2 2 0, V2 2 2, V2 1 1, V2 0 2]
 
 cyclePolygons :: Polygon -> [Polygon]
 cyclePolygons p =
-  [ V.take (len-n) p <> V.take n p
+  [ V.drop (len-n) p <> V.take n p
   | n <- [0 .. len-1]]
   where
     len = V.length p
 
-interpFirst (x:y:xs) t =
-  lerp t y x : y : xs ++ [x]
+cyclePolygon :: Polygon -> Double -> Polygon
+cyclePolygon p 0 = p
+cyclePolygon p t = worker 0 0
+  where
+    worker acc i
+      -- | segment + acc == limit =
+      --   V.drop i p <>
+      --   V.take i p
+      | segment + acc > limit =
+        V.singleton (lerp ((segment + acc - limit)/segment) x y) <>
+        V.drop (i+1) p <>
+        V.take (i+1) p
+      | i == V.length p-1  = p
+      | otherwise = worker (acc+segment) (i+1)
+        where
+          x = pAccess p i
+          y = pAccess p $ pNext p i
+          segment = distance x y
+    len = polygonLength p
+    limit = t * len
+
+polygonLength :: Polygon -> Double
+polygonLength p = sum
+  [ distance (pAccess p i) (pAccess p $ pNext p i)
+  | i <- [0 .. V.length p-1]]
 
 area :: Fractional a => V2 a -> V2 a -> V2 a -> a
 area a b c = 1/2 * area2X a b c
