@@ -5,10 +5,7 @@ module Main where
 import           Codec.Picture.Types
 import           Control.Lens
 import           Control.Monad
-import           Data.CircularList                                          as CL
-import           Data.Ext
 import           Data.Function
-import           Data.Geometry.Point
 import           Data.List
 import           Data.List.NonEmpty                                         (NonEmpty)
 import qualified Data.List.NonEmpty                                         as NE
@@ -50,9 +47,9 @@ main = reanimate $ sceneAnimation $ do
   -- play $ drawSSSP triangle naive
   -- play $ drawSSSP shape1 naive
   -- play $ drawSSSP shape2 naive
-  -- play $ drawSSSP shape3 naive
-  play $ drawSSSP shape4 naive
-  play $ drawSSSP shape5 naive
+  play $ drawSSSP shape3 naive
+  -- play $ drawSSSP shape4 naive
+  -- play $ drawSSSP shape5 naive
   -- play $ drawSSSP shape6 naive
   return ()
 
@@ -95,12 +92,16 @@ drawSSSP p gen = mkAnimation 5 $ \t -> centerUsing outline $ mkGroup
         [ (x,y) | V2 x y <- V.toList p  ++ [pAccess p 0] ]
 
 renderSSSP :: Polygon -> SSSP -> SVG
-renderSSSP p s = withStrokeColor "white" $ mkGroup
-  [ mkLine (ax,ay) (bx,by)
-  | i <- [0 .. length s-1]
-  , let V2 ax ay = pAccess p i
-        V2 bx by = pAccess p (s V.! i)
-  ]
+renderSSSP p s = withFillOpacity 0 $ withStrokeColor "white" $ mkGroup
+  [ mkLinePath (lineFrom i)
+  | i <- [0 .. length s-1] ]
+  where
+    lineFrom 0 =
+      let V2 ax ay = pAccess p 0
+      in [(ax,ay)]
+    lineFrom i =
+      let V2 ax ay = pAccess p i
+      in (ax,ay) : lineFrom (s V.! i)
 
 drawVisibleFrom :: Polygon -> Animation
 drawVisibleFrom p = mkAnimation 5 $ \t -> centerUsing (polygonShape p) $ mkGroup

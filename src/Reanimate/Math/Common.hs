@@ -24,12 +24,14 @@ type P = V2 Double
 -- Combine the two vectors? < n => offsets, >= n => edges?
 type Triangulation = V.Vector [Int]
 
+pMod :: Polygon -> Int -> Int
+pMod p i = i `mod` V.length p
 
 pNext :: Polygon -> Int -> Int
-pNext p i = (i+1) `mod` V.length p
+pNext p i = pMod p (i+1)
 
 pPrev :: Polygon -> Int -> Int
-pPrev p i = (i-1) `mod` V.length p
+pPrev p i = pMod p (i-1)
 
 pAccess :: Polygon -> Int -> P
 pAccess p i = p V.! i
