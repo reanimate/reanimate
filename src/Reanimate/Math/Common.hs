@@ -73,7 +73,7 @@ concave = V.fromList [V2 0 0, V2 2 0, V2 2 2, V2 1 1, V2 0 2]
 
 cyclePolygons :: Polygon -> [Polygon]
 cyclePolygons p =
-  [ V.drop (len-n) p <> V.take n p
+  [ V.drop n p <> V.take n p
   | n <- [0 .. len-1]]
   where
     len = V.length p

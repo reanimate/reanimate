@@ -33,6 +33,7 @@ import           Reanimate
 import           Reanimate.Math.Common
 import           Reanimate.Math.Visibility
 import           Reanimate.Math.SSSP
+import           Reanimate.Math.EarClip
 
 main :: IO ()
 main = reanimate $ sceneAnimation $ do
@@ -47,10 +48,16 @@ main = reanimate $ sceneAnimation $ do
   -- play $ drawSSSP triangle naive
   -- play $ drawSSSP shape1 naive
   -- play $ drawSSSP shape2 naive
-  play $ drawSSSP shape3 naive
+  -- play $ drawSSSP shape3 naive
   -- play $ drawSSSP shape4 naive
   -- play $ drawSSSP shape5 naive
   -- play $ drawSSSP shape6 naive
+  play $ drawTriangulation shape1 earClip'
+  -- play $ staticFrame 1 $ renderTriangulation shape2 earClip
+  -- play $ staticFrame 1 $ renderTriangulation shape3 earClip
+  -- play $ staticFrame 1 $ renderTriangulation shape4 earClip
+  -- play $ staticFrame 1 $ renderTriangulation shape5 earClip
+  -- play $ staticFrame 1 $ renderTriangulation shape6 earClip
   return ()
 
 renderPoly p' = addStatic (mkBackground "black") $ mkAnimation 5 $ \t ->
@@ -121,3 +128,21 @@ renderVisibleFrom p = withStrokeColor "white" $ withFillColor "white" $ mkGroup
   | i <- visibleFrom 0 p
   , let V2 ax ay = pAccess p 0
         V2 bx by = pAccess p i ]
+
+drawTriangulation :: Polygon -> (Polygon -> [Triangulation]) -> Animation
+drawTriangulation p gen = sceneAnimation $ do
+  forM_ (gen p) $ \t -> play $ staticFrame 1 $ renderTriangulation p t
+
+renderTriangulation :: Polygon -> Triangulation -> SVG
+renderTriangulation p t = center $ mkGroup
+  [ withFillColor "grey" $ polygonShape p
+  , withFillColor "grey" $ polygonDots p
+  , withStrokeColor "white" $ mkGroup $ concat
+    [ [ mkLine (ax,ay) (bx,by)
+      , translate ax ay $ withFillColor "white" $ mkCircle 0.1 ]
+    | i <- [0..length p-1]
+    , y <- t V.! i
+    , let V2 ax ay = pAccess p i
+          V2 bx by = pAccess p y
+    ]
+  ]

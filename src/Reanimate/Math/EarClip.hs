@@ -23,7 +23,10 @@ edgesToTriangulation p edges = V.fromList
 
 -- Triangulation by ear clipping. O(n^2)
 earClip :: Polygon -> Triangulation
-earClip p = edgesToTriangulation p $
+earClip = last . earClip'
+
+earClip' :: Polygon -> [Triangulation]
+earClip' p = map (edgesToTriangulation p) $ inits $
   let ears = Set.fromList [ i
              | i <- elts
              , isEarCorner p elts (pPrev p i) i (pNext p i) ]
@@ -43,10 +46,10 @@ earClip p = edgesToTriangulation p $
             v4 = peekQ (nextQ dq)
             e1 = if isEarCorner p (toList dq) v0 v1 v3
                   then Set.insert v1 ears
-                  else ears
+                  else Set.delete v1 ears
             e2 = if isEarCorner p (toList dq) v1 v3 v4
                   then Set.insert v3 e1
-                  else e1
+                  else Set.delete v3 e1
         in (v1,v3) : worker e2 dq
       | otherwise = worker ears (nextQ queue)
       where

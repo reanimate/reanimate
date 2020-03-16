@@ -21,9 +21,16 @@ visibleFrom y p =
   [ i
   | i <- [0.. n-1]
   , i /= y
-  , if i < y
-    then isLeftTurnOrLinear (p V.! i) (p V.! ((y-1) `mod` n)) (p V.! y) || i+1==y || i-1==y
-    else isLeftTurnOrLinear (p V.! y) (p V.! ((y+1) `mod` n)) (p V.! i) || i+1==y || i-1==y
+  , let py = pAccess p y
+        pyn = pAccess p $ pNext p y
+        pyp = pAccess p $ pPrev p y
+        pi = pAccess p i
+        isOpen = isRightTurn pyp py pyn
+  , pNext p y == i || pPrev p y == i || if isOpen
+    then isLeftTurnOrLinear py pyn pi ||
+         isLeftTurnOrLinear pyp py pi
+    else not $ isRightTurn py pyn pi ||
+               isRightTurn pyp py pi
   , let myEdges = [(e1,e2) | (e1,e2) <- edges, e1/=y, e1/=i, e2/=y,e2/=i]
   , all (isNothing . lineIntersect (elt,p V.! i))
           [ (p V.! e1,p V.! e2) | (e1,e2) <- myEdges ]]
@@ -37,11 +44,9 @@ naive :: Polygon -> SSSP
 naive p =
     V.fromList $ Map.elems $
     Map.map (fromMaybe 0 . listToMaybe) $
-    worker initial [1.. V.length p-1]
+    worker initial [0]
   where
-    initial = Map.fromList
-      [ (v,[])
-      | v <- 0:visibleFrom 0 p]
+    initial = Map.singleton 0 []
     worker :: Map.Map Int [Int] -> [(Int)] -> Map.Map Int [Int]
     worker m [] = m
     worker m (i:xs) =
@@ -50,7 +55,7 @@ naive p =
           m' = Map.fromList
             [ (v, i : (m Map.! i))
             | v <- vs ]
-      in worker (Map.unionWith f m m') xs
+      in worker (Map.unionWith f m m') (xs ++ filter (flip Map.notMember m) vs)
     pathLength [] = 0
     pathLength [v] = distance (p V.! v) (p V.! 0)
     pathLength (x:y:xs) = distance (p V.! x) (p V.! y) + pathLength (y:xs)
