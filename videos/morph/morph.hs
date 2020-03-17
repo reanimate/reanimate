@@ -2,37 +2,25 @@
 -- stack --resolver lts-13.14 runghc --package reanimate
 module Main where
 
-import           Algorithms.Geometry.DelaunayTriangulation.DivideAndConquer (delaunayTriangulation)
-import           Algorithms.Geometry.DelaunayTriangulation.Types
 import           Codec.Picture.Types
 import           Control.Lens
 import           Control.Monad
 import           Data.Function
 import           Data.List
-import           Data.Geometry.Point
-import           Data.Ext
-import Data.CircularList as CL
-import           Data.List.NonEmpty                                         (NonEmpty)
-import qualified Data.List.NonEmpty                                         as NE
+import           Data.List.NonEmpty            (NonEmpty)
+import qualified Data.List.NonEmpty            as NE
 import           Data.Maybe
-import qualified Data.Text                                                  as T
+import qualified Data.Text                     as T
 import           Data.Tuple
-import qualified Data.Vector                                                as V
+import qualified Data.Vector                   as V
 import           Debug.Trace
-import           Linear.Matrix                                              hiding
-                                                                             (trace)
+import           Linear.Matrix                 hiding (trace)
 import           Linear.V2
 import           Linear.V3
 import           Linear.Vector
-import           Numeric.LinearAlgebra                                      hiding
-                                                                             (polar,
-                                                                             scale,
-                                                                             (<>))
-import qualified Numeric.LinearAlgebra                                      as Matrix
-import           Numeric.LinearAlgebra.HMatrix                              hiding
-                                                                             (polar,
-                                                                             scale,
-                                                                             (<>))
+import           Numeric.LinearAlgebra         hiding (polar, scale, (<>))
+import qualified Numeric.LinearAlgebra         as Matrix
+import           Numeric.LinearAlgebra.HMatrix hiding (polar, scale, (<>))
 import           Reanimate
 
 type Points = V.Vector (V2 Double)
@@ -59,30 +47,30 @@ data RelMeshPair = RelMeshPair Points Edges (Matrix Double) (Matrix Double) (Mat
 -- convexInterpolate :: RelMeshPair -> Double -> RelMesh
 
 main :: IO ()
-main = reanimate testTrigs
+main = reanimate morphAnimation
 
 morphAnimation = playThenReverseA $ pauseAround 1 1 $ addStatic (mkBackground "black") $
   signalA (curveS 2) $ mkAnimation 5 $ \t -> lowerTransformations $ scale 3 $ pathify $ center $
   mkGroup
-  [ translate 1.7 0 $ drawTrig example1
+  [ -- translate 1.7 0 $ drawTrig example1
   -- , translate (-1.7) 0 $ drawTrig points2 group1
-  , translate (-1.7) 0 $ drawTrig (linearInterpolate meshPair t)
-  , drawTrig $ solveMesh $ convexInterpolate (mkRelativePair meshPair) t
+    translate (-1) 0 $ drawTrig (linearInterpolate meshPair t)
+  , translate 1 0 $ drawTrig $ solveMesh $ convexInterpolate (mkRelativePair meshPair) t
   ]
   where
     meshPair = fromJust $ compatible example1 example2
 
-testTrigs :: Animation
-testTrigs = addStatic (mkBackground "black") $ animate $ \t ->
-    withStrokeColor "white" $
-    mkGroup
-    [ --translate (-3.5) 0 $ renderTriangulation $ dummyTriangulate points
-     translate (3.5) 0 $ renderTriangulation $ delaunay points
-    ]
-  where
--- points = [V2 0 0, V2 1 1, V2 4 2, V2 (-2) (-4), V2 (-3) 4]
-points = [V2 0 0, V2 1 1, V2 2 0, V2 3 (-3), V2 (-2) (-1) ]
-         -- ,V2 0 1, V2 1 1, V2 2 1, V2 3 1]
+-- testTrigs :: Animation
+-- testTrigs = addStatic (mkBackground "black") $ animate $ \t ->
+--     withStrokeColor "white" $
+--     mkGroup
+--     [ --translate (-3.5) 0 $ renderTriangulation $ dummyTriangulate points
+--      translate (3.5) 0 $ renderTriangulation $ delaunay points
+--     ]
+--   where
+-- -- points = [V2 0 0, V2 1 1, V2 4 2, V2 (-2) (-4), V2 (-3) 4]
+-- points = [V2 0 0, V2 1 1, V2 2 0, V2 3 (-3), V2 (-2) (-1) ]
+--          -- ,V2 0 1, V2 1 1, V2 2 1, V2 3 1]
 
 renderTriangulation :: [(P,P)] -> SVG
 renderTriangulation trigs =
@@ -419,11 +407,11 @@ sortTrig (a,b,c) =
   where
     center = (a+b+c) ^/ 3
 
-delaunay :: [P] -> [(P,P)]
-delaunay ps =
-  [ (V2 ax ay, V2 bx by)
-  | (a, b) <- triangulationEdges $ delaunayTriangulation
-        (NE.fromList $ [ ext $ Point2 x y | V2 x y <- ps])
-  , let Point2 ax ay = _core a
-        Point2 bx by = _core b
-  ]
+-- delaunay :: [P] -> [(P,P)]
+-- delaunay ps =
+--   [ (V2 ax ay, V2 bx by)
+--   | (a, b) <- triangulationEdges $ delaunayTriangulation
+--         (NE.fromList $ [ ext $ Point2 x y | V2 x y <- ps])
+--   , let Point2 ax ay = _core a
+--         Point2 bx by = _core b
+--   ]

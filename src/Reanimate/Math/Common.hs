@@ -73,8 +73,8 @@ unpackPolygon p =
 type Triangulation = V.Vector [Int]
 
 -- When is a triangulation valid?
---   No internal edges intersect.
---   All edge neighbours share an internal edge.
+--   Intersection: No internal edges intersect.
+--   Completeness: All edge neighbours share an internal edge.
 isValidTriangulation :: Polygon -> Triangulation -> Bool
 isValidTriangulation p t = False
 
