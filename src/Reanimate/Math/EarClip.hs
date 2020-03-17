@@ -2,15 +2,12 @@ module Reanimate.Math.EarClip where
 
 
 import           Data.List
-import           Data.Maybe
 import qualified Data.Set              as Set
 import qualified Data.Vector           as V
-import           Linear.V2
 
 import           Reanimate.Math.Common
-import           Reanimate.Math.DCEL
 
-import           Debug.Trace
+-- import           Debug.Trace
 
 
 -- FIXME: Move to Common or a Triangulation module
@@ -33,9 +30,8 @@ earClip' p = map (edgesToTriangulation p) $ inits $
   in worker ears (mkQueue elts)
   where
     elts = [0 .. V.length p-1]
-    pts = V.toList p
     -- worker :: Set.Set Int -> PolyQueue Int -> [(P,P)]
-    worker ears queue | isSimple queue = []
+    worker _ears queue | isSimple queue = []
     worker ears queue
       -- | trace (show (x, Set.member x ears)) False = undefined
       | x `Set.member` ears =
@@ -55,33 +51,38 @@ earClip' p = map (edgesToTriangulation p) $ inits $
       where
         x = peekQ queue
 
-data PolyQueue a = PolyQueue [a] [a] [a]
+data PolyQueue a = PolyQueue a [a] [a] [a]
 
 sizeQ :: PolyQueue a -> Int
-sizeQ (PolyQueue a b _) = length a + length b
+sizeQ (PolyQueue _ a b _) = 1 + length a + length b
 
 mkQueue :: [a] -> PolyQueue a
-mkQueue pts = PolyQueue pts [] (reverse pts)
+mkQueue (x:xs) = PolyQueue x xs [] (reverse (x:xs))
+mkQueue [] = error "mkQueue: empty"
 
 toList :: PolyQueue a -> [a]
-toList (PolyQueue a b _) = a ++ b
+toList (PolyQueue e a b _) = e : a ++ b
 
 isSimple :: PolyQueue a -> Bool
-isSimple (PolyQueue xs ys _) =
+isSimple (PolyQueue _ xs ys _) =
   case xs ++ ys of
-    [_,_,_] -> True
+    [_,_] -> True
     _       -> False
 
 peekQ :: PolyQueue a -> a
-peekQ (PolyQueue (x:_) _ _) = x
+peekQ (PolyQueue e _ _ _) = e
 
 nextQ :: PolyQueue a -> PolyQueue a
-nextQ (PolyQueue [x] ys p)    = PolyQueue (reverse (x:ys)) [] (x:p)
-nextQ (PolyQueue (x:xs) ys p) = PolyQueue xs (x:ys) (x:p)
+nextQ (PolyQueue x [] ys p)     =
+  let (y:xs) = reverse (x:ys)
+  in PolyQueue y xs [] (x:p)
+nextQ (PolyQueue x (y:xs) ys p) = PolyQueue y xs (x:ys) (x:p)
 
 dropQ :: PolyQueue a -> PolyQueue a
-dropQ (PolyQueue [x] ys p)    = PolyQueue (reverse ys) [] p
-dropQ (PolyQueue (x:xs) ys p) = PolyQueue xs ys p
+dropQ (PolyQueue _ [] ys p)    =
+  let (x:xs) = reverse ys
+  in PolyQueue x xs [] p
+dropQ (PolyQueue _ (x:xs) ys p) = PolyQueue x xs ys p
 
 prevQ :: Int -> PolyQueue a -> a
-prevQ nth (PolyQueue _ _ p) = p!!nth
+prevQ nth (PolyQueue _ _ _ p) = p!!nth

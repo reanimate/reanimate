@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 module Reanimate.Math.DCEL where
-
+{-
 import           Control.Applicative
 import           Data.List.Split
 import           Data.Vector           (Vector)
@@ -11,7 +11,6 @@ import           Linear.V3
 import           Text.Printf
 
 import           Reanimate.Math.Common
-{-
 
 type EdgeIdx = Int
 type VertexIdx = Int

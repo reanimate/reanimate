@@ -1,18 +1,15 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Reanimate.Math.SSSP where
 
-import Reanimate.Math.Common
-import Reanimate.Math.EarClip
-import qualified Data.Vector as V
-import Data.Maybe
-import Data.Tuple
-import qualified Data.Map as Map
-import Linear.Metric
-import Linear.V2
-import Data.List
-import Debug.Trace
-import qualified Data.FingerTree as F
-import Data.FingerTree (SearchResult(..), search, (|>), (<|))
+import           Data.FingerTree        (SearchResult (..), (<|), (|>))
+import qualified Data.FingerTree        as F
+import           Data.List
+import qualified Data.Map               as Map
+import           Data.Maybe
+import qualified Data.Vector            as V
+import           Reanimate.Math.Common
+-- import           Debug.Trace
 
 type SSSP = V.Vector Int
 
@@ -21,16 +18,16 @@ visibleFrom y p =
   [ i
   | i <- [0.. n-1]
   , i /= y
-  , let py = pAccess p y
-        pyn = pAccess p $ pNext p y
-        pyp = pAccess p $ pPrev p y
-        pi = pAccess p i
-        isOpen = isRightTurn pyp py pyn
+  , let pY = pAccess p y
+        pYn = pAccess p $ pNext p y
+        pYp = pAccess p $ pPrev p y
+        pI = pAccess p i
+        isOpen = isRightTurn pYp pY pYn
   , pNext p y == i || pPrev p y == i || if isOpen
-    then isLeftTurnOrLinear py pyn pi ||
-         isLeftTurnOrLinear pyp py pi
-    else not $ isRightTurn py pyn pi ||
-               isRightTurn pyp py pi
+    then isLeftTurnOrLinear pY pYn pI ||
+         isLeftTurnOrLinear pYp pY pI
+    else not $ isRightTurn pY pYn pI ||
+               isRightTurn pYp pY pI
   , let myEdges = [(e1,e2) | (e1,e2) <- edges, e1/=y, e1/=i, e2/=y,e2/=i]
   , all (isNothing . lineIntersect (elt,p V.! i))
           [ (p V.! e1,p V.! e2) | (e1,e2) <- myEdges ]]
@@ -74,22 +71,19 @@ data Dual = Dual (Int,Int,Int) -- (a,b,c)
 
 data DualTree
   = EmptyDual
-  | NodeLeaf Int
   | NodeDual Int -- axb triangle, a and b are from parent.
       DualTree -- borders ba
       DualTree -- borders xb
-  | NodeDualL Int DualTree
-  | NodeDualR Int DualTree
   deriving (Show)
 
 -- Dual path:
 -- (Int,Int,Int) + V.Vector Int + V.Vector LeftOrRight
 
 simplifyDual :: DualTree -> DualTree
-simplifyDual (NodeDual x EmptyDual EmptyDual) = NodeLeaf x
-simplifyDual (NodeDual x l EmptyDual) = NodeDualL x l
-simplifyDual (NodeDual x EmptyDual r) = NodeDualR x r
-simplifyDual dual = dual
+-- simplifyDual (NodeDual x EmptyDual EmptyDual) = NodeLeaf x
+-- simplifyDual (NodeDual x l EmptyDual) = NodeDualL x l
+-- simplifyDual (NodeDual x EmptyDual r) = NodeDualR x r
+simplifyDual d = d
 
 dual :: Triangulation -> Dual
 dual t =
@@ -129,32 +123,29 @@ instance Monoid MinMax where
 instance F.Measured MinMax Int where
   measure i = MinMax i i
 
--- Return True if '3' is part of 'a'.
-searchFn MinMaxEmpty _ = False
-searchFn (MinMax a b) _ = b >= negate 300
-
---toDualTree (Dual (a,b,c) l r) = NodeDual c l r
 -- O(n)
 sssp :: Polygon -> Dual -> SSSP
-sssp p (Dual (a,b,c) l r) = toSSSP $
-    (a, a) :
-    (b, a) :
-    (c, a) :
-    worker (F.singleton c) (F.singleton b) a r ++
-    loopLeft c l
+sssp p d = toSSSP $
+    case d of
+      Dual (a,b,c) l r ->
+        (a, a) :
+        (b, a) :
+        (c, a) :
+        worker (F.singleton c) (F.singleton b) a r ++
+        loopLeft a c l
   where
     toSSSP = V.fromList . map snd . sortOn fst
-    loopLeft outer l =
+    loopLeft a outer l =
       case l of
         EmptyDual -> []
         NodeDual x l' r' ->
           worker (F.singleton x) (F.singleton outer) a r' ++
-          loopLeft x l'
-    searchFn cusp x MinMaxEmpty _ = False
-    searchFn cusp x (MinMax a b) _ =
+          loopLeft a x l'
+    searchFn _cusp _x MinMaxEmpty _ = False
+    searchFn cusp x (MinMax _a b) _ =
       isLeftTurn (p V.! cusp) (p V.! b) (p V.! x)
-    searchFn2 cusp x _ MinMaxEmpty = True
-    searchFn2 cusp x _ (MinMax a b) =
+    searchFn2 _cusp _x _ MinMaxEmpty = True
+    searchFn2 cusp x _ (MinMax a _b) =
       isLeftTurn (p V.! cusp) (p V.! a) (p V.! x)
     worker _ _ _ EmptyDual = []
     worker f1 f2 cusp (NodeDual x l r) =
@@ -186,6 +177,7 @@ sssp p (Dual (a,b,c) l r) = toSSSP $
               --       worker f1 (f2Lo |> v |> x) cusp l ++
               --       worker (F.singleton x) F.empty v r
               e -> error $ "Unhandled: " ++ show e
+          e -> error $ "Unhandled: " ++ show e
 {-
 (7,0)
 (1,0)
