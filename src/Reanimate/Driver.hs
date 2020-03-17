@@ -1,8 +1,9 @@
+{-# LANGUAGE MultiWayIf      #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE MultiWayIf #-}
 module Reanimate.Driver ( reanimate ) where
 
 import           Control.Applicative      ((<|>))
+import           Data.Either
 import           Data.Maybe
 import           Reanimate.Animation      (Animation)
 import           Reanimate.Driver.Check
@@ -10,12 +11,10 @@ import           Reanimate.Driver.CLI
 import           Reanimate.Driver.Compile
 import           Reanimate.Driver.Server
 import           Reanimate.Parameters
-import           Reanimate.Render         (FPS, Format (..), Height, Width,
-                                            render, renderSnippets, renderSvgs)
+import           Reanimate.Render         (render, renderSnippets, renderSvgs)
 import           System.Directory
 import           System.FilePath
 import           Text.Printf
-import           Data.Either
 
 presetFormat :: Preset -> Format
 presetFormat Youtube    = RenderMp4

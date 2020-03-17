@@ -13,7 +13,6 @@ module Reanimate.Raster
   ) where
 
 import           Codec.Picture
-import           Codec.Picture.Types         (dynamicMap)
 import           Control.Lens                ((&), (.~))
 import           Control.Monad
 import qualified Data.ByteString             as B

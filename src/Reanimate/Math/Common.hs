@@ -9,7 +9,7 @@ import           Linear.Metric
 import           Linear.V2
 import           Linear.V3
 import           Linear.Vector
-import Debug.Trace
+-- import Debug.Trace
 
 -- Generate random polygons, options:
 --   1. put corners around a circle. Vary the radius.
@@ -76,7 +76,7 @@ type Triangulation = V.Vector [Int]
 --   Intersection: No internal edges intersect.
 --   Completeness: All edge neighbours share an internal edge.
 isValidTriangulation :: Polygon -> Triangulation -> Bool
-isValidTriangulation p t = False
+isValidTriangulation _p _t = False
 
 pMod :: Vector (V2 a) -> Int -> Int
 pMod p i = i `mod` V.length p

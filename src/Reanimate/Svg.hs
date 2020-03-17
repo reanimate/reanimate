@@ -12,7 +12,6 @@ import           Control.Monad.State
 import           Graphics.SvgTree             hiding (height, line, path, use,
                                                width)
 import           Linear.V2                    hiding (angle)
-import           Data.Monoid ((<>))
 import           Reanimate.Constants
 import           Reanimate.Animation (SVG)
 import           Reanimate.Svg.Constructors
