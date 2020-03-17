@@ -4,6 +4,9 @@ module Reanimate.Math.EarClip where
 import           Data.List
 import qualified Data.Set              as Set
 import qualified Data.Vector           as V
+import qualified Data.Vector.Mutable as MV
+import Control.Monad.ST
+import Control.Monad
 
 import           Reanimate.Math.Common
 
@@ -11,12 +14,14 @@ import           Reanimate.Math.Common
 
 
 -- FIXME: Move to Common or a Triangulation module
--- O(n^2), can be improved to O(n)
+-- O(n)
 edgesToTriangulation :: Polygon -> [(Int,Int)] -> Triangulation
-edgesToTriangulation p edges = V.fromList
-  [ nub $ [ e2 | (e1,e2) <- edges, i == e1 ] ++ [ e1 | (e1,e2) <- edges, i == e2 ]
-  | i <- [0.. V.length p-1]
-  ]
+edgesToTriangulation p edges = runST $ do
+  v <- MV.replicate (length p) []
+  forM_ edges $ \(e1,e2) -> do
+    MV.modify v (e1:) e2
+    MV.modify v (e2:) e1
+  V.unsafeFreeze v
 
 -- Triangulation by ear clipping. O(n^2)
 earClip :: Polygon -> Triangulation
