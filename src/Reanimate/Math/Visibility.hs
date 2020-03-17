@@ -53,7 +53,7 @@ scanc z stack v (v1:v2:vs)
     --rightTurn z stack u (v2:vs)
   | otherwise           = scanc z stack v (v2:vs)
   where
-    u = rayIntersect (z,v) (v1,v2)
+    Just u = rayIntersect (z,v) (v1,v2)
 scanc _z stack _v _vs = stack
 
 unwindStack :: (Ord a, Fractional a) => V2 a -> [V2 a] -> V2 a -> t -> [V2 a]
@@ -61,7 +61,7 @@ unwindStack z (s1:s2:ss) v vs
   | isRightTurn z s1 v && isLeftTurn z s2 v = (u:s2:ss)
   | otherwise                               = unwindStack z (s2:ss) v vs
   where
-    u = rayIntersect (z,v) (s1,s2)
+    Just u = rayIntersect (z,v) (s1,s2)
 unwindStack _z stack _v _vs = stack
 
 -- We've moved into shadow. There are three ways out:
@@ -79,7 +79,7 @@ fastForward z stack v (v1:v2:vs)
   | distSquared z v < distSquared z u = {-trace ("FF unwind: " ++ show (z,v,v1,v2,u)) $ -}unwindStack z stack v2 (vs)
   | otherwise                         = fastForward z stack v (v2:vs)
   where
-    u = rayIntersect (z, v) (v1, v2)
+    Just u = rayIntersect (z, v) (v1, v2)
 fastForward _z stack _v _vs = stack
 
 {-

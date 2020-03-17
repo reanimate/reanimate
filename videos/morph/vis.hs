@@ -2,6 +2,7 @@
 -- stack --resolver lts-13.14 runghc --package reanimate
 module Main where
 
+import Data.Ratio
 import           Codec.Picture.Types
 import           Control.Lens
 import           Control.Monad

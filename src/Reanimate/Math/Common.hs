@@ -1,13 +1,15 @@
 {-# LANGUAGE RecordWildCards #-}
 module Reanimate.Math.Common where
 
-import           Data.Vector         (Vector)
-import qualified Data.Vector         as V
-import           Linear.Matrix       (det33)
+import           Data.Maybe
+import           Data.Vector   (Vector)
+import qualified Data.Vector   as V
+import           Linear.Matrix (det33)
 import           Linear.Metric
 import           Linear.V2
 import           Linear.V3
 import           Linear.Vector
+import Debug.Trace
 
 -- Generate random polygons, options:
 --   1. put corners around a circle. Vary the radius.
@@ -16,6 +18,52 @@ type FPolygon = Vector P
 type Polygon = Vector (V2 Rational)
 type P = V2 Double
 
+-- When is a polygon valid/simple?
+--   It is counter-clockwise.
+--   No edges intersect.
+-- O(n^2)
+isSimple :: Polygon -> Bool
+isSimple p = isCCW p &&
+    and [ checkEdge i | i <- [0 .. length p-1]]
+  where
+    checkEdge i = and
+      [ isNothing $
+        lineIntersect
+          (pAccess p i, pAccess p $ pNext p i)
+          (pAccess p j, pAccess p $ pNext p j)
+      | j <- [0 .. length p-1], j /= i, j /= pNext p i, j /= pPrev p i ]
+
+-- Place n points on a circle, use one parameter to slide the points back and forth.
+-- Use second parameter to move points closer to center circle.
+genPolygon :: Double -> [(Double, Double)] -> Polygon
+genPolygon radius points
+  | len < 4 = error "genPolygon: require at least three points"
+  | otherwise = V.fromList
+  [ V2 (realToFrac $ cos ang * pointRadius)
+       (realToFrac $ sin ang * pointRadius)
+  | (i,(angMod,rMod))  <- zip [0..] points
+  , let minAngle = tau / len * i - pi
+        maxAngle = tau / len * (i+1) - pi
+        ang = minAngle + (maxAngle-minAngle)*angMod
+        pointRadius = rMod * radius
+  ]
+  where
+    tau = 2*pi
+    len = fromIntegral (length points)
+
+unpackPolygon :: Polygon -> [(Double, Double)]
+unpackPolygon p =
+    [ worker i (fmap realToFrac e)
+    | (i,e) <- zip [0..] (V.toList p) ]
+  where
+    len = fromIntegral (length p)
+    worker i (V2 x y) =
+      let ang = atan2 y x
+          minAngle = tau / len * i - pi
+          maxAngle = tau / len * (i+1) - pi
+      in ((ang-minAngle)/(maxAngle-minAngle), sqrt (x*x+y*y))
+    tau = 2*pi
+
 -- Max edges: n-2
 -- Each edge is represented twice: 2n-4
 -- Flat structure:
@@ -23,6 +71,12 @@ type P = V2 Double
 --   offsets :: V.Vector Int -- length n
 -- Combine the two vectors? < n => offsets, >= n => edges?
 type Triangulation = V.Vector [Int]
+
+-- When is a triangulation valid?
+--   No internal edges intersect.
+--   All edge neighbours share an internal edge.
+isValidTriangulation :: Polygon -> Triangulation -> Bool
+isValidTriangulation p t = False
 
 pMod :: Vector (V2 a) -> Int -> Int
 pMod p i = i `mod` V.length p
@@ -189,8 +243,10 @@ barycentricCoords (V2 x1 y1) (V2 x2 y2) (V2 x3 y3) (V2 x y) =
     lam3 = 1 - lam1 - lam2
 
 
-rayIntersect :: Fractional a => (V2 a,V2 a) -> (V2 a,V2 a) -> V2 a
-rayIntersect (V2 x1 y1,V2 x2 y2) (V2 x3 y3, V2 x4 y4) =
+rayIntersect :: (Fractional a, Ord a) => (V2 a,V2 a) -> (V2 a,V2 a) -> Maybe (V2 a)
+rayIntersect (V2 x1 y1,V2 x2 y2) (V2 x3 y3, V2 x4 y4)
+  | yBot == 0 = Nothing
+  | otherwise = Just $
     V2 (xTop/xBot) (yTop/yBot)
   where
     xTop = (x1*y2 - y1*x2)*(x3-x4) - (x1 - x2)*(x3*y4-y3*x4)
@@ -204,10 +260,11 @@ isBetween (V2 x y) (V2 x1 y1, V2 x2 y2) =
   ((x1 > x) /= (x2 > x) || epsEq x x1||epsEq x x2)
 
 lineIntersect :: (Ord a, Fractional a) => (V2 a, V2 a) -> (V2 a, V2 a) -> Maybe (V2 a)
-lineIntersect a b
-  | isBetween u a && isBetween u b = Just u
-  | otherwise     = Nothing
-  where u = rayIntersect a b
+lineIntersect a b =
+  case rayIntersect a b of
+    Just u
+      | isBetween u a && isBetween u b -> Just u
+    _ -> Nothing
 
 distSquared :: (Fractional a) => V2 a -> V2 a -> a
 distSquared a b = quadrance (a ^-^ b)

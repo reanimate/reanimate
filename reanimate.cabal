@@ -108,6 +108,7 @@ test-suite spec
   default-language:   Haskell2010
   other-modules:
     UnitTests
+    Properties
   hs-source-dirs: test
   if !flag(test) {
     Buildable: False
@@ -117,7 +118,8 @@ test-suite spec
     directory,
     filepath,
     bytestring, process,
-    reanimate,
+    reanimate, vector,
     QuickCheck >= 2.1.0,
     tasty, tasty-golden, tasty-hunit,
+    tasty-quickcheck,
     ansi-wl-pprint

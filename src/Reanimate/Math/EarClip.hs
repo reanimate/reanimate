@@ -1,12 +1,12 @@
 module Reanimate.Math.EarClip where
 
 
+import           Control.Monad
+import           Control.Monad.ST
 import           Data.List
 import qualified Data.Set              as Set
 import qualified Data.Vector           as V
-import qualified Data.Vector.Mutable as MV
-import Control.Monad.ST
-import Control.Monad
+import qualified Data.Vector.Mutable   as MV
 
 import           Reanimate.Math.Common
 
@@ -36,7 +36,7 @@ earClip' p = map (edgesToTriangulation p) $ inits $
   where
     elts = [0 .. V.length p-1]
     -- worker :: Set.Set Int -> PolyQueue Int -> [(P,P)]
-    worker _ears queue | isSimple queue = []
+    worker _ears queue | isSimpleQ queue = []
     worker ears queue
       -- | trace (show (x, Set.member x ears)) False = undefined
       | x `Set.member` ears =
@@ -63,16 +63,16 @@ sizeQ (PolyQueue _ a b _) = 1 + length a + length b
 
 mkQueue :: [a] -> PolyQueue a
 mkQueue (x:xs) = PolyQueue x xs [] (reverse (x:xs))
-mkQueue [] = error "mkQueue: empty"
+mkQueue []     = error "mkQueue: empty"
 
 toList :: PolyQueue a -> [a]
 toList (PolyQueue e a b _) = e : a ++ b
 
-isSimple :: PolyQueue a -> Bool
-isSimple (PolyQueue _ xs ys _) =
+isSimpleQ :: PolyQueue a -> Bool
+isSimpleQ (PolyQueue _ xs ys _) =
   case xs ++ ys of
     [_,_] -> True
-    _       -> False
+    _     -> False
 
 peekQ :: PolyQueue a -> a
 peekQ (PolyQueue e _ _ _) = e
