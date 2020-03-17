@@ -94,7 +94,7 @@ library
                        time, text, filepath, process, directory,
                        containers, reanimate-svg >= 0.9.7.0, xml, bytestring, lens, linear, mtl, matrix,
                        JuicyPixels, attoparsec, parallel,
-                       cubicbezier, websockets,
+                       cubicbezier, websockets >= 0.12.7.0,
                        hashable, fsnotify, open-browser, random-shuffle, base64-bytestring,
                        vector, colour, cassava, ansi-wl-pprint, here, temporary,
                        optparse-applicative, chiphunk >= 0.1.2.1,
