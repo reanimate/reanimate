@@ -52,7 +52,11 @@ main = reanimate $ sceneAnimation $ do
   -- play $ drawSSSP shape4 naive
   -- play $ drawSSSP shape5 naive
   -- play $ drawSSSP shape6 naive
-  play $ drawTriangulation shape1 earClip'
+  -- play $ drawSSSP shape1 (\p -> sssp p (dual (earClip p)))
+  play $ mkAnimation 10 $ \t ->
+    let p = cyclePolygon shape2 t
+    in renderTriangulation p (earClip p)
+  -- play $ drawTriangulation shape1 earClip'
   -- play $ staticFrame 1 $ renderTriangulation shape2 earClip
   -- play $ staticFrame 1 $ renderTriangulation shape3 earClip
   -- play $ staticFrame 1 $ renderTriangulation shape4 earClip
@@ -80,23 +84,23 @@ renderPoly p' = addStatic (mkBackground "black") $ mkAnimation 5 $ \t ->
 
 polygonShape :: Polygon -> SVG
 polygonShape p = mkLinePathClosed
-  [ (x,y) | V2 x y <- V.toList p  ++ [pAccess p 0] ]
+  [ (x,y) | V2 x y <- map (fmap realToFrac) $ V.toList p  ++ [pAccess p 0] ]
 
 polygonDots :: Polygon -> SVG
 polygonDots p = mkGroup
-  [ translate x y $ mkCircle 0.1 | V2 x y <- V.toList p ]
+  [ translate x y $ mkCircle 0.1 | V2 x y <- V.toList $ V.map (fmap realToFrac) p ]
 
 drawSSSP :: Polygon -> (Polygon -> SSSP) -> Animation
 drawSSSP p gen = mkAnimation 5 $ \t -> centerUsing outline $ mkGroup
   [ outline
   , renderSSSP (cyclePolygon p t) (gen (cyclePolygon p t))
-  , let V2 x y = pAccess (cyclePolygon p t) 0 in
+  , let V2 x y = fmap realToFrac $ pAccess (cyclePolygon p t) 0 in
     translate x y $ withFillColor "red" $ mkCircle 0.1
   ]
   where
     outline =
       withFillColor "grey" $ mkLinePathClosed
-        [ (x,y) | V2 x y <- V.toList p  ++ [pAccess p 0] ]
+        [ (x,y) | V2 x y <- map (fmap realToFrac) (V.toList p  ++ [pAccess p 0]) ]
 
 renderSSSP :: Polygon -> SSSP -> SVG
 renderSSSP p s = withFillOpacity 0 $ withStrokeColor "white" $ mkGroup
@@ -104,10 +108,10 @@ renderSSSP p s = withFillOpacity 0 $ withStrokeColor "white" $ mkGroup
   | i <- [0 .. length s-1] ]
   where
     lineFrom 0 =
-      let V2 ax ay = pAccess p 0
+      let V2 ax ay = fmap realToFrac $ pAccess p 0
       in [(ax,ay)]
     lineFrom i =
-      let V2 ax ay = pAccess p i
+      let V2 ax ay = fmap realToFrac $ pAccess p i
       in (ax,ay) : lineFrom (s V.! i)
 
 drawVisibleFrom :: Polygon -> Animation
@@ -115,7 +119,7 @@ drawVisibleFrom p = mkAnimation 5 $ \t -> centerUsing (polygonShape p) $ mkGroup
   [ withFillColor "grey" $ polygonShape p
   , withFillColor "grey" $ polygonDots p
   , renderVisibleFrom (cyclePolygon p t)
-  , let V2 x y = pAccess (cyclePolygon p t) 0 in
+  , let V2 x y = fmap realToFrac $ pAccess (cyclePolygon p t) 0 in
     translate x y $ withFillColor "red" $ mkCircle 0.1
   ]
 
@@ -126,8 +130,8 @@ renderVisibleFrom p = withStrokeColor "white" $ withFillColor "white" $ mkGroup
     [ mkLine (ax,ay) (bx,by)
     , translate bx by $ mkCircle 0.1 ]
   | i <- visibleFrom 0 p
-  , let V2 ax ay = pAccess p 0
-        V2 bx by = pAccess p i ]
+  , let V2 ax ay = fmap realToFrac $ pAccess p 0
+        V2 bx by = fmap realToFrac $ pAccess p i ]
 
 drawTriangulation :: Polygon -> (Polygon -> [Triangulation]) -> Animation
 drawTriangulation p gen = sceneAnimation $ do
@@ -142,7 +146,7 @@ renderTriangulation p t = center $ mkGroup
       , translate ax ay $ withFillColor "white" $ mkCircle 0.1 ]
     | i <- [0..length p-1]
     , y <- t V.! i
-    , let V2 ax ay = pAccess p i
-          V2 bx by = pAccess p y
+    , let V2 ax ay = fmap realToFrac $ pAccess p i
+          V2 bx by = fmap realToFrac $ pAccess p y
     ]
   ]

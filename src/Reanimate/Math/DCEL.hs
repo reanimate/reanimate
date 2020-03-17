@@ -11,6 +11,7 @@ import           Linear.V3
 import           Text.Printf
 
 import           Reanimate.Math.Common
+{-
 
 type EdgeIdx = Int
 type VertexIdx = Int
@@ -133,3 +134,4 @@ fromSimplePolygon pts = DCEL
 -- addEdge a b dcel =
 --   add edge, vertex=a, face=a
 --   add twin
+-}

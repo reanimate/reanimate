@@ -12,8 +12,8 @@ import           Linear.Vector
 -- Generate random polygons, options:
 --   1. put corners around a circle. Vary the radius.
 --   2. close a hilbert curve
-type Polygon = Vector P
-type RPolygon = Vector (V2 Rational)
+type FPolygon = Vector P
+type Polygon = Vector (V2 Rational)
 type P = V2 Double
 
 -- Max edges: n-2
@@ -24,16 +24,16 @@ type P = V2 Double
 -- Combine the two vectors? < n => offsets, >= n => edges?
 type Triangulation = V.Vector [Int]
 
-pMod :: Polygon -> Int -> Int
+pMod :: Vector (V2 a) -> Int -> Int
 pMod p i = i `mod` V.length p
 
-pNext :: Polygon -> Int -> Int
+pNext :: Vector (V2 a) -> Int -> Int
 pNext p i = pMod p (i+1)
 
-pPrev :: Polygon -> Int -> Int
+pPrev :: Vector (V2 a) -> Int -> Int
 pPrev p i = pMod p (i-1)
 
-pAccess :: Polygon -> Int -> P
+pAccess :: Vector (V2 a) -> Int -> V2 a
 pAccess p i = p V.! i
 
 triangle :: Polygon
@@ -78,7 +78,7 @@ cyclePolygons p =
   where
     len = V.length p
 
-cyclePolygon :: Polygon -> Double -> Polygon
+cyclePolygon :: (Real a, Fractional a, Ord a) => Vector (V2 a) -> Double -> Vector (V2 a)
 cyclePolygon p 0 = p
 cyclePolygon p t = worker 0 0
   where
@@ -87,7 +87,7 @@ cyclePolygon p t = worker 0 0
       --   V.drop i p <>
       --   V.take i p
       | segment + acc > limit =
-        V.singleton (lerp ((segment + acc - limit)/segment) x y) <>
+        V.singleton (lerp (realToFrac $ (segment + acc - limit)/segment) x y) <>
         V.drop (i+1) p <>
         V.take (i+1) p
       | i == V.length p-1  = p
@@ -95,13 +95,18 @@ cyclePolygon p t = worker 0 0
         where
           x = pAccess p i
           y = pAccess p $ pNext p i
-          segment = distance x y
-    len = polygonLength p
+          segment = sqrt (realToFrac (distSquared x y))
+    len = polygonLength' p
     limit = t * len
 
-polygonLength :: Polygon -> Double
+polygonLength :: (Real a, Fractional a) => Vector (V2 a) -> a
 polygonLength p = sum
-  [ distance (pAccess p i) (pAccess p $ pNext p i)
+  [ realToFrac (sqrt (realToFrac (distSquared (pAccess p i) (pAccess p $ pNext p i)) :: Double))
+  | i <- [0 .. V.length p-1]]
+
+polygonLength' :: (Real a, Fractional a) => Vector (V2 a) -> Double
+polygonLength' p = sum
+  [ sqrt (realToFrac (distSquared (pAccess p i) (pAccess p $ pNext p i)) :: Double)
   | i <- [0 .. V.length p-1]]
 
 area :: Fractional a => V2 a -> V2 a -> V2 a -> a

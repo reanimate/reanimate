@@ -56,9 +56,10 @@ naive p =
             [ (v, i : (m Map.! i))
             | v <- vs ]
       in worker (Map.unionWith f m m') (xs ++ filter (flip Map.notMember m) vs)
+    pathLength :: [Int] -> Double
     pathLength [] = 0
-    pathLength [v] = distance (p V.! v) (p V.! 0)
-    pathLength (x:y:xs) = distance (p V.! x) (p V.! y) + pathLength (y:xs)
+    pathLength [v] = realToFrac (distSquared (p V.! v) (p V.! 0))
+    pathLength (x:y:xs) = realToFrac (distSquared (p V.! x) (p V.! y)) + pathLength (y:xs)
     f a b =
         case compare (pathLength a) (pathLength b) of
           LT -> a
