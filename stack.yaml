@@ -5,6 +5,9 @@ allow-newer: false
 packages:
 - .
 
+extra-lib-dirs:
+- .
+
 extra-deps:
 - reanimate-svg-0.9.8.0
 - chiphunk-0.1.2.1
