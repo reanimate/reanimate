@@ -51,11 +51,14 @@ isSimple p = isCCW p && checkEdge 0 2
 --           (pAccess p j, pAccess p $ pNext p j)
 --       | j <- [0 .. length p-1], j /= i, j /= pNext p i, j /= pPrev p i ]
 
+scalePolygon :: Polygon -> Rational -> Polygon
+scalePolygon s = V.map (\v -> v ^* s)
+
 -- Place n points on a circle, use one parameter to slide the points back and forth.
 -- Use second parameter to move points closer to center circle.
 genPolygon :: Double -> [(Double, Double)] -> Polygon
 genPolygon radius points
-  | len < 4 = error "genPolygon: require at least three points"
+  | len < 4 = error "genPolygon: require at least four points"
   | otherwise = V.fromList
   [ V2 (realToFrac $ cos ang * pointRadius)
        (realToFrac $ sin ang * pointRadius)

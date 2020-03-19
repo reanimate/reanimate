@@ -119,7 +119,7 @@ test-suite spec
     directory,
     filepath,
     bytestring, process,
-    reanimate, vector,
+    reanimate, vector, linear,
     QuickCheck >= 2.1.0,
     tasty, tasty-golden, tasty-hunit,
     tasty-quickcheck,
