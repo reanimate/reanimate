@@ -15,6 +15,9 @@ import           Linear.Vector
 --   1. put corners around a circle. Vary the radius.
 --   2. close a hilbert curve
 type FPolygon = Vector P
+-- Optimize representation?
+--   Polygon = (Vector XNumerator, Vector XDenominator
+--             ,Vector YNumerator, Vector YDenominator)
 type Polygon = Vector (V2 Rational)
 type P = V2 Double
 
@@ -23,15 +26,29 @@ type P = V2 Double
 --   No edges intersect.
 -- O(n^2)
 isSimple :: Polygon -> Bool
-isSimple p = isCCW p &&
-    and [ checkEdge i | i <- [0 .. length p-1]]
+isSimple p | length p < 3 = False
+isSimple p = isCCW p && checkEdge 0 2
   where
-    checkEdge i = and
-      [ isNothing $
-        lineIntersect
-          (pAccess p i, pAccess p $ pNext p i)
-          (pAccess p j, pAccess p $ pNext p j)
-      | j <- [0 .. length p-1], j /= i, j /= pNext p i, j /= pPrev p i ]
+    len = length p
+    -- check i,i+1 against j,j+1
+    -- j > i+1
+    checkEdge i j
+      | j >= len-1 = if i < len-4 then checkEdge (i+1) (i+3) else True
+      | otherwise =
+        isNothing (lineIntersect (pAccess p i, pAccess p $ i+1)
+                           (pAccess p j, pAccess p $ j+1)) &&
+        checkEdge i (j+1)
+
+-- isSimple :: Polygon -> Bool
+-- isSimple p = isCCW p &&
+--     and [ checkEdge i | i <- [0 .. length p-1]]
+--   where
+--     checkEdge i = and
+--       [ isNothing $
+--         lineIntersect
+--           (pAccess p i, pAccess p $ pNext p i)
+--           (pAccess p j, pAccess p $ pNext p j)
+--       | j <- [0 .. length p-1], j /= i, j /= pNext p i, j /= pPrev p i ]
 
 -- Place n points on a circle, use one parameter to slide the points back and forth.
 -- Use second parameter to move points closer to center circle.
@@ -88,7 +105,7 @@ pPrev :: Vector (V2 a) -> Int -> Int
 pPrev p i = pMod p (i-1)
 
 pAccess :: Vector (V2 a) -> Int -> V2 a
-pAccess p i = p V.! i
+pAccess p i = p V.! i -- V.unsafeIndex p i
 
 triangle :: Polygon
 triangle = V.fromList [V2 1 1, V2 0 0, V2 2 0]
@@ -243,6 +260,7 @@ barycentricCoords (V2 x1 y1) (V2 x2 y2) (V2 x3 y3) (V2 x y) =
     lam3 = 1 - lam1 - lam2
 
 
+{-# INLINE rayIntersect #-}
 rayIntersect :: (Fractional a, Ord a) => (V2 a,V2 a) -> (V2 a,V2 a) -> Maybe (V2 a)
 rayIntersect (V2 x1 y1,V2 x2 y2) (V2 x3 y3, V2 x4 y4)
   | yBot == 0 = Nothing
@@ -254,11 +272,13 @@ rayIntersect (V2 x1 y1,V2 x2 y2) (V2 x3 y3, V2 x4 y4)
     yTop = (x1*y2 - y1*x2)*(y3-y4) - (y1-y2)*(x3*y4-y3*x4)
     yBot = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4)
 
+{-# INLINE isBetween #-}
 isBetween :: (Ord a, Fractional a) => V2 a -> (V2 a, V2 a) -> Bool
 isBetween (V2 x y) (V2 x1 y1, V2 x2 y2) =
-  ((y1 > y) /= (y2 > y) || epsEq y y1||epsEq y y2) && -- y is between y1 and y2
-  ((x1 > x) /= (x2 > x) || epsEq x x1||epsEq x x2)
+  ((y1 > y) /= (y2 > y)) && -- y is between y1 and y2
+  ((x1 > x) /= (x2 > x))
 
+{-# INLINE lineIntersect #-}
 lineIntersect :: (Ord a, Fractional a) => (V2 a, V2 a) -> (V2 a, V2 a) -> Maybe (V2 a)
 lineIntersect a b =
   case rayIntersect a b of

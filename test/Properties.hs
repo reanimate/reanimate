@@ -45,7 +45,7 @@ instance Arbitrary Polygon where
         pure $ genPolygon r (e1:e2:e3:e4:es)
   -- shrink p = sublistOf (V.toList p)
 
-prop_ccw p = label ("convex: " ++ show (isConvex p)) $ isCCW p
+prop_ccw p = label (if isConvex p then "convex" else "concave") $ isCCW p
 prop_rev_ccw p = not $ isCCW (V.reverse p)
 prop_cyclePolygon_ccw p = forAll (choose (0,1)) $ \t ->
   isSimple (cyclePolygon p t)
