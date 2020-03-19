@@ -1,7 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Reanimate.Math.Common where
 
-import           Data.Maybe
+import           Data.List     (intersect, tails)
 import           Data.Vector   (Vector)
 import qualified Data.Vector   as V
 import           Linear.Matrix (det33)
@@ -33,11 +33,12 @@ isSimple p = isCCW p && checkEdge 0 2
     -- check i,i+1 against j,j+1
     -- j > i+1
     checkEdge i j
-      | j >= len-1 = if i < len-4 then checkEdge (i+1) (i+3) else True
+      | j >= len = if i < len-4 then checkEdge (i+1) (i+3) else True
       | otherwise =
-        isNothing (lineIntersect (pAccess p i, pAccess p $ i+1)
-                           (pAccess p j, pAccess p $ j+1)) &&
-        checkEdge i (j+1)
+        case lineIntersect (pAccess p i, pAccess p $ i+1)
+                           (pAccess p j, pAccess p $ pNext p j) of
+          Just u | u /= pAccess p i -> False
+          _nothing                  -> checkEdge i (j+1)
 
 -- isSimple :: Polygon -> Bool
 -- isSimple p = isCCW p &&
@@ -92,8 +93,27 @@ type Triangulation = V.Vector [Int]
 -- When is a triangulation valid?
 --   Intersection: No internal edges intersect.
 --   Completeness: All edge neighbours share an internal edge.
+-- i, i+1
 isValidTriangulation :: Polygon -> Triangulation -> Bool
-isValidTriangulation _p _t = False
+isValidTriangulation p t = isComplete && intersectionFree
+  where
+    isComplete = all isProper [0 .. length p-1]
+    isProper i =
+      let j = pNext p i in
+      length ((pPrev p i : (t V.! i)) `intersect` (pNext p j : t V.! j)) == 1
+    intersectionFree = and
+      [ case (lineIntersect (pAccess p a, pAccess p b) (pAccess p c, pAccess p d)) of
+          Nothing -> True
+          Just u  -> u == pAccess p a || u == pAccess p b ||
+                     u == pAccess p c || u == pAccess p d
+      | ((a,b),(c,d)) <- edgePairs ]
+    edgePairs = [ (e1, e2) | (e1, rest) <- zip edges (drop 1 $ tails edges), e2 <- rest]
+    edges =
+      [ (n, i)
+      | (n, lst) <- zip [0..] (V.toList t)
+      , i <- lst
+      , n < i
+      ]
 
 pMod :: Vector (V2 a) -> Int -> Int
 pMod p i = i `mod` V.length p

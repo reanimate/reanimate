@@ -7,6 +7,7 @@ import           Test.Tasty.QuickCheck
 import qualified Data.Vector as V
 
 import           Reanimate.Math.Common
+import           Reanimate.Math.EarClip
 
 -- [(0.8,1),(0.04,0.1),(0.05,1)]
 
@@ -49,6 +50,8 @@ prop_ccw p = label (if isConvex p then "convex" else "concave") $ isCCW p
 prop_rev_ccw p = not $ isCCW (V.reverse p)
 prop_cyclePolygon_ccw p = forAll (choose (0,1)) $ \t ->
   isSimple (cyclePolygon p t)
+
+prop_validEarClip p = isValidTriangulation p (earClip p)
 
 return []
 all_props :: TestTree
