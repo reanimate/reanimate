@@ -51,7 +51,7 @@ isSimple p = isCCW p && checkEdge 0 2
 --           (pAccess p j, pAccess p $ pNext p j)
 --       | j <- [0 .. length p-1], j /= i, j /= pNext p i, j /= pPrev p i ]
 
-scalePolygon :: Polygon -> Rational -> Polygon
+scalePolygon :: Rational -> Polygon -> Polygon
 scalePolygon s = V.map (\v -> v ^* s)
 
 -- Place n points on a circle, use one parameter to slide the points back and forth.
@@ -95,8 +95,7 @@ type Triangulation = V.Vector [Int]
 
 -- When is a triangulation valid?
 --   Intersection: No internal edges intersect.
---   Completeness: All edge neighbours share an internal edge.
--- i, i+1
+--   Completeness: All edge neighbours share a single internal edge.
 isValidTriangulation :: Polygon -> Triangulation -> Bool
 isValidTriangulation p t = isComplete && intersectionFree
   where
