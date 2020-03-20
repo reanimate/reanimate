@@ -1,5 +1,5 @@
 #!/usr/bin/env stack
--- stack --resolver lts-15.04 runghc --package reanimate
+-- stack runghc --package reanimate
 module Main where
 
 import           Codec.Picture.Types
@@ -36,15 +36,6 @@ data RelMesh = RelMesh
   , relMeshB      :: Matrix Double
   }
 data RelMeshPair = RelMeshPair Points Edges (Matrix Double) (Matrix Double) (Matrix Double) (Matrix Double)
--- Linear interpolation on RelMesh gives smooth morph.
--- solveMesh :: RelMesh -> Mesh
--- mkRelative :: Mesh -> RelMesh
--- mkRelativePair :: MeshPair -> RelMeshPair
--- triangulate :: Polygon -> Polygon -> MeshPair ?
--- embed :: MeshPair -> MeshPair
--- compatible :: Mesh -> Mesh -> Maybe MeshPair
--- linearInterpolate :: MeshPair -> Double -> Mesh
--- convexInterpolate :: RelMeshPair -> Double -> RelMesh
 
 main :: IO ()
 main = reanimate morphAnimation
@@ -59,26 +50,6 @@ morphAnimation = playThenReverseA $ pauseAround 1 1 $ addStatic (mkBackground "b
   ]
   where
     meshPair = fromJust $ compatible example1 example2
-
--- testTrigs :: Animation
--- testTrigs = addStatic (mkBackground "black") $ animate $ \t ->
---     withStrokeColor "white" $
---     mkGroup
---     [ --translate (-3.5) 0 $ renderTriangulation $ dummyTriangulate points
---      translate (3.5) 0 $ renderTriangulation $ delaunay points
---     ]
---   where
--- -- points = [V2 0 0, V2 1 1, V2 4 2, V2 (-2) (-4), V2 (-3) 4]
--- points = [V2 0 0, V2 1 1, V2 2 0, V2 3 (-3), V2 (-2) (-1) ]
---          -- ,V2 0 1, V2 1 1, V2 2 1, V2 3 1]
-
-renderTriangulation :: [(P,P)] -> SVG
-renderTriangulation trigs =
-  mkGroup
-  [ mkGroup
-    [ mkLineP a b ]
-  | (a,b) <- trigs
-  ]
 
 mkLineP :: P -> P -> SVG
 mkLineP (V2 x1 y1) (V2 x2 y2) = mkLine (x1,y1) (x2,y2)
@@ -407,11 +378,3 @@ sortTrig (a,b,c) =
   where
     center = (a+b+c) ^/ 3
 
--- delaunay :: [P] -> [(P,P)]
--- delaunay ps =
---   [ (V2 ax ay, V2 bx by)
---   | (a, b) <- triangulationEdges $ delaunayTriangulation
---         (NE.fromList $ [ ext $ Point2 x y | V2 x y <- ps])
---   , let Point2 ax ay = _core a
---         Point2 bx by = _core b
---   ]

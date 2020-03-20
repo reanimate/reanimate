@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE TypeSynonymInstances #-}
+{-# OPTIONS_GHC -w      #-}
 -- {-# LANGUAGE TemplateHaskell      #-}
 module Properties where
 

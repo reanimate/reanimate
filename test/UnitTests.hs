@@ -34,7 +34,7 @@ unitTestFolder path = do
 
 genGolden :: FilePath -> IO LBS.ByteString
 genGolden path = withTempDir $ \tmpDir -> withTempFile ".exe" $ \tmpExecutable -> do
-  let ghcOpts = ["-rtsopts", "--make", "-O2"] ++
+  let ghcOpts = ["-rtsopts", "--make", "-O0"] ++
                 ["-odir", tmpDir, "-hidir", tmpDir, "-o", tmpExecutable]
       runOpts = ["+RTS", "-M1G"]
   -- XXX: Check for errors.
