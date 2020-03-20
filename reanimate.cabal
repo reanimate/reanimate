@@ -120,7 +120,7 @@ test-suite spec
     filepath,
     bytestring, process,
     reanimate, vector, linear,
-    QuickCheck >= 2.1.0,
+    QuickCheck >= 2.1.0, text,
     tasty, tasty-golden, tasty-hunit,
     tasty-quickcheck,
     ansi-wl-pprint
