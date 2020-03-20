@@ -53,10 +53,10 @@ main = reanimate $ sceneAnimation $ do
   -- play $ drawSSSP shape4 naive
   -- play $ drawSSSP shape5 naive
   -- play $ drawSSSP shape6 naive
-  -- play $ drawSSSP shape1 (\p -> sssp p (dual (earClip p)))
-  play $ mkAnimation 1 $ \t ->
-    let p = scalePolygon 4 $ genPolygon 1 [(0.1,0.1),(0.3,0.1),(0.7,0.7),(0.2,0.3),(0.7,0.9)] -- cyclePolygon shape2 t
-    in renderTriangulation p (earClip p)
+  play $ drawSSSP shape1 (\p -> sssp p (dual (earClip p)))
+  -- play $ mkAnimation 1 $ \t ->
+  --   let p = scalePolygon 4 $ genPolygon 1 [(0.1,0.1),(0.3,0.1),(0.7,0.7),(0.2,0.3),(0.7,0.9)] -- cyclePolygon shape2 t
+  --   in renderTriangulation p (earClip p)
   -- play $ drawTriangulation shape1 earClip'
   -- play $ staticFrame 1 $ renderTriangulation shape2 earClip
   -- play $ staticFrame 1 $ renderTriangulation shape3 earClip
