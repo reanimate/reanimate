@@ -74,9 +74,9 @@ prop_cyclePolygon_ccw p = forAll (choose (0,1)) $ \t ->
 
 prop_validEarClip p = isValidTriangulation p (earClip p)
 
-prop_ssspEq (Parameters xs) =
-  let p = genPolygon 1 xs
-  in naive p == sssp p (dual (earClip p))
+-- prop_ssspEq (Parameters xs) =
+--   let p = genPolygon 1 xs
+--   in naive p == sssp p (dual (earClip p))
 
 -- return []
 all_props :: TestTree
