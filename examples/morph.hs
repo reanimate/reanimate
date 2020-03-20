@@ -1,27 +1,24 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
+{-# OPTIONS_GHC -w #-}
 module Main where
 
 import           Codec.Picture.Types
 import           Control.Lens
 import           Control.Monad
-import           Data.Function
 import           Data.List
-import           Data.List.NonEmpty            (NonEmpty)
-import qualified Data.List.NonEmpty            as NE
 import           Data.Maybe
 import qualified Data.Text                     as T
 import           Data.Tuple
 import qualified Data.Vector                   as V
-import           Debug.Trace
 import           Linear.Matrix                 hiding (trace)
 import           Linear.V2
 import           Linear.V3
 import           Linear.Vector
 import           Numeric.LinearAlgebra         hiding (polar, scale, (<>))
 import qualified Numeric.LinearAlgebra         as Matrix
-import           Numeric.LinearAlgebra.HMatrix hiding (polar, scale, (<>))
 import           Reanimate
+import           Reanimate.Math.Common (barycentricCoords)
 
 type Points = V.Vector (V2 Double)
 type Edges = [(Int, Int, Int)]
@@ -168,17 +165,6 @@ isConvex vertices = and
 -- G = [Polygon]
 -- U = nub $ concat G
 
-bCoords (V2 x1 y1) (V2 x2 y2) (V2 x3 y3) (V2 x y) =
-    (lam1, lam2, lam3)
-  where
-    lam1 = ((y2-y3)*(x-x3) + (x3 - x2)*(y-y3)) /
-           ((y2-y3)*(x1-x3) + (x3-x2)*(y1-y3))
-    lam2 = ((y3-y1)*(x-x3) + (x1-x3)*(y-y3)) /
-           ((y2-y3)*(x1-x3) + (x3-x2)*(y1-y3))
-    lam3 = 1 - lam1 - lam2
-
-
-
 findStarNeighbours :: Eq a => [(a,a,a)] -> a -> [(a, a)]
 findStarNeighbours allTrig self =
   [ (b,c)
@@ -304,77 +290,10 @@ calcMu points groups p = concat
             , let aP = points V.! (a-1)
                   bP = points V.! (b-1)
                   segment = (points V.! (a-1), points V.! (b-1))
-                  cross = lineIntersect line segment
-            , isBetween cross segment
+                  u = lineIntersect line segment
+            , isBetween u segment
             , a /= nP
             , b /= nP ]
     -- , b == (nPoints ++ nPoints) !! i
-    , let (t1,t2,t3) = bCoords vert aP bP selfVert
+    , let (t1,t2,t3) = barycentricCoords vert aP bP selfVert
     ]
-
-polar :: V2 Double -> Double
-polar (V2 x y) =
-  let ang = atan2 y x in
-  if ang < 0 then 2*pi+ang
-    else ang
-
-displacement :: [P] -> [Double]
-displacement [] = []
-displacement (v:vs) =
-    fix (\self -> polar v : zipWith (worker 0) vs self)
-  where
-    worker k cur prev =
-      let p = polar cur + 2*pi*k in
-      if abs (p-prev) < pi
-        then p
-        else worker (k+1) cur prev
-
-direction :: P -> P -> P -> Double
-direction p1 p2 p3 = crossZ (p3-p1) (p2-p1)
-
--- Straight lines are counted as left turns.
-isLeftTurn :: P -> P -> P -> Bool
-isLeftTurn p1 p2 p3 = direction p1 p2 p3 <= 0
-
-isRightTurn :: P -> P -> P -> Bool
-isRightTurn p1 p2 p3 = not $ isLeftTurn p1 p2 p3
-{-
-vispol z ((v0,a0):(v1,a1):rest)
-  | isLeftTurn z v0 v1 = left [v1,v0] ((v1,a1):rest)
-  | otherwise          = scana [v0] ((v1,a1):rest)
-  where
-    left stack [] = reverse stack
-    left stack [v] = v:reverse stack
-    left stack ((vi,ai):(vj,aj):rest)
-      | isLeftTurn z ai aj
-        = left (vj:vi:stack) ((vj,aj):rest)
-      | isRightTurn z ai aj && isRightTurn (stack!!1) ai aj
-        = scan_a stack ((vj,aj):rest)
-      | otherwise
-        = right stack ((vj,aj):rest)
-
-    right (sj:sji:ss) ((vi,ai):(vj,aj):rest)
-      | isRightTurn z sj vi && isLeftTurn z sji vi =
-          let sj' = intersection of (sji,sj) (z,vi) in
-          if isRightTurn z vi vj then
-            ... right
-          else if isLeftTurn z vi vj && isRightTurn vPrev vi vj then
-            ... left
-          else
-            ... scan_d
-      | isForwardMove z sji sj && (vPrev,vi) intersects (sji,sj) = ...
-      | otherwise right (sji:ss) ((vi,ai):rest)
--}
-
-dummyTriangulate :: [P] -> [(P,P,P)]
-dummyTriangulate [a,b,c]    = [(a,b,c)]
-dummyTriangulate (a:b:c:xs) = sortTrig (a,b,c) : dummyTriangulate (b:c:xs)
-dummyTriangulate _          = []
-
-sortTrig :: (P,P,P) -> (P,P,P)
-sortTrig (a,b,c) =
-  case sortOn (polar . subtract center) [a,b,c] of
-    [a',b',c'] -> (a',b',c')
-  where
-    center = (a+b+c) ^/ 3
-

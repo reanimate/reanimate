@@ -34,11 +34,15 @@ unitTestFolder path = do
 
 genGolden :: FilePath -> IO LBS.ByteString
 genGolden path = withTempDir $ \tmpDir -> withTempFile ".exe" $ \tmpExecutable -> do
-  let ghcOpts = ["-rtsopts", "--make", "-O0"] ++
+  let ghcOpts = ["-rtsopts", "--make", "-O0", "-Werror", "-Wall"] ++
                 ["-odir", tmpDir, "-hidir", tmpDir, "-o", tmpExecutable]
       runOpts = ["+RTS", "-M1G"]
   -- XXX: Check for errors.
-  _ <- readProcessWithExitCode "stack" (["ghc","--", path] ++ ghcOpts) ""
+  (ret, _stdout, err) <- readProcessWithExitCode "stack" (["ghc","--", path] ++ ghcOpts) ""
+  _ <- evaluate (length err)
+  case ret of
+    ExitFailure{} -> assertFailure $ "Failed to compile:\n" ++ err
+    ExitSuccess -> return ()
   -- ret <- runCmd_ "stack" $ ["ghc", "--"] ++ ghcOptions tmpDir ++ [self, "-o", tmpExecutable]
   -- ["-rtsopts", "--make", "-threaded", "-O2"] ++
   -- ["-odir", tmpDir, "-hidir", tmpDir]

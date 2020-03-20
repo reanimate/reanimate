@@ -5,7 +5,6 @@ module Main(main) where
 
 import Reanimate
 import Reanimate.Builtin.Documentation
-import Data.Monoid ((<>))
 import qualified Data.Text as T
 
 main :: IO ()
