@@ -297,8 +297,8 @@ rayIntersect (V2 x1 y1,V2 x2 y2) (V2 x3 y3, V2 x4 y4)
 {-# INLINE isBetween #-}
 isBetween :: (Ord a, Fractional a) => V2 a -> (V2 a, V2 a) -> Bool
 isBetween (V2 x y) (V2 x1 y1, V2 x2 y2) =
-  ((y1 > y) /= (y2 > y)) && -- y is between y1 and y2
-  ((x1 > x) /= (x2 > x))
+  ((y1 > y) /= (y2 > y) || y == y1 || y == y2) && -- y is between y1 and y2
+  ((x1 > x) /= (x2 > x) || x == x1 || x == x2)
 
 {-# INLINE lineIntersect #-}
 lineIntersect :: (Ord a, Fractional a) => (V2 a, V2 a) -> (V2 a, V2 a) -> Maybe (V2 a)
@@ -310,3 +310,6 @@ lineIntersect a b =
 
 distSquared :: (Fractional a) => V2 a -> V2 a -> a
 distSquared a b = quadrance (a ^-^ b)
+
+approxDist :: (Real a, Fractional a) => V2 a -> V2 a -> a
+approxDist a b = realToFrac (sqrt (realToFrac (distSquared a b) :: Double))

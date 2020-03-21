@@ -9,6 +9,7 @@ import qualified Data.Map               as Map
 import           Data.Maybe
 import qualified Data.Vector            as V
 import           Reanimate.Math.Common
+import           Reanimate.Math.EarClip
 -- import           Debug.Trace
 
 type SSSP = V.Vector Int
@@ -52,14 +53,17 @@ naive p =
           m' = Map.fromList
             [ (v, i : (m Map.! i))
             | v <- vs ]
-      in worker (Map.unionWith f m m') (xs ++ filter (flip Map.notMember m) vs)
-    pathLength :: [Int] -> Double
+      in worker (Map.unionWithKey f m m') (xs ++ filter (flip Map.notMember m) vs)
+    pathLength :: [Int] -> Rational
     pathLength [] = 0
-    pathLength [v] = realToFrac (distSquared (p V.! v) (p V.! 0))
-    pathLength (x:y:xs) = realToFrac (distSquared (p V.! x) (p V.! y)) + pathLength (y:xs)
-    f a b =
-        case compare (pathLength a) (pathLength b) of
+    pathLength [v] = approxDist (pAccess p v) (pAccess p 0)
+    pathLength (x:y:xs) = approxDist (pAccess p x) (pAccess p y) + pathLength (y:xs)
+    f k a b =
+        case compare (pathLength (k:a)) (pathLength (k:b)) of
           LT -> a
+          EQ -> if length a < length b
+                  then a
+                  else b
           _  -> b
 
 type Triangle = (P,P,P)
@@ -139,11 +143,12 @@ sssp p d = toSSSP $
       case l of
         EmptyDual -> []
         NodeDual x l' r' ->
+          (x,a) :
           worker (F.singleton x) (F.singleton outer) a r' ++
           loopLeft a x l'
     searchFn _cusp _x MinMaxEmpty _ = False
     searchFn cusp x (MinMax _a b) _ =
-      isLeftTurn (p V.! cusp) (p V.! b) (p V.! x)
+      isLeftTurnOrLinear (p V.! cusp) (p V.! b) (p V.! x)
     searchFn2 _cusp _x _ MinMaxEmpty = True
     searchFn2 cusp x _ (MinMax a _b) =
       isLeftTurn (p V.! cusp) (p V.! a) (p V.! x)
