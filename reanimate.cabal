@@ -36,6 +36,11 @@ Source-Repository head
     Type:      git
     Location:  git://github.com/lemmih/reanimate.git
 
+Flag hmatrix
+  Description: Enable hmatrix dependency (requires blas and lapack)
+  Default:     True
+  Manual:      True
+
 Flag test
   Description: Enable testing (requires stack)
   Default:     False
@@ -98,8 +103,11 @@ library
                        hashable, fsnotify, open-browser, random-shuffle, base64-bytestring,
                        vector, colour, cassava, ansi-wl-pprint, here, temporary,
                        optparse-applicative, chiphunk >= 0.1.2.1,
-                       geojson, aeson >= 1.3.0.0, hmatrix >= 0.20.0.0,
+                       geojson, aeson >= 1.3.0.0,
                        split, fingertree
+  if !flag(hmatrix) {
+    build-depends: hmatrix >= 0.20.0.0
+  }
   ghc-options: -Wall
 
 test-suite spec
