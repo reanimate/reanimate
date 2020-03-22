@@ -19,28 +19,47 @@ import           Reanimate.Math.EarClip
 
 type SSSP = V.Vector Int
 
-visibleFrom :: Int -> Polygon -> [Int]
-visibleFrom y p =
-  [ i
-  | i <- [0.. n-1]
-  , i /= y
-  , let pY = pAccess p y
+visibilityArray :: Polygon -> V.Vector [Int]
+visibilityArray p = arr
+  where
+    arr = V.fromList
+        [ visibility y
+        | y <- [0..length p-1]
+        ]
+    -- preCheck y i =
+    --   let pY = pAccess p y
+    --       pYn = pAccess p $ pNext p y
+    --       pYp = pAccess p $ pPrev p y
+    --       pI = pAccess p i
+    --       isOpen = isRightTurn pYp pY pYn
+    --   in pNext p y == i || pPrev p y == i || if isOpen
+    --     then isLeftTurnOrLinear pY pYn pI ||
+    --          isLeftTurnOrLinear pYp pY pI
+    --     else not $ isRightTurn pY pYn pI ||
+    --                isRightTurn pYp pY pI
+    visibility y =
+      [ i
+      | i <- [0..y-1]
+      , y `elem` arr V.! i ] ++
+      [ i
+      | i <- [y+1 .. n-1]
+      , let
+            pI = pAccess p i
+            isOpen = isRightTurn pYp pY pYn
+      , pNext p y == i || pPrev p y == i || if isOpen
+        then isLeftTurnOrLinear pY pYn pI ||
+             isLeftTurnOrLinear pYp pY pI
+        else not $ isRightTurn pY pYn pI ||
+                   isRightTurn pYp pY pI
+      , let myEdges = [(e1,e2) | (e1,e2) <- edges, e1/=y, e1/=i, e2/=y,e2/=i]
+      , all (isNothing . lineIntersect (pY,pI))
+              [ (p V.! e1,p V.! e2) | (e1,e2) <- myEdges ]]
+      where
+        n = length p
+        pY = pAccess p y
         pYn = pAccess p $ pNext p y
         pYp = pAccess p $ pPrev p y
-        pI = pAccess p i
-        isOpen = isRightTurn pYp pY pYn
-  , pNext p y == i || pPrev p y == i || if isOpen
-    then isLeftTurnOrLinear pY pYn pI ||
-         isLeftTurnOrLinear pYp pY pI
-    else not $ isRightTurn pY pYn pI ||
-               isRightTurn pYp pY pI
-  , let myEdges = [(e1,e2) | (e1,e2) <- edges, e1/=y, e1/=i, e2/=y,e2/=i]
-  , all (isNothing . lineIntersect (elt,p V.! i))
-          [ (p V.! e1,p V.! e2) | (e1,e2) <- myEdges ]]
-  where
-    n = length p
-    elt = pAccess p y
-    edges = zip [0..n-1] (tail [0..n-1] ++ [0])
+        edges = zip [0..n-1] (tail [0..n-1] ++ [0])
 
 
 
@@ -52,9 +71,7 @@ naive p =
     worker initial
   where
     initial = Map.singleton 0 (0,0)
-    visibilityArray =
-      V.fromList
-      [ visibleFrom i p | i <- [0..length p-1]]
+    visibility = visibilityArray p
     worker :: Map.Map Int (Rational, Int) -> Map.Map Int (Rational, Int)
     worker m
         | m==newM   = newM
@@ -66,7 +83,7 @@ naive p =
                         Just (otherDist,parent)
                           | otherDist > distThroughI -> (v, (distThroughI, i))
                           | otherwise -> (v, (otherDist, parent))
-                    | v <- visibilityArray V.! i
+                    | v <- visibility V.! i
                     , let distThroughI = dist + approxDist (pAccess p i) (pAccess p v) ]
               | (i,(dist,_)) <- Map.toList m
               ]
@@ -89,7 +106,7 @@ naive2 p = runST $ do
           | otherwise = do
             myCost <- MV.read costs i
             unless (myCost < 0) $
-              forM_ (visibilityArray V.! i) $ \n -> do
+              forM_ (visibility V.! i) $ \n -> do
                 -- n is visible from i.
                 theirCost <- MV.read costs n
                 let throughCost = myCost + approxDist (pAccess p i) (pAccess p n)
@@ -101,9 +118,7 @@ naive2 p = runST $ do
     loop 0
     V.unsafeFreeze parents
   where
-    visibilityArray =
-      V.fromList
-      [ visibleFrom i p | i <- [0..length p-1]]
+    visibility = visibilityArray p
 
 -- Dual of triangulated polygon
 data Dual = Dual (Int,Int,Int) -- (a,b,c)
