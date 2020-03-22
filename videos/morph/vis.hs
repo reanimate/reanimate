@@ -55,11 +55,12 @@ main = reanimate $ sceneAnimation $ do
   -- play $ drawSSSP shape6 naive
   -- play $ drawSSSP shape1 (\p -> sssp p (dual (earClip p)))
   -- play $ drawTriangulation shape5 earClip'
-  play $ mkAnimation 1 $ \t ->
-    -- let p = scalePolygon 5 $ shape11
-    -- let p = shape7
-    let p = shape4
-    in withStrokeWidth (defaultStrokeWidth*0.6) $ renderTriangulation p (earClip p)
+  -- play $ mkAnimation 1 $ \t ->
+  --   -- let p = scalePolygon 5 $ shape11
+  --   -- let p = shape7
+  --   let p = shape4
+  --   in withStrokeWidth (defaultStrokeWidth*0.6) $ renderTriangulation p (earClip p)
+  play $ drawVisibility shape2
   -- play $ drawTriangulation shape1 earClip'
   -- play $ staticFrame 1 $ renderTriangulation shape2 earClip
   -- play $ staticFrame 1 $ renderTriangulation shape3 earClip
@@ -68,23 +69,19 @@ main = reanimate $ sceneAnimation $ do
   -- play $ staticFrame 1 $ renderTriangulation shape6 earClip
   return ()
 
-renderPoly p' = addStatic (mkBackground "black") $ mkAnimation 5 $ \t ->
-  let p = cyclePolygon p' t in
-  centerUsing outline $
+drawVisibility :: Polygon -> Animation
+drawVisibility p' = addStatic (mkBackground "black") $ mkAnimation 5 $ \t ->
+  let p = cyclePolygon p' (t::Double) in
+  centerUsing (polygonShape p) $
   mkGroup
-  [ outline
+  [ withFillColor "grey" $ polygonShape p
+  , withFillColor "grey" $ polygonDots p
   , withFillColor "white" $ mkLinePathClosed
-    [ (x,y) | V2 x y <- visibility (V.toList p) ]
-  , withFillOpacity 0 $ outline
-  , let V2 x y = pAccess p 0 in
+    [ (x,y) | V2 x y <- visibility (map (fmap realToFrac) $ V.toList p) ]
+  , let V2 x y = fmap realToFrac $ pAccess p 0 in
     translate x y $ withFillColor "red" $ mkCircle 0.1
   -- , withFillColor "blue" $ latex $ T.pack $ show (t)
   ]
-  where
-    outline =
-      {-withStrokeColor "grey" $-}
-      withFillColor "grey" $ mkLinePathClosed
-        [ (x,y) | V2 x y <- V.toList p' ++ [pAccess p' 0] ]
 
 polygonShape :: Polygon -> SVG
 polygonShape p = mkLinePathClosed
@@ -149,7 +146,7 @@ renderVisibleFrom p = withStrokeColor "white" $ withFillColor "white" $ mkGroup
   [ mkGroup
     [ mkLine (ax,ay) (bx,by)
     , translate bx by $ mkCircle 0.1 ]
-  | i <- visibleFrom 0 p
+  | i <- visibilityArray p V.! 0
   , let V2 ax ay = fmap realToFrac $ pAccess p 0
         V2 bx by = fmap realToFrac $ pAccess p i ]
 

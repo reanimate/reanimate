@@ -2,6 +2,7 @@ module Reanimate.Math.Visibility where
 
 -- import qualified Data.Set              as Set
 import           Linear.V2
+import Data.Maybe
 
 import           Reanimate.Math.Common
 
@@ -73,12 +74,13 @@ unwindStack _z stack _v _vs = stack
 
 fastForward :: (Ord a, Fractional a) => V2 a -> [V2 a] -> V2 a -> [V2 a] -> [V2 a]
 fastForward z stack v (v1:v2:vs)
-  | not (isBetween u (v1, v2))        = {-trace ("FF past: " ++ show (z,v,v1,v2)) $ -}fastForward z stack v (v2:vs)
+  | isNothing i || not (isBetween u (v1, v2))        = {-trace ("FF past: " ++ show (z,v,v1,v2)) $ -}fastForward z stack v (v2:vs)
   | distSquared v u > distSquared z u = {-trace ("FF skip: " ++ show (z,v,v1,v2)) $ -}fastForward z stack v (v2:vs)
   | isLeftTurn z u v2                 = {-trace ("FF to: " ++ show u) $ -}go z (v2:u:stack) vs
   | distSquared z v < distSquared z u = {-trace ("FF unwind: " ++ show (z,v,v1,v2,u)) $ -}unwindStack z stack v2 (vs)
   | otherwise                         = fastForward z stack v (v2:vs)
   where
+    i = rayIntersect (z, v) (v1, v2)
     Just u = rayIntersect (z, v) (v1, v2)
 fastForward _z stack _v _vs = stack
 
