@@ -22,29 +22,18 @@ type SSSP = V.Vector Int
 visibilityArray :: Polygon -> V.Vector [Int]
 visibilityArray p = arr
   where
+    n = length p
     arr = V.fromList
         [ visibility y
-        | y <- [0..length p-1]
+        | y <- [0..n-1]
         ]
-    -- preCheck y i =
-    --   let pY = pAccess p y
-    --       pYn = pAccess p $ pNext p y
-    --       pYp = pAccess p $ pPrev p y
-    --       pI = pAccess p i
-    --       isOpen = isRightTurn pYp pY pYn
-    --   in pNext p y == i || pPrev p y == i || if isOpen
-    --     then isLeftTurnOrLinear pY pYn pI ||
-    --          isLeftTurnOrLinear pYp pY pI
-    --     else not $ isRightTurn pY pYn pI ||
-    --                isRightTurn pYp pY pI
     visibility y =
       [ i
       | i <- [0..y-1]
       , y `elem` arr V.! i ] ++
       [ i
       | i <- [y+1 .. n-1]
-      , let
-            pI = pAccess p i
+      , let pI = pAccess p i
             isOpen = isRightTurn pYp pY pYn
       , pNext p y == i || pPrev p y == i || if isOpen
         then isLeftTurnOrLinear pY pYn pI ||
@@ -55,7 +44,6 @@ visibilityArray p = arr
       , all (isNothing . lineIntersect (pY,pI))
               [ (p V.! e1,p V.! e2) | (e1,e2) <- myEdges ]]
       where
-        n = length p
         pY = pAccess p y
         pYn = pAccess p $ pNext p y
         pYp = pAccess p $ pPrev p y
