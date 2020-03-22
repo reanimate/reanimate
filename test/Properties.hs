@@ -16,8 +16,10 @@ import           Reanimate.Math.EarClip
 import           Reanimate.Math.SSSP
 import           Helpers
 
+import Debug.Trace
+
 prop_genPolygon (PolyParam a) (PolyParam b) (PolyParam c) (PolyParam d) =
-  isSimple $ genPolygon 1 [a,b,c,d]
+  isSimple $ genPolygon [a,b,c,d]
 
 prop_isBetween a b = percent $ \t ->
     a /= b ==>
@@ -42,9 +44,12 @@ prop_cyclePolygon_ccw p = forAll (choose (0,1)) $ \t ->
 
 prop_validEarClip p = isValidTriangulation p (earClip p)
 
--- prop_ssspEq (Parameters xs) =
---   let p = genPolygon 1 xs
---   in naive p == sssp p (dual (earClip p))
+prop_dualInv p =
+  let t = earClip p
+  in dualToTriangulation p (dual t) == t
+
+prop_ssspEq p =
+  length p < 20 ==> naive p == sssp p (dual (earClip p))
 
 return []
 all_props :: TestTree

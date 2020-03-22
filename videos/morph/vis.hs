@@ -47,16 +47,19 @@ main = reanimate $ sceneAnimation $ do
   -- play $ drawVisibleFrom shape5
   -- play $ drawVisibleFrom shape6
   -- play $ drawSSSP triangle naive
-  -- play $ drawSSSP shape1 naive
+  -- play $ drawSSSP shape5 naive
   -- play $ drawSSSP shape2 naive
   -- play $ drawSSSP shape3 naive
   -- play $ drawSSSP shape4 naive
   -- play $ drawSSSP shape5 naive
   -- play $ drawSSSP shape6 naive
-  play $ drawSSSP shape1 (\p -> sssp p (dual (earClip p)))
-  -- play $ mkAnimation 1 $ \t ->
-  --   let p = scalePolygon 4 $ genPolygon 1 [(0.1,0.1),(0.3,0.1),(0.7,0.7),(0.2,0.3),(0.7,0.9)] -- cyclePolygon shape2 t
-  --   in renderTriangulation p (earClip p)
+  -- play $ drawSSSP shape1 (\p -> sssp p (dual (earClip p)))
+  -- play $ drawTriangulation shape5 earClip'
+  play $ mkAnimation 1 $ \t ->
+    -- let p = scalePolygon 5 $ shape11
+    -- let p = shape7
+    let p = shape4
+    in withStrokeWidth (defaultStrokeWidth*0.6) $ renderTriangulation p (earClip p)
   -- play $ drawTriangulation shape1 earClip'
   -- play $ staticFrame 1 $ renderTriangulation shape2 earClip
   -- play $ staticFrame 1 $ renderTriangulation shape3 earClip
@@ -91,12 +94,28 @@ polygonDots :: Polygon -> SVG
 polygonDots p = mkGroup
   [ translate x y $ mkCircle 0.1 | V2 x y <- V.toList $ V.map (fmap realToFrac) p ]
 
+polygonNumDots :: Polygon -> SVG
+polygonNumDots p = mkGroup $ reverse
+    [ mkGroup
+      [ colored n $
+        translate x y $ mkCircle 0.1
+      , withFillColor "black" $
+        translate x y $ ppNum n ]
+    | (n, V2 x y) <- zip [0..] (V.toList $ V.map (fmap realToFrac) p) ]
+  where
+    circR = 0.1
+    colored n =
+      let c = promotePixel $ turbo (fromIntegral (n+2) / fromIntegral (length p-1+2))
+      in withStrokeColorPixel c . withFillColorPixel c
+    ppNum n = scaleToHeight (circR*1.5) $ center $ latex $ T.pack $ "\\texttt{" ++ show n ++ "}"
+
 drawSSSP :: Polygon -> (Polygon -> SSSP) -> Animation
 drawSSSP p gen = mkAnimation 5 $ \t -> centerUsing outline $ mkGroup
   [ outline
   , renderSSSP (cyclePolygon p t) (gen (cyclePolygon p t))
-  , let V2 x y = fmap realToFrac $ pAccess (cyclePolygon p t) 0 in
-    translate x y $ withFillColor "red" $ mkCircle 0.1
+  -- , let V2 x y = fmap realToFrac $ pAccess (cyclePolygon p t) 0 in
+  --   translate x y $ withFillColor "red" $ mkCircle 0.1
+  , withFillColor "grey" $ polygonNumDots $ cyclePolygon p t
   ]
   where
     outline =
@@ -141,13 +160,12 @@ drawTriangulation p gen = sceneAnimation $ do
 renderTriangulation :: Polygon -> Triangulation -> SVG
 renderTriangulation p t = center $ mkGroup
   [ withFillColor "grey" $ polygonShape p
-  , withFillColor "grey" $ polygonDots p
   , withStrokeColor "white" $ mkGroup $ concat
-    [ [ mkLine (ax,ay) (bx,by)
-      , translate ax ay $ withFillColor "white" $ mkCircle 0.1 ]
+    [ [ mkLine (ax,ay) (bx,by) ]
     | i <- [0..length p-1]
     , y <- t V.! i
     , let V2 ax ay = fmap realToFrac $ pAccess p i
           V2 bx by = fmap realToFrac $ pAccess p y
     ]
+  , withFillColor "grey" $ polygonNumDots p
   ]

@@ -7,6 +7,8 @@ module Helpers where
 import qualified Data.Vector            as V
 import           Linear.V2
 import           Linear.Vector
+import           Numeric
+import           Data.List
 import           Test.QuickCheck
 import           Test.Tasty
 import           Test.Tasty.QuickCheck
@@ -23,10 +25,12 @@ instance Arbitrary PolyParam where
   arbitrary = fmap PolyParam $
     (,) <$> choose (0.01,0.99)
               <*> choose (0.01,1)
-  shrink (PolyParam arg) =
-    [ PolyParam (a, b)
-    | (a,b) <- shrink arg
-    , a >= 0.1, b >= 0.1 ]
+  shrink (PolyParam (a,b)) =
+    [ PolyParam (a', b')
+    | a' <- a : shrinkDouble a
+    , b' <- if a==a' then b : shrinkDouble b else b : shrinkDouble b
+    , a' >= 0.01, b' >= 0.01
+    ]
 
 data Parameters = Parameters [(Double, Double)]
   deriving (Show)
@@ -39,8 +43,20 @@ instance Arbitrary Parameters where
     rest <- arbitrary
     return $ Parameters $ e1:e2:e3:e4:map unParam rest
   shrink (Parameters xs) =
-    map Parameters $
-    sequence $ map (map unParam . shrink . PolyParam) xs
+    map Parameters (delete xs $ shrinkListByOne xs) ++
+    map Parameters (delete xs $
+    sequence $ map (map unParam . shrink . PolyParam) xs)
+
+shrinkListByOne :: [a] -> [[a]]
+shrinkListByOne x | length x <= 4 = [x]
+shrinkListByOne x = x : zipWith (++) (inits x) (tails $ drop 1 x)
+
+shrinkDouble :: Double -> [Double]
+shrinkDouble x =
+  let s = showFFloat Nothing x "" in
+  if length s < 4
+    then []
+    else [read (take (length s-1) s)]
 
 instance Arbitrary Polygon where
   arbitrary =
@@ -48,9 +64,9 @@ instance Arbitrary Polygon where
       [ (1, elements premade)
       , (99, randomPoly) ]
     where
-      premade = [shape1, shape2, shape3, shape4, shape5, shape6]
+      premade = [shape1, shape2, shape3, shape4, shape5, shape6
+                ,shape7, shape8, shape9, shape11 ]
       randomPoly = do
-        r <- choose (0.1, 1)
         let genParameters = do
               angMod <- choose (0.01, 0.99)
               rMod   <- choose (0.01, 0.99)
@@ -60,7 +76,7 @@ instance Arbitrary Polygon where
         PolyParam e3 <- arbitrary
         PolyParam e4 <- arbitrary
         es <- listOf genParameters
-        pure $ genPolygon r (e1:e2:e3:e4:es)
+        pure $ genPolygon (e1:e2:e3:e4:es)
   -- shrink p = filter isSimple $
   --   map V.fromList (sequence (map shrinkV2 (V.toList p)))
 

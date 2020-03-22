@@ -2,6 +2,7 @@
 module Reanimate.Math.Common where
 
 import           Data.List     (intersect, tails)
+import           Data.Ratio
 import           Data.Vector   (Vector)
 import qualified Data.Vector   as V
 import           Linear.Matrix (det33)
@@ -56,17 +57,16 @@ scalePolygon s = V.map (\v -> v ^* s)
 
 -- Place n points on a circle, use one parameter to slide the points back and forth.
 -- Use second parameter to move points closer to center circle.
-genPolygon :: Double -> [(Double, Double)] -> Polygon
-genPolygon radius points
+genPolygon :: [(Double, Double)] -> Polygon
+genPolygon points
   | len < 4 = error "genPolygon: require at least four points"
   | otherwise = V.fromList
-  [ V2 (realToFrac $ cos ang * pointRadius)
-       (realToFrac $ sin ang * pointRadius)
+  [ V2 (realToFrac $ cos ang * rMod)
+       (realToFrac $ sin ang * rMod)
   | (i,(angMod,rMod))  <- zip [0..] points
   , let minAngle = tau / len * i - pi
         maxAngle = tau / len * (i+1) - pi
         ang = minAngle + (maxAngle-minAngle)*angMod
-        pointRadius = rMod * radius
   ]
   where
     tau = 2*pi
@@ -160,6 +160,35 @@ shape5 = cyclePolygons shape4 !! 2
 -- square
 shape6 :: Polygon
 shape6 = V.fromList [ V2 0 0, V2 1 0, V2 1 1, V2 0 1 ]
+
+shape7 :: Polygon
+shape7 = scalePolygon 6 $ V.fromList
+        [V2 ((-1567171105775771) % 144115188075855872) ((-7758063241391039) % 1152921504606846976)
+        ,V2 ((-2711114907999263) % 18014398509481984) ((-3561889280168807) % 18014398509481984)
+        ,V2 ((-6897139157863177) % 72057594037927936) ((-1632144794297397) % 4503599627370496)
+        ,V2 (5592137945106423 % 36028797018963968) ((-71351641856107) % 281474976710656)
+        ,V2 (2568147525079071 % 4503599627370496) ((-4312925637247687) % 18014398509481984)
+        ,V2 (1291079014395023 % 2251799813685248) (321513444515769 % 2251799813685248)
+        ,V2 (2071709221627247 % 4503599627370496) (4019115966736491 % 9007199254740992)
+        ,V2 ((-1589087869859839) % 144115188075855872) (4904023654354179 % 9007199254740992)
+        ,V2 ((-2328090886101149) % 36028797018963968) (2587887893460759 % 36028797018963968)
+        ,V2 ((-7990199074159871) % 18014398509481984) (1301850651537745 % 4503599627370496)]
+
+shape8 :: Polygon
+shape8 = scalePolygon 10 $ genPolygon
+          [(0.36,0.4),(0.7,1.8e-2),(0.7,0.2),(0.1,0.4),(0.2,0.2),(0.7,0.1),(0.4,8.0e-2)]
+
+shape9 :: Polygon
+shape9 = scalePolygon 5 $ genPolygon
+  [(0.5,0.2),(0.7,0.6),(0.4,0.3),(0.1,0.7),(0.3,1.0e-2),(0.5,0.3),(0.2,0.8),(0.1,0.8),(0.7,6.0e-2),(0.1,0.6)]
+
+shape10 :: Polygon
+shape10 = genPolygon
+  [(0.4,0.7),(0.2,0.2),(0.3,0.9),(5.0e-2,0.1),(0.7,1.0e-2),(0.7,0.9),(0.2,0.1),(0.5,6.0e-2),(0.6,9.0e-2)]
+
+shape11 :: Polygon
+shape11 = genPolygon
+  [(0.1,0.8),(0.7,0.6),(0.7,0.4),(0.3,0.5),(0.8,0.9),(0.8,6.0e-2),(1.0e-2,4.0e-2),(0.8,0.1)]
 
 concave :: Polygon
 concave = V.fromList [V2 0 0, V2 2 0, V2 2 2, V2 1 1, V2 0 2]
@@ -261,6 +290,9 @@ isLeftTurnOrLinear p1 p2 p3 =
 
 isRightTurn :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
 isRightTurn a b c = not (isLeftTurnOrLinear a b c)
+
+isRightTurnOrLinear :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+isRightTurnOrLinear a b c = not (isLeftTurn a b c)
 
 direction :: Fractional a => V2 a -> V2 a -> V2 a -> a
 direction p1 p2 p3 = crossZ (p3-p1) (p2-p1)

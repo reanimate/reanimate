@@ -21,6 +21,8 @@ edgesToTriangulation p edges = runST $ do
   forM_ edges $ \(e1,e2) -> do
     MV.modify v (e1:) e2
     MV.modify v (e2:) e1
+  forM_ [0..length p-1] $ \i -> do
+    MV.modify v (Set.toList . Set.fromList) i
   V.unsafeFreeze v
 
 -- Triangulation by ear clipping. O(n^2)
