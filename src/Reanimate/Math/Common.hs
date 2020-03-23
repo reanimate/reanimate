@@ -193,6 +193,21 @@ shape11 = genPolygon
 concave :: Polygon
 concave = V.fromList [V2 0 0, V2 2 0, V2 2 2, V2 1 1, V2 0 2]
 
+winding :: Int -> Polygon
+winding n | n < 1 = error "Polygon must have at least one winding."
+winding n =
+    V.fromList $ p0 : p1 : walkTo p1 1 n (V2 1 0) ++ reverse (walkTo p0 1 (n+2) (V2 (-1) 0))
+  where
+    p0 = V2 0 0
+    p1 = V2 0 1
+    walkTo at a b dir
+      | a == b = []
+      | otherwise =
+        let newAt = at + (dir ^* toRational a)
+        in newAt : walkTo newAt (a+1) b (rot dir)
+    rot (V2 x y) =
+      V2 y (-x)
+
 cyclePolygons :: Polygon -> [Polygon]
 cyclePolygons p =
   [ V.drop n p <> V.take n p

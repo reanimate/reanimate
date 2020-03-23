@@ -44,6 +44,8 @@ prop_cyclePolygon_ccw p = forAll (choose (0,1)) $ \t ->
 
 prop_validEarClip p = isValidTriangulation p (earClip p)
 
+prop_winding = forAll (choose (1,100)) $ \n -> isSimple (winding n)
+
 prop_dualInv p =
   let t = earClip p
   in dualToTriangulation p (dual t) == t
