@@ -190,6 +190,10 @@ shape11 :: Polygon
 shape11 = genPolygon
   [(0.1,0.8),(0.7,0.6),(0.7,0.4),(0.3,0.5),(0.8,0.9),(0.8,6.0e-2),(1.0e-2,4.0e-2),(0.8,0.1)]
 
+shape12 :: Polygon
+shape12 = V.fromList
+  [ V2 0 0, V2 0.5 1.5, V2 2 2, V2 (-2) 2, V2 (-0.5) 1.5 ]
+
 concave :: Polygon
 concave = V.fromList [V2 0 0, V2 2 0, V2 2 2, V2 1 1, V2 0 2]
 
@@ -340,6 +344,10 @@ rayIntersect (V2 x1 y1,V2 x2 y2) (V2 x3 y3, V2 x4 y4)
     xBot = (x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)
     yTop = (x1*y2 - y1*x2)*(y3-y4) - (y1-y2)*(x3*y4-y3*x4)
     yBot = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4)
+
+pRayIntersect :: Polygon -> (Int, Int) -> (Int,Int) -> Maybe (V2 Rational)
+pRayIntersect p (a,b) (c,d) =
+  rayIntersect (pAccess p a, pAccess p b) (pAccess p c, pAccess p d)
 
 {-# INLINE isBetween #-}
 isBetween :: (Ord a, Fractional a) => V2 a -> (V2 a, V2 a) -> Bool

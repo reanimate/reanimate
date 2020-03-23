@@ -262,3 +262,43 @@ therefore it is visible from 0.
 (2,0)
 
 -}
+
+ssspVisibility_ :: Polygon -> Polygon
+ssspVisibility_ p = ssspVisibility p (sssp p (dual (earClip p)))
+--
+ssspVisibility :: Polygon -> SSSP -> Polygon
+ssspVisibility p paths = V.fromList $ clearDups $ go [0..length p-1]
+  where
+    clearDups (x:y:xs)
+      | x == y = clearDups (y:xs)
+      | otherwise = x : clearDups (y:xs)
+    clearDups xs = xs
+    obstructedBy n =
+      case paths V.! n of
+        0 -> n
+        i -> obstructedBy i
+    go [] = []
+    go [x] = [pAccess p x]
+    go (x:y:xs) =
+      let xO = obstructedBy x
+          yO = obstructedBy y
+      in case () of
+          ()
+            -- Both ends are visible.
+            | xO == x && yO == y -> pAccess p x : go (y:xs)
+            -- X is visible, x to intersect (0,yO) (x,y)
+            | xO == x   ->
+              pAccess p x : fromMaybe (pAccess p y) (pRayIntersect p (0,yO) (x,y)) : go (y:xs)
+            -- Y is visible
+            | yO == y   -> fromMaybe (pAccess p x) (pRayIntersect p (0,xO) (x,y)) : pAccess p y : go (y:xs)
+            -- Neither is visible and they've obstructed by the same point
+            -- so the entire edge is hidden.
+            | xO == yO -> go (y:xs)
+            -- Neither is visible. Cast shadow from obstruction points to
+            -- find if a subsection of the edge is visible.
+            | otherwise ->
+              let a = fromMaybe (error "a") (pRayIntersect p (0,xO) (x,y))
+                  b = fromMaybe (error "b") (pRayIntersect p (0,yO) (x,y))
+              in if a /= b
+                then a : b : go (y:xs)
+                else go (y:xs)

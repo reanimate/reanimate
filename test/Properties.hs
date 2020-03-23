@@ -37,6 +37,8 @@ prop_isNotBetween a b = forAll (choose (1.1,100)) $ \t ->
     a /= 0 && b /= 0 ==>
     not (isBetween (lerp (realToFrac (t::Double)) a b :: V2 Rational) (a,b))
 
+prop_winding = forAll (choose (1,100)) $ \n -> isSimple (winding n)
+
 prop_ccw p = label (if isConvex p then "convex" else "concave") $ isCCW p
 prop_rev_ccw p = not $ isCCW (V.reverse p)
 prop_cyclePolygon_ccw p = forAll (choose (0,1)) $ \t ->
@@ -44,14 +46,17 @@ prop_cyclePolygon_ccw p = forAll (choose (0,1)) $ \t ->
 
 prop_validEarClip p = isValidTriangulation p (earClip p)
 
-prop_winding = forAll (choose (1,100)) $ \n -> isSimple (winding n)
-
+-- dualToTrangulation . dual = id
 prop_dualInv p =
   let t = earClip p
   in dualToTriangulation p (dual t) == t
 
 prop_ssspEq p =
   length p < 20 ==> naive p == sssp p (dual (earClip p))
+
+prop_ssspVisibilityLength (Parameters xs) =
+  let p = genPolygon xs in
+  length (ssspVisibility_ p) <= length p
 
 return []
 all_props :: TestTree
