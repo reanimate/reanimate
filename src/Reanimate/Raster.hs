@@ -141,7 +141,7 @@ vectorize_ args path = unsafePerformIO $ do
         convert <- requireExecutable "convert"
         runCmd convert [ path, "-flatten", tmpBmpPath ]
         runCmd potrace (args ++ ["--svg", "--output", tmpSvgPath, tmpBmpPath])
-        renameFile tmpSvgPath svgPath
+        renameOrCopyFile tmpSvgPath svgPath
     svg_data <- B.readFile svgPath
     case parseSvgFile svgPath svg_data of
       Nothing  -> do
