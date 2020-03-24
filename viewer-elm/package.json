@@ -17,6 +17,7 @@
   "devDependencies": {
     "elm-format": "^0.8.2",
     "elm-live": "^4.0.1",
-    "uglify-js": "^3.7.2"
+    "uglify-js": "^3.7.2",
+    "minimist": ">=1.2.2"
   }
 }
