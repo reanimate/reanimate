@@ -1,5 +1,19 @@
 # Revision history for reanimate
 
+## 0.2.0.2 -- 2020-02-25
+
+* Rewrite viewer from javascript to elm.
+* Improve API documentation.
+* Support for GeoJSON files (rendering borders, etc).
+* Fix bug affecting GIF frame rates.
+* Improve SVG serialization performance.
+* Add support for transitions (ie. functions that merge animations).
+* Properly handle ctrl-c when rendering.
+* Improve accuracy of bounding-box approximation.
+* Rewrite the API for building animations sequentially.
+* Expand 'pathify' to work on a larger subset of SVG.
+* Respect aspect ratio when 'height' or 'width' is specified but not both.
+
 ## 0.1.6.0 -- 2019-09-14
 
 * Test suite.
