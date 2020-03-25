@@ -5,23 +5,19 @@ module Main where
 import           Codec.Picture.Types
 import           Control.Lens
 import           Control.Monad
-import           Data.Function
 import           Data.List
-import           Data.List.NonEmpty            (NonEmpty)
-import qualified Data.List.NonEmpty            as NE
 import           Data.Maybe
 import qualified Data.Text                     as T
 import           Data.Tuple
 import qualified Data.Vector                   as V
-import           Debug.Trace
-import           Linear.Matrix                 hiding (trace)
 import           Linear.V2
-import           Linear.V3
 import           Linear.Vector
-import           Numeric.LinearAlgebra         hiding (polar, scale, (<>))
 import qualified Numeric.LinearAlgebra         as Matrix
-import           Numeric.LinearAlgebra.HMatrix hiding (polar, scale, (<>))
+import           Numeric.LinearAlgebra.HMatrix (Matrix, linearSolve, toLists,
+                                                (><))
 import           Reanimate
+import           Reanimate.Math.Common         (barycentricCoords, isBetween,
+                                                rayIntersect)
 
 type Points = V.Vector (V2 Double)
 type Edges = [(Int, Int, Int)]
@@ -49,36 +45,16 @@ data RelMeshPair = RelMeshPair Points Edges (Matrix Double) (Matrix Double) (Mat
 main :: IO ()
 main = reanimate morphAnimation
 
+morphAnimation :: Animation
 morphAnimation = playThenReverseA $ pauseAround 1 1 $ addStatic (mkBackground "black") $
   signalA (curveS 2) $ mkAnimation 5 $ \t -> lowerTransformations $ scale 3 $ pathify $ center $
   mkGroup
-  [ -- translate 1.7 0 $ drawTrig example1
-  -- , translate (-1.7) 0 $ drawTrig points2 group1
-    translate (-1) 0 $ drawTrig (linearInterpolate meshPair t)
-  , translate 1 0 $ drawTrig $ solveMesh $ convexInterpolate (mkRelativePair meshPair) t
+  [ translate (-1) 0 $ drawTrig (linearInterpolate meshPair t)
+  , translate 1 0 $ drawTrig $ solveMesh $ convexInterpolate relPair t
   ]
   where
+    relPair = mkRelativePair meshPair
     meshPair = fromJust $ compatible example1 example2
-
--- testTrigs :: Animation
--- testTrigs = addStatic (mkBackground "black") $ animate $ \t ->
---     withStrokeColor "white" $
---     mkGroup
---     [ --translate (-3.5) 0 $ renderTriangulation $ dummyTriangulate points
---      translate (3.5) 0 $ renderTriangulation $ delaunay points
---     ]
---   where
--- -- points = [V2 0 0, V2 1 1, V2 4 2, V2 (-2) (-4), V2 (-3) 4]
--- points = [V2 0 0, V2 1 1, V2 2 0, V2 3 (-3), V2 (-2) (-1) ]
---          -- ,V2 0 1, V2 1 1, V2 2 1, V2 3 1]
-
-renderTriangulation :: [(P,P)] -> SVG
-renderTriangulation trigs =
-  mkGroup
-  [ mkGroup
-    [ mkLineP a b ]
-  | (a,b) <- trigs
-  ]
 
 mkLineP :: P -> P -> SVG
 mkLineP (V2 x1 y1) (V2 x2 y2) = mkLine (x1,y1) (x2,y2)
@@ -145,8 +121,8 @@ drawTrig (Mesh points gs) = withStrokeColor "grey" $ withFillColor "white" $
           V2 cx cy = points V.! (c-1)
     ]
   , mkGroup $ concat
-    [ [ colored v $ translate ax ay $ mkCircle circR
-      , withStrokeWidth (defaultStrokeWidth*0.0) $
+    [ [ colored v $ translate ax ay $ mkCircle circleRadius
+      , withStrokeWidth 0 $
         withStrokeColor "white" $ withFillColor "black" $ mkGroup
         [ translate ax ay $ ppNum v ]
       ]
@@ -157,56 +133,23 @@ drawTrig (Mesh points gs) = withStrokeColor "grey" $ withFillColor "white" $
     colored n =
       let c = promotePixel $ turbo (fromIntegral n / fromIntegral (length gs-1))
       in withStrokeColorPixel c . withFillColorPixel c
-    circR = 0.05
-    ppNum n = scaleToHeight (circR*1.5) $ center $ latex $ T.pack $ "\\texttt{" ++ show n ++ "}"
+    ppNum n = cachedNumbers !! n
+     --scaleToHeight (circR*1.5) $ center $ latex $ T.pack $ "\\texttt{" ++ show n ++ "}"
 
-area (V2 a1 a2) (V2 b1 b2) (V2 c1 c2) =
-  1/2 * det33 (V3 (V3 a1 a2 1)
-                  (V3 b1 b2 1)
-                  (V3 c1 c2 1))
+cachedNumbers =
+  [ scaleToHeight (circleRadius*1.5) $ center $ latex $ T.pack $ "\\texttt{" ++ show n ++ "}"
+  | n <- [0 .. ] ]
+
+circleRadius :: Double
+circleRadius = 0.05
 
 -- Anticlockwise. No duplicate vertices. length >= 3
 type Polygon = [V2 Double]
 type P = V2 Double
 
-lineIntersect :: Fractional a => (V2 a,V2 a) -> (V2 a,V2 a) -> V2 a
-lineIntersect (V2 x1 y1,V2 x2 y2) (V2 x3 y3, V2 x4 y4) =
-    V2 (xTop/xBot) (yTop/yBot)
-  where
-    xTop = (x1*y2 - y1*x2)*(x3-x4) - (x1 - x2)*(x3*y4-y3*x4)
-    xBot = (x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)
-    yTop = (x1*y2 - y1*x2)*(y3-y4) - (y1-y2)*(x3*y4-y3*x4)
-    yBot = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4)
-
-isBetween :: Ord a => V2 a -> (V2 a,V2 a) -> Bool
-isBetween (V2 x y) (V2 x1 y1, V2 x2 y2) =
-  ((y1 > y) /= (y2 > y) || y==y1||y==y2) && -- y is between y1 and y2
-  ((x1 > x) /= (x2 > x) || x==x1||x==x2)
-
-
-isConvex :: Polygon -> Bool
-isConvex vertices = and
-  [ area (vertices!!i) (vertices!!j) (vertices!!k) > 0
-  | i <- [0..n-1]
-  , j <- [i+1..n-1]
-  , k <- [j+1..n-1]
-  ]
-  where n = length vertices
-
 -- T = (U, G)
 -- G = [Polygon]
 -- U = nub $ concat G
-
-bCoords (V2 x1 y1) (V2 x2 y2) (V2 x3 y3) (V2 x y) =
-    (lam1, lam2, lam3)
-  where
-    lam1 = ((y2-y3)*(x-x3) + (x3 - x2)*(y-y3)) /
-           ((y2-y3)*(x1-x3) + (x3-x2)*(y1-y3))
-    lam2 = ((y3-y1)*(x-x3) + (x1-x3)*(y-y3)) /
-           ((y2-y3)*(x1-x3) + (x3-x2)*(y1-y3))
-    lam3 = 1 - lam1 - lam2
-
-
 
 findStarNeighbours :: Eq a => [(a,a,a)] -> a -> [(a, a)]
 findStarNeighbours allTrig self =
@@ -333,85 +276,11 @@ calcMu points groups p = concat
             , let aP = points V.! (a-1)
                   bP = points V.! (b-1)
                   segment = (points V.! (a-1), points V.! (b-1))
-                  cross = lineIntersect line segment
-            , isBetween cross segment
+            , case rayIntersect line segment of
+                Nothing -> False
+                Just u  -> isBetween u segment
             , a /= nP
             , b /= nP ]
     -- , b == (nPoints ++ nPoints) !! i
-    , let (t1,t2,t3) = bCoords vert aP bP selfVert
+    , let (t1,t2,t3) = barycentricCoords vert aP bP selfVert
     ]
-
-polar :: V2 Double -> Double
-polar (V2 x y) =
-  let ang = atan2 y x in
-  if ang < 0 then 2*pi+ang
-    else ang
-
-displacement :: [P] -> [Double]
-displacement [] = []
-displacement (v:vs) =
-    fix (\self -> polar v : zipWith (worker 0) vs self)
-  where
-    worker k cur prev =
-      let p = polar cur + 2*pi*k in
-      if abs (p-prev) < pi
-        then p
-        else worker (k+1) cur prev
-
-direction :: P -> P -> P -> Double
-direction p1 p2 p3 = crossZ (p3-p1) (p2-p1)
-
--- Straight lines are counted as left turns.
-isLeftTurn :: P -> P -> P -> Bool
-isLeftTurn p1 p2 p3 = direction p1 p2 p3 <= 0
-
-isRightTurn :: P -> P -> P -> Bool
-isRightTurn p1 p2 p3 = not $ isLeftTurn p1 p2 p3
-{-
-vispol z ((v0,a0):(v1,a1):rest)
-  | isLeftTurn z v0 v1 = left [v1,v0] ((v1,a1):rest)
-  | otherwise          = scana [v0] ((v1,a1):rest)
-  where
-    left stack [] = reverse stack
-    left stack [v] = v:reverse stack
-    left stack ((vi,ai):(vj,aj):rest)
-      | isLeftTurn z ai aj
-        = left (vj:vi:stack) ((vj,aj):rest)
-      | isRightTurn z ai aj && isRightTurn (stack!!1) ai aj
-        = scan_a stack ((vj,aj):rest)
-      | otherwise
-        = right stack ((vj,aj):rest)
-
-    right (sj:sji:ss) ((vi,ai):(vj,aj):rest)
-      | isRightTurn z sj vi && isLeftTurn z sji vi =
-          let sj' = intersection of (sji,sj) (z,vi) in
-          if isRightTurn z vi vj then
-            ... right
-          else if isLeftTurn z vi vj && isRightTurn vPrev vi vj then
-            ... left
-          else
-            ... scan_d
-      | isForwardMove z sji sj && (vPrev,vi) intersects (sji,sj) = ...
-      | otherwise right (sji:ss) ((vi,ai):rest)
--}
-
-dummyTriangulate :: [P] -> [(P,P,P)]
-dummyTriangulate [a,b,c]    = [(a,b,c)]
-dummyTriangulate (a:b:c:xs) = sortTrig (a,b,c) : dummyTriangulate (b:c:xs)
-dummyTriangulate _          = []
-
-sortTrig :: (P,P,P) -> (P,P,P)
-sortTrig (a,b,c) =
-  case sortOn (polar . subtract center) [a,b,c] of
-    [a',b',c'] -> (a',b',c')
-  where
-    center = (a+b+c) ^/ 3
-
--- delaunay :: [P] -> [(P,P)]
--- delaunay ps =
---   [ (V2 ax ay, V2 bx by)
---   | (a, b) <- triangulationEdges $ delaunayTriangulation
---         (NE.fromList $ [ ext $ Point2 x y | V2 x y <- ps])
---   , let Point2 ax ay = _core a
---         Point2 bx by = _core b
---   ]
