@@ -52,16 +52,17 @@ main = reanimate $ sceneAnimation $ do
   -- play $ drawSSSP shape3 naive
   -- play $ drawSSSP shape4 naive
   -- play $ drawSSSP shape5 naive
-  -- play $ drawSSSP shape6 naive
+  -- play $ drawSSSP (scalePolygon 0.5 $ winding 10) (\p -> sssp p (dual (earClip p)))
   -- play $ drawSSSP shape1 (\p -> sssp p (dual (earClip p)))
-  -- play $ drawTriangulation shape5 earClip'
+  -- play $ drawTriangulation (cyclePolygon shape1 0.21) earClip'
   -- play $ mkAnimation 1 $ \t ->
   --   -- let p = scalePolygon 5 $ shape11
   --   -- let p = shape7
   --   let p = shape4
   --   in withStrokeWidth (defaultStrokeWidth*0.6) $ renderTriangulation p (earClip p)
-  play $ drawVisibility shape2
-  -- play $ drawTriangulation shape1 earClip'
+  play $ setDuration 20 $ drawSSSPVisibility $ scalePolygon 1 $ shape7
+  -- play $ animate $ \_ -> withFillColor "grey" $ polygonShape (scalePolygon 0.1 $ winding 50)
+  -- play $ drawTriangulation (scalePolygon 0.5 $ winding 10) earClip'
   -- play $ staticFrame 1 $ renderTriangulation shape2 earClip
   -- play $ staticFrame 1 $ renderTriangulation shape3 earClip
   -- play $ staticFrame 1 $ renderTriangulation shape4 earClip
@@ -78,6 +79,21 @@ drawVisibility p' = addStatic (mkBackground "black") $ mkAnimation 5 $ \t ->
   , withFillColor "grey" $ polygonDots p
   , withFillColor "white" $ mkLinePathClosed
     [ (x,y) | V2 x y <- visibility (map (fmap realToFrac) $ V.toList p) ]
+  , let V2 x y = fmap realToFrac $ pAccess p 0 in
+    translate x y $ withFillColor "red" $ mkCircle 0.1
+  -- , withFillColor "blue" $ latex $ T.pack $ show (t)
+  ]
+
+drawSSSPVisibility :: Polygon -> Animation
+drawSSSPVisibility p' = addStatic (mkBackground "black") $ mkAnimation 5 $ \t ->
+  let p = cyclePolygon p' (t::Double)
+      paths = sssp p (dual (earClip p))
+      vis = ssspVisibility p paths in
+  centerUsing (polygonShape p) $
+  mkGroup
+  [ withFillColor "grey" $ polygonShape p
+  , withFillColor "grey" $ polygonDots p
+  , withFillColor "white" $ polygonShape vis
   , let V2 x y = fmap realToFrac $ pAccess p 0 in
     translate x y $ withFillColor "red" $ mkCircle 0.1
   -- , withFillColor "blue" $ latex $ T.pack $ show (t)
