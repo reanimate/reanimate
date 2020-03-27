@@ -1,54 +1,33 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
 {-# LANGUAGE ApplicativeDo     #-}
-{-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE RecordWildCards   #-}
 module Main(main) where
 
 import           Codec.Picture
-import           Codec.Picture.Jpg
-import           Codec.Picture.Types
-import           Control.Exception
 import           Control.Lens            ((%~), (&), (^.))
-import           Control.Monad
-import           Control.Monad.ST
-import           Data.Aeson
+import           Control.Monad           (guard)
+import           Data.Aeson              (Value, decodeFileStrict, encodeFile)
 import qualified Data.ByteString         as BS
-import           Data.Char
-import           Data.Foldable
+import           Data.Char               (isAlphaNum)
 import           Data.Geospatial         hiding (LonLat)
-import           Data.LinearRing
-import qualified Data.LineString         as Line
 import           Data.Map                (Map)
 import qualified Data.Map                as Map
-import           Data.Maybe
+import           Data.Maybe              (fromMaybe)
 import qualified Data.Sequence           as Seq
-import           Data.String.Here
+import           Data.String.Here        (iTrim)
 import qualified Data.Text               as T
-import           Debug.Trace
-import           Graphics.SvgTree        (ElementRef (..), PathCommand (..),
-                                          Tree (None))
+import           Graphics.SvgTree        (ElementRef (..), Tree (None))
 import           Reanimate
-import           Reanimate.Animation
-import           Reanimate.Blender
+import           Reanimate.Builtin.Flip  (flipTransition)
 import           Reanimate.GeoProjection
-import           Reanimate.Memo
-import           Reanimate.Raster
-import           Reanimate.Scene
-import           Reanimate.Transition
-import           Reanimate.Builtin.Flip
-import           System.IO.Unsafe
+import           Reanimate.Raster        (cacheImage, mkImage, rasterSized)
+import           Reanimate.Transition    (overlapT, signalT)
+import           System.IO.Unsafe        (unsafePerformIO)
 
-import EndScene
-
-quick = False
-
-{-
-  Show the earth.
-  Rotate
--}
+import           EndScene                (endScene)
 
 earth :: FilePath
 -- earth = "earth-low.jpg"
@@ -61,47 +40,11 @@ earthMax :: FilePath
 earthMax = "earth-max.jpg"
 
 main :: IO ()
-main = do
-  -- putStrLn "Loading earth"
-  -- _ <- evaluate equirectangular
-  -- print (imageWidth equirectangular, imageHeight equirectangular)
-  -- putStrLn "Interpolating"
-  -- evaluate $ interpFastP equirectangular equirectangularP augustP 0.1
-  -- return ()
-  -- reanimate testScene
-  reanimate $
+main = reanimate $
     parA (staticFrame 1 $ mkBackground "darkgrey") $
     overlapT 2 (signalT (curveS 2) flipTransition)
       mainScene
       endScene
-
-
-testScene :: Animation
-testScene = sceneAnimation $ do
-    newSpriteSVG $ mkBackground "white"
-    grid <- newSpriteSVG $ mkGroup
-      [ withStrokeWidth (defaultStrokeWidth*0.2) $ withStrokeColor "black" $ mkGroup
-        [ mkLine (0,screenHeight) (0,-screenHeight)
-        , mkLine (screenHeight/2,screenHeight) (screenHeight/2,-screenHeight)
-        , mkLine (-screenHeight/2,screenHeight) (-screenHeight/2,-screenHeight)
-        ]
-      ]
-    spriteZ grid 1
-    Globe{..} <- newGlobe
-    let pos = brazilLonLat
-    writeVar globePosition pos
-    tweenVar globePosition 1 $ \v -> fromToLonLat v (LonLat 0 0) . curveS 2
-    tweenVar globeBend 2 $ \v -> fromToS v 0 . curveS 2
-    wait 1
-    -- destroySprite globeSprite
-    -- newSpriteSVG $
-    --   mkGroup
-    --   [ scaleToSize screenWidth screenHeight $
-    --     embedImage $ project src (orthoP pos)
-    --   ]
-    -- wait 1
-  where
-    src = equirectangular
 
 mainScene :: Animation
 mainScene = seq equirectangular $ -- takeA 10 $ dropA 21 $
@@ -119,16 +62,13 @@ mainScene = seq equirectangular $ -- takeA 10 $ dropA 21 $
     mapScale <- newVar orthoScale
     projs <- newVar (orthoP, equirectangularP)
 
-    spriteModify globeSprite $ do
-      s <- unVar mapScale
-      pure $ \(svg, z) -> (scale orthoScale svg, z)
-    spriteMap globeSprite (offset)
+    spriteMap globeSprite (offset . scale orthoScale)
 
-    let addRegion x y s proj lonlat@(LonLat lam phi) label = do
+    let addRegion x y s proj lonlat label = do
           let idName = filter isAlphaNum $ show lonlat
               srcWidth = imageWidth equirectangularMax
               srcHeight = imageHeight equirectangularMax
-              subImg = trace ("subImg for: " ++ T.unpack label) $
+              subImg =
                 convertRGBA8 $ rasterSized srcWidth srcHeight $ mkGroup
                     [ mkGroup []
                     , mkClipPath idName $
@@ -140,7 +80,7 @@ mainScene = seq equirectangular $ -- takeA 10 $ dropA 21 $
                 lowerTransformations $ proj equirectangularP
 
           move <- newVar 0
-          region1Shadow <- newSprite $ do
+          _ <- newSprite $ do
             ~(from, to) <- unVar projs
             m <- unVar morph
             relScale <- unVar mapScale
@@ -161,7 +101,6 @@ mainScene = seq equirectangular $ -- takeA 10 $ dropA 21 $
                   fh' = bh'/screenHeight
                   imgKey = (projectionLabel (from lonlat), projectionLabel to, lonlat, earthMax, m)
                   imgFile = cacheImage imgKey $
-                    trace ("interp for:" ++ show imgKey) $
                     interpBBP subImg (from lonlat) to (fx,fy,fw,fh) (fx',fy',fw',fh') m
                   setPos =
                     translate (fromToS 0 x $ curveS 2 t)
@@ -186,7 +125,6 @@ mainScene = seq equirectangular $ -- takeA 10 $ dropA 21 $
                 lowerTransformations $ setPos $ scale orthoScale $
                   (proj (orthoP lonlat))
               ]
-          -- destroySprite region1Shadow
           fork $ tweenVar move 1 $ \v -> fromToS v 1 . curveS 2
           fork $ play $ (staticFrame 2 $
             withStrokeWidth 0 $
@@ -233,12 +171,10 @@ mainScene = seq equirectangular $ -- takeA 10 $ dropA 21 $
         let imgKey = (projectionLabel (from (LonLat 0 0)), projectionLabel to, earth, m
                      ,"global"::String)
             imgFile = cacheImage imgKey $
-              trace ("global map for: " ++ show imgKey) $
               interpP src (from (LonLat 0 0)) to m
         in lowerTransformations $ scale orthoScale $ mkGroup
           [ mkGroup []
-          , if quick then None else
-            mkImage screenWidth screenHeight imgFile
+          , mkImage screenWidth screenHeight imgFile
           , withStrokeWidth (fromToS 0 (defaultStrokeWidth*0.2) $ min t 1) $
             grid $ mergeP (from (LonLat 0 0)) to m
           ]
@@ -287,34 +223,10 @@ mainScene = seq equirectangular $ -- takeA 10 $ dropA 21 $
     projMorphT = 2
     projWaitT = 3
 
-centerDelta :: Double -> Tree -> Tree
-centerDelta d t = translate ((-x-w/2)*d) ((-y-h/2)*d) t
-  where
-    (x, y, w, h) = boundingBox t
-
 centerWithDelta :: Double -> Tree -> Tree -> Tree
 centerWithDelta d orig t = translate ((-x-w/2)*d) ((-y-h/2)*d) t
   where
     (x, y, w, h) = boundingBox orig
-
-centerXWithDelta :: Double -> Tree -> Tree -> Tree
-centerXWithDelta d orig t = translate ((-x-w/2)*d) 0 t
-  where
-    (x, y, w, h) = boundingBox orig
-
-
-renderLabel label =
-  let ref = scale 1.5 $ latex "\\texttt{Tygv123}"
-      glyphs = scale 1.5 $ latex ("\\texttt{" <> label <> "}")
-      svgTxt = mkGroup
-        [ withStrokeColor "black" $ withFillColor "white" $
-          glyphs
-        , withFillColor "white" $
-          glyphs ]
-  in
-    translate (screenWidth*0.01) (screenHeight*0.02) $
-    translate (-screenWidth/2) (-screenHeight/2) $
-    translate 0 (svgHeight ref) svgTxt
 
 equirectangular :: Image PixelRGBA8
 equirectangular = unsafePerformIO $ do
@@ -329,6 +241,9 @@ equirectangularMax = unsafePerformIO $ do
   case decodeImage dat of
     Left err  -> error err
     Right img -> return $ convertRGBA8 img
+
+usaLonLat, ukLonLat, germanyLonLat, newzealandLonLat, ausLonLat, brazilLonLat ::
+  LonLat
 
 usaLonLat = svgToLonLat americaE
 ukLonLat = svgToLonLat ukE
@@ -346,11 +261,9 @@ svgToLonLat svg =
     cy = y + h/2
     (x, y, w, h) = boundingBox svg
 
+fromToLonLat :: LonLat -> LonLat -> Double -> LonLat
 fromToLonLat (LonLat lam1 phi1) (LonLat lam2 phi2) t =
   LonLat (fromToS lam1 lam2 t) (fromToS phi1 phi2 t)
-
-toRads :: Double -> Double
-toRads dec = dec/180 * pi
 
 fetchCountry :: Projection -> (Map String Value -> SVG -> Maybe SVG) -> SVG
 fetchCountry p checker =
@@ -371,13 +284,12 @@ fetchCountry p checker =
   where
     annotate :: Map String Value -> SVG -> SVG
     annotate props svg = fromMaybe None (checker props svg)
-    strokeWidth = defaultStrokeWidth * 0.3
 
 countriesGeo :: (Map String Value -> SVG -> SVG) -> SVG
 countriesGeo = loadFeatureCollection "countries-limited.json"
 
-filterCountries :: IO ()
-filterCountries = do
+_filterCountries :: IO ()
+_filterCountries = do
   mbGeo <- decodeFileStrict "countries.json"
   case mbGeo of
     Nothing  -> return ()
@@ -453,7 +365,6 @@ grid p =
   translate (-1/2) (-1/2) $
 
   withFillOpacity 0 $
-  -- withFillColor "black" $
   mkGroup
   [ mkGroup []
   , withStrokeColor "grey" $
@@ -466,8 +377,7 @@ grid p =
   ]
   where
     annotate :: Map String Value -> SVG -> SVG
-    annotate props svg = svg
-    strokeWidth = defaultStrokeWidth * 0.3
+    annotate _ svg = svg
 
 landGeo :: (Map String Value -> SVG -> SVG) -> SVG
 landGeo = loadFeatureCollection "land.geojson"
