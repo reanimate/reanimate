@@ -1,8 +1,8 @@
 Globes give a good sense of the shape and size of countries but also limit your
 view to less than half the world at any one time.
 
-If we unwrap a globe and lay it flat, the result is a projection that neither
-preserves the shapes or relative sizes of countries.
+If we unwrap a globe and lay it flat, the result is a projection that
+preserves neither the shape or relative size of countries.
 
 15s: unfolded
 
@@ -23,9 +23,9 @@ than a rectangle.
 
 50s: werner
 
-Werner's projection isn't in much use anymore but can be found in certain
+Werner's projection is not in much use anymore but can be found in certain
 historical documents from the 15 hundreds. Also, you never know when you'll need
-a heart-shaped map. Keep Werner in mind when wooing a carthographer.
+a good heart-shaped map. Keep Werner in mind when wooing a carthographer.
 
 65s: Collignon
 
@@ -34,7 +34,7 @@ Collignon might look strange but still manages to preserve relative sizes.
 70s: Eckert
 
 Eckert projections are some of my favorites. Each of Eckert's six projections
-have a different trade-off between the accuracy of shapes and sizes but I find
+have a different trade-off between the accuracy of shapes and sizes, and I find
 all of them to be visually pleasing.
 
 85s: Fahey
