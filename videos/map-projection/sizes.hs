@@ -1,6 +1,7 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
 {-# LANGUAGE ApplicativeDo     #-}
+{-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE RecordWildCards   #-}
@@ -125,6 +126,7 @@ mainScene = seq equirectangular $ -- takeA 10 $ dropA 21 $
                 lowerTransformations $ setPos $ scale orthoScale $
                   (proj (orthoP lonlat))
               ]
+          -- destroySprite region1Shadow
           fork $ tweenVar move 1 $ \v -> fromToS v 1 . curveS 2
           fork $ play $ (staticFrame 2 $
             withStrokeWidth 0 $
