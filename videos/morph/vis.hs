@@ -1,5 +1,6 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-15.04 runghc --package reanimate
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
 import Data.Ratio
@@ -35,6 +36,7 @@ import           Reanimate.Math.Common
 import           Reanimate.Math.Visibility
 import           Reanimate.Math.SSSP
 import           Reanimate.Math.EarClip
+import           Reanimate.PolyShape (svgToPolygons)
 
 main :: IO ()
 main = reanimate $ sceneAnimation $ do
@@ -60,10 +62,11 @@ main = reanimate $ sceneAnimation $ do
   --   -- let p = shape7
   --   let p = shape4
   --   in withStrokeWidth (defaultStrokeWidth*0.6) $ renderTriangulation p (earClip p)
-  play $ setDuration 20 $ drawSSSPVisibility $ scalePolygon 1 $ shape7
-  -- play $ animate $ \_ -> withFillColor "grey" $ polygonShape (scalePolygon 0.1 $ winding 50)
+  -- play $ setDuration 20 $ drawSSSPVisibility $ scalePolygon 1 $ shape7
+  let shapeI = head $ svgToPolygons 0.01 $ scale 8 $ center $ latex "I"
+  -- play $ animate $ \_ -> withFillColor "grey" $ polygonNumDots shapeI
   -- play $ drawTriangulation (scalePolygon 0.5 $ winding 10) earClip'
-  -- play $ staticFrame 1 $ renderTriangulation shape2 earClip
+  play $ drawTriangulation shapeI (take 100 . earClip')
   -- play $ staticFrame 1 $ renderTriangulation shape3 earClip
   -- play $ staticFrame 1 $ renderTriangulation shape4 earClip
   -- play $ staticFrame 1 $ renderTriangulation shape5 earClip

@@ -68,6 +68,8 @@ library
                       Reanimate.Math.EarClip
                       Reanimate.Math.Visibility
                       Reanimate.Math.SSSP
+                      Reanimate.Morph.Common
+                      Reanimate.Morph.Linear
                       Reanimate.Raster
                       Reanimate.ColorMap
                       Reanimate.ColorSpace

@@ -7,6 +7,7 @@ import           Control.Monad.ST
 import           Data.FingerTree         (SearchResult (..), (|>))
 import qualified Data.FingerTree         as F
 import           Data.List
+import           Data.Ord
 import qualified Data.Map                as Map
 import           Data.Maybe
 import           Data.STRef
@@ -107,6 +108,53 @@ naive2 p = runST $ do
     V.unsafeFreeze parents
   where
     visibility = visibilityArray p
+
+data PDual = PDual (V.Vector Int) Rational [PDual]
+  deriving (Show)
+
+toPDual :: Polygon -> Dual -> PDual
+toPDual p d =
+  case d of
+    Dual (a,b,c) l r ->
+      PDual (V.fromList [a,b,c])
+        (area2X (pAccess p a) (pAccess p b) (pAccess p c))
+        (catMaybes [ worker c a l, worker b c r])
+  where
+    worker _ _ EmptyDual = Nothing
+    worker a b (NodeDual x l r) = Just $
+      PDual (V.fromList [a,x,b])
+        (area2X (pAccess p a) (pAccess p x) (pAccess p b))
+        (catMaybes [ worker x b l, worker a x r])
+
+pdualSize :: PDual -> Int
+pdualSize (PDual _ _ children) = 1 + sum (map pdualSize children)
+
+pdualArea :: PDual -> Rational
+pdualArea (PDual _ faceArea _) = faceArea
+
+pdualReduce :: Polygon -> PDual -> Int -> PDual
+pdualReduce origin pdual n
+  | pdualSize pdual <= n = pdual
+  | otherwise =
+    let smallest = minimum $ pAreas pdual
+    in pdualReduce origin (merge smallest pdual) n
+  where
+    merge _s (PDual p faceArea []) = PDual p faceArea []
+    merge s (PDual p faceArea children)
+      | faceArea == s =
+        let (PDual p2 area2 children2:xs) = sortBy (comparing pdualArea) children
+        in PDual (joinP p p2) (faceArea+area2) (children2++xs)
+      | otherwise =
+        let (PDual p2 area2 children2:xs) = sortBy (comparing pdualArea) children
+        in if area2 == s
+            then PDual (joinP p p2) (faceArea+area2) (children2++xs)
+            else PDual p faceArea (map (merge s) children)
+    pAreas (PDual _ faceArea children) = faceArea : concatMap pAreas children
+    joinP a b = V.fromList (sort (V.toList a ++ V.toList b))
+
+pdualPolygons :: Polygon -> PDual -> [Polygon]
+pdualPolygons p (PDual pts _area children) =
+  V.map (pAccess p) pts : concatMap (pdualPolygons p) children
 
 -- Dual of triangulated polygon
 data Dual = Dual (Int,Int,Int) -- (a,b,c)

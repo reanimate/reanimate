@@ -178,7 +178,7 @@ svgGlyphs = worker id defaultSvg
           let acc' sub = acc (GroupTree $ g & groupChildren .~ [sub])
               attr' = (g^.drawAttributes) `mappend` attr
           in concatMap (worker acc' attr') (g ^. groupChildren)
-        t -> [(acc, attr, t)]
+        t -> [(acc, (t^.drawAttributes) `mappend` attr, t)]
 
 {-| Convert primitive SVG shapes (like those created by 'mkCircle', 'mkRect', 'mkLine' or
     'mkEllipse') into SVG path. This can be useful for creating animations of these shapes being

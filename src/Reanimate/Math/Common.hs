@@ -1,7 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Reanimate.Math.Common where
 
-import           Data.List     (intersect, tails)
+import           Data.List     (intersect, nub, tails)
 import           Data.Ratio
 import           Data.Vector   (Vector)
 import qualified Data.Vector   as V
@@ -28,8 +28,9 @@ type P = V2 Double
 -- O(n^2)
 isSimple :: Polygon -> Bool
 isSimple p | length p < 3 = False
-isSimple p = isCCW p && checkEdge 0 2
+isSimple p = noDups && isCCW p && checkEdge 0 2
   where
+    noDups = V.toList p == nub (V.toList p)
     len = length p
     -- check i,i+1 against j,j+1
     -- j > i+1
@@ -116,6 +117,28 @@ isValidTriangulation p t = isComplete && intersectionFree
       , i <- lst
       , n < i
       ]
+
+triangulationsToPolygons :: Polygon -> Triangulation -> [Polygon]
+triangulationsToPolygons p t =
+  [ V.fromList
+    [ pAccess p g, pAccess p i, pAccess p j ]
+  | i <- [0 .. length p-1]
+  , let js = filter (i<) $ t V.! i
+  , (g, j) <- zip (i-1:js) js
+  ]
+
+-- reducePolygons :: Int -> [Polygon] -> [Polygon]
+-- reducePolygons n ps
+--   | length ps <= n = ps
+--   | otherwise =
+--     let p = findSmallest ps
+--         es = edges p
+--         e = findSmallest es
+--     in reducePolygons n (merge p e : delete p (delete e ps))
+--   where
+--     findSmallest = minimumBy (comparing area2X)
+--     shareEdge p1 p2 =
+
 
 pMod :: Vector (V2 a) -> Int -> Int
 pMod p i = i `mod` V.length p
@@ -239,6 +262,9 @@ cyclePolygon p t = worker 0 0
           segment = sqrt (realToFrac (distSquared x y))
     len = polygonLength' p
     limit = t * len
+
+polygonCentroid :: Polygon -> V2 Rational
+polygonCentroid p = V.sum p ^/ toRational (length p)
 
 polygonLength :: (Real a, Fractional a) => Vector (V2 a) -> a
 polygonLength p = sum

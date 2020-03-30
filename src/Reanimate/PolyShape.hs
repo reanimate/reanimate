@@ -2,6 +2,7 @@ module Reanimate.PolyShape
   ( PolyShape(..)
   , PolyShapeWithHoles(..)
   , svgToPolyShapes     -- :: Tree -> [PolyShape]
+  , svgToPolygons       -- :: Double -> Svg -> [Polygon]
 
   , renderPolyShape     -- :: PolyShape -> Tree
   , renderPolyShapes    -- :: [PolyShape] -> Tree
@@ -16,6 +17,7 @@ module Reanimate.PolyShape
   , isInsideOf          -- :: PolyShape -> PolyShape -> Bool
 
   , plFromPolygon       -- :: [RPoint] -> PolyShape
+  , plToPolygon         -- :: Double -> PolyShape -> Polygon
   , plPolygonify        -- :: Double -> PolyShape -> [Point Double]
   , plDecompose         -- :: [PolyShape] -> [[RPoint]]
   , unionPolyShapes     -- :: [PolyShape] -> [PolyShape]
@@ -26,27 +28,33 @@ module Reanimate.PolyShape
   , mergePolyShapeHoles -- :: PolyShapeWithHoles -> PolyShape
   , polyShapeTolerance
   , plPartial, plPartialGroup, plPartial'
+  , splitPolyShape      -- :: Double -> Int -> PolyShape -> [PolyShape]
   , plGroupTouching
   ) where
 
 import           Chiphunk.Low
-import           Control.Lens        ((&), (.~))
-import           Data.List           (minimumBy, nub, partition, sortOn)
+import           Control.Lens          ((&), (.~))
+import           Data.List             (minimumBy, nub, partition, sortOn)
 import           Data.Ord
+import qualified Data.Vector           as V
 import           Debug.Trace
-import           Geom2D.CubicBezier  (ClosedPath (..), CubicBezier (..), DPoint,
-                                      FillRule (..), PathJoin (..), Point (..),
-                                      arcLength, arcLengthParam,
-                                      bezierIntersection, bezierSubsegment,
-                                      closedPathCurves, closest, colinear,
-                                      curvesToClosed, evalBezier,
-                                      interpolateVector, reorient, splitBezier,
-                                      union, vectorDistance)
-import           Graphics.SvgTree    (PathCommand (..), RPoint, Tree (..),
-                                      defaultSvg, pathDefinition)
+import           Geom2D.CubicBezier    (ClosedPath (..), CubicBezier (..),
+                                        DPoint, FillRule (..), PathJoin (..),
+                                        Point (..), arcLength, arcLengthParam,
+                                        bezierIntersection, bezierSubsegment,
+                                        closedPathCurves, closest, colinear,
+                                        curvesToClosed, evalBezier,
+                                        interpolateVector, reorient,
+                                        splitBezier, union, vectorDistance)
+import           Graphics.SvgTree      (PathCommand (..), RPoint, Tree (..),
+                                        defaultSvg, pathDefinition)
 import           Linear.V2
 import           Reanimate.Constants
+import           Reanimate.Math.Common (Polygon, isCCW)
+import           Reanimate.Math.EarClip
+import           Reanimate.Math.SSSP
 import           Reanimate.Svg
+import           Reanimate.Animation
 
 -- | Shape drawn by continuous line. May have overlap, may be convex.
 newtype PolyShape = PolyShape { unPolyShape :: ClosedPath Double }
@@ -91,6 +99,13 @@ plFromPolygon = PolyShape . ClosedPath . map worker
   where
     worker (V2 x y) = (Point x y, JoinLine)
 
+plToPolygon :: Double -> PolyShape -> Polygon
+plToPolygon tol pl =
+  let p = V.fromList . nub . map (\(Point x y) -> realToFrac <$> V2 x y) .
+          plPolygonify tol $ pl
+  in if isCCW p then p else V.reverse p
+
+
 plPartial :: Double -> PolyShape -> PolyShape
 plPartial delta pl | delta >= 1 = pl
 plPartial delta pl = PolyShape $ curvesToClosed (lineOut ++ [joinB] ++ lineIn)
@@ -109,6 +124,26 @@ plPartial delta pl = PolyShape $ curvesToClosed (lineOut ++ [joinB] ++ lineIn)
       if l < cLen
         then [bezierSubsegment c 0 (arcLengthParam c l polyShapeTolerance)]
         else c : takeLen (l-cLen) cs
+
+-- earClip :: Polygon -> Triangulation
+-- dual :: Triangulation -> Dual
+-- toPDual :: Polygon -> Dual -> PDual
+-- pdualReduce :: Polygon -> PDual -> Int -> PDual
+-- pdualPolygons :: Polygon -> PDual -> [Polygon]
+splitPolyShape :: Double -> Int -> PolyShape -> [PolyShape]
+splitPolyShape tol n poly =
+    let polygon = toPolygon (plPolygonify tol poly)
+        trig = earClip polygon
+        d = dual trig
+        pd = toPDual polygon d
+        reduced = pdualReduce polygon pd n
+        polygons = pdualPolygons polygon reduced
+    in map toPolyShape polygons
+  where
+    toPolygon :: [Point Double] -> Polygon
+    toPolygon = V.fromList . nub . map (\(Point x y) -> V2 (realToFrac x) (realToFrac y))
+    toPolyShape :: Polygon -> PolyShape
+    toPolyShape = plFromPolygon . map (fmap realToFrac) . V.toList
 
 plPartialGroup :: Double -> [PolyShape] -> [PolyShape]
 plPartialGroup _delta [] = []
@@ -219,6 +254,12 @@ plLineCommands pl =
 
 svgToPolyShapes :: Tree -> [PolyShape]
 svgToPolyShapes = cmdsToPolyShapes . toLineCommands . extractPath
+
+svgToPolygons :: Double -> SVG -> [Polygon]
+svgToPolygons tol = map (toPolygon . plPolygonify tol) . svgToPolyShapes
+  where
+    toPolygon :: [Point Double] -> Polygon
+    toPolygon = V.fromList . nub . map (\(Point x y) -> V2 (realToFrac x) (realToFrac y))
 
 cmdsToPolyShapes :: [LineCommand] -> [PolyShape]
 cmdsToPolyShapes [] = []

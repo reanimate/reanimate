@@ -1,18 +1,20 @@
 {-# LANGUAGE RecordWildCards #-}
 module Reanimate.Interpolate where
 
-import Codec.Picture
-import Data.Colour
-import Data.Colour.CIE
-import Data.Colour.CIE.Illuminant (d65)
-import Data.Colour.SRGB
-import Data.Colour.RGBSpace.HSV
-import Data.Colour.RGBSpace
-import Data.Fixed
+import           Codec.Picture
+import           Codec.Picture.Types
+import           Data.Colour
+import           Data.Colour.CIE
+import           Data.Colour.CIE.Illuminant (d65)
+import           Data.Colour.RGBSpace
+import           Data.Colour.RGBSpace.HSV
+import           Data.Colour.SRGB
+import           Data.Fixed
+import           Reanimate.Signal
 
 data ColorComponents = ColorComponents
   { colorUnpack :: Colour Double -> (Double, Double, Double)
-  , colorPack :: Double -> Double -> Double -> Colour Double }
+  , colorPack   :: Double -> Double -> Double -> Colour Double }
 
 -- | > interpolate rgbComponents yellow blue
 --
@@ -78,6 +80,15 @@ interpolate ColorComponents{..} from to = \d ->
 
 interpolateRGB8 :: ColorComponents -> PixelRGB8 -> PixelRGB8 -> (Double -> PixelRGB8)
 interpolateRGB8 comps from to = toRGB8 . interpolate comps (fromRGB8 from) (fromRGB8 to)
+
+interpolateRGBA8 :: ColorComponents -> PixelRGBA8 -> PixelRGBA8 -> (Double -> PixelRGBA8)
+interpolateRGBA8 comps from to = \t ->
+  case interp t of
+    PixelRGB8 r g b ->
+      let alpha = fromToS (fromIntegral $ pixelOpacity from) (fromIntegral $ pixelOpacity to) t
+      in PixelRGBA8 r g b (round alpha)
+  where
+    interp = interpolateRGB8 comps (dropTransparency from) (dropTransparency to)
 
 toRGB8 :: Colour Double -> PixelRGB8
 toRGB8 c = PixelRGB8 r g b
