@@ -354,15 +354,15 @@ mkBackgroundPixel pixel =
 --   rows. Each row can contain different number of cells.
 gridLayout :: [[Tree]] -> Tree
 gridLayout rows = mkGroup
-    [ translate (-screenWidth/2+colSep*nCol)
-                (screenHeight/2-rowSep*nRow)
+    [ translate (-screenWidth/2+colSep*nCol + colSep*0.5)
+                (screenHeight/2-rowSep*nRow - rowSep*0.5)
       elt
-    | (nRow, row) <- zip [1..] rows
+    | (nRow, row) <- zip [0..] rows
     , let nCols = length row
-          colSep = screenWidth / fromIntegral (nCols+1)
-    , (nCol, elt) <- zip [1..] row ]
+          colSep = screenWidth / fromIntegral nCols
+    , (nCol, elt) <- zip [0..] row ]
   where
-    rowSep = screenHeight / fromIntegral (nRows+1)
+    rowSep = screenHeight / fromIntegral nRows
     nRows = length rows
 
 -- | Insert a native text object anchored at the middle.
