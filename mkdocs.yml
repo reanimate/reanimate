@@ -6,3 +6,8 @@ markdown_extensions:
   - markdown_include.include
 extra_css:
   - fix.css
+nav:
+  - Reanimate: index.md
+  - Gallery: gallery.md
+  - Gluing together animations: glue_tut.md
+  - Morphology: morphology.md
