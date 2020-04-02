@@ -5,10 +5,7 @@
 module Main(main) where
 
 import           Codec.Picture
-import           Data.List
-import           Graphics.SvgTree                (LineJoin (..))
 import           Reanimate
-import           Reanimate.Builtin.Documentation
 import           Reanimate.Interpolate
 import           Reanimate.Morph.Common
 import           Reanimate.Morph.Linear
@@ -42,7 +39,7 @@ main = reanimate $
     radius = 2.5
     yellow = withFillColor "yellow" $ mkCircle radius
     blue   = withFillColor "blue" $ mkCircle radius
-    green  = withFillColor "green" $ mkCircle radius
-    pink   = withFillColor "pink" $ mkCircle radius
-    red    = withFillColor "red" $ mkCircle radius
-    purple = withFillColor "purple" $ mkCircle radius
+    -- green  = withFillColor "green" $ mkCircle radius
+    -- pink   = withFillColor "pink" $ mkCircle radius
+    -- red    = withFillColor "red" $ mkCircle radius
+    -- purple = withFillColor "purple" $ mkCircle radius

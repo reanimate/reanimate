@@ -5,11 +5,7 @@
 module Main(main) where
 
 import           Codec.Picture
-import           Data.List
-import           Graphics.SvgTree                (LineJoin (..))
 import           Reanimate
-import           Reanimate.Builtin.Documentation
-import           Reanimate.Interpolate
 import           Reanimate.Morph.Common
 import           Reanimate.Morph.Linear
 

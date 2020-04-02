@@ -7,19 +7,14 @@ module Main(main) where
 import           Codec.Picture
 import           Codec.Picture.Types
 import           Control.Monad                   (replicateM_)
-import           Data.List
 import qualified Data.Text                       as T
 import qualified Data.Vector                     as V
-import           Graphics.SvgTree                (LineJoin (..))
 import           Linear.V2
 import           Linear.Vector
 import           Reanimate
-import           Reanimate.Builtin.Documentation
-import           Reanimate.Interpolate
 import           Reanimate.Math.Common
 import           Reanimate.Morph.Common
 import           Reanimate.Morph.Linear
-import           Reanimate.PolyShape
 
 bgColor :: PixelRGBA8
 bgColor = PixelRGBA8 252 252 252 0xFF
@@ -31,7 +26,7 @@ main = reanimate $
   mapA (withStrokeColor "black") $
   mapA (withFillOpacity 1) $
     sceneAnimation $ do
-      let pl1 t = translate (-4) 0 $ mkGroup
+      let pl1 = translate (-4) 0 $ mkGroup
             [ lowerTransformations $ scale 3 $ withFillOpacity 1 $
               withStrokeColor "black" $
               withStrokeWidth defaultStrokeWidth $
@@ -48,33 +43,26 @@ main = reanimate $
             , polygonNumDots (cyclePolygons star !! (n `mod` length star)) t ]
       offset <- newVar 0
       slide <- newVar 0
-      s2 <- newSprite $ pl2 <$> unVar offset <*> unVar slide
-      _ <- newSpriteSVG $ pl1 0
+      _ <- newSprite $ pl2 <$> unVar offset <*> unVar slide
+      _ <- newSpriteSVG $ pl1
       let slideLeft = do
             tweenVar slide 1 $ \v -> fromToS v 1 . curveS 4
             writeVar slide 0
             modifyVar offset succ
       replicateM_ 8 $ do
         offsetVal <- readVar offset
-        play $ step (pl1 0) (pl2 offsetVal 0)
+        play $ step pl1 (pl2 offsetVal 0)
           # setDuration 3
         slideLeft
   where
-    radius = 2.5
     step from to =
       signalA (curveS 2) $ animate $ morph rawLinear from to
-    stage1 = translate (-3) 0 $ withFillColor "red" $ mkCircle radius
-    stage2 = translate 3 0 $ withFillColor "blue" $ mkRect (radius*2) (radius*2)
-    stage3 = mkGroup
-      [translate (-1) (-1) $ withFillColor "green" $ mkRect (radius*0.5) (radius*0.5)
-      ,translate 1 (1) $ withFillColor "black" $ mkRect (radius*0.5) (radius*0.5) ]
-    stage4 = translate (-3) 0 $ withFillColor "purple" $ mkCircle (radius*0.24)
 
 octogon :: Polygon
 octogon = V.fromList
   [ realToFrac <$> V2 (cos phi) (sin phi)
   | n <- [0..7]
-  , let phi = n*2*pi/8 + pi/8
+  , let phi = n*2*pi/8 + pi/8 :: Double
   ]
 
 star :: Polygon

@@ -45,8 +45,8 @@ data RelMeshPair = RelMeshPair Points Edges (Matrix Double) (Matrix Double) (Mat
 -- convexInterpolate :: RelMeshPair -> Double -> RelMesh
 
 meshToPolygon :: Mesh -> Polygon
-meshToPolygon (Mesh pts edges) = scalePolygon 2 $ V.fromList
-    [ realToFrac <$> (pts V.! (n-1))
+meshToPolygon mesh = scalePolygon 2 $ V.fromList
+    [ realToFrac <$> (meshPoints mesh V.! (n-1))
     | n <- polygonNodes ]
   where
     polygonNodes :: [Int]
@@ -61,14 +61,14 @@ genTrails mkMesh =
     withStrokeWidth (defaultStrokeWidth*0.5) $
     withStrokeColor "black" $
     withStrokeDashArray [0.1,0.1] $
-    mkGroup $ zipWith mkTrail [0..] $ transpose
+    mkGroup $ map mkTrail $ transpose
       [ V.toList $ V.map (fmap realToFrac) $ meshToPolygon mesh
       | n <- [0..steps]
       , let mesh = mkMesh (fromIntegral n / fromIntegral steps)
       ]
   where
-    steps = 100
-    mkTrail n lst =mkLinePath [ (x,y) | V2 x y <- lst ]
+    steps = 100 :: Int
+    mkTrail lst =mkLinePath [ (x,y) | V2 x y <- lst ]
 
 morphAnimation :: Animation
 morphAnimation = playThenReverseA $ pauseAround 1 1 $ addStatic (mkBackgroundPixel bgColor) $
@@ -222,6 +222,7 @@ mkRelativePair (MeshPair p1 p2 edges) =
       RelMesh _ _ rightM rightB = mkRelative (Mesh p2 edges)
   in RelMeshPair static edges leftM leftB rightM rightB
 
+toParameters :: (Ord b, Fractional b) => V.Vector (V2 b) -> [(Int, Int, Int)] -> (Int, [Int], ([[b]], [b]))
 toParameters points groups = (length interior*2,exterior,unzip $ concat
   [ let lst = [(if i == j then -1 else t)
               | j <- interior
@@ -245,17 +246,22 @@ toParameters points groups = (length interior*2,exterior,unzip $ concat
     (interior, exterior) =
       partition (isInterior . findStarNeighbours groups) [1 .. length points]
 
+lam_ij :: (Ord b, Fractional b) => V.Vector (V2 b) -> [(Int, Int, Int)] -> [((Int, Int), b)]
 lam_ij points groups =
   [ ((i, j), t)
   | i <- [1..V.length points]
   , (j, t) <- lam_j points groups i
   ]
+
+lam_j :: (Ord b, Fractional b) => V.Vector (V2 b) -> [(Int, Int, Int)] -> Int -> [(Int, b)]
 lam_j points groups p =
-  [ (nP, sum [ t | (j,k,t) <- mu, j == nP ] / fromIntegral (length nPoints))
+  [ (nP, sum [ t | (j,_k,t) <- mu, j == nP ] / fromIntegral (length nPoints))
   | let n = findStarNeighbours groups p
         nPoints = fromMaybe [] $ getExteriorPoly n
         mu = calcMu points groups p
   , nP <- nPoints ]
+
+calcMu :: (Ord c, Fractional c) => V.Vector (V2 c) -> [(Int, Int, Int)] -> Int -> [(Int, Int, c)]
 calcMu points groups p = concat
     [ [ (nP, nP, t1)
       , (a, nP, t2)
@@ -266,20 +272,20 @@ calcMu points groups p = concat
           n = findStarNeighbours groups p
           nPoints :: [Int]
           nPoints = fromMaybe [] $ getExteriorPoly n
-    , (i, nP) <- zip [1 .. ] nPoints
+    , nP <- nPoints
     , let vert = points V.! (nP-1)
     , let line = (vert, selfVert)
     , let (a,b,aP,bP) = head $
-            [ (a,b,aP,bP)
-            | (a,b) <- n
-            , let aP = points V.! (a-1)
-                  bP = points V.! (b-1)
-                  segment = (points V.! (a-1), points V.! (b-1))
+            [ (_a,_b,_aP,_bP)
+            | (_a,_b) <- n
+            , let _aP = points V.! (_a-1)
+                  _bP = points V.! (_b-1)
+                  segment = (points V.! (_a-1), points V.! (_b-1))
             , case rayIntersect line segment of
                 Nothing -> False
                 Just u  -> isBetween u segment
-            , a /= nP
-            , b /= nP ]
+            , _a /= nP
+            , _b /= nP ]
     -- , b == (nPoints ++ nPoints) !! i
     , let (t1,t2,t3) = barycentricCoords vert aP bP selfVert
     ]
@@ -303,7 +309,6 @@ polygonNumDots p t = mkGroup $ reverse
           V2 x y = lerp t b a ]
   where
     circR = 0.1
-    colorLimit = 5
     colored n =
       let c = genColor n (length p-1)
       in withFillColorPixel c

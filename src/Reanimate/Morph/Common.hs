@@ -87,7 +87,8 @@ addPoints n p = V.fromList $ worker n 0 (V.toList p ++ [pAccess p 0])
       if acc + xy > limit
         then x : worker (i-1) 0 (lerp ((limit-acc)/xy) y x : y:xs)
         else x : worker i (acc+xy) (y:xs)
-    worker _ _ [x] = []
+    worker _ _ [_] = []
+    worker _ _ _ = error "addPoints: invalid polygon"
     len = V.sum (V.zipWith approxDist p (V.tail p)) + approxDist (V.last p) (V.head p)
     limit = len / fromIntegral (n+1)
 
