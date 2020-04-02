@@ -101,7 +101,7 @@ plFromPolygon = PolyShape . ClosedPath . map worker
 
 plToPolygon :: Double -> PolyShape -> Polygon
 plToPolygon tol pl =
-  let p = V.fromList . nub . map (\(Point x y) -> realToFrac <$> V2 x y) .
+  let p = V.init . V.fromList . map (\(Point x y) -> realToFrac <$> V2 x y) .
           plPolygonify tol $ pl
   in if isCCW p then p else V.reverse p
 

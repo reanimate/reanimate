@@ -70,6 +70,7 @@ library
                       Reanimate.Math.SSSP
                       Reanimate.Morph.Common
                       Reanimate.Morph.Linear
+                      Reanimate.Morph.LeastWork
                       Reanimate.Raster
                       Reanimate.ColorMap
                       Reanimate.ColorSpace

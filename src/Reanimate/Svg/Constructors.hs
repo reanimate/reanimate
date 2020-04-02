@@ -20,6 +20,7 @@ module Reanimate.Svg.Constructors
   , withId
   , withStrokeColor
   , withStrokeColorPixel
+  , withStrokeDashArray
   , withStrokeLineJoin
   , withFillColor
   , withFillColorPixel
@@ -203,6 +204,9 @@ withStrokeColor color = strokeColor .~ pure (mkColor color)
 
 withStrokeColorPixel :: PixelRGBA8 -> Tree -> Tree
 withStrokeColorPixel color = strokeColor .~ pure (ColorRef color)
+
+withStrokeDashArray :: [Double] -> Tree -> Tree
+withStrokeDashArray arr = strokeDashArray .~ pure (map Num arr)
 
 -- | See <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke-linejoin>
 withStrokeLineJoin :: LineJoin -> Tree -> Tree

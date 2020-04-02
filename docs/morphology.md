@@ -16,30 +16,47 @@ shapes. Instead, there are many different algorithms that each have their own
 benefits and trade-offs. This article will specify the details of the
 morphology-problem and show a handful of different solutions.
 
-# Problem specification
+# Breaking it down
 
 Morphing between two shapes can be split into several smaller problems that can
-be tackled separately:
+be tackled separately.
 
-* **Point correspondence:**
-* **Trajectory:**
-* **Object correspondence:**
-* **Color interpolation:**
-* **Attribute interpolation:**
+## 1. Point correspondence
 
-    * position
-    * color
-    * stroke
+<video width="640" height="360" muted autoplay loop>
+  <source src="https://i.imgur.com/9WJ6mC6.mp4">
+</video>
+
+## 2. Point trajectory
+
+<video width="640" height="360" muted autoplay loop>
+  <source src="https://i.imgur.com/jXOR7Ij.mp4">
+</video>
+
+## 3. Object correspondence
+## 4. Color interpolation
 
 <video width="640" height="360" muted autoplay loop>
   <source src="https://i.imgur.com/F7RZjJN.mp4">
 </video>
+
+## 5. Attribute interpolation
+
+* position
+* color
+* stroke
+* opacity
+
 
 # Linear interpolation
 
 TBD.
 
 # Stretch and Bend
+
+TBD.
+
+# Polar coordinates
 
 TBD.
 
@@ -54,3 +71,12 @@ TBD.
 # Guaranteed intersection-free
 
 TBD.
+
+# Related work
+
+* Flubber
+* Polymorph
+* raphael
+* Kute
+* svg_morph
+* D3

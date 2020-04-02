@@ -51,17 +51,16 @@ data Morph = Morph
 morph :: Morph -> SVG -> SVG -> Double -> SVG
 morph Morph{..} src dst = \t ->
   case t of
-    0 -> src
-    1 -> dst
+    0 -> lowerTransformations src
+    1 -> lowerTransformations dst
     _ -> mkGroup
           [ (render $ genPoints t)
               & drawAttributes .~ genAttrs t
           | (genAttrs, genPoints) <- gens
           ]
   where
-    render p =
-      mkLinePathClosed
-        [ (x,y) | V2 x y <- map (fmap realToFrac) $ V.toList p  ++ [pAccess p 0] ]
+    render p = mkLinePathClosed
+        [ (x,y) | V2 x y <- map (fmap realToFrac) $ V.toList p ]
     srcShapes = toShapes morphTolerance src
     dstShapes = toShapes morphTolerance dst
     pairs = morphObjectCorrespondence srcShapes dstShapes
@@ -88,7 +87,7 @@ addPoints n p = V.fromList $ worker n 0 (V.toList p ++ [pAccess p 0])
       if acc + xy > limit
         then x : worker (i-1) 0 (lerp ((limit-acc)/xy) y x : y:xs)
         else x : worker i (acc+xy) (y:xs)
-    worker _ _ _ = []
+    worker _ _ [x] = []
     len = V.sum (V.zipWith approxDist p (V.tail p)) + approxDist (V.last p) (V.head p)
     limit = len / fromIntegral (n+1)
 

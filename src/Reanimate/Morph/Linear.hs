@@ -38,4 +38,6 @@ closestLinearCorrespondence src dst =
     score = V.sum . V.zipWith approxDist src
 
 linearTrajectory :: Trajectory
-linearTrajectory (src,dst) = \t -> V.zipWith (lerp $ realToFrac t) dst src
+linearTrajectory (src,dst)
+  | length src == length dst = \t -> V.zipWith (lerp $ realToFrac t) dst src
+  | otherwise = error "Invalid lengths"
