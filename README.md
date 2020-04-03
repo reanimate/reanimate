@@ -98,6 +98,7 @@ means.
   * Thanks to [svg-tree](https://github.com/Twinside/svg-tree) for their SVG library.
   * Thanks to [CthulhuDen/chiphunk](https://github.com/CthulhuDen/chiphunk) for making a 2D physics
     library easily available.
+  * Thanks to [Peter Johnson](https://github.com/missinglink) for reserving the 'reanimate' organization on GitHub.
 
 # YouTube
 
