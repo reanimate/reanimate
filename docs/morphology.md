@@ -18,10 +18,25 @@ morphology-problem and show a handful of different solutions.
 
 # Breaking it down
 
-Morphing between two shapes can be split into several smaller problems that can
-be tackled separately.
+Conceptually, a morphing function should take two SVG images and give a new
+SVG image over time. In Haskell, it would look like this:
+
+```haskell
+morph :: SVG → SVG → (Time → SVG)
+```
+
+However, morphing has several sub-problems, each of which that can be solved
+indepently in a variety of ways. These solutions have different benefits and
+drawbacks, and wildly different performance. Since no single morphing algorithm
+is obviously superior in all cases, let's identify the othogonal sub-problems
+and use their solutions as parameters to our morphing function.
 
 ## 1. Point correspondence
+
+
+```haskell
+type PointCorrespondence = Polygon → Polygon → (Polygon, Polygon)
+```
 
 <video width="640" height="360" muted autoplay loop>
   <source src="https://i.imgur.com/9WJ6mC6.mp4">
@@ -29,11 +44,24 @@ be tackled separately.
 
 ## 2. Point trajectory
 
+```haskell
+type Trajectory = (Polygon, Polygon) → (Double → Polygon)
+```
+
 <video width="640" height="360" muted autoplay loop>
   <source src="https://i.imgur.com/jXOR7Ij.mp4">
 </video>
 
 ## 3. Object correspondence
+
+```haskell
+type ObjectCorrespondence = [Polygon] → [Polygon] → [(Polygon, Polygon)]
+```
+
+<video width="640" height="360" muted autoplay loop>
+  <source src="https://i.imgur.com/GoiZxgo.mp4">
+</video>
+
 ## 4. Color interpolation
 
 <video width="640" height="360" muted autoplay loop>
@@ -42,8 +70,6 @@ be tackled separately.
 
 ## 5. Attribute interpolation
 
-* position
-* color
 * stroke
 * opacity
 
@@ -56,7 +82,16 @@ TBD.
 
 TBD.
 
-# Polar coordinates
+# Interpolating lengths and angles
+
+```haskell
+lineBend :: Trajectory
+```
+
+<video width="640" height="360" muted autoplay loop>
+  <source src="https://i.imgur.com/d8spJmi.mp4">
+</video>
+
 
 TBD.
 

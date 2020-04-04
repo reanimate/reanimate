@@ -71,6 +71,7 @@ library
                       Reanimate.Morph.Common
                       Reanimate.Morph.Linear
                       Reanimate.Morph.LeastWork
+                      Reanimate.Morph.LineBend
                       Reanimate.Raster
                       Reanimate.ColorMap
                       Reanimate.ColorSpace

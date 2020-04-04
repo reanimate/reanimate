@@ -40,4 +40,4 @@ closestLinearCorrespondence src dst =
 linearTrajectory :: Trajectory
 linearTrajectory (src,dst)
   | length src == length dst = \t -> V.zipWith (lerp $ realToFrac t) dst src
-  | otherwise = error "Invalid lengths"
+  | otherwise = error $ "Invalid lengths: " ++ show (length src, length dst)

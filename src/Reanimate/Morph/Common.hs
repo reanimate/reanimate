@@ -1,5 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections   #-}
+{-# LANGUAGE UnicodeSyntax   #-}
 module Reanimate.Morph.Common
   ( PointCorrespondence
   , Trajectory
@@ -8,6 +9,7 @@ module Reanimate.Morph.Common
   , morph
   , splitObjectCorrespondence
   , dupObjectCorrespondence
+  , genesisObjectCorrespondence
   ) where
 
 import           Control.Lens
@@ -20,7 +22,7 @@ import           Linear.V2
 import           Linear.Vector
 import           Reanimate.Animation
 import           Reanimate.Interpolate
-import           Reanimate.Math.Common  (Polygon, approxDist, pAccess)
+import           Reanimate.Math.Common  (Polygon, approxDist, pAccess, centoid)
 import           Reanimate.Math.EarClip
 import           Reanimate.Math.SSSP
 import           Reanimate.PolyShape
@@ -33,11 +35,12 @@ import           Reanimate.Svg
 -- Polygon holes
 -- Polygon splitting
 
-type PointCorrespondence = Polygon -> Polygon -> (Polygon, Polygon)
-type Trajectory = (Polygon, Polygon) -> (Double -> Polygon)
-type ObjectCorrespondence =
-  [(DrawAttributes, Polygon)] -> [(DrawAttributes, Polygon)] ->
-  [(DrawAttributes, DrawAttributes, Polygon, Polygon)]
+-- Graphical polygon? FIXME: Come up with a better name.
+type GPolygon = (DrawAttributes, Polygon)
+
+type PointCorrespondence = Polygon → Polygon → (Polygon, Polygon)
+type Trajectory = (Polygon, Polygon) → (Double → Polygon)
+type ObjectCorrespondence = [GPolygon] → [GPolygon] → [(GPolygon, GPolygon)]
 
 data Morph = Morph
   { morphTolerance            :: Double
@@ -66,7 +69,7 @@ morph Morph{..} src dst = \t ->
     pairs = morphObjectCorrespondence srcShapes dstShapes
     gens =
       [ (interpolateAttrs morphColorComponents srcAttr dstAttr, morphTrajectory arranged)
-      | (srcAttr, dstAttr, srcPoly', dstPoly') <- pairs
+      | ((srcAttr, srcPoly'), (dstAttr, dstPoly')) <- pairs
       , let arranged = applyPointCorrespondence morphPointCorrespondence srcPoly' dstPoly'
       ]
 
@@ -107,37 +110,50 @@ interpolateAttrs colorComps src dst t =
     interpColor a _ = a
     interpOpacity a b = realToFrac (fromToS (realToFrac a) (realToFrac b) t)
 
+genesisObjectCorrespondence :: ObjectCorrespondence
+genesisObjectCorrespondence left right =
+  case (left, right) of
+    ([] , []) -> []
+    ([], (y1,y2):ys) ->
+      ((y1,y2), (y1, emptyFrom y2 y2)) : genesisObjectCorrespondence [] ys
+    ((x1,x2):xs, []) ->
+      ((x1,x2), (x1, emptyFrom x2 x2)) : genesisObjectCorrespondence xs []
+    (x:xs, y:ys) ->
+      (x,y) : genesisObjectCorrespondence xs ys
+  where
+    emptyFrom a b = V.map (const $ centoid a) b
+
 dupObjectCorrespondence :: ObjectCorrespondence
 dupObjectCorrespondence left right =
   case (left, right) of
     (_, []) -> []
     ([], _) -> []
-    ([(x1,x2)], [(y1,y2)]) ->
-      [(x1,y1,x2,y2)]
+    ([x], [y]) ->
+      [(x,y)]
     ([(x1,x2)], yShapes) ->
       let x2s = replicate (length yShapes) x2
       in dupObjectCorrespondence (map (x1,) x2s) yShapes
     (xShapes, [(y1,y2)]) ->
       let y2s = replicate (length xShapes) y2
       in dupObjectCorrespondence xShapes (map (y1,) y2s)
-    ((x1,x2):xs, (y1,y2):ys) ->
-      (x1, y1, x2, y2) : dupObjectCorrespondence xs ys
+    (x:xs, y:ys) ->
+      (x, y) : dupObjectCorrespondence xs ys
 
 splitObjectCorrespondence :: ObjectCorrespondence
 splitObjectCorrespondence left right =
   case (left, right) of
     (_, []) -> []
     ([], _) -> []
-    ([(x1,x2)], [(y1,y2)]) ->
-      [(x1,y1,x2,y2)]
+    ([x], [y]) ->
+      [(x,y)]
     ([(x1,x2)], yShapes) ->
       let x2s = splitPolygon (length yShapes) x2
       in splitObjectCorrespondence (map (x1,) x2s) yShapes
     (xShapes, [(y1,y2)]) ->
       let y2s = splitPolygon (length xShapes) y2
       in splitObjectCorrespondence xShapes (map (y1,) y2s)
-    ((x1,x2):xs, (y1,y2):ys) ->
-      (x1, y1, x2, y2) : splitObjectCorrespondence xs ys
+    (x:xs, y:ys) ->
+      (x,y) : splitObjectCorrespondence xs ys
 
 splitPolygon :: Int -> Polygon -> [Polygon]
 splitPolygon n polygon =

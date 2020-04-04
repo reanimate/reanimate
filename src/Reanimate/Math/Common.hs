@@ -56,6 +56,9 @@ isSimple p = noDups && isCCW p && checkEdge 0 2
 scalePolygon :: Rational -> Polygon -> Polygon
 scalePolygon s = V.map (\v -> v ^* s)
 
+centoid :: Polygon -> V2 Rational
+centoid p = V.sum p ^/ fromIntegral (length p)
+
 -- Place n points on a circle, use one parameter to slide the points back and forth.
 -- Use second parameter to move points closer to center circle.
 genPolygon :: [(Double, Double)] -> Polygon
