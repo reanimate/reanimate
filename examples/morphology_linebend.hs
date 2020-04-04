@@ -7,11 +7,7 @@ module Main(main) where
 import           Codec.Picture
 import           Codec.Picture.Types
 import           Control.Monad
-import qualified Data.Vector              as V
-import           Linear.V2
 import           Reanimate
-import           Reanimate.ColorMap
-import           Reanimate.Math.Common
 import           Reanimate.Morph.Common
 import           Reanimate.Morph.Linear
 import           Reanimate.Morph.LineBend
@@ -37,10 +33,10 @@ main = reanimate $
   where
     showPair from to =
       waitOn $ do
-        fork $ play $ animate (morph linear from to)
+        fork $ play $ mkAnimation 2 (morph linear from to)
           # mapA (translate (-3) (-0.5))
           # signalA (curveS 4)
-        fork $ play $ animate (morph myMorph from to)
+        fork $ play $ mkAnimation 2 (morph myMorph from to)
           # mapA (translate (3) (-0.5))
           # signalA (curveS 4)
     myMorph = linear{morphTrajectory = lineBend }

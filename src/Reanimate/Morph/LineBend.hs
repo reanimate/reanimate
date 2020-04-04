@@ -4,7 +4,6 @@ module Reanimate.Morph.LineBend
   ) where
 
 import qualified Data.Vector            as V
-import           Debug.Trace
 import           Linear.Matrix          (det22)
 import           Linear.Metric
 import           Linear.V2
@@ -12,20 +11,13 @@ import           Linear.Vector
 import           Reanimate.Math.Common
 import           Reanimate.Morph.Common
 
--- type Trajectory = (Polygon, Polygon) → (Double → Polygon)
-
-p1 :: Polygon
-p1 = V.fromList [V2 0 0, V2 1 0, V2 (-3) 4]
-
-p2 :: Polygon
-p2 = V.fromList [V2 0 0, V2 1 0, V2 4 4]
-
 lineBend :: Trajectory
 lineBend = lineBend' True
 
 lineBendRaw :: Trajectory
 lineBendRaw = lineBend' False
 
+-- Note: Returns polygon with n+1 elements.
 lineBend' :: Bool -> Trajectory
 lineBend' corrected (a,b) = \t ->
     let u = 1 - t
@@ -33,17 +25,17 @@ lineBend' corrected (a,b) = \t ->
         alpha_zero = u * alpha_a_zero + t * alpha_b_zero
         alpha = V.scanl (+) alpha_zero phi
         bigE =
-          V.sum $ V.zipWith (\diff a -> squared diff * squared (cos a)) lengths_diff alpha
+          V.sum $ V.zipWith (\diff alp -> squared diff * squared (cos alp)) lengths_diff alpha
         bigF =
-          V.sum $ V.zipWith (\diff a -> squared diff * sin a * cos a) lengths_diff alpha
+          V.sum $ V.zipWith (\diff alp -> squared diff * sin alp * cos alp) lengths_diff alpha
         bigG =
-          V.sum $ V.zipWith (\diff a -> squared diff * squared (sin a)) lengths_diff alpha
+          V.sum $ V.zipWith (\diff alp -> squared diff * squared (sin alp)) lengths_diff alpha
         bigU =
           2 * V.sum
-          (V.zipWith3 (\len_a len_b a -> (u*len_a + t*len_b) * cos a) lengths_a lengths_b alpha)
+          (V.zipWith3 (\len_a len_b alp -> (u*len_a + t*len_b) * cos alp) lengths_a lengths_b alpha)
         bigV =
           2 * V.sum
-          (V.zipWith3 (\len_a len_b a -> (u*len_a + t*len_b) * sin a) lengths_a lengths_b alpha)
+          (V.zipWith3 (\len_a len_b alp -> (u*len_a + t*len_b) * sin alp) lengths_a lengths_b alpha)
         lam1 = det22 (V2 (V2 bigU bigF) (V2 bigV bigG)) /
                det22 (V2 (V2 bigE bigF) (V2 bigF bigG))
         lam2 = det22 (V2 (V2 bigE bigU) (V2 bigF bigV)) /
@@ -55,12 +47,11 @@ lineBend' corrected (a,b) = \t ->
           | n <- [0 .. length a-1]]
         lengths = V.zipWith3 (\l r s -> u*l + t*r + if corrected then s else 0) lengths_a lengths_b s_vect
         V2 x_zero y_zero = lerp t (realToFrac <$> b V.! 0) (realToFrac <$> a V.! 0)
-        x_modifiers = V.zipWith (\l a -> l * cos a) lengths alpha
-        y_modifiers = V.zipWith (\l a -> l * sin a) lengths alpha
+        x_modifiers = V.zipWith (*) lengths (V.map cos alpha)
+        y_modifiers = V.zipWith (*) lengths (V.map sin alpha)
         xs = V.scanl (+) x_zero x_modifiers
         ys = V.scanl (+) y_zero y_modifiers
-    in -- trace (show $ s_vect) $
-      V.map (fmap realToFrac) $ V.zipWith V2 xs ys
+    in V.map (fmap realToFrac) $ V.zipWith V2 xs ys
   where
     squared x = x*x
     alpha_a_zero = lineAngle (a V.! 0 + V2 1 0) (a V.! 0) (a V.! 1)
