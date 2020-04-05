@@ -1,6 +1,6 @@
 # 2D morphology
 
-Morphing 2D shapes is conceptually simple. We can image it as a function that
+Morphing 2D shapes is conceptually simple. We can imagine it as a function that
 takes two SVG images and produces the intermediate steps that smoothly
 transforms the source image to the target image. If the SVG images are simple
 shapes then it looks like this:
@@ -33,6 +33,7 @@ and use their solutions as parameters to our morphing function.
 
 ## 1. Point correspondence
 
+SVG images can be simplified to polygons
 
 ```haskell
 type PointCorrespondence = Polygon → Polygon → (Polygon, Polygon)
@@ -78,6 +79,10 @@ type ObjectCorrespondence = [Polygon] → [Polygon] → [(Polygon, Polygon)]
 
 TBD.
 
+# Rotational interpolation
+
+TBD.
+
 # Stretch and Bend
 
 TBD.
@@ -89,7 +94,11 @@ lineBend :: Trajectory
 ```
 
 <video width="640" height="360" muted autoplay loop>
-  <source src="https://i.imgur.com/d8spJmi.mp4">
+  <source src="https://i.imgur.com/cmG1Wwr.mp4">
+</video>
+
+<video width="640" height="360" muted autoplay loop>
+  <source src="https://i.imgur.com/hoSncAC.mp4">
 </video>
 
 

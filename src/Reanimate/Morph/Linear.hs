@@ -1,5 +1,8 @@
 module Reanimate.Morph.Linear
   ( linear, rawLinear
+  , linearCorrespondence
+  , closestLinearCorrespondence
+  , linearTrajectory
   ) where
 
 import qualified Data.Vector            as V
