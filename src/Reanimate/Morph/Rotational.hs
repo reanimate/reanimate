@@ -31,7 +31,7 @@ rotationalTrajectory origin (src,dst) =
     srcAngles = V.map (originAngle srcOrigin . fmap realToFrac) src
     dstAngles = V.map (originAngle dstOrigin . fmap realToFrac) dst
 
-    originAngle origin v = lineAngle (origin + V2 1 0) origin v
+    originAngle o v = lineAngle (o + V2 1 0) o v
 
 polygonOrigin :: Polygon -> Origin -> V2 Double
 polygonOrigin poly (originX, originY) =

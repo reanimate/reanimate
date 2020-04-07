@@ -6,8 +6,6 @@
 module Main(main) where
 
 import           Codec.Picture
-import           Codec.Picture.Types
-import           Control.Monad
 import           Data.List                  (transpose)
 import qualified Data.Vector                as V
 import           Graphics.SvgTree           (LineJoin (..))
