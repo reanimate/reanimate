@@ -69,25 +69,25 @@ type ObjectCorrespondence = [Polygon] → [Polygon] → [(Polygon, Polygon)]
   <source src="https://i.imgur.com/F7RZjJN.mp4">
 </video>
 
-## 5. Attribute interpolation
-
-* stroke
-* opacity
-
-
 # Linear interpolation
 
 TBD.
 
 # Rotational interpolation
 
-TBD.
+```haskell
+rotationalTrajectory :: Origin -> Trajectory
+```
 
-# Stretch and Bend
+<video width="640" height="360" muted autoplay loop>
+  <source src="https://i.imgur.com/dFY0IZz.mp4">
+</video>
 
-TBD.
+<video width="640" height="360" muted autoplay loop>
+  <source src="https://i.imgur.com/nAk8xJ1.mp4">
+</video>
 
-# Interpolating lengths and angles
+# Edge+angle interpolation
 
 ```haskell
 lineBend :: Trajectory
@@ -101,6 +101,10 @@ lineBend :: Trajectory
   <source src="https://i.imgur.com/hoSncAC.mp4">
 </video>
 
+
+TBD.
+
+# Stretch and Bend
 
 TBD.
 

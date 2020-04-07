@@ -5,7 +5,7 @@ module Main where
 
 import Data.Ratio
 import           Codec.Picture.Types
-import           Control.Lens
+import           Control.Lens ()
 import           Control.Monad
 import           Data.Function
 import           Data.List
@@ -63,10 +63,11 @@ main = reanimate $ sceneAnimation $ do
   --   let p = shape4
   --   in withStrokeWidth (defaultStrokeWidth*0.6) $ renderTriangulation p (earClip p)
   -- play $ setDuration 20 $ drawSSSPVisibility $ scalePolygon 1 $ shape7
-  let shapeI = head $ svgToPolygons 0.01 $ scale 8 $ center $ latex "I"
+  let shapeI = head $ svgToPolygons 0.01 $ scale 8 $ center $ latex "$\\pi$"
   -- play $ animate $ \_ -> withFillColor "grey" $ polygonNumDots shapeI
   -- play $ drawTriangulation (scalePolygon 0.5 $ winding 10) earClip'
-  play $ drawTriangulation shapeI (take 100 . earClip')
+  play $ drawSSSPVisibility shapeI
+    # setDuration 25
   -- play $ staticFrame 1 $ renderTriangulation shape3 earClip
   -- play $ staticFrame 1 $ renderTriangulation shape4 earClip
   -- play $ staticFrame 1 $ renderTriangulation shape5 earClip
@@ -95,7 +96,7 @@ drawSSSPVisibility p' = addStatic (mkBackground "black") $ mkAnimation 5 $ \t ->
   centerUsing (polygonShape p) $
   mkGroup
   [ withFillColor "grey" $ polygonShape p
-  , withFillColor "grey" $ polygonDots p
+  -- , withFillColor "grey" $ polygonDots p
   , withFillColor "white" $ polygonShape vis
   , let V2 x y = fmap realToFrac $ pAccess p 0 in
     translate x y $ withFillColor "red" $ mkCircle 0.1

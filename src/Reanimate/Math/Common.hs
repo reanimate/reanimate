@@ -59,6 +59,18 @@ scalePolygon s = V.map (\v -> v ^* s)
 centoid :: Polygon -> V2 Rational
 centoid p = V.sum p ^/ fromIntegral (length p)
 
+-- Returns (min-x, min-y, width, height)
+polygonBox :: Polygon -> (Rational, Rational, Rational, Rational)
+polygonBox = \p ->
+    let V2 x y = p V.! 0 in
+    case V.foldl' worker (x, y, 0, 0) p of
+      (xMin, yMin, xMax, yMax) ->
+        (xMin, yMin, xMax-xMin, yMax-yMin)
+  where
+    worker (xMin,yMin,xMax,yMax) (V2 thisX thisY) =
+      (min xMin thisX, min yMin thisY
+      ,max xMax thisX, max yMax thisY)
+
 -- Place n points on a circle, use one parameter to slide the points back and forth.
 -- Use second parameter to move points closer to center circle.
 genPolygon :: [(Double, Double)] -> Polygon
