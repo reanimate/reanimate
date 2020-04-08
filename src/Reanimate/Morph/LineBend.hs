@@ -49,7 +49,7 @@ lineBend' corrected (a,b) = \t ->
           | n <- [0 .. length a-1]]
         lengths = V.zipWith3 (\l r s -> u*l + t*r + if corrected then s else 0) lengths_a lengths_b s_vect
         movingCenter :: V2 Double
-        movingCenter = lerp t (realToFrac <$> centoid b) (realToFrac <$> centoid a)
+        movingCenter = lerp t (realToFrac <$> polygonCentroid b) (realToFrac <$> polygonCentroid a)
         centerAng :: Double
         centerAng = lerpAngle centoid_angle_a centoid_angle_b t
         centerLen = u*centoid_len_a + t*centoid_len_b
@@ -63,11 +63,11 @@ lineBend' corrected (a,b) = \t ->
   where
     squared x = x*x
     centoid_angle_a :: Double
-    centoid_angle_a = lineAngle (centoid a + V2 1 0) (centoid a) (a V.! 0)
-    centoid_angle_b = lineAngle (centoid b + V2 1 0) (centoid b) (b V.! 0)
+    centoid_angle_a = lineAngle (polygonCentroid a + V2 1 0) (polygonCentroid a) (a V.! 0)
+    centoid_angle_b = lineAngle (polygonCentroid b + V2 1 0) (polygonCentroid b) (b V.! 0)
     centoid_len_a :: Double
-    centoid_len_a = realToFrac $ approxDist (centoid a) (a V.! 0)
-    centoid_len_b = realToFrac $ approxDist (centoid b) (b V.! 0)
+    centoid_len_a = realToFrac $ approxDist (polygonCentroid a) (a V.! 0)
+    centoid_len_b = realToFrac $ approxDist (polygonCentroid b) (b V.! 0)
     alpha_a_zero = lineAngle (a V.! 0 + V2 1 0) (a V.! 0) (a V.! 1)
     alpha_b_zero = lineAngle (b V.! 0 + V2 1 0) (b V.! 0) (b V.! 1)
     lengths_a = computeLength a

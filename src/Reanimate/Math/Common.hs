@@ -56,9 +56,6 @@ isSimple p = noDups && isCCW p && checkEdge 0 2
 scalePolygon :: Rational -> Polygon -> Polygon
 scalePolygon s = V.map (\v -> v ^* s)
 
-centoid :: Polygon -> V2 Rational
-centoid p = V.sum p ^/ fromIntegral (length p)
-
 -- Returns (min-x, min-y, width, height)
 polygonBox :: Polygon -> (Rational, Rational, Rational, Rational)
 polygonBox = \p ->
@@ -279,7 +276,21 @@ cyclePolygon p t = worker 0 0
     limit = t * len
 
 polygonCentroid :: Polygon -> V2 Rational
-polygonCentroid p = V.sum p ^/ toRational (length p)
+polygonCentroid p = V2 cx cy
+  where
+    pArea = polygonArea p
+    cx = recip (6*pArea) * V.sum (mapEdges fnX p)
+    cy = recip (6*pArea) * V.sum (mapEdges fnY p)
+    fnX (V2 x y) (V2 x' y') = (x+x')*(x*y' - x'*y)
+    fnY (V2 x y) (V2 x' y') = (y+y')*(x*y' - x'*y)
+
+mapEdges :: (V2 Rational -> V2 Rational -> a) -> Polygon -> V.Vector a
+mapEdges fn p = V.generate (length p) $ \i ->
+  fn (pAccess p i) (pAccess p $ pNext p i)
+
+polygonArea :: Polygon -> Rational
+polygonArea p =
+  0.5 * V.sum (mapEdges (\(V2 x y) (V2 x' y') -> x*y' - x'-y) p)
 
 polygonLength :: (Real a, Fractional a) => Vector (V2 a) -> a
 polygonLength p = sum
@@ -311,8 +322,7 @@ isConvex p = and
 
 isCCW :: Polygon -> Bool
 isCCW p | V.null p = False
-isCCW p =
-    (V.sum (V.zipWith fn p (V.drop 1 p)) + fn (V.last p) (V.head p)) < 0
+isCCW p = V.sum (mapEdges fn p) < 0
   where
     fn (V2 x1 y1) (V2 x2 y2) = (x2-x1)*(y2+y1)
 

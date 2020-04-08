@@ -22,7 +22,7 @@ import           Linear.V2
 import           Linear.Vector
 import           Reanimate.Animation
 import           Reanimate.Interpolate
-import           Reanimate.Math.Common  (Polygon, approxDist, pAccess, centoid)
+import           Reanimate.Math.Common  (Polygon, approxDist, pAccess, polygonCentroid)
 import           Reanimate.Math.EarClip
 import           Reanimate.Math.SSSP
 import           Reanimate.PolyShape
@@ -121,7 +121,7 @@ genesisObjectCorrespondence left right =
     (x:xs, y:ys) ->
       (x,y) : genesisObjectCorrespondence xs ys
   where
-    emptyFrom a b = V.map (const $ centoid a) b
+    emptyFrom a b = V.map (const $ polygonCentroid a) b
 
 dupObjectCorrespondence :: ObjectCorrespondence
 dupObjectCorrespondence left right =
