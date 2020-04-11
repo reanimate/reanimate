@@ -104,7 +104,7 @@ lineBend :: Trajectory
 
 TBD.
 
-# Stretch and Bend
+# Least-work correspondence
 
 TBD.
 
@@ -128,3 +128,7 @@ TBD.
 * Kute
 * svg_morph
 * D3
+
+$$
+\frac{n!}{k!(n-k)!} = \binom{n}{k}
+$$
