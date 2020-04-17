@@ -33,28 +33,30 @@ module Reanimate.PolyShape
   ) where
 
 import           Chiphunk.Low
-import           Control.Lens          ((&), (.~))
-import           Data.List             (minimumBy, nub, partition, sortOn)
+import           Control.Lens           ((&), (.~))
+import           Data.AdditiveGroup
+import           Data.List              (minimumBy, nub, partition, sortOn)
 import           Data.Ord
-import qualified Data.Vector           as V
+import qualified Data.Vector            as V
 import           Debug.Trace
-import           Geom2D.CubicBezier    (ClosedPath (..), CubicBezier (..),
-                                        DPoint, FillRule (..), PathJoin (..),
-                                        Point (..), arcLength, arcLengthParam,
-                                        bezierIntersection, bezierSubsegment,
-                                        closedPathCurves, closest, colinear,
-                                        curvesToClosed, evalBezier,
-                                        interpolateVector, reorient,
-                                        splitBezier, union, vectorDistance)
-import           Graphics.SvgTree      (PathCommand (..), RPoint, Tree (..),
-                                        defaultSvg, pathDefinition)
+import           Geom2D (($*), rotate90L, rotate90R, (^*))
+import           Geom2D.CubicBezier     (ClosedPath (..), CubicBezier (..),
+                                         DPoint, FillRule (..), PathJoin (..),
+                                         Point (..), arcLength, arcLengthParam,
+                                         bezierIntersection, bezierSubsegment,
+                                         closedPathCurves, closest, colinear,
+                                         curvesToClosed, evalBezier,
+                                         interpolateVector, reorient,
+                                         splitBezier, union, vectorDistance)
+import           Graphics.SvgTree       (PathCommand (..), RPoint, Tree (..),
+                                         defaultSvg, pathDefinition)
 import           Linear.V2
+import           Reanimate.Animation
 import           Reanimate.Constants
-import           Reanimate.Math.Common (Polygon, isCCW)
+import           Reanimate.Math.Common  (Polygon, isCCW)
 import           Reanimate.Math.EarClip
 import           Reanimate.Math.SSSP
 import           Reanimate.Svg
-import           Reanimate.Animation
 
 -- | Shape drawn by continuous line. May have overlap, may be convex.
 newtype PolyShape = PolyShape { unPolyShape :: ClosedPath Double }
@@ -221,7 +223,7 @@ plPolygonify tol shape =
     worker c | endPoint c == startPoint c =
       [] -- error $ "Bad bezier: " ++ show c
     worker c =
-      if colinear c tol
+      if colinear c tol -- && arcLength c 1 tol < 1
         then [endPoint c]
         else
           let (lhs,rhs) = splitBezier c 0.5
@@ -403,20 +405,26 @@ cutSingleHole parent child =
       [x2p]
     )
   where
+    vect = (childOrigin ^-^ p) ^* 0.0001
+    vectL = rotate90L $* vect
+    vectR = rotate90R $* vect
     score = vectorDistance childOrigin p
     childOrigin = polyShapeOrigin child
+    childOrigin' = childOrigin ^-^ vectL
     (pHead:pTail) = plCurves parent
     childCurves = plCurves child
 
     pParam = closest pHead childOrigin polyShapeTolerance
 
-    (a2p, p2b) = splitBezier pHead pParam
+    (a2p, p2b') = splitBezier pHead pParam
+    p2b = case p2b' of
+      CubicBezier a b c d -> CubicBezier (a ^-^ vectL) b c d
 
     p = evalBezier pHead pParam
     -- straight line to child origin
-    p2x = lineBetween p childOrigin
+    p2x = lineBetween (p ^-^ vectR) childOrigin
     -- straight line from child origin
-    x2p = lineBetween childOrigin p
+    x2p = lineBetween childOrigin' p
 
     lineBetween a = CubicBezier a a a
 

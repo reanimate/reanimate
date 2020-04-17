@@ -5,16 +5,19 @@ module Reanimate.Morph.Linear
   , linearTrajectory
   ) where
 
+import           Data.Hashable
 import qualified Data.Vector            as V
 import           Linear.Vector
-
 import           Reanimate.Interpolate
-import           Reanimate.Morph.Common
 import           Reanimate.Math.Common
+import           Reanimate.Morph.Cache
+import           Reanimate.Morph.Common
 
 linear :: Morph
 linear = rawLinear
-  { morphPointCorrespondence  = closestLinearCorrespondence }
+  { morphPointCorrespondence  =
+      cachePointCorrespondence (hash ("closest"::String))
+        closestLinearCorrespondence }
 
 rawLinear :: Morph
 rawLinear = Morph
@@ -25,12 +28,13 @@ rawLinear = Morph
   , morphObjectCorrespondence = splitObjectCorrespondence }
 
 linearCorrespondence :: PointCorrespondence
-linearCorrespondence src dst = (src, dst)
+linearCorrespondence = normalizePolygons
 
 closestLinearCorrespondence :: PointCorrespondence
-closestLinearCorrespondence src dst =
+closestLinearCorrespondence src' dst' =
     (src, worker dst (score dst) options)
   where
+    (src, dst) = normalizePolygons src' dst'
     worker bestP _bestPScore [] = bestP
     worker bestP bestPScore (x:xs) =
       let newScore = score x in

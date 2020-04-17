@@ -10,6 +10,10 @@ module Reanimate.Morph.Common
   , splitObjectCorrespondence
   , dupObjectCorrespondence
   , genesisObjectCorrespondence
+  , toShapes
+  , normalizePolygons
+  , annotatePolygons
+  , unsafeSVGToPolygon
   ) where
 
 import           Control.Lens
@@ -54,8 +58,8 @@ data Morph = Morph
 morph :: Morph -> SVG -> SVG -> Double -> SVG
 morph Morph{..} src dst = \t ->
   case t of
-    0 -> lowerTransformations src
-    1 -> lowerTransformations dst
+    -- 0 -> lowerTransformations src
+    -- 1 -> lowerTransformations dst
     _ -> mkGroup
           [ (render $ genPoints t)
               & drawAttributes .~ genAttrs t
@@ -74,9 +78,13 @@ morph Morph{..} src dst = \t ->
       ]
 
 applyPointCorrespondence :: PointCorrespondence -> Polygon -> Polygon -> (Polygon, Polygon)
-applyPointCorrespondence fn src dst =
-    fn (addPoints (max 0 $ dstN-srcN) src)
-       (addPoints (max 0 $ srcN-dstN) dst)
+applyPointCorrespondence fn src dst = fn src dst
+  --uncurry fn (normalizePolygons src dst)
+
+normalizePolygons :: Polygon -> Polygon -> (Polygon, Polygon)
+normalizePolygons src dst =
+    (addPoints (max 0 $ dstN-srcN) src
+    ,addPoints (max 0 $ srcN-dstN) dst)
   where
     srcN = length src
     dstN = length dst
@@ -187,4 +195,13 @@ toShapes tol src =
   [ (attrs, plToPolygon tol shape)
   | (_, attrs, glyph) <- svgGlyphs $ lowerTransformations $ pathify $ src
   , shape <- map mergePolyShapeHoles $ plGroupShapes $ svgToPolyShapes glyph
+  ]
+
+unsafeSVGToPolygon :: Double -> SVG -> Polygon
+unsafeSVGToPolygon tol src = snd $ head $ toShapes tol src
+
+annotatePolygons :: (Polygon -> SVG) -> SVG -> SVG
+annotatePolygons fn svg = mkGroup
+  [ fn poly & drawAttributes .~ attr
+  | (attr, poly) <- toShapes 0.001 svg
   ]

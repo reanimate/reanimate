@@ -5,9 +5,12 @@ module Reanimate.Cache
   , cacheDiskSvg
   , cacheDiskKey
   , cacheDiskLines
+  , encodeInt
   ) where
 
+import           Control.Exception
 import           Control.Monad       (unless)
+import           Data.Bits
 import           Data.Hashable
 import           Data.IORef
 import           Data.Map            (Map)
@@ -20,10 +23,9 @@ import           Reanimate.Animation (renderTree)
 import           System.Directory
 import           System.FilePath
 import           System.IO
-import           Control.Exception
+import           System.IO.Temp
 import           System.IO.Unsafe
 import           Text.XML.Light      (Content (..), parseXML)
-import System.IO.Temp
 
 -- Memory cache and disk cache
 
@@ -39,11 +41,11 @@ cacheFile template gen = do
       renameFile tmp path
     evaluate path
 
-cacheDisk :: (T.Text -> Maybe a) -> (a -> T.Text) -> (Text -> IO a) -> (Text -> IO a)
-cacheDisk parse render gen key = do
+cacheDisk :: String -> (T.Text -> Maybe a) -> (a -> T.Text) -> (Text -> IO a) -> (Text -> IO a)
+cacheDisk cacheType parse render gen key = do
     root <- getXdgDirectory XdgCache "reanimate"
     createDirectoryIfMissing True root
-    let path = root </> show (hash key)
+    let path = root </> encodeInt (hash key) <.> cacheType
     hit <- doesFileExist path
     if hit
       then do
@@ -54,7 +56,7 @@ cacheDisk parse render gen key = do
       else genCache root path
   where
     genCache root path = do
-      (tmpPath, tmpHandle) <- openTempFile root (show (hash key))
+      (tmpPath, tmpHandle) <- openTempFile root (encodeInt (hash key))
       new <- gen key
       T.hPutStr tmpHandle (render new)
       hClose tmpHandle
@@ -65,7 +67,7 @@ cacheDiskKey :: Text -> IO Tree -> IO Tree
 cacheDiskKey key gen = cacheDiskSvg (const gen) key
 
 cacheDiskSvg :: (Text -> IO Tree) -> (Text -> IO Tree)
-cacheDiskSvg = cacheDisk parse render
+cacheDiskSvg = cacheDisk "svg" parse render
   where
     parse txt = case parseXML txt of
       [Elem t] -> Just (unparse t)
@@ -73,7 +75,7 @@ cacheDiskSvg = cacheDisk parse render
     render = T.pack . renderTree
 
 cacheDiskLines :: (Text -> IO [Text]) -> (Text -> IO [Text])
-cacheDiskLines = cacheDisk parse render
+cacheDiskLines = cacheDisk "txt" parse render
   where
     parse = Just . T.lines
     render = T.unlines
@@ -95,3 +97,14 @@ cacheMem gen key = do
         -- don't store the result.
         None -> pure None
         _    -> atomicModifyIORef cache (\m -> (Map.insert key svg m, svg))
+
+encodeInt :: Int -> String
+encodeInt i = worker (fromIntegral i) 60
+  where
+    worker :: Word -> Int -> String
+    worker key sh
+      | sh < 0 = []
+      | otherwise =
+        case (key `shiftR` sh) `mod` 64 of
+          idx -> alphabet !! fromIntegral idx : worker key (sh-6)
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+$"

@@ -3,40 +3,35 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import Data.Ratio
 import           Codec.Picture.Types
-import           Control.Lens ()
+import           Control.Lens                  ()
 import           Control.Monad
 import           Data.Function
 import           Data.List
-import           Data.List.NonEmpty                                         (NonEmpty)
-import qualified Data.List.NonEmpty                                         as NE
+import           Data.List.NonEmpty            (NonEmpty)
+import qualified Data.List.NonEmpty            as NE
 import           Data.Maybe
-import qualified Data.Text                                                  as T
+import           Data.Ratio
+import qualified Data.Text                     as T
 import           Data.Tuple
-import qualified Data.Vector                                                as V
+import qualified Data.Vector                   as V
 import           Debug.Trace
-import           Linear.Matrix                                              hiding
-                                                                             (trace)
+import           Linear.Matrix                 hiding (trace)
 import           Linear.Metric
 import           Linear.V2
 import           Linear.V3
 import           Linear.Vector
-import           Numeric.LinearAlgebra                                      hiding
-                                                                             (polar,
-                                                                             scale,
-                                                                             (<>))
-import qualified Numeric.LinearAlgebra                                      as Matrix
-import           Numeric.LinearAlgebra.HMatrix                              hiding
-                                                                             (polar,
-                                                                             scale,
-                                                                             (<>))
+import           Numeric.LinearAlgebra         hiding (polar, scale, (<>))
+import qualified Numeric.LinearAlgebra         as Matrix
+import           Numeric.LinearAlgebra.HMatrix hiding (polar, scale, (<>))
 import           Reanimate
+import           Reanimate.Math.Balloon
 import           Reanimate.Math.Common
-import           Reanimate.Math.Visibility
-import           Reanimate.Math.SSSP
 import           Reanimate.Math.EarClip
-import           Reanimate.PolyShape (svgToPolygons)
+import           Reanimate.Math.SSSP
+import           Reanimate.Math.Visibility
+import           Reanimate.Morph.Common
+import           Reanimate.PolyShape           (svgToPolygons)
 
 main :: IO ()
 main = reanimate $ sceneAnimation $ do
@@ -63,11 +58,38 @@ main = reanimate $ sceneAnimation $ do
   --   let p = shape4
   --   in withStrokeWidth (defaultStrokeWidth*0.6) $ renderTriangulation p (earClip p)
   -- play $ setDuration 20 $ drawSSSPVisibility $ scalePolygon 1 $ shape7
-  let shapeI = head $ svgToPolygons 0.01 $ scale 8 $ center $ latex "$\\pi$"
+  let shapeI = head $ svgToPolygons 0.1 $ scale 8 $ center $ latex "I"
   -- play $ animate $ \_ -> withFillColor "grey" $ polygonNumDots shapeI
   -- play $ drawTriangulation (scalePolygon 0.5 $ winding 10) earClip'
-  play $ drawSSSPVisibility shapeI
-    # setDuration 25
+  -- play $ staticFrame 1 $
+  --   mkGroup
+  --   [ withFillColor "grey" $ polygonShape shape13
+  --   , withFillColor "grey" $ polygonDots shape13 ]
+  let p = balloonP origin
+      origin = centerPolygon $ scalePolygon 1 $ shiftLongestDiameter shapeI
+      mkB = balloon (scale 8 $ center $ latex "$\\infty$")
+      inf = unsafeSVGToPolygon 0.1 $ (scale 8 $ center $ latex "$\\infty$")
+  _ <- newSpriteSVG $
+    translate (0) (3) $ withFillColor "white" $
+    center $ latex $ T.pack $ show (isSimple inf)
+  play $ pauseAtEnd 1 $ mkAnimation 3 $ \t ->
+    let inflated = p t in
+    translate (0) (0) $ withFillColor "white" $ withStrokeColor "red" $
+    withStrokeWidth (defaultStrokeWidth*0) $
+    -- polygonShape inf
+    -- renderTriangulation inf (earClip inf)
+    mkB t
+    -- mkGroup
+    -- [ -- translate (-2) 0 $ withFillColor "white" $ polygonShape $ balloonP (min 1 $ t+0.1) origin
+    --   if False then mkGroup [] else translate (0) 0 $ mkGroup
+    --   [ withFillColor "white" $ polygonShape inflated
+    --   -- , polygonNumDots inflated
+    --   ]
+    -- -- , translate (2) 0 $ mkGroup
+    -- --   [ withFillColor "grey" $ polygonShape origin
+    -- --   , polygonNumDots origin
+    -- --   ]
+    -- ]
   -- play $ staticFrame 1 $ renderTriangulation shape3 earClip
   -- play $ staticFrame 1 $ renderTriangulation shape4 earClip
   -- play $ staticFrame 1 $ renderTriangulation shape5 earClip

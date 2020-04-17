@@ -10,8 +10,10 @@ import           Control.Monad
 import           Graphics.SvgTree (LineJoin(..))
 import           Reanimate
 import           Reanimate.Morph.Common
+import           Reanimate.Math.Common
 import           Reanimate.Morph.Linear
 import           Reanimate.Morph.LineBend
+import Linear.V2
 
 bgColor :: PixelRGBA8
 bgColor = PixelRGBA8 252 252 252 0xFF
@@ -40,6 +42,7 @@ main = reanimate $
         fork $ play $ mkAnimation 4 (morph myMorph from to)
           # mapA (translate (3) (-0.5))
           # signalA (curveS 4)
+
     myMorph = linear{morphTrajectory = lineBend }
     pairs = zip stages (tail stages ++ [head stages])
     stages = map (lowerTransformations . scale 6 . pathify . center) $ colorize

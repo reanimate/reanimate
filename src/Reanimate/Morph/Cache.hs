@@ -1,0 +1,50 @@
+module Reanimate.Morph.Cache where
+
+import           Control.Exception
+import           Data.Bits
+import qualified Data.ByteString        as B
+import           Data.Hashable
+import           Data.Serialize
+import qualified Data.Vector            as V
+import           Reanimate.Cache        (encodeInt)
+import           Reanimate.Math.Common
+import           Reanimate.Morph.Common
+import           System.Directory
+import           System.FilePath
+import           System.IO
+import           System.IO.Temp
+import           System.IO.Unsafe
+
+instance Hashable a => Hashable (V.Vector a) where
+  hashWithSalt = V.foldl' hashWithSalt
+
+instance Serialize a => Serialize (V.Vector a) where
+  put = put . V.toList
+  get = V.fromList <$> get
+
+-- type PointCorrespondence = Polygon → Polygon → (Polygon, Polygon)
+cachePointCorrespondence :: Int -> PointCorrespondence -> PointCorrespondence
+cachePointCorrespondence ident fn src dst = unsafePerformIO $ do
+    root <- getXdgDirectory XdgCache "reanimate"
+    createDirectoryIfMissing True root
+    let path = root </> template
+    hit <- doesFileExist path
+    if hit
+      then do
+        inp <- B.readFile path
+        case decode inp of
+          Left{} -> do
+            removeFile path
+            gen path
+          Right out -> return out
+      else gen path
+  where
+    gen path = do
+      correspondence <- evaluate (fn src dst)
+      withSystemTempFile template $ \tmp h -> do
+        hClose h
+        B.writeFile tmp (encode correspondence)
+        renameFile tmp path
+      return correspondence
+    template = encodeInt key <.> "morph"
+    key = hashWithSalt ident (src,dst)

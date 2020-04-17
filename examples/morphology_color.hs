@@ -32,8 +32,8 @@ main = reanimate $
             ]
           | conf <- [ linear
                     , linear{morphColorComponents=xyzComponents}
-                    , linear{morphColorComponents=rgbComponents}]
-          | label <- ["LAB", "XYZ", "RGB"]
+                    , linear{morphColorComponents=hsvComponents}]
+          | label <- ["LAB", "XYZ", "HSV"]
           | n <- [0..]
           ]
     radius = 2.5

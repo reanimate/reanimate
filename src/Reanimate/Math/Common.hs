@@ -56,6 +56,10 @@ isSimple p = noDups && isCCW p && checkEdge 0 2
 scalePolygon :: Rational -> Polygon -> Polygon
 scalePolygon s = V.map (\v -> v ^* s)
 
+centerPolygon :: Polygon -> Polygon
+centerPolygon p = V.map (subtract c) p
+  where c = polygonCentroid p ^/ 2
+
 -- Returns (min-x, min-y, width, height)
 polygonBox :: Polygon -> (Rational, Rational, Rational, Rational)
 polygonBox = \p ->
@@ -229,6 +233,48 @@ shape12 :: Polygon
 shape12 = V.fromList
   [ V2 0 0, V2 0.5 1.5, V2 2 2, V2 (-2) 2, V2 (-0.5) 1.5 ]
 
+-- F shape
+shape13 :: Polygon
+shape13 = cyclePolygons (V.reverse (V.fromList
+  [ V2 0 0, V2 0 2
+  , V2 2 2, V2 2 1.7, V2 0.3 1.7, V2 0.3 1
+  , V2 2 1, V2 2 0.7
+  , V2 0.3 0.7, V2 0.3 0 ])) !! 7
+
+-- E shape
+shape14 :: Polygon
+shape14 = cyclePolygons (V.reverse $ V.fromList
+  [ V2 0 0, V2 0 2 -- up
+  , V2 2 2, V2 2 1.7, V2 0.3 1.7, V2 0.3 1 -- first prong
+  , V2 2 1, V2 2 0.7, V2 0.3 0.7, V2 0.3 0.3 -- second prong
+  , V2 2 0.3, V2 2 0 -- last prong
+  ]) !! 9
+
+--
+shape15 :: Polygon
+shape15 = V.fromList
+  [ V2 0 0, V2 2 0
+  , V2 2 2, V2 1 2
+  , V2 1 1, V2 0 1]
+
+shape16 :: Polygon
+shape16 = V.fromList
+  [ V2 0 0, V2 2 0
+  , V2 2 1, V2 1 1
+  , V2 1 2, V2 0 2]
+
+shape17 :: Polygon
+shape17 = V.fromList
+  [ V2 2 0, V2 2 1
+  , V2 1 1, V2 1 2
+  , V2 0 2, V2 0 1, V2 0 0 ]
+
+shape18 :: Polygon
+shape18 = V.fromList
+  [ V2 2 0, V2 2 1, V2 2 2
+  , V2 1 2, V2 1 1
+  , V2 0 1, V2 0 0 ]
+
 concave :: Polygon
 concave = V.fromList [V2 0 0, V2 2 0, V2 2 2, V2 1 1, V2 0 2]
 
@@ -290,7 +336,7 @@ mapEdges fn p = V.generate (length p) $ \i ->
 
 polygonArea :: Polygon -> Rational
 polygonArea p =
-  0.5 * V.sum (mapEdges (\(V2 x y) (V2 x' y') -> x*y' - x'-y) p)
+  0.5 * V.sum (mapEdges (\(V2 x y) (V2 x' y') -> x*y' - x'*y) p)
 
 polygonLength :: (Real a, Fractional a) => Vector (V2 a) -> a
 polygonLength p = sum
@@ -414,8 +460,13 @@ lineIntersect a b =
       | isBetween u a && isBetween u b -> Just u
     _ -> Nothing
 
+-- circleIntersect :: (Ord a, Fractional a) => (V2 a, V2 a) -> (V2 a, V2 a) -> [V2 a]
+
 distSquared :: (Fractional a) => V2 a -> V2 a -> a
 distSquared a b = quadrance (a ^-^ b)
 
 approxDist :: (Real a, Fractional a) => V2 a -> V2 a -> a
 approxDist a b = realToFrac (sqrt (realToFrac (distSquared a b) :: Double))
+
+distance' :: (Real a, Fractional a) => V2 a -> V2 a -> Double
+distance' a b = sqrt (realToFrac (distSquared a b))
