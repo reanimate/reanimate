@@ -11,20 +11,30 @@ Reanimate is an animation library based on SVGs. It is designed to act like glue
 between external components such as 'latex', 'ffmpeg', 'gnuplot', 'diagrams',
 and 'povray'.
 
+= Canvas
+
+Reanimate uses its own internal, Cartesian coordinate system for animations,
+with a fixed canvas size of 16x9, where X and Y are real numbers. (0, 0) is
+located in the center of the canvas, with positive X going to the right, and
+positive Y going up. This means that e.g. (8, 4.5) is the top right corner
+and (-8, -4.5) is the bottom left corner. Note that this canvas size does not
+affect how large or small output resolution will be, although it /does/ affect
+aspect ratio.
+
+= Driver
+
+Reanimate features a web-based viewer which is opened by default if
+no other parameters are given. Key features:
+
+  * This viewer listens for changes to the source file and recompiles the
+    code automatically as needed.
+  * Animations are rendered with increasing fidelity until the frame
+    rate reaches 60 fps.
+  * Key commands for pausing, frame stepping, forward/rewind.
+    To pause press SPACE, to move -1\/+1\/-10\/+10 frames use LEFT\/RIGHT\/DOWN\/UP arrow keys.
 -}
 module Reanimate
-  ( -- * Driver
-    --
-    -- | Reanimate features a web-based viewer which is opened by default if
-    --   no other parameters are given. Key features:
-    --
-    --   * This viewer listens for changes to the source file and recompiles the
-    --     code automatically as needed.
-    --   * Animations are rendered with increasing fidelity until the frame
-    --     rate reaches 60 fps.
-    --   * Key commands for pausing, frame stepping, forward/rewind.
-    --     To pause press SPACE, to move -1\/+1\/-10\/+10 frames use LEFT\/RIGHT\/DOWN\/UP arrow keys.
-    reanimate,
+  ( reanimate,
     -- * Animations
     SVG,
     Time,
