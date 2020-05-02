@@ -1,21 +1,13 @@
 {-# LANGUAGE RecordWildCards #-}
-module Reanimate.Math.Triangulate where
+module Reanimate.Math.Triangulate
+  ( Triangulation
+  , edgesToTriangulation
+  ) where
 
 import           Control.Monad
-import           Data.Hashable
-import           Data.List             (intersect, nub, tails)
-import           Data.Ratio
-import           Data.Serialize
 import qualified Data.Set              as Set
-import           Data.Vector           (Vector)
 import qualified Data.Vector           as V
 import qualified Data.Vector.Mutable   as MV
-import           Linear.Matrix         (det33)
-import           Linear.Metric
-import           Linear.V2
-import           Linear.V3
-import           Linear.Vector
-import           Reanimate.Math.Common
 import           Control.Monad.ST
 
 -- Max edges: n-2

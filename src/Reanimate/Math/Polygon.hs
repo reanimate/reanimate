@@ -354,6 +354,11 @@ shape20 = mkPolygon $ V.fromList
   , V2 (-3) 3
   , V2 (-1) 0 ]
 
+shape21 :: Polygon
+shape21 = mkPolygon $ V.fromList
+  [V2 0.0 0.0,V2 1.0 0.0,V2 1.0 1.0,V2 2.0 1.0,V2 2.0 (-1.0),V2 3.0 (-1.0)
+  ,V2 3.0 2.0,V2 0.0 2.0]
+
 concave :: Polygon
 concave = mkPolygon $
   V.fromList [V2 0 0, V2 2 0, V2 2 2, V2 1 1, V2 0 2]

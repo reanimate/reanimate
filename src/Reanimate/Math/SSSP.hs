@@ -1,6 +1,21 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Reanimate.Math.SSSP where
+module Reanimate.Math.SSSP
+  ( -- * Single-Source-Shortest-Path
+    SSSP
+  , sssp                -- :: (Fractional a, Ord a) => Ring a -> Dual -> SSSP
+  , dual                -- :: Int -> Triangulation -> Dual
+  , PDual
+  , toPDual             -- :: Ring Rational -> Dual -> PDual
+  , pdualRings          -- :: Ring Rational -> PDual -> [Ring Rational]
+    -- * Misc
+  , dualToTriangulation -- :: Ring Rational -> Dual -> Triangulation
+  , pdualReduce         -- :: Ring Rational -> PDual -> Int -> PDual
+  , visibilityArray     -- :: Ring Rational -> V.Vector [Int]
+  , naive               -- :: Ring Rational -> SSSP
+  , naive2              -- :: Ring Rational -> SSSP
+  , drawDual            -- :: Dual -> String
+  ) where
 
 import           Control.Monad
 import           Control.Monad.ST
@@ -14,11 +29,8 @@ import           Data.STRef
 import           Data.Tree
 import qualified Data.Vector            as V
 import qualified Data.Vector.Mutable    as MV
-import           Linear.V2
--- import           Debug.Trace
 import           Reanimate.Math.Triangulate
 import           Reanimate.Math.Common
-import           Reanimate.Math.EarClip
 
 type SSSP = V.Vector Int
 
@@ -203,11 +215,11 @@ dualToTriangulation p d = edgesToTriangulation (ringSize p) $ filter goodEdge $
 -- Dual path:
 -- (Int,Int,Int) + V.Vector Int + V.Vector LeftOrRight
 
-simplifyDual :: DualTree -> DualTree
--- simplifyDual (NodeDual x EmptyDual EmptyDual) = NodeLeaf x
--- simplifyDual (NodeDual x l EmptyDual) = NodeDualL x l
--- simplifyDual (NodeDual x EmptyDual r) = NodeDualR x r
-simplifyDual d = d
+-- simplifyDual :: DualTree -> DualTree
+-- -- simplifyDual (NodeDual x EmptyDual EmptyDual) = NodeLeaf x
+-- -- simplifyDual (NodeDual x l EmptyDual) = NodeDualL x l
+-- -- simplifyDual (NodeDual x EmptyDual r) = NodeDualR x r
+-- simplifyDual d = d
 
 dual :: Int -> Triangulation -> Dual
 dual root t =

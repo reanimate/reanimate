@@ -4,7 +4,6 @@ module Reanimate.Math.Balloon where
 import           Control.Lens
 import qualified Data.Vector            as V
 import           Graphics.SvgTree       (drawAttributes)
-import           Linear.Metric
 import           Linear.V2
 import           Linear.Vector
 import           Reanimate.Svg.Constructors
@@ -14,7 +13,7 @@ import           Reanimate.Math.EarClip
 import           Reanimate.Math.SSSP
 import           Reanimate.Morph.Common (toShapes)
 
-import           Debug.Trace
+-- import           Debug.Trace
 
 balloon :: SVG -> (Double -> SVG)
 balloon svg = \t ->
@@ -65,7 +64,7 @@ balloonP p = \t ->
               if nodeVisible x
                 then map (moveCloser x) [a]
                 else []
-        chunkRight ai bi a b _ = []
+        chunkRight _ai _bi _a _b _ = []
         chunkLeft ai bi a b (x:y:xs) =
           case rayIntersect (a,b) (pAccess p x,pAccess p y) of
             Just u ->
@@ -78,7 +77,7 @@ balloonP p = \t ->
               if nodeVisible x
                 then map (moveCloser x) [b]
                 else []
-        chunkLeft ai bi a b _ = []
+        chunkLeft _ai _bi _a _b _ = []
         chunkCenter a b =
           let (aF, bF) = getFunnel a b
               aP = pAccess p a
@@ -126,7 +125,7 @@ balloonP p = \t ->
     ds = ssspDistances p ssspTree
 
 takeUntil :: (a -> Bool) -> [a] -> [a]
-takeUntil fn [] = []
+takeUntil _fn [] = []
 takeUntil fn (x:xs)
   | fn x = [x]
   | otherwise = x : takeUntil fn xs
@@ -137,30 +136,28 @@ diameter p = V.maximum (ssspDistances p ssspTree)
     ssspTree = sssp (polygonRing p) (dual 0 $ earClip $ polygonPoints p)
 
 shiftLongestDiameter :: Polygon -> Polygon
-shiftLongestDiameter p = findBest 0 p (cyclePolygons p)
+shiftLongestDiameter p = findBest p (cyclePolygons p)
   where
-    margin = 0.25
-    findBest score elt [] = elt
-    findBest score elt (x:xs) =
-      let newScore = 0 in --diameter x in
+    findBest elt [] = elt
+    findBest elt (x:xs) =
       if
         -- | newScore-score > score * margin    -> findBest newScore x xs
         -- | score-newScore > newScore * margin -> findBest score elt xs
-        | isTopLeft x elt                    -> findBest newScore x xs
-        | otherwise                          -> findBest score elt xs
+        | isTopLeft x elt                    -> findBest x xs
+        | otherwise                          -> findBest elt xs
     isTopLeft a b =
       case V.head (polygonPoints a)-V.head (polygonPoints b) of
         V2 x y -> y > x
 
 -- Shortest distances from point 0 to all other points.
 ssspDistances :: Polygon -> SSSP -> V.Vector Double
-ssspDistances p sssp = arr
+ssspDistances p sTree = arr
   where
     arr = V.generate (polygonSize p) $ \i ->
       case i of
         0 -> 0
         _ ->
-          let parent = sssp V.! i in
+          let parent = sTree V.! i in
           arr V.! parent + distance' (pAccess p parent) (pAccess p i)
 
 -- sssp :: Polygon -> Dual -> SSSP

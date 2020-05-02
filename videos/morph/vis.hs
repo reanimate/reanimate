@@ -38,7 +38,7 @@ import           Reanimate.Morph.Common
 import           Reanimate.PolyShape           (svgToPolygons)
 
 main :: IO ()
-main = reanimate $ takeA 0.1 $ sceneAnimation $ do
+main = reanimate $ sceneAnimation $ do
   bg <- newSpriteSVG $ mkBackground "black"
   spriteZ bg (-1)
   -- play $ drawVisibleFrom triangle
@@ -56,23 +56,24 @@ main = reanimate $ takeA 0.1 $ sceneAnimation $ do
   -- play $ drawOverlap $ fst $ split1Link (fst (split1Link shape7 3 7)) 0 2
   -- fork $ play $ mapA (translate (-4) 0) $ drawSSSPVisibilityFast $ setOffset (addPoints 0 shape14) 0
   -- fork $ play $ mapA (translate (4) 0) $ drawSSSPVisibilityFast $ setOffset (addPoints 2 shape13) 0
-  fork $ play $ staticFrame 1 $
-    let pOrigin = (addPoints 10 $ setOffset shape14 0)
-        --pOrigin = (addPoints 2 shape13)
-        p1 = translatePolygon (V2 0 (-3)) $ scalePolygon 3 $ setOffset pOrigin 0
-        p2 = fst $ split1Link p1 6 11 0
-        p3 = snd $ split1Link p2 1 7 0
-        -- p4 = fst $ split2Link p3 2 5
-        p4 = fst $ split1Link p3 2 5 1
-        p5 = fst $ split1Link p4 3 5 0
-        p6 = fst $ split2Link p5 0 2
-        p7 = fst $ split1Link p6 1 3 0
-        p8 = fst $ split2Link p7 0 2
-        p9 = fst $ split1Link p7 1 3 0
-        p = p1
-    in mkGroup
-    [ withFillColor "grey" $ polygonShape p
-    , polygonNumDots p ]
+  -- fork $ play $ staticFrame 1 $
+  --   let -- pOrigin = (addPoints 10 $ setOffset shape14 0)
+  --       pOrigin = shape21
+  --       --pOrigin = (addPoints 2 shape13)
+  --       p1 = translatePolygon (V2 0 (-3)) $ scalePolygon 1 $ setOffset pOrigin 0
+  --       p2 = fst $ split1Link p1 6 11 0
+  --       p3 = snd $ split1Link p2 1 7 0
+  --       -- p4 = fst $ split2Link p3 2 5
+  --       p4 = fst $ split1Link p3 2 5 1
+  --       p5 = fst $ split1Link p4 3 5 0
+  --       p6 = fst $ split2Link p5 0 2
+  --       p7 = fst $ split1Link p6 1 3 0
+  --       p8 = fst $ split2Link p7 0 2
+  --       p9 = fst $ split1Link p7 1 3 0
+  --       p = p1
+  --   in mkGroup
+  --   [ withFillColor "grey" $ polygonShape p
+  --   , polygonNumDots p ]
   -- newSpriteSVG $
   --   let p1 = setOffset shape14 0
   --       V2 x y = realToFrac <$> steiner2Link p1 2 6
@@ -108,7 +109,7 @@ main = reanimate $ takeA 0.1 $ sceneAnimation $ do
   -- play $ drawSSSP shape5 naive
   -- play $ drawSSSP (scalePolygon 0.5 $ winding 10) (\p -> sssp p (dual (earClip p)))
   -- play $ drawSSSP shape1 (\p -> sssp p (dual (earClip p)))
-  -- play $ drawTriangulation (cyclePolygon shape1 0.21) earClip'
+  play $ drawTriangulation shape21 earClip'
   -- play $ mkAnimation 1 $ \t ->
   --   -- let p = scalePolygon 5 $ shape11
   --   -- let p = shape7
@@ -154,7 +155,7 @@ main = reanimate $ takeA 0.1 $ sceneAnimation $ do
   return ()
 
 drawVisibility :: Polygon -> Animation
-drawVisibility p' = addStatic (mkBackground "black") $ mkAnimation 5 $ \t ->
+drawVisibility p' = mkAnimation 5 $ \t ->
   let p = cyclePolygon p' (t::Double) in
   centerUsing (polygonShape p) $
   mkGroup
@@ -223,7 +224,7 @@ drawCompatible a b = sceneAnimation $ do
   --     withFillColor "white" $ polygonShape r
 
 drawOverlap :: Polygon -> Animation
-drawOverlap p' = addStatic (mkBackground "black") $ mkAnimation 5 $ \t ->
+drawOverlap p' = mkAnimation 5 $ \t ->
   let p = cyclePolygon p' (t::Double)
       vis = ssspVisibility p
       vis' = ssspVisibility p'
@@ -403,9 +404,9 @@ renderVisibleFrom p = withStrokeColor "white" $ withFillColor "white" $ mkGroup
   , let V2 ax ay = fmap realToFrac $ pAccess p 0
         V2 bx by = fmap realToFrac $ pAccess p i ]
 
-drawTriangulation :: Polygon -> (Polygon -> [Triangulation]) -> Animation
+drawTriangulation :: Polygon -> (V.Vector (V2 Rational) -> [Triangulation]) -> Animation
 drawTriangulation p gen = sceneAnimation $ do
-  forM_ (gen p) $ \t -> play $ staticFrame 1 $ renderTriangulation p t
+  forM_ (gen $ polygonPoints p) $ \t -> play $ staticFrame 1 $ renderTriangulation p t
 
 renderTriangulation :: Polygon -> Triangulation -> SVG
 renderTriangulation p t = center $ mkGroup

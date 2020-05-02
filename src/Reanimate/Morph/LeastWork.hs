@@ -20,11 +20,7 @@ module Reanimate.Morph.LeastWork
 import           Control.Monad
 import           Control.Monad.ST
 import           Control.Monad.ST.Unsafe
-import           Data.Array
 import           Data.Array.Base
-import           Data.Array.MArray
-import           Data.Array.ST
-import           Data.Array.Unsafe
 import           Data.Hashable
 import           Data.Maybe
 import qualified Data.Vector             as V
@@ -32,15 +28,14 @@ import qualified Data.Vector.Unboxed     as VU
 import           Linear.Metric
 import           Linear.V2
 import           Linear.Vector
-import           Reanimate.LaTeX
 import           Reanimate.Math.Polygon
 import           Reanimate.Morph.Cache
 import           Reanimate.Morph.Common
 import           Reanimate.Morph.Linear
 import           System.IO
-import           Text.Printf
+-- import           Text.Printf
 
-import           Debug.Trace
+-- import           Debug.Trace
 
 data StretchCosts = StretchCosts
   { stretchStiffness       :: Double
@@ -111,19 +106,19 @@ bendWork BendCosts{..} startA endA startB endB =
       (bendStiffness * (deltaAngle + bendDeviationPenalty * deviation))**bendElasticity +
       if throughZero then bendZeroPenalty else 0
 
-deltaX :: Fractional a => V2 a
-deltaX = V2 (recip 1000000000) 0
+-- deltaX :: Fractional a => V2 a
+-- deltaX = V2 (recip 1000000000) 0
 
-testBendInfo :: Polygon -> Polygon -> [Int] -> [Int] -> (Double, Double, Bool)
-testBendInfo a b [a1,a2,a3] [b1,b2,b3] =
-  let startA = realToFrac <$> (pAccess a a1 - pAccess a a2)
-      endA   = realToFrac <$> (pAccess b b1 - pAccess b b2)
-      endB   = realToFrac <$> (pAccess b b3 - pAccess b b2)
-      startB = realToFrac <$> (pAccess a a3 - pAccess a a2)
-  in bendInfo startA endA startB endB
+-- testBendInfo :: Polygon -> Polygon -> [Int] -> [Int] -> (Double, Double, Bool)
+-- testBendInfo a b ~[a1,a2,a3] ~[b1,b2,b3] =
+--   let startA = realToFrac <$> (pAccess a a1 - pAccess a a2)
+--       endA   = realToFrac <$> (pAccess b b1 - pAccess b b2)
+--       endB   = realToFrac <$> (pAccess b b3 - pAccess b b2)
+--       startB = realToFrac <$> (pAccess a a3 - pAccess a a2)
+--   in bendInfo startA endA startB endB
 
-zeroBendFactor :: Fractional a => a
-zeroBendFactor = 1
+-- zeroBendFactor :: Fractional a => a
+-- zeroBendFactor = 1
 
 vZero :: (Ord a, Fractional a) => V2 a -> Bool
 vZero (V2 x y) = abs x < epsilon && abs y < epsilon
@@ -323,17 +318,17 @@ leastWork'' stretchCosts bendCosts src dst srcV dstV srcDist dstDist = runST $ d
                 srcMiddle = V.unsafeIndex srcV (i-1)
                 srcNext   = V.unsafeIndex srcV i
                 dstPrev   = V.unsafeIndex dstV (j-1-prevNorth)
-                dstPrev'   = V.unsafeIndex dstV (j-2)
+                -- dstPrev'   = V.unsafeIndex dstV (j-2)
                 dstMiddle = V.unsafeIndex dstV (j-1)
                 dstNext   = V.unsafeIndex dstV j
                 bWork =
                   bendWork bendCosts
                     (srcPrev-srcMiddle) (dstPrev-dstMiddle)
                     (srcNext-srcMiddle) (dstNext-dstMiddle)
-                bWork' =
-                  bendWork bendCosts
-                    (srcPrev-srcMiddle) (dstPrev'-dstMiddle)
-                    (srcNext-srcMiddle) (dstNext-dstMiddle)
+                -- bWork' =
+                --   bendWork bendCosts
+                --     (srcPrev-srcMiddle) (dstPrev'-dstMiddle)
+                --     (srcNext-srcMiddle) (dstNext-dstMiddle)
             when cond $ do
               unsafeIOToST $ hPutStrLn stderr $ "Diag:  " ++ show (i-1-prevWest, i-1, i)
               unsafeIOToST $ hPutStrLn stderr $ "Diag:  " ++ show (j-1-prevNorth, j-1, j)
@@ -389,7 +384,7 @@ leastWork'' stretchCosts bendCosts src dst srcV dstV srcDist dstDist = runST $ d
     --     hPutStr stderr "\n"
     finalWork <- readArray work (nSrc-1,nDst-1)
     let walk = \i j acc -> do
-          w <- readArray work (i,j)
+          -- w <- readArray work (i,j)
           -- when (i==14) $
           --   unsafeIOToST $ hPrint stderr (i,j)
           let acc' = (i,j):acc

@@ -1,13 +1,12 @@
-module Reanimate.Morph.Cache where
+module Reanimate.Morph.Cache
+  ( cachePointCorrespondence -- :: Int -> PointCorrespondence -> PointCorrespondence
+  ) where
 
 import           Control.Exception
-import           Data.Bits
 import qualified Data.ByteString        as B
 import           Data.Hashable
 import           Data.Serialize
-import qualified Data.Vector            as V
 import           Reanimate.Cache        (encodeInt)
-import           Reanimate.Math.Common
 import           Reanimate.Morph.Common
 import           System.Directory
 import           System.FilePath

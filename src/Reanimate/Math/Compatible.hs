@@ -7,12 +7,9 @@ import           Data.Ord
 import qualified Data.Vector                   as V
 import           Linear.V2
 import           Linear.Vector
-import           Numeric.LinearAlgebra.HMatrix (Matrix, linearSolve, toLists,
-                                                (><))
 import           Reanimate.Math.Polygon
-import           Reanimate.Math.EarClip
 
-import Debug.Trace
+import           Debug.Trace
 
 mkSteinerPoints :: V2 Rational -> V2 Rational -> Int -> [V2 Rational]
 mkSteinerPoints a b s_ = [ lerp (i/(s+1)) b a | i <- [1..s]]
@@ -83,7 +80,6 @@ steiner2Link p i j
                | b == d -> pure (b, a, c)
                | otherwise -> []
         ]
-    rNorm v = v ^/ approxDist 0 v
     isForward (a,b) v =
       not (isBetween a (b,v))
 
@@ -115,9 +111,9 @@ splitNLink p i js =
 -- 0, [(TwoLink,2),(OneLink,3)]
 -- 0, [(OneLink,5),(TwoLink,3)]
 splitNLinks :: Polygon -> Int -> [(Link,Int)] -> [V2 Rational]
-splitNLinks p i [] = []
+splitNLinks _p _i [] = []
 splitNLinks p i [(TwoLink,j)] = [steiner2Link p i j]
-splitNLinks p i [(OneLink,j)] = []
+splitNLinks _p _i [(OneLink,_j)] = []
 splitNLinks p i ((TwoLink,j):(OneLink,j'):xs) =
   let (l,r) = split2Link p i j
       p' = selectContains l r (pAccess p j')
@@ -139,7 +135,9 @@ splitNLinks p i ((OneLink,j):(TwoLink,j'):xs) =
       sIdx = fromMaybe (error "missing steiner sIdx") $ V.elemIndex s (polygonPoints p')
       sIdx' = fromMaybe (error "missing steiner sIdx'") $ V.elemIndex s' (polygonPoints p'')
   in s' : s : splitNLinks p'' sIdx' ((OneLink,j') : xs)
+splitNLinks _p _i _ = error "splitNLinks: invalid input"
 
+selectContains :: Polygon -> Polygon -> V2 Rational -> Polygon
 selectContains p1 p2 elt
   | V.elem elt (polygonPoints p1) = p1
   | V.elem elt (polygonPoints p2) = p2
@@ -247,6 +245,7 @@ compatiblyTriangulateP' aOrigin a b
     bTwoLink = polygonTwoLinks b
     nodeDist (i,j) = min (j-i) (n-j+i)
 
+oneBendBetween :: Polygon -> Int -> Int -> Bool
 oneBendBetween p a b =
     direction
       (pAccess p b)
@@ -258,6 +257,7 @@ oneBendBetween p a b =
       case polygonParent p a n of
         i -> if i == a then n else obstructedBy i
 
+polygonTwoLinks :: Polygon -> [(Int,Int)]
 polygonTwoLinks p =
   [ (i, j)
   | i <- [0 .. n-1]
@@ -271,6 +271,7 @@ polygonTwoLinks p =
   , isTwoLink || isStraightLine
   ] where n = polygonSize p
 
+polygonOneLinks :: Polygon -> [(Int,Int)]
 polygonOneLinks p =
   [ (i, j)
   | i <- [0 .. polygonSize p-1]

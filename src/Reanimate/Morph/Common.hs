@@ -23,13 +23,13 @@ import           Graphics.SvgTree       (DrawAttributes, Texture (..),
                                          groupOpacity, strokeColor,
                                          strokeOpacity)
 import           Linear.V2
-import           Linear.Vector
 import           Reanimate.Animation
 import           Reanimate.Interpolate
-import           Reanimate.Math.Polygon  (Polygon, approxDist, mkPolygon,
-                                         pAccess, polygonCentroid,
-                                         polygonPoints, polygonSize, addPoints, polygonRing, pdualPolygons)
 import           Reanimate.Math.EarClip
+import           Reanimate.Math.Polygon (Polygon, addPoints,
+                                         mkPolygon, pdualPolygons,
+                                         polygonCentroid, polygonPoints,
+                                         polygonRing, polygonSize)
 import           Reanimate.Math.SSSP
 import           Reanimate.PolyShape
 import           Reanimate.Signal

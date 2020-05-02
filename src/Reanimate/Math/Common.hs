@@ -1,10 +1,33 @@
 {-# LANGUAGE RecordWildCards #-}
-module Reanimate.Math.Common where
+module Reanimate.Math.Common
+  ( -- * Ring
+    Ring(..)
+  , ringSize            -- :: Ring a -> Int
+  , ringAccess          -- :: Ring a -> Int -> V2 a
+  , ringClamp           -- :: Ring a -> Int -> Int
+  , ringUnpack          -- :: Ring a -> Vector (V2 a)
+  , ringPack            -- :: Vector (V2 a) -> Ring a
+  , ringRayIntersect    -- :: Ring Rational -> (Int, Int) -> (Int,Int) -> Maybe (V2 Rational)
+    -- * Math
+  , area                -- :: Fractional a => V2 a -> V2 a -> V2 a -> a
+  , area2X              -- :: Fractional a => V2 a -> V2 a -> V2 a -> a
+  , epsilon             -- :: Fractional a => a
+  , epsEq               -- :: (Ord a, Fractional a) => a -> a -> Bool
+  , isLeftTurn          -- :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+  , isLeftTurnOrLinear  -- :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+  , isRightTurn         -- :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+  , isRightTurnOrLinear -- :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+  , direction           -- :: Fractional a => V2 a -> V2 a -> V2 a -> a
+  , isInside            -- :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> V2 a -> Bool
+  , barycentricCoords   -- :: Fractional a => V2 a -> V2 a -> V2 a -> V2 a -> (a, a, a)
+  , rayIntersect        -- :: (Fractional a, Ord a) => (V2 a,V2 a) -> (V2 a,V2 a) -> Maybe (V2 a)
+  , isBetween           -- :: (Ord a, Fractional a) => V2 a -> (V2 a, V2 a) -> Bool
+  , lineIntersect       -- :: (Ord a, Fractional a) => (V2 a, V2 a) -> (V2 a, V2 a) -> Maybe (V2 a)
+  , distSquared         -- :: (Fractional a) => V2 a -> V2 a -> a
+  , approxDist          -- :: (Real a, Fractional a) => V2 a -> V2 a -> a
+  , distance'           -- :: (Real a, Fractional a) => V2 a -> V2 a -> Double
+  ) where
 
-import           Data.Hashable
-import           Data.List      (intersect, nub, tails)
-import           Data.Ratio
-import           Data.Serialize
 import           Data.Vector    (Vector)
 import qualified Data.Vector    as V
 import           Linear.Matrix  (det33)

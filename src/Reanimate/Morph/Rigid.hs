@@ -67,21 +67,15 @@ on the shear.
 module Reanimate.Morph.Rigid where
 
 import           Data.Foldable (toList)
-import           Data.Maybe
 import           Data.Vector                   (Vector)
 import qualified Data.Vector                   as V
 import           Linear.Quaternion
-import           Linear.V
 import           Linear.Vector
 import           Linear.V2
 import           Linear.V3
-import           Linear.V4
 import qualified Numeric.LinearAlgebra         as Matrix
-import           Numeric.LinearAlgebra.HMatrix (GMatrix, Matrix, linearSolve,
+import           Numeric.LinearAlgebra.HMatrix (GMatrix, Matrix,
                                                 toLists, (!), (><))
-import           Reanimate.Morph.Common
-
-import           Debug.Trace
 
 type P = V2 Double
 type Trig = (P,P,P)
@@ -143,6 +137,7 @@ applyA :: Matrix Double -> Trig -> Trig
 applyA a p =
     case toLists (a <> matP) of
       [ [x1, x2], [y1, y2] ] -> (V2 0 0, V2 x1 y1, V2 x2 y2)
+      _ -> error "invalid matrix"
   where
     matP = trigToMatrix p
 
