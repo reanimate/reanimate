@@ -32,6 +32,9 @@ is obviously superior in all cases, let's identify the othogonal sub-problems
 and use their solutions as parameters to our morphing function.
 
 ## 1. Point correspondence
+```haskell
+type PointCorrespondence = Polygon → Polygon → (Polygon, Polygon)
+```
 
 SVG images can be simplified to polygons which are made out of points. To morph
 between two shapes, we somehow have to transform the points in a source
@@ -47,21 +50,26 @@ Point correspondence algorithms take two polygons (which may have a different
 number of points) and align their points so there's an exact one-to-one
 correspondence. This may require shuffling, adding, splitting, or merging points.
 
-In *reanimate*, point correspondence algorithms have this type:
-```haskell
-type PointCorrespondence = Polygon → Polygon → (Polygon, Polygon)
-```
-
-
 ## 2. Point trajectory
-
 ```haskell
 type Trajectory = (Polygon, Polygon) → (Double → Polygon)
 ```
 
+Once the points in the source and target polygons have been aligned, the next
+step is to figure out which path they should take. The simplest approach would
+be to move the points in a straight line but this doesn't always look right.
+The points in the leftmost figure of the following illustration moves in a
+straight line while the points in the rightmost figure take a curved path
+designed to avoid self-intersections:
+
 <video width="640" height="360" muted autoplay loop>
   <source src="https://i.imgur.com/jXOR7Ij.mp4">
 </video>
+
+The design space for trajectory algorithms is quite large and this article
+will cover five different approaches in addition to the simplest straight-line
+path.
+
 
 ## 3. Object correspondence
 
@@ -90,20 +98,30 @@ going in a straight line in the XYZ space (the 3D colorspace defined by the
 sensitivity of a typical human's eye) is physically correct but often a bit
 counter intuitive. For example, morphing between **blue** and **yellow** will go
 through **grey**. Also, the XYZ doesn't take into account how humans perceive
-colors (ie. what happens in the brain rather than what happens in the eye) and
+colors (ie. what happens in the brain rather than the eye) and
 morphing between two colors with the same perceived brightness will not keep the
 brightness a constant. These concerns, and many more, have lead to the
 development of different 3D colorspaces, such as CIE LAB, which take human color perception into
-account. *Reanimate* has built-in support for several spaces and this
+account. **Reanimate** has built-in support for several spaces and this
 illustration shows how they stack up against each other:
 
 <video width="640" height="360" muted autoplay loop>
   <source src="https://i.imgur.com/AUqFi7L.mp4">
 </video>
 
+By default, **reanimate** uses the LAB colorspace for morphing colors.
+
 # Linear interpolation
 
 TBD.
+
+<video width="640" height="360" muted autoplay loop>
+  <source src="https://i.imgur.com/ZBh1ena.mp4">
+</video>
+
+<video width="640" height="360" muted autoplay loop>
+  <source src="https://i.imgur.com/2jWIXLL.mp4">
+</video>
 
 # Rotational interpolation
 

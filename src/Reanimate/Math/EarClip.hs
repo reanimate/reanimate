@@ -1,42 +1,29 @@
-module Reanimate.Math.EarClip where
+module Reanimate.Math.EarClip
+  ( earClip
+  , earClip'
+  ) where
 
-
-import           Control.Monad
-import           Control.Monad.ST
 import           Data.List
-import qualified Data.Set              as Set
-import qualified Data.Vector           as V
-import qualified Data.Vector.Mutable   as MV
+import qualified Data.Set                   as Set
+import qualified Data.Vector                as V
+import           Linear.V2
 
 import           Reanimate.Math.Common
-
--- import           Debug.Trace
-
-
--- FIXME: Move to Common or a Triangulation module
--- O(n)
-edgesToTriangulation :: Polygon -> [(Int,Int)] -> Triangulation
-edgesToTriangulation p edges = runST $ do
-  v <- MV.replicate (length p) []
-  forM_ edges $ \(e1,e2) -> do
-    MV.modify v (e1:) e2
-    MV.modify v (e2:) e1
-  forM_ [0..length p-1] $ \i -> do
-    MV.modify v (Set.toList . Set.fromList) i
-  V.unsafeFreeze v
+import           Reanimate.Math.Triangulate
 
 -- Triangulation by ear clipping. O(n^2)
-earClip :: Polygon -> Triangulation
+earClip :: (Fractional a, Ord a) => V.Vector (V2 a) -> Triangulation
 earClip = last . earClip'
 
-earClip' :: Polygon -> [Triangulation]
-earClip' p = map (edgesToTriangulation p) $ inits $
+earClip' :: (Fractional a, Ord a) => V.Vector (V2 a) -> [Triangulation]
+earClip' p = map (edgesToTriangulation $ V.length p) $ inits $
   let ears = Set.fromList [ i
              | i <- elts
-             , isEarCorner p elts (pPrev p i) i (pNext p i) ]
+             , isEarCorner p elts (mod (i-1) n) i (mod (i+1) n) ]
   in worker ears (mkQueue elts)
   where
-    elts = [0 .. V.length p-1]
+    n = V.length p
+    elts = [0 .. n-1]
     -- worker :: Set.Set Int -> PolyQueue Int -> [(P,P)]
     worker _ears queue | isSimpleQ queue = []
     worker ears queue
@@ -60,8 +47,8 @@ earClip' p = map (edgesToTriangulation p) $ inits $
 
 data PolyQueue a = PolyQueue a [a] [a] [a]
 
-sizeQ :: PolyQueue a -> Int
-sizeQ (PolyQueue _ a b _) = 1 + length a + length b
+-- sizeQ :: PolyQueue a -> Int
+-- sizeQ (PolyQueue _ a b _) = 1 + length a + length b
 
 mkQueue :: [a] -> PolyQueue a
 mkQueue (x:xs) = PolyQueue x xs [] (reverse (x:xs))
@@ -93,3 +80,18 @@ dropQ (PolyQueue _ (x:xs) ys p) = PolyQueue x xs ys p
 
 prevQ :: Int -> PolyQueue a -> a
 prevQ nth (PolyQueue _ _ _ p) = p!!nth
+
+-- O(n)
+-- Returns true if ac can be cut from polygon. That is, true if 'b' is an ear.
+-- isEarCorner polygon a b c = True iff ac can be cut
+isEarCorner :: (Fractional a, Ord a) => V.Vector (V2 a) -> [Int] -> Int -> Int -> Int -> Bool
+isEarCorner p polygon a b c =
+    isLeftTurn aP bP cP &&
+    -- If it is a right turn then the line ac will be outside the polygon
+    and [ not (isInside aP bP cP (p V.! k))
+    | k <- polygon, k /= a && k /= b && k /= c
+    ]
+  where
+    aP = p V.! a
+    bP = p V.! b
+    cP = p V.! c

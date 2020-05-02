@@ -64,17 +64,21 @@ library
                       Reanimate.Transform
                       Reanimate.Misc
                       Reanimate.Math.Common
+                      Reanimate.Math.Polygon
+                      Reanimate.Math.Triangulate
                       Reanimate.Math.DCEL
                       Reanimate.Math.EarClip
                       Reanimate.Math.Visibility
                       Reanimate.Math.SSSP
                       Reanimate.Math.Balloon
+                      Reanimate.Math.Compatible
                       Reanimate.Morph.Common
                       Reanimate.Morph.Linear
                       Reanimate.Morph.Rotational
                       Reanimate.Morph.LeastWork
                       Reanimate.Morph.LineBend
                       Reanimate.Morph.Cache
+                      Reanimate.Morph.Rigid
                       Reanimate.Raster
                       Reanimate.ColorMap
                       Reanimate.ColorSpace

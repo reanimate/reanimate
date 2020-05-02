@@ -4,7 +4,7 @@ module Reanimate.Math.Visibility where
 import           Linear.V2
 import Data.Maybe
 
-import           Reanimate.Math.Common
+import           Reanimate.Math.Polygon
 
 -- import           Debug.Trace
 

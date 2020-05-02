@@ -26,7 +26,9 @@ import           Linear.V2
 import           Linear.Vector
 import           Reanimate.Animation
 import           Reanimate.Interpolate
-import           Reanimate.Math.Common  (Polygon, approxDist, pAccess, polygonCentroid)
+import           Reanimate.Math.Polygon  (Polygon, approxDist, mkPolygon,
+                                         pAccess, polygonCentroid,
+                                         polygonPoints, polygonSize, addPoints, polygonRing, pdualPolygons)
 import           Reanimate.Math.EarClip
 import           Reanimate.Math.SSSP
 import           Reanimate.PolyShape
@@ -67,7 +69,7 @@ morph Morph{..} src dst = \t ->
           ]
   where
     render p = mkLinePathClosed
-        [ (x,y) | V2 x y <- map (fmap realToFrac) $ V.toList p ]
+        [ (x,y) | V2 x y <- map (fmap realToFrac) $ V.toList $ polygonPoints p ]
     srcShapes = toShapes morphTolerance src
     dstShapes = toShapes morphTolerance dst
     pairs = morphObjectCorrespondence srcShapes dstShapes
@@ -86,23 +88,8 @@ normalizePolygons src dst =
     (addPoints (max 0 $ dstN-srcN) src
     ,addPoints (max 0 $ srcN-dstN) dst)
   where
-    srcN = length src
-    dstN = length dst
-
-addPoints :: Int -> Polygon -> Polygon
-addPoints n p = V.fromList $ worker n 0 (V.toList p ++ [pAccess p 0])
-  where
-    worker 0 _ rest = init rest
-    worker i acc (x:y:xs) =
-      let xy = approxDist x y in
-      if acc + xy > limit
-        then x : worker (i-1) 0 (lerp ((limit-acc)/xy) y x : y:xs)
-        else x : worker i (acc+xy) (y:xs)
-    worker _ _ [_] = []
-    worker _ _ _ = error "addPoints: invalid polygon"
-    len = V.sum (V.zipWith approxDist p (V.tail p)) + approxDist (V.last p) (V.head p)
-    limit = len / fromIntegral (n+1)
-
+    srcN = polygonSize src
+    dstN = polygonSize dst
 
 interpolateAttrs :: ColorComponents -> DrawAttributes -> DrawAttributes -> Double -> DrawAttributes
 interpolateAttrs colorComps src dst t =
@@ -129,7 +116,7 @@ genesisObjectCorrespondence left right =
     (x:xs, y:ys) ->
       (x,y) : genesisObjectCorrespondence xs ys
   where
-    emptyFrom a b = V.map (const $ polygonCentroid a) b
+    emptyFrom a b = mkPolygon $ V.map (const $ polygonCentroid a) (polygonPoints b)
 
 dupObjectCorrespondence :: ObjectCorrespondence
 dupObjectCorrespondence left right =
@@ -165,10 +152,10 @@ splitObjectCorrespondence left right =
 
 splitPolygon :: Int -> Polygon -> [Polygon]
 splitPolygon n polygon =
-    let trig = earClip polygon
-        d = dual trig
-        pd = toPDual polygon d
-        reduced = pdualReduce polygon pd n
+    let trig = earClip $ polygonPoints polygon
+        d = dual 0 trig
+        pd = toPDual (polygonRing polygon) d
+        reduced = pdualReduce (polygonRing polygon) pd n
         polygons = pdualPolygons polygon reduced
     in polygons
 

@@ -53,7 +53,7 @@ import           Graphics.SvgTree       (PathCommand (..), RPoint, Tree (..),
 import           Linear.V2
 import           Reanimate.Animation
 import           Reanimate.Constants
-import           Reanimate.Math.Common  (Polygon, isCCW)
+import           Reanimate.Math.Polygon  (Polygon, polygonPoints, isCCW, mkPolygon, polygonRing, pdualPolygons)
 import           Reanimate.Math.EarClip
 import           Reanimate.Math.SSSP
 import           Reanimate.Svg
@@ -105,7 +105,7 @@ plToPolygon :: Double -> PolyShape -> Polygon
 plToPolygon tol pl =
   let p = V.init . V.fromList . map (\(Point x y) -> realToFrac <$> V2 x y) .
           plPolygonify tol $ pl
-  in if isCCW p then p else V.reverse p
+  in if isCCW (mkPolygon p) then mkPolygon p else mkPolygon (V.reverse p)
 
 
 plPartial :: Double -> PolyShape -> PolyShape
@@ -135,17 +135,17 @@ plPartial delta pl = PolyShape $ curvesToClosed (lineOut ++ [joinB] ++ lineIn)
 splitPolyShape :: Double -> Int -> PolyShape -> [PolyShape]
 splitPolyShape tol n poly =
     let polygon = toPolygon (plPolygonify tol poly)
-        trig = earClip polygon
-        d = dual trig
-        pd = toPDual polygon d
-        reduced = pdualReduce polygon pd n
+        trig = earClip $ polygonPoints polygon
+        d = dual 0 trig
+        pd = toPDual (polygonRing polygon) d
+        reduced = pdualReduce (polygonRing polygon) pd n
         polygons = pdualPolygons polygon reduced
     in map toPolyShape polygons
   where
     toPolygon :: [Point Double] -> Polygon
-    toPolygon = V.fromList . nub . map (\(Point x y) -> V2 (realToFrac x) (realToFrac y))
+    toPolygon = mkPolygon . V.fromList . nub . map (\(Point x y) -> V2 (realToFrac x) (realToFrac y))
     toPolyShape :: Polygon -> PolyShape
-    toPolyShape = plFromPolygon . map (fmap realToFrac) . V.toList
+    toPolyShape = plFromPolygon . map (fmap realToFrac) . V.toList . polygonPoints
 
 plPartialGroup :: Double -> [PolyShape] -> [PolyShape]
 plPartialGroup _delta [] = []
@@ -261,7 +261,8 @@ svgToPolygons :: Double -> SVG -> [Polygon]
 svgToPolygons tol = map (toPolygon . plPolygonify tol) . svgToPolyShapes
   where
     toPolygon :: [Point Double] -> Polygon
-    toPolygon = V.fromList . nub . map (\(Point x y) -> V2 (realToFrac x) (realToFrac y))
+    toPolygon = mkPolygon .
+      V.fromList . nub . map (\(Point x y) -> V2 (realToFrac x) (realToFrac y))
 
 cmdsToPolyShapes :: [LineCommand] -> [PolyShape]
 cmdsToPolyShapes [] = []

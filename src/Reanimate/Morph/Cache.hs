@@ -15,13 +15,6 @@ import           System.IO
 import           System.IO.Temp
 import           System.IO.Unsafe
 
-instance Hashable a => Hashable (V.Vector a) where
-  hashWithSalt = V.foldl' hashWithSalt
-
-instance Serialize a => Serialize (V.Vector a) where
-  put = put . V.toList
-  get = V.fromList <$> get
-
 -- type PointCorrespondence = Polygon → Polygon → (Polygon, Polygon)
 cachePointCorrespondence :: Int -> PointCorrespondence -> PointCorrespondence
 cachePointCorrespondence ident fn src dst = unsafePerformIO $ do

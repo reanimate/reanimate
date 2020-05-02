@@ -10,7 +10,7 @@ import           Linear.Metric
 
 import           Reanimate.Signal
 import           Reanimate.Morph.Common
-import           Reanimate.Math.Common
+import           Reanimate.Math.Polygon
 
 type Origin = (Double, Double)
 
@@ -18,7 +18,8 @@ rotationalTrajectory :: Origin -> Trajectory
 rotationalTrajectory origin (src,dst) =
     \t ->
       let thisOrigin = lerp t dstOrigin srcOrigin in
-      V.generate (length src) $ \i ->
+      mkPolygon $
+      V.generate (polygonSize src) $ \i ->
         let len = fromToS (srcLengths V.! i) (dstLengths V.! i) t
             ang = lerpAngle (srcAngles V.! i) (dstAngles V.! i) t
         in realToFrac <$> (thisOrigin + V2 (cos ang * len) (sin ang * len))
@@ -26,10 +27,10 @@ rotationalTrajectory origin (src,dst) =
     srcOrigin = polygonOrigin src origin
     dstOrigin = polygonOrigin dst origin
     srcLengths :: V.Vector Double
-    srcLengths = V.map (distance srcOrigin . fmap realToFrac) src
-    dstLengths = V.map (distance dstOrigin . fmap realToFrac) dst
-    srcAngles = V.map (originAngle srcOrigin . fmap realToFrac) src
-    dstAngles = V.map (originAngle dstOrigin . fmap realToFrac) dst
+    srcLengths = V.map (distance srcOrigin . fmap realToFrac) $ polygonPoints src
+    dstLengths = V.map (distance dstOrigin . fmap realToFrac) $ polygonPoints dst
+    srcAngles = V.map (originAngle srcOrigin . fmap realToFrac) $ polygonPoints src
+    dstAngles = V.map (originAngle dstOrigin . fmap realToFrac) $ polygonPoints dst
 
     originAngle o v = lineAngle (o + V2 1 0) o v
 

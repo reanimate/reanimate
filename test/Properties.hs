@@ -12,6 +12,7 @@ import           Test.Tasty
 import           Test.Tasty.QuickCheck
 
 import           Reanimate.Math.Common
+import           Reanimate.Math.Polygon
 import           Reanimate.Math.EarClip
 import           Reanimate.Math.SSSP
 import           Helpers
@@ -40,23 +41,23 @@ prop_isNotBetween a b = forAll (choose (1.1,100)) $ \t ->
 prop_winding = forAll (choose (1,100)) $ \n -> isSimple (winding n)
 
 prop_ccw p = label (if isConvex p then "convex" else "concave") $ isCCW p
-prop_rev_ccw p = not $ isCCW (V.reverse p)
+prop_rev_ccw p = not $ isCCW (mkPolygon $ V.reverse $ polygonPoints p)
 prop_cyclePolygon_ccw p = forAll (choose (0,1)) $ \t ->
   isSimple (cyclePolygon p t)
 
-prop_validEarClip p = isValidTriangulation p (earClip p)
+prop_validEarClip p = isValidTriangulation p (earClip $ polygonPoints p)
 
 -- dualToTrangulation . dual = id
 prop_dualInv p =
-  let t = earClip p
-  in dualToTriangulation p (dual t) == t
+  let t = earClip $ polygonPoints p
+  in dualToTriangulation (polygonRing p) (dual 0 t) == t
 
 prop_ssspEq p =
-  length p < 20 ==> naive p == sssp p (dual (earClip p))
+  polygonSize p < 20 ==> naive (polygonRing p) == sssp (polygonRing p) (dual 0 (earClip $ polygonPoints p))
 
 prop_ssspVisibilityLength (Parameters xs) =
   let p = genPolygon xs in
-  length (ssspVisibility_ p) <= length p
+  polygonSize (ssspVisibility p) <= polygonSize p
 
 return []
 all_props :: TestTree

@@ -4,26 +4,35 @@ module Reanimate.Math.SSSP where
 
 import           Control.Monad
 import           Control.Monad.ST
-import           Data.FingerTree         (SearchResult (..), (|>))
-import qualified Data.FingerTree         as F
+import           Data.FingerTree        (SearchResult (..), (|>))
+import qualified Data.FingerTree        as F
 import           Data.List
-import           Data.Ord
-import qualified Data.Map                as Map
+import qualified Data.Map               as Map
 import           Data.Maybe
+import           Data.Ord
 import           Data.STRef
 import           Data.Tree
-import qualified Data.Vector             as V
-import qualified Data.Vector.Mutable     as MV
+import qualified Data.Vector            as V
+import qualified Data.Vector.Mutable    as MV
+import           Linear.V2
 -- import           Debug.Trace
+import           Reanimate.Math.Triangulate
 import           Reanimate.Math.Common
 import           Reanimate.Math.EarClip
 
 type SSSP = V.Vector Int
 
-visibilityArray :: Polygon -> V.Vector [Int]
+
+-- ssspParent :: Polygon -> SSSP -> Int -> Int
+-- ssspParent p sTree x =
+--     (sTree V.! ((x - polygonOffset p) `mod` n) + polygonOffset p) `mod` n
+--   where
+--     n = polygonSize p
+
+visibilityArray :: Ring Rational -> V.Vector [Int]
 visibilityArray p = arr
   where
-    n = length p
+    n = ringSize p
     arr = V.fromList
         [ visibility y
         | y <- [0..n-1]
@@ -34,26 +43,26 @@ visibilityArray p = arr
       , y `elem` arr V.! i ] ++
       [ i
       | i <- [y+1 .. n-1]
-      , let pI = pAccess p i
+      , let pI = ringAccess p i
             isOpen = isRightTurn pYp pY pYn
-      , pNext p y == i || pPrev p y == i || if isOpen
+      , ringClamp p (y+1) == i || ringClamp p (y-1) == i || if isOpen
         then isLeftTurnOrLinear pY pYn pI ||
              isLeftTurnOrLinear pYp pY pI
         else not $ isRightTurn pY pYn pI ||
                    isRightTurn pYp pY pI
       , let myEdges = [(e1,e2) | (e1,e2) <- edges, e1/=y, e1/=i, e2/=y,e2/=i]
       , all (isNothing . lineIntersect (pY,pI))
-              [ (p V.! e1,p V.! e2) | (e1,e2) <- myEdges ]]
+              [ (ringAccess p e1, ringAccess p e2) | (e1,e2) <- myEdges ]]
       where
-        pY = pAccess p y
-        pYn = pAccess p $ pNext p y
-        pYp = pAccess p $ pPrev p y
+        pY = ringAccess p y
+        pYn = ringAccess p $ y+1
+        pYp = ringAccess p $ y-1
         edges = zip [0..n-1] (tail [0..n-1] ++ [0])
 
 
 
 -- Iterative Single Source Shortest Path solver. Quite slow.
-naive :: Polygon -> SSSP
+naive :: Ring Rational -> SSSP
 naive p =
     V.fromList $ Map.elems $
     Map.map snd $
@@ -73,21 +82,21 @@ naive p =
                           | otherDist > distThroughI -> (v, (distThroughI, i))
                           | otherwise -> (v, (otherDist, parent))
                     | v <- visibility V.! i
-                    , let distThroughI = dist + approxDist (pAccess p i) (pAccess p v) ]
+                    , let distThroughI = dist + approxDist (ringAccess p i) (ringAccess p v) ]
               | (i,(dist,_)) <- Map.toList m
               ]
         newM = Map.unionsWith g (m:ms') :: Map.Map Int (Rational,Int)
     g a b = if fst a < fst b then a else b
 
-naive2 :: Polygon -> SSSP
+naive2 :: Ring Rational -> SSSP
 naive2 p = runST $ do
-    parents <- MV.replicate (length p) (-1)
-    costs <- MV.replicate (length p) (-1)
+    parents <- MV.replicate (ringSize p) (-1)
+    costs <- MV.replicate (ringSize p) (-1)
     MV.write parents 0 0
     MV.write costs 0 0
     changedRef <- newSTRef False
     let loop i
-          | i == length p = do
+          | i == ringSize p = do
             changed <- readSTRef changedRef
             when changed $ do
               writeSTRef changedRef False
@@ -98,7 +107,7 @@ naive2 p = runST $ do
               forM_ (visibility V.! i) $ \n -> do
                 -- n is visible from i.
                 theirCost <- MV.read costs n
-                let throughCost = myCost + approxDist (pAccess p i) (pAccess p n)
+                let throughCost = myCost + approxDist (ringAccess p i) (ringAccess p n)
                 when (throughCost < theirCost || theirCost < 0) $ do
                     MV.write parents n i
                     MV.write costs n throughCost
@@ -112,18 +121,18 @@ naive2 p = runST $ do
 data PDual = PDual (V.Vector Int) Rational [PDual]
   deriving (Show)
 
-toPDual :: Polygon -> Dual -> PDual
+toPDual :: Ring Rational -> Dual -> PDual
 toPDual p d =
   case d of
     Dual (a,b,c) l r ->
       PDual (V.fromList [a,b,c])
-        (area2X (pAccess p a) (pAccess p b) (pAccess p c))
+        (area2X (ringAccess p a) (ringAccess p b) (ringAccess p c))
         (catMaybes [ worker c a l, worker b c r])
   where
     worker _ _ EmptyDual = Nothing
     worker a b (NodeDual x l r) = Just $
       PDual (V.fromList [a,x,b])
-        (area2X (pAccess p a) (pAccess p x) (pAccess p b))
+        (area2X (ringAccess p a) (ringAccess p x) (ringAccess p b))
         (catMaybes [ worker x b l, worker a x r])
 
 pdualSize :: PDual -> Int
@@ -132,7 +141,8 @@ pdualSize (PDual _ _ children) = 1 + sum (map pdualSize children)
 pdualArea :: PDual -> Rational
 pdualArea (PDual _ faceArea _) = faceArea
 
-pdualReduce :: Polygon -> PDual -> Int -> PDual
+-- FIXME: 'origin' isn't used. Remove.
+pdualReduce :: Ring Rational -> PDual -> Int -> PDual
 pdualReduce origin pdual n
   | pdualSize pdual <= n = pdual
   | otherwise =
@@ -152,9 +162,9 @@ pdualReduce origin pdual n
     pAreas (PDual _ faceArea children) = faceArea : concatMap pAreas children
     joinP a b = V.fromList (sort (V.toList a ++ V.toList b))
 
-pdualPolygons :: Polygon -> PDual -> [Polygon]
-pdualPolygons p (PDual pts _area children) =
-  V.map (pAccess p) pts : concatMap (pdualPolygons p) children
+pdualRings :: Ring Rational -> PDual -> [Ring Rational]
+pdualRings p (PDual pts _area children) =
+  ringPack (V.map (ringAccess p) pts) : concatMap (pdualRings p) children
 
 -- Dual of triangulated polygon
 data Dual = Dual (Int,Int,Int) -- (a,b,c)
@@ -178,17 +188,14 @@ drawDual d = drawTree $
     worker a b (NodeDual x l r) =
       Node (show (b,a,x)) [worker x b l, worker a x r]
 
-dualToTriangulation :: Polygon -> Dual -> Triangulation
-dualToTriangulation p d = edgesToTriangulation p $ filter goodEdge $
+dualToTriangulation :: Ring Rational -> Dual -> Triangulation
+dualToTriangulation p d = edgesToTriangulation (ringSize p) $ filter goodEdge $
     case d of
-      -- 0,1,5
-      -- 1,5
-      --
       Dual (a,b,c) l r ->
         (a,b):(a,c):(b,c):worker c a l ++ worker b c r
   where
     goodEdge (a,b)
-      = a /= pNext p b && a /= pPrev p b
+      = a /= ringClamp p (b+1) && a /= ringClamp p (b-1)
     worker _a _b EmptyDual = []
     worker a b (NodeDual x l r) =
       (a,x) : (x, b) : worker x b l ++ worker a x r
@@ -202,14 +209,18 @@ simplifyDual :: DualTree -> DualTree
 -- simplifyDual (NodeDual x EmptyDual r) = NodeDualR x r
 simplifyDual d = d
 
-dual :: Triangulation -> Dual
-dual t =
+dual :: Int -> Triangulation -> Dual
+dual root t =
   case hasTriangle of
     []    -> error "weird triangulation"
     -- [] -> Dual (0,1,V.length t-1) EmptyDual (dualTree t (1, (V.length t-1)) 0)
-    (x:_) -> Dual (0,1,x) (dualTree t (x,0) 1) (dualTree t (1,x) 0)
+    (x:_) -> Dual (root,rootNext,x) (dualTree t (x,root) rootNext) (dualTree t (rootNext,x) root)
   where
-    hasTriangle = (n-1 : t V.! 0) `intersect` (2 : t V.! 1)
+    rootNext = idx (root+1)
+    rootPrev = idx (root-1)
+    rootNNext = idx (root+2)
+    idx i = i `mod` n
+    hasTriangle = (rootPrev : t V.! root) `intersect` (rootNNext : t V.! rootNext)
     n = V.length t
 
 -- a=6, b=0, e=1
@@ -241,7 +252,7 @@ instance F.Measured MinMax Int where
   measure i = MinMax i i
 
 -- O(n)
-sssp :: Polygon -> Dual -> SSSP
+sssp :: (Fractional a, Ord a) => Ring a -> Dual -> SSSP
 sssp p d = toSSSP $
     case d of
       Dual (a,b,c) l r ->
@@ -263,19 +274,19 @@ sssp p d = toSSSP $
     searchFn _cusp _x MinMaxEmpty _ = False
     searchFn _cusp _x _ MinMaxEmpty = True
     searchFn _cusp x (MinMax a _) (MinMax _ b) =
-      isRightTurn (p V.! a) (p V.! b) (p V.! x)
+      isRightTurn (ringAccess p a) (ringAccess p b) (ringAccess p x)
     searchFn2 _cusp _x MinMaxEmpty _ = False
     searchFn2 _cusp _x _ MinMaxEmpty = True
     searchFn2 _cusp x (MinMax _ a) (MinMax b _) =
-      isLeftTurn (p V.! a) (p V.! b) (p V.! x)
+      isLeftTurn (ringAccess p a) (ringAccess p b) (ringAccess p x)
     isOnLeft f cusp x =
       case F.viewl f of
         F.EmptyL -> False
-        v F.:< _ -> isLeftTurnOrLinear (pAccess p cusp) (pAccess p v) (pAccess p x)
+        v F.:< _ -> isLeftTurnOrLinear (ringAccess p cusp) (ringAccess p v) (ringAccess p x)
     isOnRight f cusp x =
       case F.viewl f of
         F.EmptyL -> False
-        v F.:< _ -> isRightTurnOrLinear (pAccess p cusp) (pAccess p v) (pAccess p x)
+        v F.:< _ -> isRightTurnOrLinear (ringAccess p cusp) (ringAccess p v) (ringAccess p x)
     worker _ _ _ EmptyDual = []
     worker f1 f2 cusp (NodeDual x l r) =
         --trace ("Funnel: " ++ show (f1,cusp,f2,x)) $
@@ -301,52 +312,3 @@ sssp p d = toSSSP $
               (x, cusp::Int) :
               worker f1 (F.singleton x) cusp l ++
               worker (F.singleton x) f2 cusp r
-{-
-(7,0)
-(1,0)
-funnel: 7,0  0  0,1
-2 is neither to the left of the left funnel or to the right of the right funnel,
-therefore it is visible from 0.
-(2,0)
-
--}
-
-ssspVisibility_ :: Polygon -> Polygon
-ssspVisibility_ p = ssspVisibility p (sssp p (dual (earClip p)))
---
-ssspVisibility :: Polygon -> SSSP -> Polygon
-ssspVisibility p paths = V.fromList $ clearDups $ go [0..length p-1]
-  where
-    clearDups (x:y:xs)
-      | x == y = clearDups (y:xs)
-      | otherwise = x : clearDups (y:xs)
-    clearDups xs = xs
-    obstructedBy n =
-      case paths V.! n of
-        0 -> n
-        i -> obstructedBy i
-    go [] = []
-    go [x] = [pAccess p x]
-    go (x:y:xs) =
-      let xO = obstructedBy x
-          yO = obstructedBy y
-      in case () of
-          ()
-            -- Both ends are visible.
-            | xO == x && yO == y -> pAccess p x : go (y:xs)
-            -- X is visible, x to intersect (0,yO) (x,y)
-            | xO == x   ->
-              pAccess p x : fromMaybe (pAccess p y) (pRayIntersect p (0,yO) (x,y)) : go (y:xs)
-            -- Y is visible
-            | yO == y   -> fromMaybe (pAccess p x) (pRayIntersect p (0,xO) (x,y)) : pAccess p y : go (y:xs)
-            -- Neither is visible and they've obstructed by the same point
-            -- so the entire edge is hidden.
-            | xO == yO -> go (y:xs)
-            -- Neither is visible. Cast shadow from obstruction points to
-            -- find if a subsection of the edge is visible.
-            | otherwise ->
-              let a = fromMaybe (error "a") (pRayIntersect p (0,xO) (x,y))
-                  b = fromMaybe (error "b") (pRayIntersect p (0,yO) (x,y))
-              in if a /= b
-                then a : b : go (y:xs)
-                else go (y:xs)

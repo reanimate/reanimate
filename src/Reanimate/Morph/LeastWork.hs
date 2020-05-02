@@ -33,7 +33,7 @@ import           Linear.Metric
 import           Linear.V2
 import           Linear.Vector
 import           Reanimate.LaTeX
-import           Reanimate.Math.Common
+import           Reanimate.Math.Polygon
 import           Reanimate.Morph.Cache
 import           Reanimate.Morph.Common
 import           Reanimate.Morph.Linear
@@ -116,10 +116,10 @@ deltaX = V2 (recip 1000000000) 0
 
 testBendInfo :: Polygon -> Polygon -> [Int] -> [Int] -> (Double, Double, Bool)
 testBendInfo a b [a1,a2,a3] [b1,b2,b3] =
-  let startA = realToFrac <$> (a V.! a1 - a V.! a2)
-      endA   = realToFrac <$> (b V.! b1 - b V.! b2)
-      endB   = realToFrac <$> (b V.! b3 - b V.! b2)
-      startB = realToFrac <$> (a V.! a3 - a V.! a2)
+  let startA = realToFrac <$> (pAccess a a1 - pAccess a a2)
+      endA   = realToFrac <$> (pAccess b b1 - pAccess b b2)
+      endB   = realToFrac <$> (pAccess b b3 - pAccess b b2)
+      startB = realToFrac <$> (pAccess a a3 - pAccess a a2)
   in bendInfo startA endA startB endB
 
 zeroBendFactor :: Fractional a => a
@@ -186,7 +186,7 @@ leastWork stretchCosts bendCosts =
 
 leastWork_ :: StretchCosts -> BendCosts -> PointCorrespondence
 leastWork_ stretchCosts bendCosts src dst
-  | length src > length dst =
+  | polygonSize src > polygonSize dst =
     case leastWork stretchCosts bendCosts dst src of
       (dst', src') -> (src', dst')
 leastWork_ stretchCosts bendCosts src dst =
@@ -220,8 +220,8 @@ leastWork' stretchCosts bendCosts src dst =
     leastWork'' stretchCosts bendCosts src dst
       srcV dstV (mkDistances srcV) (mkDistances dstV)
   where
-    srcV = V.map (fmap realToFrac) src
-    dstV = V.map (fmap realToFrac) dst
+    srcV = V.map (fmap realToFrac) $ polygonPoints src
+    dstV = V.map (fmap realToFrac) $ polygonPoints dst
     mkDistances poly = VU.generate (length poly) $ \i ->
       distance (V.unsafeIndex poly i) (V.unsafeIndex poly ((i+1) `mod` length poly))
 
@@ -403,13 +403,13 @@ leastWork'' stretchCosts bendCosts src dst srcV dstV srcDist dstDist = runST $ d
                  | otherwise         -> walk (i-1) j acc'
     pairs <- walk (nSrc-1) (nDst-1) []
     return
-      ( V.fromList [ pAccess src idx | idx <- map fst pairs ]
-      , V.fromList [ pAccess dst idx | idx <- map snd pairs ]
+      ( mkPolygon $ V.fromList [ pAccess src idx | idx <- map fst pairs ]
+      , mkPolygon $ V.fromList [ pAccess dst idx | idx <- map snd pairs ]
       , finalWork
       )
   where
-    nSrc = length src
-    nDst = length dst
+    nSrc = polygonSize src
+    nDst = polygonSize dst
     asArray :: ST s (STUArray s i e) -> ST s (STUArray s i e)
     asArray = id
 

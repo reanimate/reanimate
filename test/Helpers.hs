@@ -14,6 +14,7 @@ import           Test.Tasty
 import           Test.Tasty.QuickCheck
 
 import           Reanimate.Math.Common
+import           Reanimate.Math.Polygon
 import           Reanimate.Math.EarClip
 import           Reanimate.Math.SSSP
 

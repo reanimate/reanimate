@@ -9,7 +9,7 @@ import           Linear.V2
 import           Linear.Vector
 import           Reanimate.Svg.Constructors
 import           Reanimate.Animation
-import           Reanimate.Math.Common
+import           Reanimate.Math.Polygon
 import           Reanimate.Math.EarClip
 import           Reanimate.Math.SSSP
 import           Reanimate.Morph.Common (toShapes)
@@ -24,7 +24,7 @@ balloon svg = \t ->
   where
     polygonShape :: Polygon -> SVG
     polygonShape p = mkLinePathClosed
-      [ (x,y) | V2 x y <- map (fmap realToFrac) $ V.toList p  ++ [pAccess p 0] ]
+      [ (x,y) | V2 x y <- map (fmap realToFrac) $ V.toList (polygonPoints p) ++ [pAccess p 0] ]
     lst =
       [ (attr, balloonP $ shiftLongestDiameter poly)
       | (attr, poly) <- toShapes 0.01 svg
@@ -102,7 +102,7 @@ balloonP p = \t ->
                     Nothing -> map (moveCloser x) [aP,bP]
                 Nothing -> map (moveCloser x) [aP,bP]
             _ -> []
-    in V.fromList $ clearDups $ concatMap worker [0..length p-1]
+    in mkPolygon $ V.fromList $ clearDups $ concatMap worker [0..polygonSize p-1]
   where
     clearDups (x:y:xs)
       | x == y = clearDups (x:xs)
@@ -121,7 +121,7 @@ balloonP p = \t ->
       [ lerp (t/steps) bP aP
       | t <- [0 .. steps]
       ]
-    ssspTree = sssp p (dual $ earClip p)
+    ssspTree = sssp (polygonRing p) (dual 0 $ earClip $ polygonPoints  p)
     d = V.maximum ds
     ds = ssspDistances p ssspTree
 
@@ -134,7 +134,7 @@ takeUntil fn (x:xs)
 diameter :: Polygon -> Double
 diameter p = V.maximum (ssspDistances p ssspTree)
   where
-    ssspTree = sssp p (dual $ earClip p)
+    ssspTree = sssp (polygonRing p) (dual 0 $ earClip $ polygonPoints p)
 
 shiftLongestDiameter :: Polygon -> Polygon
 shiftLongestDiameter p = findBest 0 p (cyclePolygons p)
@@ -149,14 +149,14 @@ shiftLongestDiameter p = findBest 0 p (cyclePolygons p)
         | isTopLeft x elt                    -> findBest newScore x xs
         | otherwise                          -> findBest score elt xs
     isTopLeft a b =
-      case V.head a-V.head b of
+      case V.head (polygonPoints a)-V.head (polygonPoints b) of
         V2 x y -> y > x
 
 -- Shortest distances from point 0 to all other points.
 ssspDistances :: Polygon -> SSSP -> V.Vector Double
 ssspDistances p sssp = arr
   where
-    arr = V.generate (length p) $ \i ->
+    arr = V.generate (polygonSize p) $ \i ->
       case i of
         0 -> 0
         _ ->
