@@ -64,7 +64,8 @@ instance Arbitrary Polygon where
     frequency
       [ (1, elements premade)
       , (2, winding <$> choose (1,100))
-      , (99, randomPoly) ]
+      , (99, randomPoly)
+      ]
     where
       premade = [shape1, shape2, shape3, shape4, shape5, shape6
                 ,shape7, shape8, shape9, shape11 ]

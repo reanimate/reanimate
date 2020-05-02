@@ -184,15 +184,16 @@ unpackPolygon p =
 isValidTriangulation :: Polygon -> Triangulation -> Bool
 isValidTriangulation p t = isComplete && intersectionFree
   where
+    o = polygonOffset p
     isComplete = all isProper [0 .. polygonSize p-1]
     isProper i =
       let j = pNext p i in
       length ((pPrev p i : (t V.! i)) `intersect` (pNext p j : t V.! j)) == 1
     intersectionFree = and
-      [ case (lineIntersect (pAccess p a, pAccess p b) (pAccess p c, pAccess p d)) of
+      [ case (lineIntersect (pAccess p (a-o), pAccess p (b-o)) (pAccess p (c-o), pAccess p (d-o))) of
           Nothing -> True
-          Just u  -> u == pAccess p a || u == pAccess p b ||
-                     u == pAccess p c || u == pAccess p d
+          Just u  -> u == pAccess p (a-o) || u == pAccess p (b-o) ||
+                     u == pAccess p (c-o) || u == pAccess p (d-o)
       | ((a,b),(c,d)) <- edgePairs ]
     edgePairs = [ (e1, e2) | (e1, rest) <- zip edges (drop 1 $ tails edges), e2 <- rest]
     edges =
@@ -379,9 +380,7 @@ winding n = mkPolygon $
       V2 y (-x)
 
 cyclePolygons :: Polygon -> [Polygon]
-cyclePolygons p =
-  [ setOffset p n
-  | n <- [polygonOffset p .. polygonSize p-1] ++ [0 .. polygonOffset p-1]]
+cyclePolygons p = map (modOffset p) [0 .. polygonSize p-1]
 
 cyclePolygon :: (Real a, Fractional a, Ord a) => APolygon a -> Double -> APolygon a
 cyclePolygon p 0 = p
@@ -393,14 +392,16 @@ cyclePolygon p t = mkPolygon $ worker 0 0
       --   V.take i p
       | segment + acc > limit =
         V.singleton (lerp (realToFrac $ (segment + acc - limit)/segment) x y) <>
-        V.drop (i+1) (polygonPoints p) <>
-        V.take (i+1) (polygonPoints p)
-      | i == polygonSize p-1  = polygonPoints p
+        -- V.drop (i+1) (polygonPoints p) <>
+        V.fromList (map (pAccess p) [i+1..polygonSize p-1]) <>
+        V.fromList (map (pAccess p) [0 .. i])
+        -- V.take (i+1) (polygonPoints p)
+      | i == polygonSize p-1  = V.fromList (map (pAccess p) [0 .. polygonSize p-1])
       | otherwise = worker (acc+segment) (i+1)
         where
           x = pAccess p i
           y = pAccess p $ i+1
-          segment = sqrt (realToFrac (distSquared x y))
+          segment = distance' x y
     len = polygonLength' p
     limit = t * len
 

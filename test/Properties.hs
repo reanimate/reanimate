@@ -22,6 +22,8 @@ import Debug.Trace
 prop_genPolygon (PolyParam a) (PolyParam b) (PolyParam c) (PolyParam d) =
   isSimple $ genPolygon [a,b,c,d]
 
+prop_isSimple p = isSimple p
+
 prop_isBetween a b = percent $ \t ->
     a /= b ==>
     isBetween (lerp t a b) (a,b) &&
@@ -42,7 +44,7 @@ prop_winding = forAll (choose (1,100)) $ \n -> isSimple (winding n)
 
 prop_ccw p = label (if isConvex p then "convex" else "concave") $ isCCW p
 prop_rev_ccw p = not $ isCCW (mkPolygon $ V.reverse $ polygonPoints p)
-prop_cyclePolygon_ccw p = forAll (choose (0,1)) $ \t ->
+prop_cyclePolygon p = forAll (choose (0,1)) $ \t ->
   isSimple (cyclePolygon p t)
 
 prop_validEarClip p = isValidTriangulation p (earClip $ polygonPoints p)
