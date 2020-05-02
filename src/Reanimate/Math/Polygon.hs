@@ -5,7 +5,7 @@ module Reanimate.Math.Polygon
   ) where
 
 import           Data.Hashable
-import           Data.List                  (intersect, nub, tails)
+import           Data.List                  (intersect, tails, sort)
 import           Data.Maybe
 import           Data.Ratio
 import           Data.Serialize
@@ -99,11 +99,15 @@ pPrev p i = (i-1) `mod` polygonSize p
 --   It is counter-clockwise.
 --   No edges intersect.
 -- O(n^2)
+-- 'checkEdge' takes 90% of the time.
 isSimple :: Polygon -> Bool
 isSimple p | polygonSize p < 3 = False
-isSimple p = noDups && isCCW p && checkEdge 0 2
+isSimple p = isCCW p && noDups && checkEdge 0 2
   where
-    noDups = V.toList (polygonPoints p) == nub (V.toList (polygonPoints p))
+    noDups = checkForDups (sort (V.toList (polygonPoints p)))
+    checkForDups (x:y:xs)
+      = x /= y && checkForDups (y:xs)
+    checkForDups _ = True
     len = polygonSize p
     -- check i,i+1 against j,j+1
     -- j > i+1
