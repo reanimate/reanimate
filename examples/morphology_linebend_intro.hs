@@ -11,7 +11,7 @@ import qualified Data.Vector              as V
 import           Graphics.SvgTree         (LineJoin (..))
 import           Linear.V2
 import           Reanimate
-import           Reanimate.Math.Common
+import           Reanimate.Math.Polygon
 import           Reanimate.Morph.Common
 import           Reanimate.Morph.Linear
 import           Reanimate.Morph.LineBend
@@ -20,23 +20,23 @@ bgColor :: PixelRGBA8
 bgColor = PixelRGBA8 252 252 252 0xFF
 
 spike1 :: Polygon
-spike1 = scalePolygon 2.5 $ V.map (\x -> x - V2 1 1) $ V.fromList
+spike1 = scalePolygon 2.5 $ mkPolygon $ V.map (\x -> x - V2 1 1) $ V.fromList
   [ V2 0 0, V2 2 0
   , V2 2 1 ]
 
 spike2 :: Polygon
-spike2 = scalePolygon 2.5 $ V.map (\x -> x - V2 1 1) $ V.fromList
+spike2 = scalePolygon 2.5 $ mkPolygon $ V.map (\x -> x - V2 1 1) $ V.fromList
   [ V2 0 0, V2 2 0
   , V2 0 1 ]
 
 spike3 :: Polygon
-spike3 = scalePolygon 2.5 $ V.map (\x -> x - V2 1 1) $ V.fromList
+spike3 = scalePolygon 2.5 $ mkPolygon $ V.map (\x -> x - V2 1 1) $ V.fromList
   [ V2 0.5 0, V2 1.5 0
   , V2 1 2 ]
 
 polygonShape :: Polygon -> SVG
 polygonShape p = mkLinePathClosed
-  [ (x,y) | V2 x y <- map (fmap realToFrac) $ V.toList p  ++ [pAccess p 0] ]
+  [ (x,y) | V2 x y <- map (fmap realToFrac) $ V.toList (polygonPoints p) ]
 
 
 main :: IO ()
@@ -90,7 +90,7 @@ genTrails plotters =
     withStrokeDashArray [0.1,0.05] $
     mkGroup $ map mkTrail $ transpose $ concat
       [
-        [ V.toList $ V.map (fmap realToFrac) poly
+        [ V.toList $ V.map (fmap realToFrac) (polygonPoints poly)
         | n <- [0..steps]
         , let poly = plotter (fromIntegral n / fromIntegral steps)
         ]

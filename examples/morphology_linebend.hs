@@ -7,13 +7,11 @@ module Main(main) where
 import           Codec.Picture
 import           Codec.Picture.Types
 import           Control.Monad
-import           Graphics.SvgTree (LineJoin(..))
+import           Graphics.SvgTree         (LineJoin (..))
 import           Reanimate
 import           Reanimate.Morph.Common
-import           Reanimate.Math.Common
 import           Reanimate.Morph.Linear
 import           Reanimate.Morph.LineBend
-import Linear.V2
 
 bgColor :: PixelRGBA8
 bgColor = PixelRGBA8 252 252 252 0xFF

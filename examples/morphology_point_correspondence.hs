@@ -12,7 +12,7 @@ import qualified Data.Vector                     as V
 import           Linear.V2
 import           Linear.Vector
 import           Reanimate
-import           Reanimate.Math.Common
+import           Reanimate.Math.Polygon
 import           Reanimate.Morph.Common
 import           Reanimate.Morph.Linear
 
@@ -39,8 +39,8 @@ main = reanimate $
               withStrokeColor "black" $
               withStrokeWidth defaultStrokeWidth $
               withFillColor "cyan" $
-              polygonShape (cyclePolygons star !! (n `mod` length star))
-            , polygonNumDots (cyclePolygons star !! (n `mod` length star)) t ]
+              polygonShape (setOffset star n)
+            , polygonNumDots (setOffset star n) t ]
       offset <- newVar 0
       slide <- newVar 0
       _ <- newSprite $ pl2 <$> unVar offset <*> unVar slide
@@ -59,17 +59,17 @@ main = reanimate $
       signalA (curveS 2) $ animate $ morph rawLinear from to
 
 octogon :: Polygon
-octogon = V.fromList
+octogon = mkPolygon $ V.fromList
   [ realToFrac <$> V2 (cos phi) (sin phi)
   | n <- [0..7]
   , let phi = n*2*pi/8 + pi/8 :: Double
   ]
 
 star :: Polygon
-star = scalePolygon 0.5 $ cyclePolygons (V.fromList
+star = scalePolygon 0.5 $ mkPolygon $ V.fromList
   [ V2 0 1, V2 (-2) 2, V2 (-1) 0
   , V2 (-2) (-2), V2 0 (-1), V2 2 (-2)
-  , V2 1 0, V2 2 2 ]) !! 0
+  , V2 1 0, V2 2 2 ]
 
 genColor :: Int -> Int -> PixelRGBA8
 genColor n m =
@@ -84,17 +84,17 @@ polygonNumDots p t = mkGroup $ reverse
         translate x y $ pathify $ mkCircle circR
       , withFillColor "black" $
         translate x y $ ppNum n ]
-    | n <- [0..length p-1]
+    | n <- [0..polygonSize p-1]
     , let a = realToFrac <$> pAccess p n
           b = realToFrac <$> pAccess p (pNext p n)
           V2 x y = lerp t b a ]
   where
     circR = 0.1
     colored n =
-      let c = genColor n (length p-1)
+      let c = genColor n (polygonSize p-1)
       in withFillColorPixel c
     ppNum n = scaleToHeight (circR*1.5) $ center $ latex $ T.pack $ "\\texttt{" ++ show n ++ "}"
 
 polygonShape :: Polygon -> SVG
 polygonShape p = mkLinePathClosed
-  [ (x,y) | V2 x y <- map (fmap realToFrac) $ V.toList p  ++ [pAccess p 0] ]
+  [ (x,y) | V2 x y <- map (fmap realToFrac) $ V.toList (polygonPoints p) ]

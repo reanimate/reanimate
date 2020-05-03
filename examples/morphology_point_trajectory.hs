@@ -16,7 +16,7 @@ import qualified Numeric.LinearAlgebra         as Matrix
 import           Numeric.LinearAlgebra.HMatrix (Matrix, linearSolve, toLists,
                                                 (><))
 import           Reanimate
-import           Reanimate.Math.Common
+import           Reanimate.Math.Polygon
 
 bgColor :: PixelRGBA8
 bgColor = PixelRGBA8 252 252 252 0xFF
@@ -45,7 +45,7 @@ data RelMeshPair = RelMeshPair Points Edges (Matrix Double) (Matrix Double) (Mat
 -- convexInterpolate :: RelMeshPair -> Double -> RelMesh
 
 meshToPolygon :: Mesh -> Polygon
-meshToPolygon mesh = scalePolygon 2 $ V.fromList
+meshToPolygon mesh = scalePolygon 2 $ mkPolygon $ V.fromList
     [ realToFrac <$> (meshPoints mesh V.! (n-1))
     | n <- polygonNodes ]
   where
@@ -62,7 +62,7 @@ genTrails mkMesh =
     withStrokeColor "black" $
     withStrokeDashArray [0.1,0.1] $
     mkGroup $ map mkTrail $ transpose
-      [ V.toList $ V.map (fmap realToFrac) $ meshToPolygon mesh
+      [ V.toList $ V.map (fmap realToFrac) $ polygonPoints $ meshToPolygon mesh
       | n <- [0..steps]
       , let mesh = mkMesh (fromIntegral n / fromIntegral steps)
       ]
@@ -303,17 +303,17 @@ polygonNumDots p t = mkGroup $ reverse
         translate x y $ mkCircle circR
       , withFillColor "black" $
         translate x y $ ppNum n ]
-    | n <- [0..length p-1]
+    | n <- [0..polygonSize p-1]
     , let a = realToFrac <$> pAccess p n
           b = realToFrac <$> pAccess p (pNext p n)
           V2 x y = lerp t b a ]
   where
     circR = 0.1
     colored n =
-      let c = genColor n (length p-1)
+      let c = genColor n (polygonSize p-1)
       in withFillColorPixel c
     ppNum n = scaleToHeight (circR*1.5) $ center $ latex $ T.pack $ "\\texttt{" ++ show n ++ "}"
 
 polygonShape :: Polygon -> SVG
 polygonShape p = mkLinePathClosed
-  [ (x,y) | V2 x y <- map (fmap realToFrac) $ V.toList p  ++ [pAccess p 0] ]
+  [ (x,y) | V2 x y <- map (fmap realToFrac) $ V.toList (polygonPoints p) ]
