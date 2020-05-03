@@ -1,32 +1,34 @@
-{-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE MultiWayIf        #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Reanimate.Math.Balloon where
 
 import           Control.Lens
-import qualified Data.Vector            as V
-import           Graphics.SvgTree       (drawAttributes)
+import qualified Data.Vector                as V
+import           Graphics.SvgTree           (drawAttributes)
 import           Linear.V2
 import           Linear.Vector
-import           Reanimate.Svg.Constructors
 import           Reanimate.Animation
 import           Reanimate.Math.Polygon
-import           Reanimate.Math.EarClip
-import           Reanimate.Math.SSSP
-import           Reanimate.Morph.Common (toShapes)
+import           Reanimate.Morph.Common     (toShapes)
+import           Reanimate.Svg.Constructors
 
 -- import           Debug.Trace
 
 balloon :: SVG -> (Double -> SVG)
-balloon svg = \t ->
+balloon = balloon' 0.01
+
+balloon' :: Double -> SVG -> (Double -> SVG)
+balloon' tol svg = \t ->
     mkGroup
     [ polygonShape (gen t) & drawAttributes .~ attr
     | (attr, gen) <- lst ]
   where
     polygonShape :: Polygon -> SVG
     polygonShape p = mkLinePathClosed
-      [ (x,y) | V2 x y <- map (fmap realToFrac) $ V.toList (polygonPoints p) ++ [pAccess p 0] ]
+      [ (x,y) | V2 x y <- map (fmap realToFrac) $ V.toList (polygonPoints p) ]
     lst =
       [ (attr, balloonP $ shiftLongestDiameter poly)
-      | (attr, poly) <- toShapes 0.01 svg
+      | (attr, poly) <- toShapes tol svg
       ]
 
 -- x <= 1
@@ -47,7 +49,7 @@ balloonP p = \t ->
         worker a =
           let b = pNext p a in
           if nodeVisible a && nodeVisible b
-            then pAccess p a : pAccess p b : []
+            then (pAccess p a : pAccess p b : [])
             else
               chunkRight a b (pAccess p a) (pAccess p b) (fst $ getFunnel a b) ++
               chunkCenter a b ++
@@ -87,7 +89,8 @@ balloonP p = \t ->
                 map (moveCloser x) (split aP bP)
             ([x], _:left:_) | nodeVisible x ->
               case rayIntersect (aP,bP) (pAccess p x,pAccess p left) of
-                Just v  -> map (moveCloser x) (split aP v)
+                Just v  ->
+                  map (moveCloser x) (split aP v)
                 Nothing -> map (moveCloser x) [aP,bP]
             (x:right:_, [_]) | nodeVisible x ->
               case rayIntersect (aP,bP) (pAccess p x,pAccess p right) of
@@ -101,7 +104,8 @@ balloonP p = \t ->
                     Nothing -> map (moveCloser x) [aP,bP]
                 Nothing -> map (moveCloser x) [aP,bP]
             _ -> []
-    in mkPolygon $ V.fromList $ clearDups $ concatMap worker [0..polygonSize p-1]
+    in mkPolygon $ V.fromList $ clearDups $
+        concatMap worker [0..polygonSize p-1]
   where
     clearDups (x:y:xs)
       | x == y = clearDups (x:xs)
@@ -109,7 +113,9 @@ balloonP p = \t ->
     clearDups [] = []
 
     getParents 0 = []
-    getParents x = ssspTree V.! x : getParents (ssspTree V.! x)
+    getParents x =
+      let parent = polygonParent p 0 x
+      in parent : getParents parent
     getFunnel a b =
       let aP = getParents a
           bP = getParents b in
@@ -120,9 +126,8 @@ balloonP p = \t ->
       [ lerp (t/steps) bP aP
       | t <- [0 .. steps]
       ]
-    ssspTree = sssp (polygonRing p) (dual 0 $ earClip $ polygonPoints  p)
     d = V.maximum ds
-    ds = ssspDistances p ssspTree
+    ds = ssspDistances p
 
 takeUntil :: (a -> Bool) -> [a] -> [a]
 takeUntil _fn [] = []
@@ -131,35 +136,31 @@ takeUntil fn (x:xs)
   | otherwise = x : takeUntil fn xs
 
 diameter :: Polygon -> Double
-diameter p = V.maximum (ssspDistances p ssspTree)
-  where
-    ssspTree = sssp (polygonRing p) (dual 0 $ earClip $ polygonPoints p)
+diameter p = V.maximum (ssspDistances p)
 
 shiftLongestDiameter :: Polygon -> Polygon
-shiftLongestDiameter p = findBest p (cyclePolygons p)
+shiftLongestDiameter p = findBest 0 p (cyclePolygons p)
   where
-    findBest elt [] = elt
-    findBest elt (x:xs) =
+    margin = 0.01
+    findBest _score elt [] = elt
+    findBest score elt (x:xs) =
+      let newScore = diameter x in
       if
-        -- | newScore-score > score * margin    -> findBest newScore x xs
-        -- | score-newScore > newScore * margin -> findBest score elt xs
-        | isTopLeft x elt                    -> findBest x xs
-        | otherwise                          -> findBest elt xs
+        | newScore-score > score * margin    -> findBest newScore x xs
+        | score-newScore > newScore * margin -> findBest score elt xs
+        | isTopLeft x elt                    -> findBest newScore x xs
+        | otherwise                          -> findBest score elt xs
     isTopLeft a b =
-      case V.head (polygonPoints a)-V.head (polygonPoints b) of
+      case pAccess a 0-pAccess b 0 of
         V2 x y -> y > x
 
 -- Shortest distances from point 0 to all other points.
-ssspDistances :: Polygon -> SSSP -> V.Vector Double
-ssspDistances p sTree = arr
+ssspDistances :: Polygon -> V.Vector Double
+ssspDistances p = arr
   where
     arr = V.generate (polygonSize p) $ \i ->
       case i of
         0 -> 0
         _ ->
-          let parent = sTree V.! i in
-          arr V.! parent + distance' (pAccess p parent) (pAccess p i)
-
--- sssp :: Polygon -> Dual -> SSSP
--- dual :: Triangulation -> Dual
--- earClip :: Polygon -> Triangulation
+          let parent = polygonParent p 0 i in
+          arr V.! parent + distance' (pAccess p i) (pAccess p parent)

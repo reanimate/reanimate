@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Reanimate.Math.SSSP
@@ -5,6 +6,8 @@ module Reanimate.Math.SSSP
     SSSP
   , sssp                -- :: (Fractional a, Ord a) => Ring a -> Dual -> SSSP
   , dual                -- :: Int -> Triangulation -> Dual
+  , Dual(..)
+  , DualTree(..)
   , PDual
   , toPDual             -- :: Ring Rational -> Dual -> PDual
   , pdualRings          -- :: Ring Rational -> PDual -> [Ring Rational]
@@ -19,18 +22,21 @@ module Reanimate.Math.SSSP
 
 import           Control.Monad
 import           Control.Monad.ST
-import           Data.FingerTree        (SearchResult (..), (|>))
-import qualified Data.FingerTree        as F
+-- import           Data.FingerTree            (SearchResult (..), (|>))
+-- import qualified Data.FingerTree            as F
+import           Data.Foldable
 import           Data.List
-import qualified Data.Map               as Map
+import qualified Data.Map                   as Map
 import           Data.Maybe
 import           Data.Ord
 import           Data.STRef
 import           Data.Tree
-import qualified Data.Vector            as V
-import qualified Data.Vector.Mutable    as MV
-import           Reanimate.Math.Triangulate
+import qualified Data.Vector                as V
+import qualified Data.Vector.Mutable        as MV
 import           Reanimate.Math.Common
+import           Reanimate.Math.Triangulate
+
+-- import           Debug.Trace
 
 type SSSP = V.Vector Int
 
@@ -252,18 +258,23 @@ dualTree t (a,b) e = -- simplifyDual $
     next x = (x+1) `mod` n
     prev x = (x-1) `mod` n
 
-data MinMax = MinMax Int Int | MinMaxEmpty deriving (Show)
-instance Semigroup MinMax where
-  MinMaxEmpty <> b = b
-  a <> MinMaxEmpty = a
-  MinMax a b <> MinMax c d = MinMax (min a c) (max b d)
-instance Monoid MinMax where
-  mempty = MinMaxEmpty
+-- data MinMax = MinMax Int Int | MinMaxEmpty deriving (Show)
+-- instance Semigroup MinMax where
+--   MinMaxEmpty <> b = b
+--   a <> MinMaxEmpty = a
+--   MinMax a b <> MinMax c d
+--     = MinMax (min a c) (max b d)
+--     -- = MinMax c b
+-- instance Monoid MinMax where
+--   mempty = MinMaxEmpty
+--
+-- instance F.Measured MinMax Int where
+--   measure i = MinMax i i
 
-instance F.Measured MinMax Int where
-  measure i = MinMax i i
+-- dualRoot :: Dual -> Int
+-- dualRoot (Dual (a,_,_) _ _) = a
 
--- O(n)
+-- O(n*ln n), could be O(n) if I could figure out how to use fingertrees...
 sssp :: (Fractional a, Ord a) => Ring a -> Dual -> SSSP
 sssp p d = toSSSP $
     case d of
@@ -271,7 +282,7 @@ sssp p d = toSSSP $
         (a, a) :
         (b, a) :
         (c, a) :
-        worker (F.singleton c) (F.singleton b) a r ++
+        worker [c] [b] a r ++
         loopLeft a c l
   where
     toSSSP edges =
@@ -281,46 +292,50 @@ sssp p d = toSSSP $
         EmptyDual -> []
         NodeDual x l' r' ->
           (x,a) :
-          worker (F.singleton x) (F.singleton outer) a r' ++
+          worker [x] [outer] a r' ++
           loopLeft a x l'
-    searchFn _cusp _x MinMaxEmpty _ = False
-    searchFn _cusp _x _ MinMaxEmpty = True
-    searchFn _cusp x (MinMax a _) (MinMax _ b) =
-      isRightTurn (ringAccess p a) (ringAccess p b) (ringAccess p x)
-    searchFn2 _cusp _x MinMaxEmpty _ = False
-    searchFn2 _cusp _x _ MinMaxEmpty = True
-    searchFn2 _cusp x (MinMax _ a) (MinMax b _) =
-      isLeftTurn (ringAccess p a) (ringAccess p b) (ringAccess p x)
-    isOnLeft f cusp x =
-      case F.viewl f of
-        F.EmptyL -> False
-        v F.:< _ -> isLeftTurnOrLinear (ringAccess p cusp) (ringAccess p v) (ringAccess p x)
-    isOnRight f cusp x =
-      case F.viewl f of
-        F.EmptyL -> False
-        v F.:< _ -> isRightTurnOrLinear (ringAccess p cusp) (ringAccess p v) (ringAccess p x)
+    searchFn _checkStep _cusp _x [] = Nothing
+    searchFn checkStep cusp x (y:ys)
+      | not (checkStep (ringAccess p cusp) (ringAccess p y) (ringAccess p x))
+        = Just $ helper [] y ys
+      | otherwise = Nothing
+      where
+        helper acc v [] = (v, [], reverse acc)
+        helper acc v1 (v2:vs)
+          | checkStep (ringAccess p v1) (ringAccess p v2) (ringAccess p x) =
+            (v1, v2:vs, reverse acc)
+          | otherwise = helper (v1:acc) v2 vs
+    searchRight = searchFn isLeftTurn
+    searchLeft = searchFn isRightTurn
+    -- adj x = x -- ringClamp p (x-dualRoot d)
+    -- optTrace msg =
+    --   if False -- dualRoot d == 1 || dualRoot d == 0
+    --     then trace msg
+    --     else id
     worker _ _ _ EmptyDual = []
     worker f1 f2 cusp (NodeDual x l r) =
-        --trace ("Funnel: " ++ show (f1,cusp,f2,x)) $
-        if isOnLeft f1 cusp x
-          then -- trace ("Search: " ++ show (F.search (searchFn cusp x) f1)) $
-            case F.search (searchFn cusp x) f1 of
-              Position f1Lo v f1Hi ->
-                -- trace ("Visble from left: " ++ show (x,v)) $
+        -- (optTrace ("Funnel: " ++ show
+        --       (map adj $ toList f1
+        --       ,adj cusp
+        --       ,map adj $ toList f2
+        --       ,adj x
+        --       , dualRoot d))
+        --   ) $
+        case searchLeft cusp x (toList f1) of
+          Just (v, f1Hi, f1Lo) ->
+                -- optTrace ("  Visble from left: " ++ show (adj x,adj v)) $
                 (x, v::Int) :
-                worker f1Hi (F.singleton x) v l ++
-                worker (f1Lo |> v |> x) f2 cusp r
-              _ -> error "invalid sssp"
-          else if isOnRight f2 cusp x
-            then -- trace ("Search: " ++ show (F.search (searchFn2 cusp x) f2)) $
-              case F.search (searchFn2 cusp x) f2 of
-                Position f2Lo v f2Hi ->
-                  (x, v::Int) :
-                  worker f1 (f2Lo |> v |> x) cusp l ++
-                  worker (F.singleton x) f2Hi v r
-                _ -> error "invalid sssp"
-            else
-              -- trace ("Visble from cusp: " ++ show (x,cusp)) $
-              (x, cusp::Int) :
-              worker f1 (F.singleton x) cusp l ++
-              worker (F.singleton x) f2 cusp r
+                worker f1Hi [x] v l ++
+                worker (f1Lo ++ [v, x]) f2 cusp r
+          Nothing ->
+            case searchRight cusp x (toList f2) of
+              Just (v, f2Hi, f2Lo) ->
+                -- optTrace ("  Visble from right: " ++ show (adj x,adj v)) $
+                (x, v::Int) :
+                worker f1 (f2Lo ++ [v, x]) cusp l ++
+                worker [x] f2Hi v r
+              Nothing ->
+                -- optTrace ("  Visble from cusp: " ++ show (adj x,adj cusp)) $
+                (x, cusp::Int) :
+                worker f1 [x] cusp l ++
+                worker [x] f2 cusp r

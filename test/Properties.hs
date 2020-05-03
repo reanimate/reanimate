@@ -61,6 +61,11 @@ prop_ssspVisibilityLength (Parameters xs) =
   let p = genPolygon xs in
   polygonSize (ssspVisibility p) <= polygonSize p
 
+prop_dualCycle p = forAll (choose (0,polygonSize p-1)) $ \n ->
+  let p1 = setOffset p n
+      p2 = polygonCopy p1
+  in and [ polygonParent p1 0 i == polygonParent p2 0 i | i <- [0.. polygonSize p-1] ]
+
 return []
 all_props :: TestTree
 all_props = testProperties "properties" $allProperties

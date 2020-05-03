@@ -75,6 +75,9 @@ polygonParent p i j =
     sTree = polygonSSSP p V.! (mod (i + polygonOffset p) n)
     n = polygonSize p
 
+polygonCopy :: Polygon -> Polygon
+polygonCopy p = mkPolygon $ V.generate (polygonSize p) $ pAccess p
+
 setOffset :: APolygon a -> Int -> APolygon a
 setOffset p offset =
   p { polygonOffset = offset `mod` polygonSize p }
@@ -215,6 +218,16 @@ triangulationsToPolygons p t =
   , let js = filter (i<) $ t V.! i
   , (g, j) <- zip (i-1:js) js
   ]
+
+polygonIsInside :: Polygon -> V2 Rational -> Bool
+polygonIsInside p point = or
+  [ isInside (rawAccess g) (rawAccess i) (rawAccess j) point
+  | i <- [0 .. polygonSize p-1]
+  , let js = filter (i<) $ (polygonTriangulation p) V.! i
+  , (g, j) <- zip (i-1:js) js
+  ]
+  where
+    rawAccess x = polygonPoints p V.! x
 
 -- reducePolygons :: Int -> [Polygon] -> [Polygon]
 -- reducePolygons n ps
@@ -364,6 +377,16 @@ shape21 = mkPolygon $ V.fromList
   [V2 0.0 0.0,V2 1.0 0.0,V2 1.0 1.0,V2 2.0 1.0,V2 2.0 (-1.0),V2 3.0 (-1.0)
   ,V2 3.0 2.0,V2 0.0 2.0]
 
+shape22 :: Polygon
+shape22 = scalePolygon 2 $ mkPolygon $ V.fromList
+  [V2 (-0.17) (-0.08)
+  ,V2 (-0.34) (-0.21)
+  ,V2 0.0 0.0
+  ,V2 (-0.10) 0.60
+  ,V2 (-0.14) 0.19
+  ,V2 (-0.05) 0.03
+  ]
+
 concave :: Polygon
 concave = mkPolygon $
   V.fromList [V2 0 0, V2 2 0, V2 2 2, V2 1 1, V2 0 2]
@@ -433,7 +456,7 @@ polygonLength p = sum
 
 polygonLength' :: (Real a, Fractional a) => APolygon a -> Double
 polygonLength' p = sum
-  [ sqrt (realToFrac (distSquared (pAccess p i) (pAccess p $ i+1)) :: Double)
+  [ distance' (pAccess p i) (pAccess p $ i+1)
   | i <- [0 .. polygonSize p-1]]
 
 addPoints :: Int -> Polygon -> Polygon
