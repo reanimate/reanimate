@@ -19,7 +19,7 @@ rotationalTrajectory origin (src,dst) =
     \t ->
       let thisOrigin = lerp t dstOrigin srcOrigin in
       mkPolygon $
-      V.generate (polygonSize src) $ \i ->
+      V.generate (pSize src) $ \i ->
         let len = fromToS (srcLengths V.! i) (dstLengths V.! i) t
             ang = lerpAngle (srcAngles V.! i) (dstAngles V.! i) t
         in realToFrac <$> (thisOrigin + V2 (cos ang * len) (sin ang * len))
@@ -36,7 +36,7 @@ rotationalTrajectory origin (src,dst) =
 
 polygonOrigin :: Polygon -> Origin -> V2 Double
 polygonOrigin poly (originX, originY) =
-  case polygonBox poly of
+  case pBoundingBox poly of
     (polyX, polyY, polyWidth, polyHeight) ->
       V2 (realToFrac polyX + realToFrac polyWidth * originX)
          (realToFrac polyY + realToFrac polyHeight * originY)

@@ -109,12 +109,11 @@ main = reanimate $ sceneAnimation $ do
   -- play $ drawSSSP shape5 naive
   -- play $ drawSSSP (scalePolygon 0.5 $ winding 10) (\p -> sssp p (dual (earClip p)))
   -- play $ drawSSSP shape1 (\p -> sssp p (dual (earClip p)))
-  play $ drawTriangulation shape21 earClip'
+  -- play $ drawTriangulation (cyclePolygon shape5 0.2910962834555265) earClip'
+  -- play $ drawTriangulation shape5 earClip'
   -- play $ mkAnimation 1 $ \t ->
-  --   -- let p = scalePolygon 5 $ shape11
-  --   -- let p = shape7
   --   let p = shape4
-  --   in withStrokeWidth (defaultStrokeWidth*0.6) $ renderTriangulation p (earClip p)
+  --   in polygonNumDots (cyclePolygon p t)
   -- play $ setDuration 20 $ drawSSSPVisibility $ scalePolygon 1 $ shape7
   -- let shapeI = head $ svgToPolygons 0.1 $ scale 8 $ center $ latex "I"
   -- play $ animate $ \_ -> withFillColor "grey" $ polygonNumDots shapeI
@@ -125,8 +124,9 @@ main = reanimate $ sceneAnimation $ do
   --   , withFillColor "grey" $ polygonDots shape13 ]
   -- let p = balloonP origin
   --     origin = centerPolygon $ scalePolygon 1 $ shiftLongestDiameter shapeI
-  --     mkB = balloon (scale 8 $ center $ latex "$\\infty$")
+  --     mkB = balloon (scale 8 $ center $ latex "C")
   --     inf = unsafeSVGToPolygon 0.1 $ (scale 8 $ center $ latex "$\\infty$")
+  --     cShape = shiftLongestDiameter $ unsafeSVGToPolygon 0.01 $ (scale 8 $ center $ latex "C")
   -- _ <- newSpriteSVG $
   --   translate (0) (3) $ withFillColor "white" $
   --   center $ latex $ T.pack $ show (isSimple inf)
@@ -134,9 +134,17 @@ main = reanimate $ sceneAnimation $ do
   --   let inflated = p t in
   --   translate (0) (0) $ withFillColor "white" $ withStrokeColor "red" $
   --   withStrokeWidth (defaultStrokeWidth*0) $
-  --   -- polygonShape inf
-  --   -- renderTriangulation inf (earClip inf)
-  --   mkB t
+    -- polygonShape inf
+    -- renderTriangulation inf (earClip inf)
+    -- mkB t
+    -- scale 3 $ -- translate (-2.2) (-1) $
+    -- mkGroup
+    -- [ mkGroup []
+    -- , withStrokeWidth (defaultStrokeWidth*0.05) $
+    --   renderDual (polygonRing shape22) (dual (polygonOffset shape22) $ polygonTriangulation shape22)
+    -- , polygonNumDots shape22
+    --   -- renderTriangulation cShape (polygonTriangulation cShape)
+    -- ]
     -- mkGroup
     -- [ -- translate (-2) 0 $ withFillColor "white" $ polygonShape $ balloonP (min 1 $ t+0.1) origin
     --   if False then mkGroup [] else translate (0) 0 $ mkGroup
@@ -148,10 +156,19 @@ main = reanimate $ sceneAnimation $ do
     -- --   , polygonNumDots origin
     -- --   ]
     -- ]
+  -- play $ mapA (withStrokeWidth (defaultStrokeWidth*0.2)) $ drawTriangulation cShape earClip'
   -- play $ staticFrame 1 $ renderTriangulation shape3 earClip
   -- play $ staticFrame 1 $ renderTriangulation shape4 earClip
   -- play $ staticFrame 1 $ renderTriangulation shape5 earClip
   -- play $ staticFrame 1 $ renderTriangulation shape6 earClip
+  let p = deoverlapPolygon shape23
+  -- newSpriteSVG $ translate (-3) 0 $ scale 2 $ center $ mkGroup
+  --   [ withFillColor "grey" $ polygonShape p
+  --   , polygonNumDots p
+  --   ]
+  -- wait 1
+  play $ mapA (scale 2 . withStrokeWidth (defaultStrokeWidth*0.2)) $
+    drawTriangulation p (earClip')
   return ()
 
 drawVisibility :: Polygon -> Animation
@@ -329,17 +346,19 @@ polygonNumDots :: Polygon -> SVG
 polygonNumDots p = mkGroup $ reverse
     [ mkGroup
       [ colored n $
-        translate x y $ mkCircle 0.1
+        translate x y $ mkCircle circR
       , withFillColor "black" $
         translate x y $ ppNum n ]
     | n <- [0..polygonSize p-1]
     , let V2 x y = realToFrac <$> pAccess p n ]
   where
-    circR = 0.1
+    circR = 0.05
     colored n =
       let c = promotePixel $ turbo (fromIntegral (n+2) / fromIntegral (polygonSize p-1+2))
       in withStrokeColorPixel c . withFillColorPixel c
-    ppNum n = scaleToHeight (circR*1.5) $ center $ latex $ T.pack $ "\\texttt{" ++ show n ++ "}"
+    ppNum n =
+      scaleToSize (circR*1.7) (circR*1.5) $
+      center $ latex $ T.pack $ "\\texttt{" ++ show n ++ "}"
 
 drawSSSP :: Polygon -> (Polygon -> SSSP) -> Animation
 drawSSSP p gen = mkAnimation 5 $ \t -> centerUsing outline $
@@ -370,7 +389,7 @@ drawSSSPFast p = mkAnimation 5 $ \t -> centerUsing outline $
   , withFillColor "grey" $ polygonNumDots $ p
   ]
   where
-    triangulation = earClip $ polygonPoints p
+    triangulation = earClip $ polygonRing p
     outline =
       withFillColor "grey" $ mkLinePathClosed
         [ (x,y) | V2 x y <- map (fmap realToFrac) (V.toList (polygonPoints p) ++ [pAccess p 0]) ]
@@ -404,9 +423,9 @@ renderVisibleFrom p = withStrokeColor "white" $ withFillColor "white" $ mkGroup
   , let V2 ax ay = fmap realToFrac $ pAccess p 0
         V2 bx by = fmap realToFrac $ pAccess p i ]
 
-drawTriangulation :: Polygon -> (V.Vector (V2 Rational) -> [Triangulation]) -> Animation
+drawTriangulation :: Polygon -> (Ring Rational -> [Triangulation]) -> Animation
 drawTriangulation p gen = sceneAnimation $ do
-  forM_ (gen $ polygonPoints p) $ \t -> play $ staticFrame 1 $ renderTriangulation p t
+  forM_ (gen $ polygonRing p) $ \t -> play $ staticFrame 1 $ renderTriangulation p t
 
 renderTriangulation :: Polygon -> Triangulation -> SVG
 renderTriangulation p t = center $ mkGroup
@@ -415,8 +434,41 @@ renderTriangulation p t = center $ mkGroup
     [ [ mkLine (ax,ay) (bx,by) ]
     | i <- [0..polygonSize p-1]
     , y <- t V.! i
-    , let V2 ax ay = fmap realToFrac $ pAccess p i
-          V2 bx by = fmap realToFrac $ pAccess p y
+    , let V2 ax ay = fmap realToFrac $ rawAccess i
+          V2 bx by = fmap realToFrac $ rawAccess y
     ]
   , withFillColor "grey" $ polygonNumDots p
   ]
+  where
+    rawAccess x = polygonPoints p V.! x
+
+renderDual :: Ring Rational -> Dual -> SVG
+renderDual ring d = case d of
+    Dual (a,b,c) l r -> mkGroup
+      [ withFillColor "blue" $ mkTrig a b c
+      , worker c a l
+      , worker b c r
+      ]
+  where
+    mkTrig a b c =
+      let V2 x1 y1 = realToFrac <$> ringAccess ring a
+          V2 x2 y2 = realToFrac <$> ringAccess ring b
+          V2 x3 y3 = realToFrac <$> ringAccess ring c
+      in mkLinePathClosed [ (x1, y1), (x2,y2), (x3,y3) ]
+    worker p1 p2 EmptyDual = mkGroup []
+    worker p1 p2 (NodeDual x l r) = mkGroup
+      [ mkTrig p1 p2 x
+      , worker x p2 l
+      , worker p1 x r
+      ]
+-- data Dual = Dual (Int,Int,Int) -- (a,b,c)
+--                   DualTree -- borders ca
+--                   DualTree -- borders bc
+--   deriving (Show)
+--
+-- data DualTree
+--   = EmptyDual
+--   | NodeDual Int -- axb triangle, a and b are from parent.
+--       DualTree -- borders xb
+--       DualTree -- borders ax
+--   deriving (Show)

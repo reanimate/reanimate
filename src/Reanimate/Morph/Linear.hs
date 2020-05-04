@@ -9,6 +9,7 @@ import           Data.Hashable
 import qualified Data.Vector            as V
 import           Linear.Vector
 import           Reanimate.Interpolate
+import           Reanimate.Math.Common
 import           Reanimate.Math.Polygon
 import           Reanimate.Morph.Cache
 import           Reanimate.Morph.Common
@@ -41,11 +42,11 @@ closestLinearCorrespondence src' dst' =
       if newScore < bestPScore
         then worker x newScore xs
         else worker bestP bestPScore xs
-    options = cyclePolygons dst
+    options = pCycles dst
     score = V.sum . V.zipWith approxDist (polygonPoints src) . polygonPoints
 
 linearTrajectory :: Trajectory
 linearTrajectory (src,dst)
-  | polygonSize src == polygonSize dst = \t -> mkPolygon $
+  | pSize src == pSize dst = \t -> mkPolygon $
     V.zipWith (lerp $ realToFrac t) (polygonPoints dst) (polygonPoints src)
-  | otherwise = error $ "Invalid lengths: " ++ show (polygonSize src, polygonSize dst)
+  | otherwise = error $ "Invalid lengths: " ++ show (pSize src, pSize dst)

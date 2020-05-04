@@ -8,6 +8,7 @@ import           Graphics.SvgTree           (drawAttributes)
 import           Linear.V2
 import           Linear.Vector
 import           Reanimate.Animation
+import           Reanimate.Math.Common
 import           Reanimate.Math.Polygon
 import           Reanimate.Morph.Common     (toShapes)
 import           Reanimate.Svg.Constructors
@@ -105,7 +106,7 @@ balloonP p = \t ->
                 Nothing -> map (moveCloser x) [aP,bP]
             _ -> []
     in mkPolygon $ V.fromList $ clearDups $
-        concatMap worker [0..polygonSize p-1]
+        concatMap worker [0..pSize p-1]
   where
     clearDups (x:y:xs)
       | x == y = clearDups (x:xs)
@@ -114,7 +115,7 @@ balloonP p = \t ->
 
     getParents 0 = []
     getParents x =
-      let parent = polygonParent p 0 x
+      let parent = pParent p 0 x
       in parent : getParents parent
     getFunnel a b =
       let aP = getParents a
@@ -139,7 +140,7 @@ diameter :: Polygon -> Double
 diameter p = V.maximum (ssspDistances p)
 
 shiftLongestDiameter :: Polygon -> Polygon
-shiftLongestDiameter p = findBest 0 p (cyclePolygons p)
+shiftLongestDiameter p = findBest 0 p (pCycles p)
   where
     margin = 0.01
     findBest _score elt [] = elt
@@ -158,9 +159,9 @@ shiftLongestDiameter p = findBest 0 p (cyclePolygons p)
 ssspDistances :: Polygon -> V.Vector Double
 ssspDistances p = arr
   where
-    arr = V.generate (polygonSize p) $ \i ->
+    arr = V.generate (pSize p) $ \i ->
       case i of
         0 -> 0
         _ ->
-          let parent = polygonParent p 0 i in
+          let parent = pParent p 0 i in
           arr V.! parent + distance' (pAccess p i) (pAccess p parent)

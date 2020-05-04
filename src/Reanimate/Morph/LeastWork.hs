@@ -28,6 +28,7 @@ import qualified Data.Vector.Unboxed     as VU
 import           Linear.Metric
 import           Linear.V2
 import           Linear.Vector
+import           Reanimate.Math.Common
 import           Reanimate.Math.Polygon
 import           Reanimate.Morph.Cache
 import           Reanimate.Morph.Common
@@ -181,7 +182,7 @@ leastWork stretchCosts bendCosts =
 
 leastWork_ :: StretchCosts -> BendCosts -> PointCorrespondence
 leastWork_ stretchCosts bendCosts src dst
-  | polygonSize src > polygonSize dst =
+  | pSize src > pSize dst =
     case leastWork stretchCosts bendCosts dst src of
       (dst', src') -> (src', dst')
 leastWork_ stretchCosts bendCosts src dst =
@@ -195,8 +196,8 @@ leastWork_ stretchCosts bendCosts src dst =
       if newScore < bestPScore || bestPScore < 0
         then worker (src',dst') newScore xs
         else worker bestP bestPScore xs
-    options = cyclePolygons dst
-    -- options = [cyclePolygons dst !! 79 ]
+    options = pCycles dst
+    -- options = [pCycles dst !! 79 ]
 
 anyLeastWork :: StretchCosts -> BendCosts -> PointCorrespondence
 anyLeastWork stretchCosts bendCosts src dst =
@@ -403,8 +404,8 @@ leastWork'' stretchCosts bendCosts src dst srcV dstV srcDist dstDist = runST $ d
       , finalWork
       )
   where
-    nSrc = polygonSize src
-    nDst = polygonSize dst
+    nSrc = pSize src
+    nDst = pSize dst
     asArray :: ST s (STUArray s i e) -> ST s (STUArray s i e)
     asArray = id
 

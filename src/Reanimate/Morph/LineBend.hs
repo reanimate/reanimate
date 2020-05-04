@@ -8,6 +8,7 @@ import           Linear.Matrix          (det22)
 import           Linear.Metric
 import           Linear.V2
 import           Linear.Vector
+import           Reanimate.Math.Common
 import           Reanimate.Math.Polygon
 import           Reanimate.Morph.Common
 
@@ -46,10 +47,10 @@ lineBend' corrected (a,b) = \t ->
           [ -0.5 * squared (lengths_diff V.! n) *
             (lam1 * cos (alpha V.! n) +
              lam2 * sin (alpha V.! n))
-          | n <- [0 .. polygonSize a-1]]
+          | n <- [0 .. pSize a-1]]
         lengths = V.zipWith3 (\l r s -> u*l + t*r + if corrected then s else 0) lengths_a lengths_b s_vect
         movingCenter :: V2 Double
-        movingCenter = lerp t (realToFrac <$> polygonCentroid b) (realToFrac <$> polygonCentroid a)
+        movingCenter = lerp t (realToFrac <$> pCentroid b) (realToFrac <$> pCentroid a)
         centerAng :: Double
         centerAng = lerpAngle centoid_angle_a centoid_angle_b t
         centerLen = u*centoid_len_a + t*centoid_len_b
@@ -63,11 +64,11 @@ lineBend' corrected (a,b) = \t ->
   where
     squared x = x*x
     centoid_angle_a :: Double
-    centoid_angle_a = lineAngle (polygonCentroid a + V2 1 0) (polygonCentroid a) (pAccess a 0)
-    centoid_angle_b = lineAngle (polygonCentroid b + V2 1 0) (polygonCentroid b) (pAccess b 0)
+    centoid_angle_a = lineAngle (pCentroid a + V2 1 0) (pCentroid a) (pAccess a 0)
+    centoid_angle_b = lineAngle (pCentroid b + V2 1 0) (pCentroid b) (pAccess b 0)
     centoid_len_a :: Double
-    centoid_len_a = realToFrac $ approxDist (polygonCentroid a) (pAccess a 0)
-    centoid_len_b = realToFrac $ approxDist (polygonCentroid b) (pAccess b 0)
+    centoid_len_a = realToFrac $ approxDist (pCentroid a) (pAccess a 0)
+    centoid_len_b = realToFrac $ approxDist (pCentroid b) (pAccess b 0)
     alpha_a_zero = lineAngle (pAccess a 0 + V2 1 0) (pAccess a 0) (pAccess a 1)
     alpha_b_zero = lineAngle (pAccess b 0 + V2 1 0) (pAccess b 0) (pAccess b 1)
     lengths_a = computeLength a
@@ -81,13 +82,13 @@ lineBend' corrected (a,b) = \t ->
     computeLength :: Polygon -> V.Vector Double
     computeLength poly = V.fromList
       [ realToFrac $ approxDist this next
-      | n <- [0 .. polygonSize poly-1]
+      | n <- [0 .. pSize poly-1]
       , let this = pAccess poly n
             next = pAccess poly (pNext a n)
       ]
     computePhi poly = V.fromList $
       [ negate $ angle' (next-this) ((prev-this) ^* (-1))
-      | n <- [1 .. polygonSize poly-1]
+      | n <- [1 .. pSize poly-1]
       , let prev = pAccess poly (n-1)
             this = pAccess poly n
             next = pAccess poly (pNext a n)

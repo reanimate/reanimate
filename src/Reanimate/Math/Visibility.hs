@@ -1,9 +1,9 @@
 module Reanimate.Math.Visibility where
 
 -- import qualified Data.Set              as Set
+import           Data.Maybe
 import           Linear.V2
-import Data.Maybe
-
+import           Reanimate.Math.Common
 import           Reanimate.Math.Polygon
 
 -- import           Debug.Trace

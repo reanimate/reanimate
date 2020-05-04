@@ -26,10 +26,9 @@ import           Linear.V2
 import           Reanimate.Animation
 import           Reanimate.Interpolate
 import           Reanimate.Math.EarClip
-import           Reanimate.Math.Polygon (Polygon, polygonAddPoints,
-                                         mkPolygon, pdualPolygons,
-                                         polygonCentroid, polygonPoints,
-                                         polygonRing, polygonSize)
+import           Reanimate.Math.Polygon (Polygon, mkPolygon, pAddPoints,
+                                         pCentroid, pRing, pSize, pdualPolygons,
+                                         polygonPoints)
 import           Reanimate.Math.SSSP
 import           Reanimate.PolyShape
 import           Reanimate.Signal
@@ -85,11 +84,11 @@ applyPointCorrespondence fn src dst = fn src dst
 
 normalizePolygons :: Polygon -> Polygon -> (Polygon, Polygon)
 normalizePolygons src dst =
-    (polygonAddPoints (max 0 $ dstN-srcN) src
-    ,polygonAddPoints (max 0 $ srcN-dstN) dst)
+    (pAddPoints (max 0 $ dstN-srcN) src
+    ,pAddPoints (max 0 $ srcN-dstN) dst)
   where
-    srcN = polygonSize src
-    dstN = polygonSize dst
+    srcN = pSize src
+    dstN = pSize dst
 
 interpolateAttrs :: ColorComponents -> DrawAttributes -> DrawAttributes -> Double -> DrawAttributes
 interpolateAttrs colorComps src dst t =
@@ -116,7 +115,7 @@ genesisObjectCorrespondence left right =
     (x:xs, y:ys) ->
       (x,y) : genesisObjectCorrespondence xs ys
   where
-    emptyFrom a b = mkPolygon $ V.map (const $ polygonCentroid a) (polygonPoints b)
+    emptyFrom a b = mkPolygon $ V.map (const $ pCentroid a) (polygonPoints b)
 
 dupObjectCorrespondence :: ObjectCorrespondence
 dupObjectCorrespondence left right =
@@ -152,10 +151,10 @@ splitObjectCorrespondence left right =
 
 splitPolygon :: Int -> Polygon -> [Polygon]
 splitPolygon n polygon =
-    let trig = earClip $ polygonRing polygon
+    let trig = earClip $ pRing polygon
         d = dual 0 trig
-        pd = toPDual (polygonRing polygon) d
-        reduced = pdualReduce (polygonRing polygon) pd n
+        pd = toPDual (pRing polygon) d
+        reduced = pdualReduce (pRing polygon) pd n
         polygons = pdualPolygons polygon reduced
     in polygons
 

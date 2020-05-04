@@ -13,6 +13,7 @@ import           Reanimate.LaTeX
 -- import           Reanimate.Math.Compatible
 -- import           Reanimate.Math.EarClip
 import           Reanimate.Math.Polygon
+import           Reanimate.Math.Common
 import           Reanimate.Math.SSSP
 import           Reanimate.Math.Triangulate
 -- import           Reanimate.Math.Visibility
@@ -36,7 +37,7 @@ import           Reanimate.Svg
 
 -- drawSSSPVisibility :: Polygon -> Animation
 -- drawSSSPVisibility p' = mkAnimation 5 $ \t ->
---   let p = setOffset p' (round $ t*(fromIntegral $ polygonSize p'-1))
+--   let p = pSetOffset p' (round $ t*(fromIntegral $ pSize p'-1))
 --       vis = ssspVisibility p in
 --   centerUsing (polygonShape p) $
 --   mkGroup
@@ -50,8 +51,8 @@ import           Reanimate.Svg
 
 -- drawSSSPVisibilityFast :: Polygon -> Animation
 -- drawSSSPVisibilityFast p' = mkAnimation 5 $ \t ->
---   let root = min (polygonSize p-1) $ (floor $ t*(fromIntegral $ polygonSize p))
---       p = setOffset p' root
+--   let root = min (pSize p-1) $ (floor $ t*(fromIntegral $ pSize p))
+--       p = pSetOffset p' root
 --       vis = ssspVisibility p in
 --   -- centerUsing (polygonShape p) $
 --   mkGroup
@@ -131,12 +132,12 @@ polygonNumDots p = mkGroup $ reverse
         translate x y $ mkCircle circR
       , withFillColor "black" $
         translate x y $ ppNum n ]
-    | n <- [0..polygonSize p-1]
+    | n <- [0..pSize p-1]
     , let V2 x y = realToFrac <$> pAccess p n ]
   where
     circR = 0.05
     colored n =
-      let c = promotePixel $ turbo (fromIntegral (n+2) / fromIntegral (polygonSize p-1+2))
+      let c = promotePixel $ turbo (fromIntegral (n+2) / fromIntegral (pSize p-1+2))
       in withStrokeColorPixel c . withFillColorPixel c
     ppNum n =
       scaleToSize (circR*1.7) (circR*1.5) $
@@ -144,7 +145,7 @@ polygonNumDots p = mkGroup $ reverse
 
 -- drawSSSP :: Polygon -> (Polygon -> SSSP) -> Animation
 -- drawSSSP p gen = mkAnimation 5 $ \t -> centerUsing outline $
---   let p' = cyclePolygons p !! (round $ t*(fromIntegral $ polygonSize p-1)) in
+--   let p' = cyclePolygons p !! (round $ t*(fromIntegral $ pSize p-1)) in
 --   mkGroup
 --   [ outline
 --   , renderSSSP p' (gen p')
@@ -157,7 +158,7 @@ polygonNumDots p = mkGroup $ reverse
 
 drawSSSP :: Polygon -> Animation
 drawSSSP p = mkAnimation 5 $ \t -> centerUsing (polygonShape p) $
-  let root = (round $ t*(fromIntegral $ polygonSize p-1))
+  let root = (round $ t*(fromIntegral $ pSize p-1))
       sTree = polygonSSSP p V.! root in
   mkGroup
   [ polygonShape p
@@ -169,7 +170,7 @@ drawSSSP p = mkAnimation 5 $ \t -> centerUsing (polygonShape p) $
 {-# INLINE drawSSSPNaive #-}
 drawSSSPNaive :: Polygon -> Animation
 drawSSSPNaive p = mkAnimation 5 $ \t -> centerUsing (polygonShape p) $
-  let root = (round $ t*(fromIntegral $ polygonSize p-1)) in
+  let root = (round $ t*(fromIntegral $ pSize p-1)) in
   mkGroup
   [ polygonShape p
   , renderSSSP p (trees !! root)
@@ -177,8 +178,8 @@ drawSSSPNaive p = mkAnimation 5 $ \t -> centerUsing (polygonShape p) $
   ]
   where
     trees =
-      [ naive $ polygonRing $ polygonCopy $ setOffset p i
-      | i <- [0 .. polygonSize p-1]]
+      [ naive $ pRing $ pCopy $ pSetOffset p i
+      | i <- [0 .. pSize p-1]]
 
 renderSSSP :: Polygon -> SSSP -> SVG
 renderSSSP p s = withFillOpacity 0 $ withStrokeColor "white" $ mkGroup
@@ -192,14 +193,14 @@ renderSSSP p s = withFillOpacity 0 $ withStrokeColor "white" $ mkGroup
 
 drawTriangulation :: Polygon -> (Ring Rational -> [Triangulation]) -> Animation
 drawTriangulation p gen = sceneAnimation $ do
-  forM_ (gen $ polygonRing p) $ \t -> play $ staticFrame 1 $ renderTriangulation p t
+  forM_ (gen $ pRing p) $ \t -> play $ staticFrame 1 $ renderTriangulation p t
 
 renderTriangulation :: Polygon -> Triangulation -> SVG
 renderTriangulation p t = center $ mkGroup
   [ withFillColor "grey" $ polygonShape p
   , withStrokeColor "white" $ mkGroup $ concat
     [ [ mkLine (ax,ay) (bx,by) ]
-    | i <- [0..polygonSize p-1]
+    | i <- [0..pSize p-1]
     , y <- t V.! i
     , let V2 ax ay = fmap realToFrac $ rawAccess i
           V2 bx by = fmap realToFrac $ rawAccess y

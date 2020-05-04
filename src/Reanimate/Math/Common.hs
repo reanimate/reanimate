@@ -7,6 +7,7 @@ module Reanimate.Math.Common
   , ringClamp           -- :: Ring a -> Int -> Int
   , ringUnpack          -- :: Ring a -> Vector (V2 a)
   , ringPack            -- :: Vector (V2 a) -> Ring a
+  , ringMap             -- :: (V2 a -> V2 b) -> Ring a -> Ring b
   , ringRayIntersect    -- :: Ring Rational -> (Int, Int) -> (Int,Int) -> Maybe (V2 Rational)
     -- * Math
   , area                -- :: Fractional a => V2 a -> V2 a -> V2 a -> a
@@ -52,6 +53,9 @@ ringUnpack (Ring v) = v
 
 ringPack :: Vector (V2 a) -> Ring a
 ringPack = Ring
+
+ringMap :: (V2 a -> V2 b) -> Ring a -> Ring b
+ringMap fn (Ring v) = Ring (V.map fn v)
 
 ringRayIntersect :: Ring Rational -> (Int, Int) -> (Int,Int) -> Maybe (V2 Rational)
 ringRayIntersect p (a,b) (c,d) =

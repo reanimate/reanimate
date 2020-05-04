@@ -39,7 +39,7 @@ import           Data.List              (minimumBy, nub, partition, sortOn)
 import           Data.Ord
 import qualified Data.Vector            as V
 import           Debug.Trace
-import           Geom2D (($*), rotate90L, rotate90R, (^*))
+import           Geom2D                 (rotate90L, rotate90R, ($*), (^*))
 import           Geom2D.CubicBezier     (ClosedPath (..), CubicBezier (..),
                                          DPoint, FillRule (..), PathJoin (..),
                                          Point (..), arcLength, arcLengthParam,
@@ -53,8 +53,9 @@ import           Graphics.SvgTree       (PathCommand (..), RPoint, Tree (..),
 import           Linear.V2
 import           Reanimate.Animation
 import           Reanimate.Constants
-import           Reanimate.Math.Polygon  (Polygon, polygonPoints, isCCW, mkPolygon, polygonRing, pdualPolygons)
 import           Reanimate.Math.EarClip
+import           Reanimate.Math.Polygon (Polygon, mkPolygon, pIsCCW, pRing,
+                                         pdualPolygons, polygonPoints)
 import           Reanimate.Math.SSSP
 import           Reanimate.Svg
 
@@ -105,7 +106,7 @@ plToPolygon :: Double -> PolyShape -> Polygon
 plToPolygon tol pl =
   let p = V.init . V.fromList . map (\(Point x y) -> realToFrac <$> V2 x y) .
           plPolygonify tol $ pl
-  in if isCCW (mkPolygon p) then mkPolygon p else mkPolygon (V.reverse p)
+  in if pIsCCW (mkPolygon p) then mkPolygon p else mkPolygon (V.reverse p)
 
 
 plPartial :: Double -> PolyShape -> PolyShape
@@ -135,10 +136,10 @@ plPartial delta pl = PolyShape $ curvesToClosed (lineOut ++ [joinB] ++ lineIn)
 splitPolyShape :: Double -> Int -> PolyShape -> [PolyShape]
 splitPolyShape tol n poly =
     let polygon = toPolygon (plPolygonify tol poly)
-        trig = earClip $ polygonRing polygon
+        trig = earClip $ pRing polygon
         d = dual 0 trig
-        pd = toPDual (polygonRing polygon) d
-        reduced = pdualReduce (polygonRing polygon) pd n
+        pd = toPDual (pRing polygon) d
+        reduced = pdualReduce (pRing polygon) pd n
         polygons = pdualPolygons polygon reduced
     in map toPolyShape polygons
   where

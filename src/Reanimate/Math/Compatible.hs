@@ -7,6 +7,7 @@ import           Data.Ord
 import qualified Data.Vector                   as V
 import           Linear.V2
 import           Linear.Vector
+import           Reanimate.Math.Common
 import           Reanimate.Math.Polygon
 
 import           Debug.Trace
@@ -24,7 +25,7 @@ split1Link p i j s =
     (mkPolygon $ V.fromList left
     ,mkPolygon $ V.fromList right)
   where
-    n = polygonSize p
+    n = pSize p
     sp = mkSteinerPoints (pAccess p i) (pAccess p j) s
     left = map (pAccess p) [0..i] ++ sp ++ map (pAccess p) [j..n-1]
     right = map (pAccess p) [i..j] ++ reverse sp
@@ -41,17 +42,17 @@ steiner2Link p i j
   where
     distToV = approxDist (fst vect)
     isNeighbour = i == pNext p j || i == pPrev p j
-    isParent = polygonParent p i j == i
-    isGrandparent = polygonParent p i (polygonParent p i j) == i
+    isParent = pParent p i j == i
+    isGrandparent = pParent p i (pParent p i j) == i
     isStraightLine =
       direction
         (pAccess p j)
-        (pAccess p $ polygonParent p i j)
+        (pAccess p $ pParent p i j)
         (pAccess p i) == 0
     intersects = sortBy (comparing distToV) $
       snd vect :
       [ u
-      | n <- [0..polygonSize p-1]
+      | n <- [0..pSize p-1]
       , let edge = (pAccess p n, pAccess p $ pNext p n)
       , u <- case rayIntersect vect edge of
                Nothing -> []
@@ -60,8 +61,8 @@ steiner2Link p i j
       , u /= fst vect
       , isForward vect u
       ]
-    iP = modOffset p i
-    jP = modOffset p j
+    iP = pAdjustOffset p i
+    jP = pAdjustOffset p j
     vect
       | isStraightLine =
           let p1 = lerp 0.5 (pAccess p i) (pAccess p j)
@@ -92,7 +93,7 @@ split2Link p i j =
     ,mkPolygon $ V.fromList right)
   where
     s = steiner2Link p i j
-    n = polygonSize p
+    n = pSize p
     left = map (pAccess p) [0..i] ++ [s] ++ map (pAccess p) [j..n-1]
     right = map (pAccess p) [i..j] ++ [s]
 
@@ -103,7 +104,7 @@ splitNLink p i js =
     (mkPolygon $ V.fromList left
     ,mkPolygon $ V.fromList right)
   where
-    n = polygonSize p
+    n = pSize p
     left = map (pAccess p) [0..i] ++ steiners ++ map (pAccess p) [j..n-1]
     right = map (pAccess p) [i..j] ++ reverse steiners
     j = snd (last js)
@@ -204,8 +205,8 @@ data MeshPair = MeshPair Points Points Edges
 -- floyd
 compatiblyTriangulateP :: Polygon -> Polygon -> [(Polygon, Polygon)]
 compatiblyTriangulateP a b
-  | polygonSize a /= polygonSize b = error "polygon size mismatch"
-  | otherwise = compatiblyTriangulateP' (setOffset a 0) (setOffset a 0) (setOffset b 0)
+  | pSize a /= pSize b = error "polygon size mismatch"
+  | otherwise = compatiblyTriangulateP' (pSetOffset a 0) (pSetOffset a 0) (pSetOffset b 0)
 
 compatiblyTriangulateP' :: Polygon -> Polygon -> Polygon -> [(Polygon, Polygon)]
 compatiblyTriangulateP' aOrigin a b
@@ -234,7 +235,7 @@ compatiblyTriangulateP' aOrigin a b
     toOriginIndex idx =
       (idx,fromMaybe (-1) (V.elemIndex (pAccess a idx) (polygonPoints aOrigin)) +
       polygonOffset aOrigin)
-    n = polygonSize a
+    n = pSize a
     bestOneLink = listToMaybe (sortBy (flip (comparing nodeDist))
       (aOneLink `intersect` bOneLink))
     bestTwoLink = listToMaybe (sortBy (flip (comparing nodeDist))
@@ -249,12 +250,12 @@ oneBendBetween :: Polygon -> Int -> Int -> Bool
 oneBendBetween p a b =
     direction
       (pAccess p b)
-      (pAccess p (polygonParent p a b))
+      (pAccess p (pParent p a b))
       (pAccess p $ obstructedBy b) == 0 &&
-    (polygonParent p a b) /= obstructedBy b
+    (pParent p a b) /= obstructedBy b
   where
     obstructedBy n =
-      case polygonParent p a n of
+      case pParent p a n of
         i -> if i == a then n else obstructedBy i
 
 polygonTwoLinks :: Polygon -> [(Int,Int)]
@@ -263,19 +264,19 @@ polygonTwoLinks p =
   | i <- [0 .. n-1]
   , j <- [i+2 .. n-1]
   , not (i==0 && j == n-1)
-  , polygonParent p i j /= i -- check for 1-link
-  , let isTwoLink = polygonParent p i (polygonParent p i j) == 0
+  , pParent p i j /= i -- check for 1-link
+  , let isTwoLink = pParent p i (pParent p i j) == 0
         isStraightLine = oneBendBetween p i j
   -- Points on a straight line should be 2-link even though they are not
   -- direct grandparents.
   , isTwoLink || isStraightLine
-  ] where n = polygonSize p
+  ] where n = pSize p
 
 polygonOneLinks :: Polygon -> [(Int,Int)]
 polygonOneLinks p =
   [ (i, j)
-  | i <- [0 .. polygonSize p-1]
-  , j <- [i+2 .. polygonSize p-1]
-  , not (i==0 && j == polygonSize p-1)
-  , polygonParent p i j == i
+  | i <- [0 .. pSize p-1]
+  , j <- [i+2 .. pSize p-1]
+  , not (i==0 && j == pSize p-1)
+  , pParent p i j == i
   ]
