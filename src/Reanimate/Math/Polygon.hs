@@ -387,6 +387,15 @@ shape22 = scalePolygon 2 $ mkPolygon $ V.fromList
   ,V2 (-0.05) 0.03
   ]
 
+shape23 :: Polygon
+shape23 = mkPolygon $ V.fromList
+  [ V2 0 0, V2 4 0
+  , V2 4 3, V2 2 3
+  , V2 2 2, V2 3 2
+  , V2 3 1, V2 1 1
+  , V2 1 2, V2 2 2
+  , V2 2 3, V2 0 3 ]
+
 concave :: Polygon
 concave = mkPolygon $
   V.fromList [V2 0 0, V2 2 0, V2 2 2, V2 1 1, V2 0 2]
@@ -405,6 +414,19 @@ winding n = mkPolygon $
         in newAt : walkTo newAt (a+1) b (rot dir)
     rot (V2 x y) =
       V2 y (-x)
+
+deoverlapPolygon :: Polygon -> Polygon
+deoverlapPolygon p = mkPolygon arr
+  where
+    arr = V.generate (polygonSize p) worker
+    worker 0 = pAccess p 0
+    worker n =
+      if length (V.elemIndices (pAccess p n) (polygonPoints p)) /= 1
+        then
+          let prev = arr V.! (n-1)
+              this = pAccess p n
+          in lerp 0.99999 this prev
+        else pAccess p n
 
 cyclePolygons :: Polygon -> [Polygon]
 cyclePolygons p = map (modOffset p) [0 .. polygonSize p-1]
