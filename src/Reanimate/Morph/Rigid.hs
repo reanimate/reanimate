@@ -218,18 +218,18 @@ prepare (Mesh pointsA pointsB trigs) = Prep
     uToB =
       [ ((x,y-2),key) | ((x,y),key) <- bigM, y /= pivotIdx*2 && y /= pivotIdx*2+1 ]
     bigM =
-      (concat $ zipWith worker [0..] (V.toList trigs)) ++
+      concat (zipWith worker [0..] (V.toList trigs)) ++
       if symmetric
-        then (concat $ zipWith workerRev [n..] (V.toList trigs))
+        then concat $ zipWith workerRev [n..] (V.toList trigs)
         else []
-    worker i (src@(a,b,c)) = concat $
+    worker i src@(a,b,c) = concat $
       let effs = coeffOfB (mkAbs pointsA src) in
       [ [((i*4+h, e*2), effs!h!(j*2))
         ,((i*4+h, e*2+1), effs!h!(j*2+1))]
       | h <- [0..3]
       , (e,j) <- zip [a,b,c] [0..]
       ]
-    workerRev i (dst@(a,b,c)) = concat $
+    workerRev i dst@(a,b,c) = concat $
       let effs = coeffOfB (mkAbs pointsB dst) in
       [ [((i*4+h, e*2), effs!h!(j*2))
         ,((i*4+h, e*2+1), effs!h!(j*2+1))]
@@ -239,7 +239,7 @@ prepare (Mesh pointsA pointsB trigs) = Prep
 
 interpolate :: Prep -> Double -> Vector P
 interpolate Prep{..} t = V.fromList $
-    pivot : worker (Matrix.toList $ solution)
+    pivot : worker (Matrix.toList solution)
   where
     -- solution = Matrix.cgSolve False prepUToB b
     solution = Matrix.cgx $ last solutions
@@ -268,8 +268,8 @@ interpolate Prep{..} t = V.fromList $
       , j <- [0..3]
       ] ++
       [ concat (toLists a)!!j
-      | i <- [0..n-1]
-      , symmetric
+      | symmetric
+      , i <- [0..n-1]
       , let (r,s) = prepRSRev V.! i
       , let a = computeA_RSt r s (1-t)
       , j <- [0..3]

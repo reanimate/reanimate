@@ -148,7 +148,7 @@ bendInfo startA endA startB endB =
     !q0 = fudge $ V2 x0 y0
     !q1 = V2 x1 y1
     !q2 = fudge $ V2 x2 y2
-    curve n = (q0^*(squared (1-n)) + q1^*(2*n*(1-n)) + q2^*squared n)
+    curve n = q0^*squared (1-n) + q1^*(2*n*(1-n)) + q2^*squared n
     squared a = a*a
     ang3 = abs (angleR q0 q2)
     ang4 = if isWrap then 2*pi - ang3 else ang3
@@ -425,12 +425,12 @@ cubicRoot 0 (a - 2b + c) (2b - 2c) c
 
 quadThroughZero :: V2 Double -> V2 Double -> V2 Double -> Bool
 quadThroughZero a@(V2 _ q0) b@(V2 _ q1) c@(V2 _ q2) =
-    any xPositive $ map eval $ filter (\x -> x > 0 && x < 1) extrema
+    any (xPositive . eval) $ filter (\x -> x > 0 && x < 1) extrema
   where
     xPositive (V2 x _) = x>0
-    eval n = a^*(squared (1-n)) + b^*(2*n*(1-n)) + c^*squared n
+    eval n = a^*squared (1-n) + b^*(2*n*(1-n)) + c^*squared n
     squared x = x*x
-    extrema = quadraticRoot (q2-2*q1+q0) (2*q1-2*q0) (q0)
+    extrema = quadraticRoot (q2-2*q1+q0) (2*q1-2*q0) q0
 
 quadraticRoot :: Double -> Double -> Double -> [Double]
 quadraticRoot a b c

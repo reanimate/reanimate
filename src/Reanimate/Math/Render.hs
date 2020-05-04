@@ -158,7 +158,7 @@ polygonNumDots p = mkGroup $ reverse
 
 drawSSSP :: Polygon -> Animation
 drawSSSP p = mkAnimation 5 $ \t -> centerUsing (polygonShape p) $
-  let root = (round $ t*(fromIntegral $ pSize p-1))
+  let root = round $ t*fromIntegral (pSize p-1)
       sTree = polygonSSSP p V.! root in
   mkGroup
   [ polygonShape p
@@ -170,7 +170,7 @@ drawSSSP p = mkAnimation 5 $ \t -> centerUsing (polygonShape p) $
 {-# INLINE drawSSSPNaive #-}
 drawSSSPNaive :: Polygon -> Animation
 drawSSSPNaive p = mkAnimation 5 $ \t -> centerUsing (polygonShape p) $
-  let root = (round $ t*(fromIntegral $ pSize p-1)) in
+  let root = round $ t*fromIntegral (pSize p-1) in
   mkGroup
   [ polygonShape p
   , renderSSSP p (trees !! root)
@@ -187,12 +187,12 @@ renderSSSP p s = withFillOpacity 0 $ withStrokeColor "white" $ mkGroup
   | i <- [0 .. length s-1] ]
   where
     lineFrom i =
-      let V2 ax ay = fmap realToFrac $ pAccess p i
+      let V2 ax ay = realToFrac <$> pAccess p i
           next = (s V.! i)
       in (ax,ay) : if next == i then [] else lineFrom next
 
 drawTriangulation :: Polygon -> (Ring Rational -> [Triangulation]) -> Animation
-drawTriangulation p gen = sceneAnimation $ do
+drawTriangulation p gen = sceneAnimation $
   forM_ (gen $ pRing p) $ \t -> play $ staticFrame 1 $ renderTriangulation p t
 
 renderTriangulation :: Polygon -> Triangulation -> SVG
@@ -202,8 +202,8 @@ renderTriangulation p t = center $ mkGroup
     [ [ mkLine (ax,ay) (bx,by) ]
     | i <- [0..pSize p-1]
     , y <- t V.! i
-    , let V2 ax ay = fmap realToFrac $ rawAccess i
-          V2 bx by = fmap realToFrac $ rawAccess y
+    , let V2 ax ay = realToFrac <$> rawAccess i
+          V2 bx by = realToFrac <$> rawAccess y
     ]
   , withFillColor "grey" $ polygonNumDots p
   ]

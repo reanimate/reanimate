@@ -20,17 +20,17 @@ bgColor :: PixelRGBA8
 bgColor = PixelRGBA8 252 252 252 0xFF
 
 spike1 :: Polygon
-spike1 = scalePolygon 2.5 $ mkPolygon $ V.map (\x -> x - V2 1 1) $ V.fromList
+spike1 = pScale 2.5 $ mkPolygon $ V.map (\x -> x - V2 1 1) $ V.fromList
   [ V2 0 0, V2 2 0
   , V2 2 1 ]
 
 spike2 :: Polygon
-spike2 = scalePolygon 2.5 $ mkPolygon $ V.map (\x -> x - V2 1 1) $ V.fromList
+spike2 = pScale 2.5 $ mkPolygon $ V.map (\x -> x - V2 1 1) $ V.fromList
   [ V2 0 0, V2 2 0
   , V2 0 1 ]
 
 spike3 :: Polygon
-spike3 = scalePolygon 2.5 $ mkPolygon $ V.map (\x -> x - V2 1 1) $ V.fromList
+spike3 = pScale 2.5 $ mkPolygon $ V.map (\x -> x - V2 1 1) $ V.fromList
   [ V2 0.5 0, V2 1.5 0
   , V2 1 2 ]
 

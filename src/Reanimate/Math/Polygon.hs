@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 module Reanimate.Math.Polygon
   ( APolygon(..)
   , Polygon
@@ -118,7 +117,7 @@ instance Hashable a => Hashable (APolygon a) where
 
 instance (Fractional a, Ord a, Serialize a) => Serialize (APolygon a) where
   put = put . V.toList . polygonPoints
-  get = (mkPolygon . V.fromList) <$> get
+  get = mkPolygon . V.fromList <$> get
 
 pRing :: APolygon a -> Ring a
 pRing = ringPack . polygonPoints
@@ -144,9 +143,9 @@ pUnsafeMap fn p = p{ polygonPoints = ringUnpack (fn (pRing p)) }
 -- pParent p i j = shortest-path parent from j to i
 pParent :: Polygon -> Int -> Int -> Int
 pParent p i j =
-    (sTree V.! (mod (j + polygonOffset p) n) - polygonOffset p) `mod` n
+    (sTree V.! mod (j + polygonOffset p) n - polygonOffset p) `mod` n
   where
-    sTree = polygonSSSP p V.! (mod (i + polygonOffset p) n)
+    sTree = polygonSSSP p V.! mod (i + polygonOffset p) n
     n = pSize p
 
 pCopy :: Polygon -> Polygon
@@ -189,7 +188,7 @@ pIsSimple p = pIsCCW p && noDups && checkEdge 0 2
     -- check i,i+1 against j,j+1
     -- j > i+1
     checkEdge i j
-      | j >= len = if i < len-4 then checkEdge (i+1) (i+3) else True
+      | j >= len = (i > len-3) || checkEdge (i+1) (i+3)
       | otherwise =
         case lineIntersect (pAccess p i, pAccess p $ i+1)
                            (pAccess p j, pAccess p $ j+1) of
@@ -268,7 +267,7 @@ isValidTriangulation p t = isComplete && intersectionFree
       let j = pNext p i in
       length ((pPrev p i : (t V.! i)) `intersect` (pNext p j : t V.! j)) == 1
     intersectionFree = and
-      [ case (lineIntersect (pAccess p (a-o), pAccess p (b-o)) (pAccess p (c-o), pAccess p (d-o))) of
+      [ case lineIntersect (pAccess p (a-o), pAccess p (b-o)) (pAccess p (c-o), pAccess p (d-o)) of
           Nothing -> True
           Just u  -> u == pAccess p (a-o) || u == pAccess p (b-o) ||
                      u == pAccess p (c-o) || u == pAccess p (d-o)
@@ -294,7 +293,7 @@ pIsInside :: Polygon -> V2 Rational -> Bool
 pIsInside p point = or
   [ isInside (rawAccess g) (rawAccess i) (rawAccess j) point
   | i <- [0 .. pSize p-1]
-  , let js = filter (i<) $ (polygonTriangulation p) V.! i
+  , let js = filter (i<) $ polygonTriangulation p V.! i
   , (g, j) <- zip (i-1:js) js
   ]
   where

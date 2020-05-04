@@ -63,7 +63,7 @@ instance Arbitrary Polygon where
   arbitrary =
     frequency
       [ (1, elements premade)
-      , (2, winding <$> choose (1,100))
+      , (2, pMkWinding <$> choose (1,100))
       , (99, randomPoly)
       ]
     where
@@ -79,7 +79,7 @@ instance Arbitrary Polygon where
         PolyParam e3 <- arbitrary
         PolyParam e4 <- arbitrary
         es <- listOf genParameters
-        pure $ genPolygon (e1:e2:e3:e4:es)
+        pure $ pGenerate (e1:e2:e3:e4:es)
   -- shrink p = filter isSimple $
   --   map V.fromList (sequence (map shrinkV2 (V.toList p)))
 

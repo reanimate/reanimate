@@ -16,6 +16,7 @@ import qualified Numeric.LinearAlgebra         as Matrix
 import           Numeric.LinearAlgebra.HMatrix (Matrix, linearSolve, toLists,
                                                 (><))
 import           Reanimate
+import           Reanimate.Math.Common
 import           Reanimate.Math.Polygon
 
 bgColor :: PixelRGBA8
@@ -45,7 +46,7 @@ data RelMeshPair = RelMeshPair Points Edges (Matrix Double) (Matrix Double) (Mat
 -- convexInterpolate :: RelMeshPair -> Double -> RelMesh
 
 meshToPolygon :: Mesh -> Polygon
-meshToPolygon mesh = scalePolygon 2 $ mkPolygon $ V.fromList
+meshToPolygon mesh = pScale 2 $ mkPolygon $ V.fromList
     [ realToFrac <$> (meshPoints mesh V.! (n-1))
     | n <- polygonNodes ]
   where
@@ -303,14 +304,14 @@ polygonNumDots p t = mkGroup $ reverse
         translate x y $ mkCircle circR
       , withFillColor "black" $
         translate x y $ ppNum n ]
-    | n <- [0..polygonSize p-1]
+    | n <- [0..pSize p-1]
     , let a = realToFrac <$> pAccess p n
           b = realToFrac <$> pAccess p (pNext p n)
           V2 x y = lerp t b a ]
   where
     circR = 0.1
     colored n =
-      let c = genColor n (polygonSize p-1)
+      let c = genColor n (pSize p-1)
       in withFillColorPixel c
     ppNum n = scaleToHeight (circR*1.5) $ center $ latex $ T.pack $ "\\texttt{" ++ show n ++ "}"
 

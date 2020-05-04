@@ -39,8 +39,8 @@ main = reanimate $
               withStrokeColor "black" $
               withStrokeWidth defaultStrokeWidth $
               withFillColor "cyan" $
-              polygonShape (setOffset star n)
-            , polygonNumDots (setOffset star n) t ]
+              polygonShape (pSetOffset star n)
+            , polygonNumDots (pSetOffset star n) t ]
       offset <- newVar 0
       slide <- newVar 0
       _ <- newSprite $ pl2 <$> unVar offset <*> unVar slide
@@ -66,7 +66,7 @@ octogon = mkPolygon $ V.fromList
   ]
 
 star :: Polygon
-star = scalePolygon 0.5 $ mkPolygon $ V.fromList
+star = pScale 0.5 $ mkPolygon $ V.fromList
   [ V2 0 1, V2 (-2) 2, V2 (-1) 0
   , V2 (-2) (-2), V2 0 (-1), V2 2 (-2)
   , V2 1 0, V2 2 2 ]
@@ -84,14 +84,14 @@ polygonNumDots p t = mkGroup $ reverse
         translate x y $ pathify $ mkCircle circR
       , withFillColor "black" $
         translate x y $ ppNum n ]
-    | n <- [0..polygonSize p-1]
+    | n <- [0..pSize p-1]
     , let a = realToFrac <$> pAccess p n
           b = realToFrac <$> pAccess p (pNext p n)
           V2 x y = lerp t b a ]
   where
     circR = 0.1
     colored n =
-      let c = genColor n (polygonSize p-1)
+      let c = genColor n (pSize p-1)
       in withFillColorPixel c
     ppNum n = scaleToHeight (circR*1.5) $ center $ latex $ T.pack $ "\\texttt{" ++ show n ++ "}"
 

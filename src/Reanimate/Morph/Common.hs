@@ -55,14 +55,13 @@ data Morph = Morph
   , morphObjectCorrespondence :: ObjectCorrespondence
   }
 
-
 morph :: Morph -> SVG -> SVG -> Double -> SVG
 morph Morph{..} src dst = \t ->
   case t of
     -- 0 -> lowerTransformations src
     -- 1 -> lowerTransformations dst
     _ -> mkGroup
-          [ (render $ genPoints t)
+          [ render (genPoints t)
               & drawAttributes .~ genAttrs t
           | (genAttrs, genPoints) <- gens
           ]
@@ -75,12 +74,8 @@ morph Morph{..} src dst = \t ->
     gens =
       [ (interpolateAttrs morphColorComponents srcAttr dstAttr, morphTrajectory arranged)
       | ((srcAttr, srcPoly'), (dstAttr, dstPoly')) <- pairs
-      , let arranged = applyPointCorrespondence morphPointCorrespondence srcPoly' dstPoly'
+      , let arranged = morphPointCorrespondence srcPoly' dstPoly'
       ]
-
-applyPointCorrespondence :: PointCorrespondence -> Polygon -> Polygon -> (Polygon, Polygon)
-applyPointCorrespondence fn src dst = fn src dst
-  --uncurry fn (normalizePolygons src dst)
 
 normalizePolygons :: Polygon -> Polygon -> (Polygon, Polygon)
 normalizePolygons src dst =
@@ -179,7 +174,7 @@ splitPolygon n polygon =
 toShapes :: Double -> SVG -> [(DrawAttributes, Polygon)]
 toShapes tol src =
   [ (attrs, plToPolygon tol shape)
-  | (_, attrs, glyph) <- svgGlyphs $ lowerTransformations $ pathify $ src
+  | (_, attrs, glyph) <- svgGlyphs $ lowerTransformations $ pathify src
   , shape <- map mergePolyShapeHoles $ plGroupShapes $ svgToPolyShapes glyph
   ]
 
