@@ -135,7 +135,7 @@ plPartial delta pl = PolyShape $ curvesToClosed (lineOut ++ [joinB] ++ lineIn)
 splitPolyShape :: Double -> Int -> PolyShape -> [PolyShape]
 splitPolyShape tol n poly =
     let polygon = toPolygon (plPolygonify tol poly)
-        trig = earClip $ polygonPoints polygon
+        trig = earClip $ polygonRing polygon
         d = dual 0 trig
         pd = toPDual (polygonRing polygon) d
         reduced = pdualReduce (polygonRing polygon) pd n

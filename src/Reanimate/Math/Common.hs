@@ -77,14 +77,14 @@ epsEq a b = abs (a-b) < epsilon
 isLeftTurn :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
 isLeftTurn p1 p2 p3 =
   let d = direction p1 p2 p3 in
-  if abs d < epsilon
+  if d == 0 -- Doesn't work for Double/Float. Only Rational.
     then False -- colinear
     else d < 0
 
 isLeftTurnOrLinear :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
 isLeftTurnOrLinear p1 p2 p3 =
   let d = direction p1 p2 p3 in
-  if abs d < epsilon
+  if d == 0
     then True -- colinear
     else d < 0
 

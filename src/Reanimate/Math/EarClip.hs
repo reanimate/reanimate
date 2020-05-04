@@ -1,28 +1,29 @@
 module Reanimate.Math.EarClip
   ( earClip
   , earClip'
+  , isEarCorner
   ) where
 
 import           Data.List
 import qualified Data.Set                   as Set
-import qualified Data.Vector                as V
-import           Linear.V2
 
 import           Reanimate.Math.Common
 import           Reanimate.Math.Triangulate
 
+-- import Debug.Trace
+
 -- Triangulation by ear clipping. O(n^2)
-earClip :: (Fractional a, Ord a) => V.Vector (V2 a) -> Triangulation
+earClip :: (Fractional a, Ord a) => Ring a -> Triangulation
 earClip = last . earClip'
 
-earClip' :: (Fractional a, Ord a) => V.Vector (V2 a) -> [Triangulation]
-earClip' p = map (edgesToTriangulation $ V.length p) $ inits $
+earClip' :: (Fractional a, Ord a) => Ring a -> [Triangulation]
+earClip' p = map (edgesToTriangulation $ ringSize p) $ inits $
   let ears = Set.fromList [ i
              | i <- elts
              , isEarCorner p elts (mod (i-1) n) i (mod (i+1) n) ]
   in worker ears (mkQueue elts)
   where
-    n = V.length p
+    n = ringSize p
     elts = [0 .. n-1]
     -- worker :: Set.Set Int -> PolyQueue Int -> [(P,P)]
     worker _ears queue | isSimpleQ queue = []
@@ -84,14 +85,14 @@ prevQ nth (PolyQueue _ _ _ p) = p!!nth
 -- O(n)
 -- Returns true if ac can be cut from polygon. That is, true if 'b' is an ear.
 -- isEarCorner polygon a b c = True iff ac can be cut
-isEarCorner :: (Fractional a, Ord a) => V.Vector (V2 a) -> [Int] -> Int -> Int -> Int -> Bool
+isEarCorner :: (Fractional a, Ord a) => Ring a -> [Int] -> Int -> Int -> Int -> Bool
 isEarCorner p polygon a b c =
     isLeftTurn aP bP cP &&
     -- If it is a right turn then the line ac will be outside the polygon
-    and [ not (isInside aP bP cP (p V.! k))
+    and [ not (isInside aP bP cP (ringAccess p k))
     | k <- polygon, k /= a && k /= b && k /= c
     ]
   where
-    aP = p V.! a
-    bP = p V.! b
-    cP = p V.! c
+    aP = ringAccess p a
+    bP = ringAccess p b
+    cP = ringAccess p c

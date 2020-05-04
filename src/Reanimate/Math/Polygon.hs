@@ -5,7 +5,7 @@ module Reanimate.Math.Polygon
   ) where
 
 import           Data.Hashable
-import           Data.List                  (intersect, tails, sort)
+import           Data.List                  (intersect, tails, sort, maximumBy)
 import           Data.Maybe
 import           Data.Ratio
 import           Data.Serialize
@@ -59,7 +59,7 @@ mkPolygon points = Polygon
   where
     n = length points
     ring = ringPack points
-    trig = earClip points
+    trig = earClip ring
 
 mkPolygonFromRing :: (Fractional a, Ord a) => Ring a -> APolygon a
 mkPolygonFromRing = mkPolygon . ringUnpack
@@ -459,20 +459,39 @@ polygonLength' p = sum
   [ distance' (pAccess p i) (pAccess p $ i+1)
   | i <- [0 .. polygonSize p-1]]
 
-addPoints :: Int -> Polygon -> Polygon
-addPoints n p = mkPolygon $ V.fromList $ worker n 0 (map (pAccess p) [0..s])
+
+-- Add points by splitting the longest lines in half repeatedly.
+polygonAddPoints :: Int -> Polygon -> Polygon
+polygonAddPoints n p | n <= 0 = p
+polygonAddPoints n p = polygonAddPoints (n-1) $
+    mkPolygon $ V.fromList $ concatMap worker [0 .. polygonSize p-1]
   where
-    worker 0 _ rest = init rest
-    worker i acc (x:y:xs) =
-      let xy = approxDist x y in
-      if acc + xy > limit
-        then x : worker (i-1) 0 (lerp ((limit-acc)/xy) y x : y:xs)
-        else x : worker i (acc+xy) (y:xs)
-    worker _ _ [_] = []
-    worker _ _ _ = error "addPoints: invalid polygon"
-    s = polygonSize p
-    len = polygonLength p
-    limit = len / fromIntegral (n+1)
+    worker idx
+      | idx == longestEdge =
+        let start = pAccess p idx
+            end = pAccess p $ idx+1
+            middle = lerp 0.5 end start
+        in [start, middle]
+      | otherwise = [pAccess p idx]
+    longestEdge = maximumBy cmpLength [0 .. polygonSize p-1]
+    cmpLength a b =
+      distSquared (pAccess p a) (pAccess p $ a+1) `compare`
+      distSquared (pAccess p b) (pAccess p $ b+1)
+
+-- addPoints :: Int -> Polygon -> Polygon
+-- addPoints n p = mkPolygon $ V.fromList $ worker n 0 (map (pAccess p) [0..s])
+--   where
+--     worker 0 _ rest = init rest
+--     worker i acc (x:y:xs) =
+--       let xy = approxDist x y in
+--       if acc + xy > limit
+--         then x : worker (i-1) 0 (lerp ((limit-acc)/xy) y x : y:xs)
+--         else x : worker i (acc+xy) (y:xs)
+--     worker _ _ [_] = []
+--     worker _ _ _ = error "addPoints: invalid polygon"
+--     s = polygonSize p
+--     len = polygonLength p
+--     limit = len / fromIntegral (n+1)
 
 isConvex :: Polygon -> Bool
 isConvex p = and

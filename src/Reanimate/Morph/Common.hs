@@ -26,7 +26,7 @@ import           Linear.V2
 import           Reanimate.Animation
 import           Reanimate.Interpolate
 import           Reanimate.Math.EarClip
-import           Reanimate.Math.Polygon (Polygon, addPoints,
+import           Reanimate.Math.Polygon (Polygon, polygonAddPoints,
                                          mkPolygon, pdualPolygons,
                                          polygonCentroid, polygonPoints,
                                          polygonRing, polygonSize)
@@ -85,8 +85,8 @@ applyPointCorrespondence fn src dst = fn src dst
 
 normalizePolygons :: Polygon -> Polygon -> (Polygon, Polygon)
 normalizePolygons src dst =
-    (addPoints (max 0 $ dstN-srcN) src
-    ,addPoints (max 0 $ srcN-dstN) dst)
+    (polygonAddPoints (max 0 $ dstN-srcN) src
+    ,polygonAddPoints (max 0 $ srcN-dstN) dst)
   where
     srcN = polygonSize src
     dstN = polygonSize dst
@@ -152,7 +152,7 @@ splitObjectCorrespondence left right =
 
 splitPolygon :: Int -> Polygon -> [Polygon]
 splitPolygon n polygon =
-    let trig = earClip $ polygonPoints polygon
+    let trig = earClip $ polygonRing polygon
         d = dual 0 trig
         pd = toPDual (polygonRing polygon) d
         reduced = pdualReduce (polygonRing polygon) pd n

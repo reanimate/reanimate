@@ -47,15 +47,16 @@ prop_rev_ccw p = not $ isCCW (mkPolygon $ V.reverse $ polygonPoints p)
 prop_cyclePolygon p = forAll (choose (0,1)) $ \t ->
   isSimple (cyclePolygon p t)
 
-prop_validEarClip p = isValidTriangulation p (earClip $ polygonPoints p)
+prop_validEarClip p = isValidTriangulation p (earClip $ polygonRing p)
 
 -- dualToTrangulation . dual = id
 prop_dualInv p =
-  let t = earClip $ polygonPoints p
-  in dualToTriangulation (polygonRing p) (dual 0 t) == t
+  let t = polygonTriangulation p in
+  dualToTriangulation (polygonRing p) (dual (polygonOffset p) t) == t
 
 prop_ssspEq p =
-  polygonSize p < 20 ==> naive (polygonRing p) == sssp (polygonRing p) (dual 0 (earClip $ polygonPoints p))
+  polygonSize p < 20 ==>
+  naive (polygonRing p) == polygonSSSP p V.! 0
 
 prop_ssspVisibilityLength (Parameters xs) =
   let p = genPolygon xs in
