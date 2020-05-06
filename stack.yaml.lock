@@ -41,7 +41,7 @@ packages:
     hackage: matrices-0.5.0@sha256:b2761813f6a61c84224559619cc60a16a858ac671c8436bbac8ec89e85473058
 snapshots:
 - completed:
-    size: 497078
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/13/14.yaml
-    sha256: 9e5ba48e5188aeb52bb0df9bc65dbd858a12c33f5b8d495a3eb588dc9ffcb15a
-  original: lts-13.14
+    size: 498155
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/13/19.yaml
+    sha256: b9367a80d4393d02e58a46b8a9fdfbd7bc19f59c0c2bbf90034ba15cf52cf213
+  original: lts-13.19

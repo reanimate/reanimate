@@ -25,6 +25,13 @@ main = reanimate $ docEnv $ playThenReverseA $ mkAnimation duration $ \t ->
 
 ![Draw Circle](docs/gifs/doc_playThenReverseA.gif)
 
+# What is reanimate good at?
+
+## Vector graphics and math
+![Vector graphics](https://i.imgur.com/o2cGSSu.gif)
+
+## Geo JSON
+![Geo JSON](https://i.imgur.com/a07Jzea.gif)
 
 # Prerequisites
 
@@ -61,22 +68,6 @@ animation source code, the browser window will automatically reload and show the
  * API reference: http://hackage.haskell.org/package/reanimate/docs/Reanimate.html
  * Design overview: https://reanimate.readthedocs.io/en/latest/glue_tut/
  * Gallery with source code: https://reanimate.readthedocs.io/en/latest/gallery/
-
-# Examples
-
-The example gifs are displayed at 25 fps.
-
-![Map projections](gifs/map.gif)
-![LaTeX wheel](gifs/latex_wheel.gif)
-![Sunflower](gifs/sunflower.gif)
-![Tangent](gifs/tangent.gif)
-![Goo](gifs/goo.gif)
-![Drawing LaTeX equations](gifs/latex_draw.gif)
-![Bounding boxes](gifs/bbox.gif)
-![Colorful LaTeX](gifs/latex_color.gif)
-![Bezier curves](gifs/bezier.gif)
-![Valentine's Day](gifs/valentine.gif)
-![Basic LaTeX](gifs/latex_basic.gif)
 
 # Authors
 
