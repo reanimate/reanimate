@@ -16,32 +16,28 @@ scripting.
 In more practical terms, reanimate is a library for turning code like this:
 
 ```haskell
-main = reanimate $ docEnv $ playThenReverseA $ mkAnimation duration $ \t ->
-  partialSvg t $ pathify $ mkCircle radius
-  where duration = 2; radius = screenHeight/3
+main = reanimate $ docEnv $ playThenReverseA drawCircle
 ```
 
 ... into animations like this:
 
-![Draw Circle](docs/gifs/doc_playThenReverseA.gif)
+[![Draw Circle](https://i.imgur.com/C02hPw8.gif)](examples/doc_playThenReverseA.hs)
 
 # What is reanimate good at?
 
 ## Vector graphics and math
-![Vector graphics](https://i.imgur.com/o2cGSSu.gif)
-![Fourier](https://i.imgur.com/pX4YRa4.gif)
+[![Tangent/Normal](https://i.imgur.com/w6gEkbl.gif)](examples/demo_tangent.hs)
+[![Fourier](https://i.imgur.com/pX4YRa4.gif)](examples/tut_glue_fourier.hs)
 
 ## Mapping and projections
-![Geo JSON](https://i.imgur.com/2ULXEqZ.gif)
+[![Geo JSON](https://i.imgur.com/OrKiOqF.gif)](videos/map-projection/gif.hs)
 
 ## Mathematical typesetting
-![LaTeX](https://i.imgur.com/e6oO4wz.gif)
+[![LaTeX](https://i.imgur.com/e6oO4wz.gif)](examples/tut_glue_latex.hs)
 
-## 2D physics
-![2D Physics](https://i.imgur.com/ZHUfWdp.gif)
-
-## Mixed vector graphics and 3D graphics
-![3D graphics](https://i.imgur.com/4wdtuJw.gif)
+## 2D physics and 3D graphics
+[![2D Physics](https://i.imgur.com/ZHUfWdp.gif)](examples/tut_glue_physics.hs)
+[![3D graphics](https://i.imgur.com/4wdtuJw.gif)](examples/tut_glue_povray.hs)
 
 # Prerequisites
 

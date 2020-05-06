@@ -14,6 +14,7 @@ import           Reanimate
 import           Reanimate.Animation
 import           Reanimate.Scene
 import           Reanimate.GeoProjection
+import           Reanimate.Builtin.Documentation
 import           System.IO.Unsafe
 import           Data.Geospatial         hiding (LonLat)
 import           Data.LinearRing
@@ -28,7 +29,7 @@ import           Control.Lens            ((^.))
 
 main :: IO ()
 main = reanimate $ sceneAnimation $ do
-    newSpriteSVG $ mkBackground "white"
+    newSpriteSVG $ mkBackgroundPixel rtfdBackgroundColor
     prevProj <- newVar equirectangularP
     let push label proj = do
           prev <- readVar prevProj
