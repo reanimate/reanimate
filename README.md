@@ -31,11 +31,17 @@ main = reanimate $ docEnv $ playThenReverseA $ mkAnimation duration $ \t ->
 ![Vector graphics](https://i.imgur.com/o2cGSSu.gif)
 ![Fourier](https://i.imgur.com/pX4YRa4.gif)
 
-## Geo JSON
+## Mapping and projections
 ![Geo JSON](https://i.imgur.com/2ULXEqZ.gif)
 
 ## Mathematical typesetting
 ![LaTeX](https://i.imgur.com/e6oO4wz.gif)
+
+## 2D physics
+![2D Physics](https://i.imgur.com/ZHUfWdp.gif)
+
+## Mixed vector graphics and 3D graphics
+![3D graphics](https://i.imgur.com/4wdtuJw.gif)
 
 # Prerequisites
 
