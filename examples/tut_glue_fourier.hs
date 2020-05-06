@@ -12,8 +12,9 @@ import           Codec.Picture
 
 -- layer 3
 main :: IO ()
-main = reanimate $ parA bg $ sceneAnimation $ do
-    play $ fourierA (fromToS 0 15)      -- Rotate 15 times
+main = reanimate $ setDuration 30 $ sceneAnimation $ do
+    newSpriteSVG $ mkBackgroundPixel (PixelRGBA8 252 252 252 0xFF)
+    play $ fourierA (fromToS 0 5)      -- Rotate 15 times
       # setDuration 50
       # signalA (reverseS . powerS 2 . reverseS) -- Start fast, end slow
       # pauseAtEnd 2
@@ -22,8 +23,6 @@ main = reanimate $ parA bg $ sceneAnimation $ do
       # reverseA
       # signalA (powerS 2)                       -- Start slow, end fast
       # pauseAtEnd 2
-  where
-    bg = animate $ const $ mkBackgroundPixel (PixelRGBA8 252 252 252 0xFF)
 
 -- layer 2
 fourierA :: (Double -> Double) -> Animation

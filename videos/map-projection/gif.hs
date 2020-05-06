@@ -43,24 +43,24 @@ main = reanimate $ sceneAnimation $ do
     --   [ grid equirectangularP ]
 
     -- push "Lambert" lambertP
-    push "Web Mercator" mercatorP
+    --push "Web Mercator" mercatorP
     push "Mollweide" mollweideP
     push "Bottomley 30\\degree" (bottomleyP (toRads 30))
     -- 4
     push "Werner" wernerP
     -- 5
-    push "Bonne 45\\degree" (bonneP (toRads 45))
+    -- push "Bonne 45\\degree" (bonneP (toRads 45))
     -- pushT
     --   (\t -> "Bonne " <> T.pack (show $ round $ fromToS 45 0 t) <> "\\degree")
     --   (bonneP . toRads . fromToS 45 0)
     -- 6
-    push "Eckert I" eckert1P
-    push "Eckert III" eckert3P
-    push "Eckert IV" eckert5P
+    -- push "Eckert I" eckert1P
+    -- push "Eckert III" eckert3P
+    -- push "Eckert IV" eckert5P
     -- 7
-    push "Fahey" faheyP
+    -- push "Fahey" faheyP
     -- 8
-    push "August" augustP
+    -- push "August" augustP
     -- 9
     push "Foucaut" foucautP
     -- 10
