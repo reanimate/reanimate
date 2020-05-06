@@ -3,20 +3,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main(main) where
 
-import           Control.Lens
+import           Control.Lens                    ((^.))
 import           Control.Monad.State
-import           Geom2D.CubicBezier              (CubicBezier (..), Point (..),
-                                                  QuadBezier (..),AnyBezier(..),
-                                                  evalBezierDeriv, quadToCubic)
-import           Graphics.SvgTree                (RPoint (..), Tree (..),
-                                                  mapTree, pathDefinition)
-import           Linear.Vector
+import qualified Data.Vector.Unboxed             as V
+import           Geom2D.CubicBezier              (AnyBezier (..), Point (..),
+                                                  evalBezierDeriv)
+import           Graphics.SvgTree                (Coord, Tree (..), mapTree,
+                                                  pathDefinition)
 import           Linear.Metric
-import           Linear.V2 (V2(..))
-import qualified Data.Vector.Unboxed as V
+import           Linear.V2                       (V2 (..))
+import           Linear.Vector
 import           Reanimate
 import           Reanimate.Builtin.Documentation
-import           Reanimate.Svg.LineCommand
 
 main :: IO ()
 main = reanimate $ docEnv $ mkAnimation 30 $ \t ->
@@ -87,6 +85,7 @@ atPartial alpha cmds = evalState (worker 0 cmds) zero
     totalLen = evalState (sum <$> mapM lineLength cmds) zero
     targetLen = totalLen * alpha
 
+lineCommandToBezier :: V2 Coord -> LineCommand -> AnyBezier Coord
 lineCommandToBezier from line =
   case line of
     LineBezier [a] ->
@@ -97,8 +96,10 @@ lineCommandToBezier from line =
       AnyBezier $ V.fromList [toTuple from, toTuple a, toTuple b, toTuple c]
     _ -> error (show line)
 
+fromPoint :: Point a -> V2 a
 fromPoint (Point x y) = V2 x y
-toPoint (V2 x y) = Point x y
+
+toTuple :: V2 a -> (a,a)
 toTuple (V2 x y) = (x, y)
 
 unangle :: (Floating a, Ord a) => V2 a -> a
