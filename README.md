@@ -102,4 +102,4 @@ means.
 
 Completed animations are uploaded to the [Reanimated Science](https://www.youtube.com/channel/UCbZujyI7i6JbI-I0shPvDgg) channel.
 
-Animation snippets are uploaded to the [Reanimated Science Playground](https://www.youtube.com/channel/UCL7MwXLtQbhJeb6Ts3_HooA) channel.
+Animation snippets are uploaded to the [Reanimated Science Shorts](https://www.youtube.com/channel/UCL7MwXLtQbhJeb6Ts3_HooA) channel.
