@@ -14,6 +14,7 @@ import           Reanimate
 import           Reanimate.Animation
 import           Reanimate.Scene
 import           Reanimate.GeoProjection
+import           Reanimate.Builtin.Documentation
 import           System.IO.Unsafe
 import           Data.Geospatial         hiding (LonLat)
 import           Data.LinearRing
@@ -27,8 +28,8 @@ import           Control.Lens            ((^.))
 
 
 main :: IO ()
-main = seq equirectangular $ reanimate $ sceneAnimation $ do
-    newSpriteSVG $ mkBackground "white"
+main = reanimate $ sceneAnimation $ do
+    newSpriteSVG $ mkBackgroundPixel rtfdBackgroundColor
     prevProj <- newVar equirectangularP
     let push label proj = do
           prev <- readVar prevProj
@@ -43,24 +44,24 @@ main = seq equirectangular $ reanimate $ sceneAnimation $ do
     --   [ grid equirectangularP ]
 
     -- push "Lambert" lambertP
-    push "Web Mercator" mercatorP
+    --push "Web Mercator" mercatorP
     push "Mollweide" mollweideP
-    -- push "Bottomley 30\\degree" (bottomleyP (toRads 30))
+    push "Bottomley 30\\degree" (bottomleyP (toRads 30))
     -- 4
-    -- pushInterp "Werner" wernerP
+    push "Werner" wernerP
     -- 5
-    -- pushInterp "Bonne 45\\degree" (bonneP (toRads 45))
+    -- push "Bonne 45\\degree" (bonneP (toRads 45))
     -- pushT
     --   (\t -> "Bonne " <> T.pack (show $ round $ fromToS 45 0 t) <> "\\degree")
     --   (bonneP . toRads . fromToS 45 0)
     -- 6
-    -- pushInterp "Eckert I" eckert1P
-    -- pushInterp "Eckert III" eckert3P
-    -- pushInterp "Eckert IV" eckert5P
+    -- push "Eckert I" eckert1P
+    -- push "Eckert III" eckert3P
+    -- push "Eckert IV" eckert5P
     -- 7
     -- push "Fahey" faheyP
     -- 8
-    push "August" augustP
+    -- push "August" augustP
     -- 9
     push "Foucaut" foucautP
     -- 10
@@ -70,16 +71,8 @@ main = seq equirectangular $ reanimate $ sceneAnimation $ do
     play $ signalA (curveS 2) $
       mkAnimation morphT $ grid . mergeP prev equirectangularP
   where
-    src = equirectangular
     waitT = 0
     morphT = 1
-
-equirectangular :: Image PixelRGB8
-equirectangular = unsafePerformIO $ do
-  dat <- BS.readFile "earth.jpg"
-  case decodeJpeg dat of
-    Left err  -> error err
-    Right img -> return $ convertRGB8 img
 
 toRads :: Double -> Double
 toRads dec = dec/180 * pi
