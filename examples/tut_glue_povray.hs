@@ -22,7 +22,8 @@ import           System.Random.Shuffle
 
 
 main :: IO ()
-main = reanimate $ parA bg $ sceneAnimation $ do
+main = reanimate $ sceneAnimation $ do
+    newSpriteSVG $ mkBackgroundPixel $ PixelRGBA8 252 252 252 0xFF
     zPos <- newVar 0
     xRot <- newVar 0
     zRot <- newVar 0
@@ -41,8 +42,6 @@ main = reanimate $ parA bg $ sceneAnimation $ do
     fork $ tweenVar zRot 9 $ \v -> fromToS v 360 . curveS 2
     wait 10
     tweenVar zPos 2 $ \v -> fromToS v 0 . curveS 3
-  where
-    bg = animate $ const $ mkBackgroundPixel $ PixelRGBA8 252 252 252 0xFF
 
 texture :: Double -> SVG
 texture t = frameAt (t*duration latexExample) latexExample
@@ -92,7 +91,7 @@ latexExample = sceneAnimation $ do
     -- Draw equation
     play $ drawAnimation strokedSvg
     sprites <- forM glyphs $ \(fn, _, elt) ->
-      newSpriteA $ animate $ const $ fn elt
+      newSpriteSVG $ fn elt
     -- Yoink each glyph
     forM_ (reverse sprites) $ \sprite -> do
       spriteE sprite (overBeginning 1 $ aroundCenterE $ highlightE)

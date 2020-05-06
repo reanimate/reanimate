@@ -16,15 +16,29 @@ scripting.
 In more practical terms, reanimate is a library for turning code like this:
 
 ```haskell
-main = reanimate $ docEnv $ playThenReverseA $ mkAnimation duration $ \t ->
-  partialSvg t $ pathify $ mkCircle radius
-  where duration = 2; radius = screenHeight/3
+main = reanimate $ docEnv $ playThenReverseA drawCircle
 ```
 
 ... into animations like this:
 
-![Draw Circle](docs/gifs/doc_playThenReverseA.gif)
+[![Draw Circle](https://i.imgur.com/C02hPw8.gif)](examples/doc_playThenReverseA.hs)
 
+# What is reanimate good at?
+
+## Vector graphics and math
+[![Tangent/Normal](https://i.imgur.com/w6gEkbl.gif)](examples/demo_tangent.hs)
+[![Fourier](https://i.imgur.com/pX4YRa4.gif)](examples/tut_glue_fourier.hs)
+
+## Mapping and tracing
+[![Geo JSON](https://i.imgur.com/OrKiOqF.gif)](videos/map-projection/gif.hs)
+[![Object tracing](https://i.imgur.com/Y6NsPWF.gif)](examples/tut_glue_potrace.hs)
+
+## Mathematical typesetting
+[![LaTeX](https://i.imgur.com/e6oO4wz.gif)](examples/tut_glue_latex.hs)
+
+## 2D physics and 3D graphics
+[![2D Physics](https://i.imgur.com/ZHUfWdp.gif)](examples/tut_glue_physics.hs)
+[![3D graphics](https://i.imgur.com/4wdtuJw.gif)](examples/tut_glue_povray.hs)
 
 # Prerequisites
 
@@ -62,22 +76,6 @@ animation source code, the browser window will automatically reload and show the
  * Design overview: https://reanimate.readthedocs.io/en/latest/glue_tut/
  * Gallery with source code: https://reanimate.readthedocs.io/en/latest/gallery/
 
-# Examples
-
-The example gifs are displayed at 25 fps.
-
-![Map projections](gifs/map.gif)
-![LaTeX wheel](gifs/latex_wheel.gif)
-![Sunflower](gifs/sunflower.gif)
-![Tangent](gifs/tangent.gif)
-![Goo](gifs/goo.gif)
-![Drawing LaTeX equations](gifs/latex_draw.gif)
-![Bounding boxes](gifs/bbox.gif)
-![Colorful LaTeX](gifs/latex_color.gif)
-![Bezier curves](gifs/bezier.gif)
-![Valentine's Day](gifs/valentine.gif)
-![Basic LaTeX](gifs/latex_basic.gif)
-
 # Authors
 
   * David Himmelstrup.
@@ -104,4 +102,4 @@ means.
 
 Completed animations are uploaded to the [Reanimated Science](https://www.youtube.com/channel/UCbZujyI7i6JbI-I0shPvDgg) channel.
 
-Animation snippets are uploaded to the [Reanimated Science Playground](https://www.youtube.com/channel/UCL7MwXLtQbhJeb6Ts3_HooA) channel.
+Animation snippets are uploaded to the [Reanimated Science Shorts](https://www.youtube.com/channel/UCL7MwXLtQbhJeb6Ts3_HooA) channel.
