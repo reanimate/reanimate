@@ -38,6 +38,7 @@ main = reanimate $ docEnv $ playThenReverseA drawCircle
 ## 2D physics and 3D graphics
 [![2D Physics](https://i.imgur.com/ZHUfWdp.gif)](examples/tut_glue_physics.hs)
 [![3D graphics](https://i.imgur.com/4wdtuJw.gif)](examples/tut_glue_povray.hs)
+[![Object tracing](https://i.imgur.com/Y6NsPWF.gif)](examples/tut_glue_potrace.hs)
 
 # Prerequisites
 

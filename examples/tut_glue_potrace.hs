@@ -18,13 +18,10 @@ main = reanimate $ parA bg $ sceneAnimation $ do
     xRot <- newVar (-45)
     yRot <- newVar 220
     wf <- newSprite $ wireframe <$> unVar xRot <*> unVar yRot
-    tweenVar yRot spinDur (\t v -> fromToS v (v+60*3) $ curveS 2 (t/spinDur))
+    fork $ tweenVar yRot spinDur $ \v -> fromToS v (v+60*3) . curveS 2
     replicateM_ wobbles $ do
-      tweenVar xRot (wobbleDur/2) (\t v -> fromToS v (v+90) $ curveS 2 (t/(wobbleDur/2)))
-      fork $ do
-        wait (wobbleDur/2)
-        tweenVar xRot (wobbleDur/2) (\t v -> fromToS v (v-90) $ curveS 2 (t/(wobbleDur/2)))
-      wait wobbleDur
+      tweenVar xRot (wobbleDur/2) $ \v -> fromToS v (v+90) . curveS 2
+      tweenVar xRot (wobbleDur/2) $ \v -> fromToS v (v-90) . curveS 2
     destroySprite wf
     play $ mkAnimation drawDuration (\t -> partialSvg t (wireframe (-45) 220))
       # reverseA
