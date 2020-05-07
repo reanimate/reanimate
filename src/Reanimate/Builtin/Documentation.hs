@@ -48,3 +48,6 @@ showColorMap f = center $ scaleToSize screenWidth screenHeight $ embedImage img
     height = 1
     img = generateImage pixelRenderer width height
     pixelRenderer x _y = f (fromIntegral x / fromIntegral (width-1))
+
+rtfdBackgroundColor :: PixelRGBA8
+rtfdBackgroundColor = PixelRGBA8 252 252 252 0xFF

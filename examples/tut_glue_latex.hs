@@ -25,7 +25,7 @@ latexExample = sceneAnimation $ do
     -- Draw equation
     play $ drawAnimation strokedSvg
     sprites <- forM glyphs $ \(fn, _, elt) ->
-      newSpriteA $ animate $ const $ fn elt
+      newSpriteSVG $ fn elt
     -- Yoink each glyph
     forM_ (reverse sprites) $ \sprite -> do
       spriteE sprite (overBeginning 1 $ aroundCenterE $ highlightE)
