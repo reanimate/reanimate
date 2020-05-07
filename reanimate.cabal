@@ -120,7 +120,7 @@ library
   if flag(hmatrix) {
     build-depends: hmatrix >= 0.20.0.0
   }
-  ghc-options: -Wall
+  ghc-options: -Wall -fno-ignore-asserts
 
 test-suite spec
   type: exitcode-stdio-1.0
