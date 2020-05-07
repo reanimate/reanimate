@@ -20,6 +20,7 @@ import qualified Data.Text           as T
 import qualified Data.Text.IO        as T
 import           Graphics.SvgTree    (Tree (..), unparse)
 import           Reanimate.Animation (renderTree)
+import           Reanimate.Misc      (renameOrCopyFile)
 import           System.Directory
 import           System.FilePath
 import           System.IO
@@ -38,7 +39,7 @@ cacheFile template gen = do
     unless hit $ withSystemTempFile template $ \tmp h -> do
       hClose h
       gen tmp
-      renameFile tmp path
+      renameOrCopyFile tmp path
     evaluate path
 
 cacheDisk :: String -> (T.Text -> Maybe a) -> (a -> T.Text) -> (Text -> IO a) -> (Text -> IO a)
@@ -60,7 +61,7 @@ cacheDisk cacheType parse render gen key = do
       new <- gen key
       T.hPutStr tmpHandle (render new)
       hClose tmpHandle
-      renameFile tmpPath path
+      renameOrCopyFile tmpPath path
       return new
 
 cacheDiskKey :: Text -> IO Tree -> IO Tree
