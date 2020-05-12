@@ -45,6 +45,7 @@ module Reanimate.Svg.Constructors
   , aroundCenterX
   , aroundCenterY
   , withTransformations
+  , withViewBox
   -- * Other
   , mkColor
   , mkBackground
@@ -368,3 +369,20 @@ mkText str =
     -- be overwritten by the user.
   where
     span_ = defaultSvg & spanContent .~ [SpanText str]
+
+-- | Switch from the default viewbox to a custom viewbox. Nesting custom viewboxes is
+--   unlikely to give good results. If you need nested custom viewboxes, you will have
+--   to configure them by hand.
+--
+--   The viewbox argument is (min-x, min-y, width, height).
+withViewBox :: (Double, Double, Double, Double) -> Tree -> Tree
+withViewBox vbox child = translate (-screenWidth/2) (-screenHeight/2) $
+  SvgTree $ Document
+  { _viewBox = Just vbox
+  , _width = Just (Num screenWidth)
+  , _height = Just (Num screenHeight)
+  , _elements = [child]
+  , _description = ""
+  , _documentLocation = ""
+  , _documentAspectRatio = PreserveAspectRatio False AlignNone Nothing
+  }
