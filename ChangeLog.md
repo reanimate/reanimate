@@ -3,6 +3,7 @@
 ## 0.3.2.0 -- unreleased
 
 * Add helper for creating custom viewboxes.
+* Add newSprite_, newSpriteSVG_.
 
 ## 0.3.1.0 -- 2020-05-12
 
