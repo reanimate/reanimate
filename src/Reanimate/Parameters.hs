@@ -30,7 +30,7 @@ data Raster
   | RasterInkscape
   | RasterRSvg
   | RasterConvert
-  deriving (Show)
+  deriving (Show, Eq)
 
 {-# NOINLINE pRasterRef #-}
 pRasterRef :: IORef Raster

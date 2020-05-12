@@ -141,11 +141,14 @@ module Reanimate
     module Reanimate.Svg.BoundingBox,
     module Reanimate.Svg,
     -- ** Raster data
+    mkImage,
     embedImage,
     embedDynamicImage,
     embedPng,
     raster,
+    rasterSized,
     svgAsPngFile,
+    svgAsPngFile',
     vectorize,
     vectorize_,
     -- ** External SVG providers

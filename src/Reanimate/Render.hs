@@ -1,11 +1,14 @@
+{-# LANGUAGE MultiWayIf #-}
 module Reanimate.Render
   ( render
-  , renderSvgs
-  , renderSnippets
+  , renderSvgs            -- :: Animation -> IO ()
+  , renderSnippets        -- :: Animation -> IO ()
   , Format(..)
   , Raster(..)
   , Width, Height, FPS
-  , applyRaster
+  , requireRaster         -- :: Raster -> IO Raster
+  , selectRaster          -- :: Raster -> IO Raster
+  , applyRaster           -- :: Raster -> FilePath -> IO ()
   ) where
 
 import           Control.Concurrent
@@ -14,18 +17,20 @@ import           Control.Monad       (forM_, void, unless, forever)
 import qualified Data.Text           as T
 import qualified Data.Text.IO        as T
 import           Data.Time
+import Data.Either
 import           Graphics.SvgTree    (Number (..))
 import           Numeric
 import           Reanimate.Animation
 import           Reanimate.Misc
 import           Reanimate.Parameters
+import           Reanimate.Driver.Check
 import           System.Exit
 import           System.FilePath     ((</>))
 import           System.FilePath     (replaceExtension)
 import           System.IO
 import           Text.Printf         (printf)
 
-renderSvgs :: Animation ->  IO ()
+renderSvgs :: Animation -> IO ()
 renderSvgs ani = do
     print frameCount
     lock <- newMVar ()
@@ -181,6 +186,28 @@ ppDiff diff
 rasterTemplate :: Raster -> String
 rasterTemplate RasterNone = "render-%05d.svg"
 rasterTemplate _          = "render-%05d.png"
+
+requireRaster :: Raster -> IO Raster
+requireRaster raster = do
+  raster' <- selectRaster (if raster==RasterNone then RasterAuto else raster)
+  case raster' of
+    RasterNone -> do
+      hPutStrLn stderr
+        "Raster required but none could be found. \
+        \Please install either inkscape, imagemagick, or rsvg-convert."
+      exitWith (ExitFailure 1)
+    _ -> pure raster'
+
+selectRaster :: Raster -> IO Raster
+selectRaster RasterAuto = do
+  rsvg <- hasRSvg
+  ink <- hasInkscape
+  conv <- hasConvert
+  if | isRight rsvg -> pure RasterRSvg
+     | isRight ink  -> pure RasterInkscape
+     | isRight conv -> pure RasterConvert
+     | otherwise    -> pure RasterNone
+selectRaster r = pure r
 
 applyRaster :: Raster -> FilePath -> IO ()
 applyRaster RasterNone _ = return ()
