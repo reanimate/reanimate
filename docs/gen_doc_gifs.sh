@@ -5,6 +5,7 @@ TINY='^(doc_turbo|doc_viridis|doc_magma|doc_inferno|doc_plasma|doc_sinebow|doc_c
         newline|doc_hsvMatlab|doc_greyscale|doc_parula|doc_rgbComponents|doc_hsvComponents|
         newline|doc_lchComponents|doc_xyzComponents|doc_labComponents)$'
 
+cd $ROOT/examples/
 for src in $ROOT/examples/doc_*.hs; do
   BASE=`basename $src .hs`
   DST=$ROOT/docs/gifs/$BASE.gif

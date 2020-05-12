@@ -1,5 +1,9 @@
 # Revision history for reanimate
 
+## 0.3.1.0 -- 2020-05-12
+
+* Expose 'mkImage'
+
 ## 0.3.0.0 -- 2020-05-11
 
 * Improve README.md with better examples at a higher framerate.
