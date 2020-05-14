@@ -3,7 +3,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import           Data.Monoid         ((<>))
 import           Data.Text           (Text, pack)
 import           Graphics.SvgTree    hiding (Text)
 import           Numeric

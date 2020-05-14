@@ -1,0 +1,10 @@
+cradle:
+  multi:
+    - path: "./src"
+      config: {cradle: {stack: {component: "reanimate:lib"}} }
+    - path: "./videos"
+      config: {cradle: {stack: {component: "reanimate:lib"}} }
+    - path: "./examples"
+      config: {cradle: {stack: {component: "reanimate:lib"}} }
+    - path: "./test"
+      config: {cradle: {none: }}

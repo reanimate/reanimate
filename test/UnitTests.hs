@@ -5,9 +5,12 @@ module UnitTests
   ) where
 
 import           Control.Exception
+import qualified Data.ByteString      as BS
 import qualified Data.ByteString.Lazy as LBS
 import           Data.List            (sort)
-import           Reanimate.Misc       (withTempDir, withTempFile)
+import qualified Data.Text            as T
+import qualified Data.Text.IO         as T
+import           Reanimate.Misc       (runCmd, withTempDir, withTempFile)
 import           System.Directory
 import           System.Exit
 import           System.FilePath
@@ -22,7 +25,7 @@ unitTestFolder path = do
   files <- sort <$> getDirectoryContents path
   mbWDiff <- findExecutable "wdiff"
   let diff = case mbWDiff of
-        Nothing -> ["diff", "--strip-trailing-cr"]
+        Nothing    -> ["diff", "--strip-trailing-cr"]
         Just wdiff -> [wdiff, "--no-common"]
   return $ testGroup "animate"
     [ goldenVsStringDiff file (\ref new -> diff ++ [ref, new]) fullPath (genGolden hsPath)
@@ -34,21 +37,23 @@ unitTestFolder path = do
 
 genGolden :: FilePath -> IO LBS.ByteString
 genGolden path = withTempDir $ \tmpDir -> withTempFile ".exe" $ \tmpExecutable -> do
-  let ghcOpts = ["-rtsopts", "--make", "-O2"] ++
+  let ghcOpts = ["-rtsopts", "--make", "-O0", "-Werror", "-Wall"] ++
                 ["-odir", tmpDir, "-hidir", tmpDir, "-o", tmpExecutable]
       runOpts = ["+RTS", "-M1G"]
   -- XXX: Check for errors.
-  _ <- readProcessWithExitCode "stack" (["ghc","--", path] ++ ghcOpts) ""
-  -- ret <- runCmd_ "stack" $ ["ghc", "--"] ++ ghcOptions tmpDir ++ [self, "-o", tmpExecutable]
-  -- ["-rtsopts", "--make", "-threaded", "-O2"] ++
-  -- ["-odir", tmpDir, "-hidir", tmpDir]
-  (inh, outh, errh, _pid) <- runInteractiveProcess tmpExecutable (["test"] ++ runOpts)
+  runCmd "stack" $ ["ghc","--", path] ++ ghcOpts
+
+  (inh, outh, errh, pid) <- runInteractiveProcess tmpExecutable (["test"] ++ runOpts)
     Nothing Nothing
   -- hSetBinaryMode outh True
   -- hSetNewlineMode outh universalNewlineMode
   hClose inh
-  hClose errh
-  LBS.hGetContents outh
+  out <- BS.hGetContents outh
+  err <- T.hGetContents errh
+  code <- waitForProcess pid
+  case code of
+    ExitSuccess   -> return $ LBS.fromChunks [out]
+    ExitFailure{} -> error $ "Failed to run: " ++ T.unpack err
 
 compileTestFolder :: FilePath -> IO TestTree
 compileTestFolder path = do

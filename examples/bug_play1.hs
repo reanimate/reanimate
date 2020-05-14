@@ -3,7 +3,6 @@
 module Main(main) where
 
 import Reanimate
-import Reanimate.Scene
 
 -- This should give circle.
 main :: IO ()
