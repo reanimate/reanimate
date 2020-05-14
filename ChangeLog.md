@@ -2,7 +2,8 @@
 
 ## 0.3.2.0 -- unreleased
 
-* Add helper for creating custom viewboxes.
+* Fix bug that forced GIF width to 320 pixels.
+* Add helper for creating custom viewboxes, withViewBox.
 * Add newSprite_, newSpriteSVG_.
 
 ## 0.3.1.0 -- 2020-05-12
