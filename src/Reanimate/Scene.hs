@@ -42,9 +42,11 @@ module Reanimate.Scene
   , spriteT           -- :: Frame s Time
   , spriteDuration    -- :: Frame s Duration
   , newSprite         -- :: Frame s SVG -> Scene s (Sprite s)
+  , newSprite_        -- :: Frame s SVG -> Scene s ()
   , newSpriteA        -- :: Animation -> Scene s (Sprite s)
   , newSpriteA'       -- :: Sync -> Animation -> Scene s (Sprite s)
   , newSpriteSVG      -- :: SVG -> Scene s (Sprite s)
+  , newSpriteSVG_     -- :: SVG -> Scene s ()
   , destroySprite     -- :: Sprite s -> Scene s ()
   , applyVar          -- :: Var s a -> Sprite s -> (a -> SVG -> SVG) -> Scene s ()
   , spriteModify      -- :: Sprite s -> Frame s ((SVG,ZIndex) -> (SVG, ZIndex)) -> Scene s ()
@@ -57,13 +59,14 @@ module Reanimate.Scene
   -- * ST internals
   , liftST
   )
-  where
+where
 
+import           Control.Monad                            ( void )
 import           Control.Monad.Fix
 import           Control.Monad.ST
 import           Data.List
 import           Data.STRef
-import           Graphics.SvgTree           (Tree (None))
+import           Graphics.SvgTree                         ( Tree(None) )
 import           Reanimate.Animation
 import           Reanimate.Effect
 import           Reanimate.Svg.Constructors
@@ -88,34 +91,34 @@ instance Applicative (Scene s) where
   pure a = M $ \_ -> return (a, 0, 0, [])
   f <*> g = M $ \t -> do
     (f', s1, p1, gen1) <- unM f t
-    (g', s2, p2, gen2) <- unM g (t+s1)
-    return (f' g', s1+s2, max p1 (s1+p2), gen1++gen2)
+    (g', s2, p2, gen2) <- unM g (t + s1)
+    return (f' g', s1 + s2, max p1 (s1 + p2), gen1 ++ gen2)
 
 instance Monad (Scene s) where
   return = pure
   f >>= g = M $ \t -> do
     (a, s1, p1, gen1) <- unM f t
-    (b, s2, p2, gen2) <- unM (g a) (t+s1)
-    return (b, s1+s2, max p1 (s1+p2), gen1++gen2)
+    (b, s2, p2, gen2) <- unM (g a) (t + s1)
+    return (b, s1 + s2, max p1 (s1 + p2), gen1 ++ gen2)
 
 instance MonadFix (Scene s) where
-  mfix fn = M $ \t -> mfix (\v -> let (a,_s,_p,_gens) = v in unM (fn a) t)
+  mfix fn = M $ \t -> mfix (\v -> let (a, _s, _p, _gens) = v in unM (fn a) t)
 
 liftST :: ST s a -> Scene s a
 liftST action = M $ \_ -> action >>= \a -> return (a, 0, 0, [])
 
-sceneAnimation :: (forall s. Scene s a) -> Animation
-sceneAnimation action =
-  runST (do
+sceneAnimation :: (forall s . Scene s a) -> Animation
+sceneAnimation action = runST
+  (do
     (_, s, p, gens) <- unM action 0
     let dur = max s p
     genFns <- sequence gens
-    return $ mkAnimation dur (\t ->
-      mkGroup $
-      map fst $
-      sortOn snd
-      [ spriteRender dur (t*dur)
-      | spriteRender <- genFns ])
+    return $ mkAnimation
+      dur
+      (\t -> mkGroup $ map fst $ sortOn
+        snd
+        [ spriteRender dur (t * dur) | spriteRender <- genFns ]
+      )
   )
 
 -- | Execute actions in a scene without advancing the clock. Note that scenes do not end before
@@ -166,8 +169,7 @@ queryNow = M $ \t -> return (t, 0, 0, [])
 --
 --   <<docs/gifs/doc_wait.gif>>
 wait :: Duration -> Scene s ()
-wait d = M $ \_ ->
-  return ((), d, 0, [])
+wait d = M $ \_ -> return ((), d, 0, [])
 
 -- | Wait until the clock is equal to the given timestamp.
 waitUntil :: Time -> Scene s ()
@@ -191,14 +193,12 @@ waitOn (M action) = M $ \t -> do
 -- | Change the ZIndex of a scene.
 adjustZ :: (ZIndex -> ZIndex) -> Scene s a -> Scene s a
 adjustZ fn (M action) = M $ \t -> do
-    (a, s, p, gens) <- action t
-    return (a, s, p, map genFn gens)
-  where
-    genFn gen = do
-      frameGen <- gen
-      return $ \d t ->
-        let (svg, z) = frameGen d t
-        in (svg, fn z)
+  (a, s, p, gens) <- action t
+  return (a, s, p, map genFn gens)
+ where
+  genFn gen = do
+    frameGen <- gen
+    return $ \d t -> let (svg, z) = frameGen d t in (svg, fn z)
 
 -- | Query the duration of a scene.
 withSceneDuration :: Scene s () -> Scene s Duration
@@ -206,7 +206,7 @@ withSceneDuration s = do
   t1 <- queryNow
   s
   t2 <- queryNow
-  return (t2-t1)
+  return (t2 - t1)
 
 addGen :: Gen s -> Scene s ()
 addGen gen = M $ \_ -> return ((), 0, 0, [gen])
@@ -246,10 +246,7 @@ writeVar var val = modifyVar var (const val)
 modifyVar :: Var s a -> (a -> a) -> Scene s ()
 modifyVar (Var ref) fn = do
   now <- queryNow
-  liftST $ modifySTRef ref $ \prev t ->
-    if t < now
-      then prev t
-      else fn (prev t)
+  liftST $ modifySTRef ref $ \prev t -> if t < now then prev t else fn (prev t)
 
 -- | Modify a variable between @now@ and @now+duration@.
 --   Note: The modification function is invoked for past timestamps (with a time value of 0) and
@@ -257,8 +254,7 @@ modifyVar (Var ref) fn = do
 tweenVar :: Var s a -> Duration -> (a -> Time -> a) -> Scene s ()
 tweenVar (Var ref) dur fn = do
   now <- queryNow
-  liftST $ modifySTRef ref $ \prev t ->
-    fn (prev t) (max 0 (min dur $ t-now)/dur)
+  liftST $ modifySTRef ref $ \prev t -> fn (prev t) (max 0 (min dur $ t - now) / dur)
   wait dur
 
 -- | Modify a variable between @now@ and @now+duration@.
@@ -267,8 +263,7 @@ tweenVar (Var ref) dur fn = do
 tweenVarUnclamped :: Var s a -> Duration -> (a -> Time -> a) -> Scene s ()
 tweenVarUnclamped (Var ref) dur fn = do
   now <- queryNow
-  liftST $ modifySTRef ref $ \prev t ->
-    fn (prev t) ((t-now)/dur)
+  liftST $ modifySTRef ref $ \prev t -> fn (prev t) ((t - now) / dur)
   wait dur
 
 -- | Create and render a variable. The rendering will be born at the current timestamp
@@ -288,8 +283,8 @@ simpleVar render def = do
 
 -- | Helper function for filtering variables.
 findVar :: (a -> Bool) -> [Var s a] -> Scene s (Var s a)
-findVar _cond [] = error "Variable not found."
-findVar cond (v:vs) = do
+findVar _cond []       = error "Variable not found."
+findVar cond  (v : vs) = do
   val <- readVar v
   if cond val then return v else findVar cond vs
 
@@ -310,8 +305,7 @@ instance Applicative (Frame s) where
   Frame f <*> Frame g = Frame $ do
     m1 <- f
     m2 <- g
-    return $ \real_t d t ->
-      m1 real_t d t (m2 real_t d t)
+    return $ \real_t d t -> m1 real_t d t (m2 real_t d t)
 
 -- | Dereference a variable as a Sprite frame.
 --
@@ -351,16 +345,21 @@ newSprite render = do
   now <- queryNow
   ref <- liftST $ newSTRef (-1, return $ \_d _t svg -> (svg, 0))
   addGen $ do
-    fn <- unFrame render
+    fn                           <- unFrame render
     (spriteDur, spriteEffectGen) <- readSTRef ref
-    spriteEffect <- spriteEffectGen
+    spriteEffect                 <- spriteEffectGen
     return $ \d absT ->
-      let relD = (if spriteDur < 0 then d else spriteDur)-now
-          relT = absT-now in
-      if relT < 0 || (relD+now/=d && relD <= relT)
-        then (None, 0)
-        else spriteEffect relD relT (fn absT relD relT)
+      let relD = (if spriteDur < 0 then d else spriteDur) - now
+          relT = absT - now
+      in  if relT < 0 || (relD + now /= d && relD <= relT)
+            then (None, 0)
+            else spriteEffect relD relT (fn absT relD relT)
   return $ Sprite now ref
+
+-- | Create new sprite defined by a frame generator. The sprite will die at
+--   the end of the scene.
+newSprite_ :: Frame s SVG -> Scene s ()
+newSprite_ = void . newSprite
 
 -- | Create a new sprite from an animation. This advances the clock by the
 --   duration of the animation. Unless otherwise specified using
@@ -406,6 +405,11 @@ newSpriteA' sync animation =
 newSpriteSVG :: SVG -> Scene s (Sprite s)
 newSpriteSVG = newSprite . pure
 
+-- | Create a permanent sprite from a static SVG image. Same as `newSpriteSVG`
+--   but the sprite isn't returned and thus cannot be destroyed.
+newSpriteSVG_ :: SVG -> Scene s ()
+newSpriteSVG_ = void . newSpriteSVG
+
 -- | Change the rendering of a sprite using data from a variable. If data from several variables
 --   is needed, use a frame generator instead.
 --
@@ -418,11 +422,9 @@ newSpriteSVG = newSprite . pure
 --
 --   <<docs/gifs/doc_applyVar.gif>>
 applyVar :: Var s a -> Sprite s -> (a -> SVG -> SVG) -> Scene s ()
-applyVar var sprite fn =
-  spriteModify sprite $ do
-    varFn <- unVar var
-    return $ \(svg, zindex) ->
-      (fn varFn svg, zindex)
+applyVar var sprite fn = spriteModify sprite $ do
+  varFn <- unVar var
+  return $ \(svg, zindex) -> (fn varFn svg, zindex)
 
 -- | Destroy a sprite, preventing it from being rendered in the future of the scene.
 --   If 'destroySprite' is invoked multiple times, the earliest time-of-death is used.
@@ -441,15 +443,15 @@ destroySprite (Sprite _ ref) = do
     (if ttl < 0 then now else min ttl now, render)
 
 -- | Low-level frame modifier.
-spriteModify :: Sprite s -> Frame s ((SVG,ZIndex) -> (SVG, ZIndex)) -> Scene s ()
-spriteModify (Sprite born ref) modFn =
-  liftST $ modifySTRef ref $ \(ttl, renderGen) ->
-    (ttl, do
-      render <- renderGen
-      modRender <- unFrame modFn
-      return $ \relD relT ->
-        let absT = relT + born
-        in modRender absT relD relT . render relD relT)
+spriteModify :: Sprite s -> Frame s ((SVG, ZIndex) -> (SVG, ZIndex)) -> Scene s ()
+spriteModify (Sprite born ref) modFn = liftST $ modifySTRef ref $ \(ttl, renderGen) ->
+  ( ttl
+  , do
+    render    <- renderGen
+    modRender <- unFrame modFn
+    return $ \relD relT ->
+      let absT = relT + born in modRender absT relD relT . render relD relT
+  )
 
 -- | Map the SVG output of a sprite.
 --
@@ -462,11 +464,11 @@ spriteModify (Sprite born ref) modFn =
 --   <<docs/gifs/doc_spriteMap.gif>>
 spriteMap :: Sprite s -> (SVG -> SVG) -> Scene s ()
 spriteMap sprite@(Sprite born _) fn = do
-    now <- queryNow
-    let tDelta = now - born
-    spriteModify sprite $ do
-      t <- spriteT
-      return $ \(svg, zindex) -> (if (t-tDelta) < 0 then svg else fn svg, zindex)
+  now <- queryNow
+  let tDelta = now - born
+  spriteModify sprite $ do
+    t <- spriteT
+    return $ \(svg, zindex) -> (if (t - tDelta) < 0 then svg else fn svg, zindex)
 
 -- | Modify the output of a sprite between @now@ and @now+duration@.
 --
@@ -478,18 +480,16 @@ spriteMap sprite@(Sprite born _) fn = do
 --   <<docs/gifs/doc_spriteTween.gif>>
 spriteTween :: Sprite s -> Duration -> (Double -> SVG -> SVG) -> Scene s ()
 spriteTween sprite@(Sprite born _) dur fn = do
-    now <- queryNow
-    let tDelta = now - born
-    spriteModify sprite $ do
-      t <- spriteT
-      return $ \(svg, zindex) ->
-        (fn (clamp 0 1 $ (t-tDelta)/dur) svg, zindex)
-    wait dur
-  where
-    clamp a b v
-      | v < a     = a
-      | v > b     = b
-      | otherwise = v
+  now <- queryNow
+  let tDelta = now - born
+  spriteModify sprite $ do
+    t <- spriteT
+    return $ \(svg, zindex) -> (fn (clamp 0 1 $ (t - tDelta) / dur) svg, zindex)
+  wait dur
+ where
+  clamp a b v | v < a     = a
+              | v > b     = b
+              | otherwise = v
 
 -- | Create a new variable and apply it to a sprite.
 --
@@ -519,11 +519,13 @@ spriteE :: Sprite s -> Effect -> Scene s ()
 spriteE (Sprite born ref) effect = do
   now <- queryNow
   liftST $ modifySTRef ref $ \(ttl, renderGen) ->
-    (ttl, do
+    ( ttl
+    , do
       render <- renderGen
       return $ \d t svg ->
         let (svg', z) = render d t svg
-        in (delayE (max 0 $ now-born) effect d t svg', z))
+        in  (delayE (max 0 $ now - born) effect d t svg', z)
+    )
 
 -- | Set new ZIndex of a sprite.
 --
@@ -540,8 +542,9 @@ spriteZ :: Sprite s -> ZIndex -> Scene s ()
 spriteZ (Sprite born ref) zindex = do
   now <- queryNow
   liftST $ modifySTRef ref $ \(ttl, renderGen) ->
-    (ttl, do
+    ( ttl
+    , do
       render <- renderGen
       return $ \d t svg ->
-        let (svg', z) = render d t svg
-        in (svg', if t < now-born then z else zindex))
+        let (svg', z) = render d t svg in (svg', if t < now - born then z else zindex)
+    )

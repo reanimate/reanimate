@@ -7,7 +7,6 @@ module Main (main) where
 
 import           Reanimate
 import           Reanimate.Povray      (povraySlow')
-import           Reanimate.Raster
 
 import           Codec.Picture
 import           Codec.Picture.Types

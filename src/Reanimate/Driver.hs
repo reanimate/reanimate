@@ -11,7 +11,8 @@ import           Reanimate.Driver.CLI
 import           Reanimate.Driver.Compile
 import           Reanimate.Driver.Server
 import           Reanimate.Parameters
-import           Reanimate.Render         (render, renderSnippets, renderSvgs)
+import           Reanimate.Render         (FPS, Format (..), Height, Width,
+                                            render, renderSnippets, renderSvgs, selectRaster)
 import           System.Directory
 import           System.FilePath
 import           Text.Printf
@@ -26,7 +27,7 @@ presetFormat LowFPS     = RenderMp4
 
 presetFPS :: Preset -> FPS
 presetFPS Youtube    = 60
-presetFPS ExampleGif = 24
+presetFPS ExampleGif = 25
 presetFPS Quick      = 15
 presetFPS MediumQ    = 30
 presetFPS HighQ      = 30
@@ -45,7 +46,7 @@ presetHeight preset = presetWidth preset * 9 `div` 16
 
 formatFPS :: Format -> FPS
 formatFPS RenderMp4  = 60
-formatFPS RenderGif  = 24
+formatFPS RenderGif  = 25
 formatFPS RenderWebm = 60
 
 formatWidth :: Format -> Width
@@ -159,17 +160,6 @@ reanimate animation = do
             fps width height (showFormat fmt) target (show raster)
 
           render animation target raster fmt width height fps
-
-selectRaster :: Raster -> IO Raster
-selectRaster RasterAuto = do
-  rsvg <- hasRSvg
-  ink <- hasInkscape
-  conv <- hasConvert
-  if | isRight rsvg -> pure RasterRSvg
-     | isRight ink  -> pure RasterInkscape
-     | isRight conv -> pure RasterConvert
-     | otherwise    -> pure RasterNone
-selectRaster r = pure r
 
 guessParameter :: Maybe a -> Maybe a -> a -> a
 guessParameter a b def = fromMaybe def (a <|> b)

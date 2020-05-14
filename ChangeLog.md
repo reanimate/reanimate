@@ -1,5 +1,29 @@
 # Revision history for reanimate
 
+## 0.3.2.0 -- unreleased
+
+* Fix bug that forced GIF width to 320 pixels.
+* Add helper for creating custom viewboxes, withViewBox.
+* Add newSprite_, newSpriteSVG_.
+
+## 0.3.1.0 -- 2020-05-12
+
+* Expose 'mkImage'
+
+## 0.3.0.0 -- 2020-05-11
+
+* Improve README.md with better examples at a higher framerate.
+* Improve canvas documentation, courtesy of William Yao.
+* Fix 'renameFile' bug when moving files between different file-systems.
+* Improve GeoJSON performance.
+* Improve SVG rendering performance.
+* CLI: Show time spent and time remaining when rendering.
+* Better support for external images.
+* Support external raster engines (inkscape, image magick, rsvg).
+* Fix framerate bug affecting GIFs.
+* Improve boundingbox performance.
+* Add generalized cubic bezier signal.
+
 ## 0.2.0.2 -- 2020-02-25
 
 * Rewrite viewer from javascript to elm.
