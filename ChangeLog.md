@@ -5,6 +5,8 @@
 * Fix bug that forced GIF width to 320 pixels.
 * Add helper for creating custom viewboxes, withViewBox.
 * Add newSprite_, newSpriteSVG_.
+* Drop support for lts-11 and lts-12. Lts-15, lts-14 and lts-13 are supported.
+* Add common interface for polygon morphing.
 
 ## 0.3.1.0 -- 2020-05-12
 
