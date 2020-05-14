@@ -26,7 +26,7 @@ presetFormat LowFPS     = RenderMp4
 
 presetFPS :: Preset -> FPS
 presetFPS Youtube    = 60
-presetFPS ExampleGif = 24
+presetFPS ExampleGif = 25
 presetFPS Quick      = 15
 presetFPS MediumQ    = 30
 presetFPS HighQ      = 30
@@ -45,7 +45,7 @@ presetHeight preset = presetWidth preset * 9 `div` 16
 
 formatFPS :: Format -> FPS
 formatFPS RenderMp4  = 60
-formatFPS RenderGif  = 24
+formatFPS RenderGif  = 25
 formatFPS RenderWebm = 60
 
 formatWidth :: Format -> Width
