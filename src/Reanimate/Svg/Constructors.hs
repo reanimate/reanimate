@@ -378,7 +378,7 @@ mkText str =
 --
 --   Example:
 --
---   > withViewBox (-4,-4,8,8) $ mkBackground "yellow"
+--   > withViewBox (0,0,1,1) $ mkBackground "yellow"
 --
 --   <<docs/gifs/doc_withViewBox.gif>>
 withViewBox :: (Double, Double, Double, Double) -> Tree -> Tree
