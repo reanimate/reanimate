@@ -93,6 +93,7 @@ $ stack ./examples/doc_andThen.hs render --format gif
 # Learning resources
 
 * [API documentation](http://hackage.haskell.org/package/reanimate/docs/Reanimate.html)
+* [Core concepts](introduction)
 * [Gallery](gallery)
 * [Examples](https://github.com/Lemmih/reanimate/tree/master/examples)
 * [Design overview](glue_tut)
