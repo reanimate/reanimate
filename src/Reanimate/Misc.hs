@@ -16,7 +16,6 @@ import           GHC.IO.Exception
 import           System.Directory  (copyFile, createDirectory, findExecutable,
                                     getTemporaryDirectory, removeFile,
                                     renameFile)
-import           System.Exit       (ExitCode (..))
 import           System.FilePath   ((<.>), (</>))
 import           System.IO         (hClose, hGetContents, hIsEOF, openTempFile)
 import           System.Process    (readProcessWithExitCode,

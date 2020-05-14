@@ -36,6 +36,11 @@ Source-Repository head
     Type:      git
     Location:  git://github.com/lemmih/reanimate.git
 
+Flag hmatrix
+  Description: Enable hmatrix dependency (requires blas and lapack)
+  Default:     True
+  Manual:      True
+
 Flag test
   Description: Enable testing (requires stack)
   Default:     False
@@ -58,6 +63,24 @@ library
                       -- Reanimate.Diagrams
                       Reanimate.Transform
                       Reanimate.Misc
+                      Reanimate.Math.Common
+                      Reanimate.Math.Polygon
+                      Reanimate.Math.Triangulate
+                      Reanimate.Math.DCEL
+                      Reanimate.Math.EarClip
+                      Reanimate.Math.Visibility
+                      Reanimate.Math.SSSP
+                      Reanimate.Math.Balloon
+                      Reanimate.Math.Compatible
+                      Reanimate.Math.Render
+                      Reanimate.Math.Smooth
+                      Reanimate.Morph.Common
+                      Reanimate.Morph.Linear
+                      Reanimate.Morph.Rotational
+                      Reanimate.Morph.LeastWork
+                      Reanimate.Morph.LineBend
+                      Reanimate.Morph.Cache
+                      Reanimate.Morph.Rigid
                       Reanimate.Raster
                       Reanimate.ColorMap
                       Reanimate.ColorSpace
@@ -89,12 +112,16 @@ library
                        time, text, filepath, process, directory,
                        containers, reanimate-svg >= 0.9.7.0, xml, bytestring, lens, linear, mtl, matrix,
                        JuicyPixels, attoparsec, parallel,
-                       cubicbezier, websockets,
+                       cubicbezier, websockets >= 0.12.7.0,
                        hashable, fsnotify, open-browser, random-shuffle, base64-bytestring,
                        vector >= 0.12.0.0, colour, cassava, ansi-wl-pprint, here, temporary,
                        optparse-applicative, chiphunk >= 0.1.2.1,
-                       geojson, aeson >= 1.3.0.0
-  ghc-options: -Wall
+                       geojson, aeson >= 1.3.0.0,
+                       split, fingertree, array, cereal, vector-space
+  if flag(hmatrix) {
+    build-depends: hmatrix >= 0.20.0.0
+  }
+  ghc-options: -Wall -fno-ignore-asserts
 
 test-suite spec
   type: exitcode-stdio-1.0
@@ -102,16 +129,20 @@ test-suite spec
   default-language:   Haskell2010
   other-modules:
     UnitTests
+    Properties
+    Helpers
   hs-source-dirs: test
   if !flag(test) {
     Buildable: False
   }
+  ghc-options: -w
   build-depends:
     base,
     directory,
     filepath,
     bytestring, process,
-    reanimate,
-    QuickCheck >= 2.1.0,
+    reanimate, vector, linear,
+    QuickCheck >= 2.1.0, text,
     tasty, tasty-golden, tasty-hunit,
+    tasty-quickcheck,
     ansi-wl-pprint

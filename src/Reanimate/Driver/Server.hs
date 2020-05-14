@@ -47,7 +47,12 @@ serve = withManager $ \watch -> do
     unless hasConn openViewer
 
   putStrLn "Listening..."
-  runServerWith "127.0.0.1" 9161 opts $ \pending -> do
+  let options = ServerOptions
+        { serverHost = "127.0.0.1"
+        , serverPort = 9161
+        , serverConnectionOptions = opts
+        , serverRequirePong = Nothing }
+  runServerWithOptions options $ \pending -> do
     putStrLn "New connection received."
     hasConn <- swapMVar hasConnectionVar True
     if hasConn

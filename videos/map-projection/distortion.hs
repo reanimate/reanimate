@@ -23,19 +23,21 @@ import           Graphics.SvgTree        (PathCommand (..), Tree (None))
 import           Reanimate
 import           Reanimate.Animation
 import           Reanimate.GeoProjection
+import           Reanimate.Raster
 import           Reanimate.Scene
 import           System.IO.Unsafe
 
 
 main :: IO ()
-main = seq equirectangular $ reanimate $ sceneAnimation $ do
+main = seq equirectangular $ reanimate $ setDuration 59 $ sceneAnimation $ do
+    bg <- newSpriteSVG $ mkBackground "white"
+    spriteZ bg (-1)
     prevProj <- newVar equirectangularP
     txtVar <- newVar "Equirectangular"
     txtS <- newSprite $ renderLabel <$> unVar txtVar
     txtFade <- spriteVar txtS 1 withGroupOpacity
     spriteZ txtS 2
-    let pushInterp = pushMerge' (\a b t -> interpP src a b t)
-        pushMerge' fn label proj = do
+    let pushInterp label proj = do
           fork $ do
             tweenVar txtFade 0.2 $ \v -> fromToS v 0 . curveS 2
             writeVar txtVar label
@@ -43,10 +45,15 @@ main = seq equirectangular $ reanimate $ sceneAnimation $ do
           prev <- readVar prevProj
           play $ pauseAtEnd waitT $ signalA (curveS 2) $
             mkAnimation morphT $ \t ->
-              mkGroup $
-              [ scaleToSize screenWidth screenHeight $
-                embedImage $ fn prev proj t
-              , grid $ mergeP prev proj t ]
+              let imgKey = (label, projectionLabel prev, projectionLabel proj, t
+                           ,"distort"::String)
+                  imgFile = cacheImage imgKey $
+                    interpP src prev proj t
+              in mkGroup $
+                [ --scaleToSize screenWidth screenHeight $
+                --  embedImage $ interP src prev proj t
+                  mkImage screenWidth screenHeight imgFile
+                , grid $ mergeP prev proj t ]
           writeVar prevProj proj
         pushT mkLabel mkProj = do
           fork $ tweenVar txtVar morphT $ \v t -> if t > 0 then mkLabel t else v
@@ -114,12 +121,12 @@ renderLabel label =
     translate (-screenWidth/2) (-screenHeight/2) $
     translate 0 (svgHeight ref) svgTxt
 
-equirectangular :: Image PixelRGB8
+equirectangular :: Image PixelRGBA8
 equirectangular = unsafePerformIO $ do
-  dat <- BS.readFile "earth.jpg"
+  dat <- BS.readFile "earth-extreme.jpg"
   case decodeJpeg dat of
     Left err  -> error err
-    Right img -> return $ convertRGB8 img
+    Right img -> return $ convertRGBA8 img
 
 toRads :: Double -> Double
 toRads dec = dec/180 * pi
