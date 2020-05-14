@@ -105,14 +105,18 @@ render ani target raster format width height fps = do
                       , "-pix_fmt", "yuv420p", target]
       RenderGif -> withTempFile "png" $ \palette -> do
         runCmd ffmpeg ["-i", template, "-y"
-                      ,"-vf", "fps="++show fps++",scale=320:-1:flags=lanczos,palettegen"
+                      ,"-vf", "fps="++show fps++
+                        ",scale="++show width++":"++show height ++
+                        ":flags=lanczos,palettegen"
                       ,"-t", showFFloat Nothing (duration ani) ""
                       , palette ]
         runCmd ffmpeg ["-framerate", show fps,"-i", template, "-y"
                       ,"-i", palette
                       ,"-progress", progress
                       ,"-filter_complex"
-                      ,"fps="++show fps++",scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse"
+                      ,"fps="++show fps++
+                        ",scale="++show width++":"++show height ++
+                        ":flags=lanczos[x];[x][1:v]paletteuse"
                       ,"-t", showFFloat Nothing (duration ani) ""
                       , target]
       RenderWebm ->
