@@ -375,6 +375,12 @@ mkText str =
 --   to configure them by hand.
 --
 --   The viewbox argument is (min-x, min-y, width, height).
+--
+--   Example:
+--
+--   > withViewBox (-4,-4,8,8) $ mkBackground "yellow"
+--
+--   <<docs/gifs/doc_withViewBox.gif>>
 withViewBox :: (Double, Double, Double, Double) -> Tree -> Tree
 withViewBox vbox child = translate (-screenWidth/2) (-screenHeight/2) $
   SvgTree $ Document
