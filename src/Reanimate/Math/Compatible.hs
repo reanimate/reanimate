@@ -36,7 +36,7 @@ steiner2Link p i j
     | isNeighbour = error "steiner2Link: Points are neighbours"
     | isParent    = error "steiner2Link: Points can directly see each other."
     | not (isStraightLine || isGrandparent || oneBendBetween p i j) =
-      error "steiner2Link: Cannot construct 2-link chain between points."
+      error $ "steiner2Link: Cannot construct 2-link chain between points: " ++ show (i,j,pParent p i j,pParent p i (pParent p i j))
     | otherwise =
       lerp 0.5 (fst vect) (intersects!!0)
   where
@@ -49,7 +49,7 @@ steiner2Link p i j
         (pAccess p j)
         (pAccess p $ pParent p i j)
         (pAccess p i) == 0
-    intersects = sortBy (comparing distToV) $
+    intersects = sortOn distToV $
       snd vect :
       [ u
       | n <- [0..pSize p-1]
@@ -70,7 +70,7 @@ steiner2Link p i j
                 case p1-pAccess p i of
                   V2 x y -> p1 + V2 (-y) x -- rotate 90 degrees.
           in (p1,p2)
-      | otherwise = fromJust $ listToMaybe $
+      | otherwise = fromMaybe (error $ "No window overlap: " ++ show (isStraightLine, isGrandparent, oneBendBetween p i j)) $ listToMaybe $
         [ (p1, p1+(p2-p1) + (p3-p1))
         | (a,b) <- ssspWindows iP
         , (c,d) <- ssspWindows jP
@@ -210,6 +210,7 @@ compatiblyTriangulateP a b
 
 compatiblyTriangulateP' :: Polygon -> Polygon -> Polygon -> [(Polygon, Polygon)]
 compatiblyTriangulateP' aOrigin a b
+  | trace ("Polygon size: " ++ show (pSize a)) False = undefined
   | n == 3 = trace ("Done") $
     [(a,b)]
   | otherwise =
@@ -236,9 +237,9 @@ compatiblyTriangulateP' aOrigin a b
       (idx,fromMaybe (-1) (V.elemIndex (pAccess a idx) (polygonPoints aOrigin)) +
       polygonOffset aOrigin)
     n = pSize a
-    bestOneLink = listToMaybe (sortBy (flip (comparing nodeDist))
+    bestOneLink = listToMaybe (sortOn (Down . nodeDist)
       (aOneLink `intersect` bOneLink))
-    bestTwoLink = listToMaybe (sortBy (flip (comparing nodeDist))
+    bestTwoLink = listToMaybe (sortOn (Down . nodeDist)
       ((aOneLink++aTwoLink) `intersect` (bOneLink++bTwoLink)))
     aOneLink = polygonOneLinks a
     bOneLink = polygonOneLinks b
@@ -247,16 +248,17 @@ compatiblyTriangulateP' aOrigin a b
     nodeDist (i,j) = min (j-i) (n-j+i)
 
 oneBendBetween :: Polygon -> Int -> Int -> Bool
-oneBendBetween p a b =
-    direction
-      (pAccess p b)
-      (pAccess p (pParent p a b))
-      (pAccess p $ obstructedBy b) == 0 &&
-    (pParent p a b) /= obstructedBy b
-  where
-    obstructedBy n =
-      case pParent p a n of
-        i -> if i == a then n else obstructedBy i
+oneBendBetween _p _a _b = False
+-- oneBendBetween p a b =
+--     direction
+--       (pAccess p b)
+--       (pAccess p (pParent p a b))
+--       (pAccess p $ obstructedBy b) == 0 &&
+--     (pParent p a b) /= obstructedBy b
+--   where
+--     obstructedBy n =
+--       case pParent p a n of
+--         i -> if i == a then n else obstructedBy i
 
 polygonTwoLinks :: Polygon -> [(Int,Int)]
 polygonTwoLinks p =
@@ -265,7 +267,7 @@ polygonTwoLinks p =
   , j <- [i+2 .. n-1]
   , not (i==0 && j == n-1)
   , pParent p i j /= i -- check for 1-link
-  , let isTwoLink = pParent p i (pParent p i j) == 0
+  , let isTwoLink = pParent p i (pParent p i j) == i
         isStraightLine = oneBendBetween p i j
   -- Points on a straight line should be 2-link even though they are not
   -- direct grandparents.

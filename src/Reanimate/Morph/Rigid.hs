@@ -84,13 +84,9 @@ type RelTrig = (Int,Int,Int)
 data Mesh = Mesh
   { meshPointsA :: Vector P
   , meshPointsB :: Vector P
+  , meshOutline :: Vector Int
+  -- , meshSteiner :: Vector Int
   , meshTriangles :: Vector RelTrig }
-
-meshSrc :: [Trig]
-meshSrc = [ (V2 0 0, V2 1 0, V2 1 1)]
-
-meshDst :: [Trig]
-meshDst = [ (V2 0 0, V2 1 0, V2 0 1)]
 
 -- applyA (computeA a b) a = b + some_constant_translation
 -- A = Q P_inv
@@ -166,13 +162,6 @@ trigToMatrix (p1,p2,p3) = matP
 
 
 
-testMesh :: Mesh
-testMesh = Mesh (V.fromList pointsA) (V.fromList pointsB) (V.fromList trigs)
-  where
-    pointsA = [V2 0 0, V2 1 0, V2 1 1]
-    pointsB = [V2 0 0, V2 1 0, V2 0 1]
-    trigs = [(0,1,2)]
-
 data Prep = Prep
   { prepPivot    :: (P, P)
   , prepPointsA  :: Vector P
@@ -186,30 +175,30 @@ symmetric :: Bool
 symmetric = True
 
 prepare :: Mesh -> Prep
-prepare (Mesh pointsA pointsB trigs) = Prep
+prepare Mesh{..} = Prep
     { prepPivot = (aOrigin, bOrigin)
     , prepPointsA =
         V.map (subtract aOrigin) $
-        V.take pivotIdx pointsA <> V.drop (pivotIdx+1) pointsA
+        V.take pivotIdx meshPointsA <> V.drop (pivotIdx+1) meshPointsA
     , prepPointsB =
         V.map (subtract bOrigin) $
-        V.take pivotIdx pointsB <> V.drop (pivotIdx+1) pointsB
+        V.take pivotIdx meshPointsB <> V.drop (pivotIdx+1) meshPointsB
     , prepRS = rsList
     , prepRSRev = rsRevList
     , prepUToB = Matrix.mkSparse uToB }
   where
-    aOrigin = pointsA V.! pivotIdx
-    bOrigin = pointsB V.! pivotIdx
-    pivotIdx = case V.head trigs of
+    aOrigin = meshPointsA V.! pivotIdx
+    bOrigin = meshPointsB V.! pivotIdx
+    pivotIdx = case V.head meshTriangles of
         (a,_,_) -> a
     mkAbs p (a,b,c) = (p V.! a,p V.! b,p V.! c)
-    absATrigs = V.map (mkAbs pointsA) trigs
-    absBTrigs = V.map (mkAbs pointsB) trigs
+    absATrigs = V.map (mkAbs meshPointsA) meshTriangles
+    absBTrigs = V.map (mkAbs meshPointsB) meshTriangles
     aList = V.zipWith computeA absATrigs absBTrigs
     rsList = V.map computeRS aList
     revList = V.zipWith computeA absBTrigs absATrigs
     rsRevList = V.map computeRS revList
-    n = length trigs
+    n = length meshTriangles
     -- nT = if symmetric then n*2 else n
     -- pivotToB = ((nT*4)><2) $ concat
     --   [ [ fromMaybe 0 (lookup (x,pivotIdx*2) bigM)
@@ -218,19 +207,19 @@ prepare (Mesh pointsA pointsB trigs) = Prep
     uToB =
       [ ((x,y-2),key) | ((x,y),key) <- bigM, y /= pivotIdx*2 && y /= pivotIdx*2+1 ]
     bigM =
-      concat (zipWith worker [0..] (V.toList trigs)) ++
+      concat (zipWith worker [0..] (V.toList meshTriangles)) ++
       if symmetric
-        then concat $ zipWith workerRev [n..] (V.toList trigs)
+        then concat $ zipWith workerRev [n..] (V.toList meshTriangles)
         else []
     worker i src@(a,b,c) = concat $
-      let effs = coeffOfB (mkAbs pointsA src) in
+      let effs = coeffOfB (mkAbs meshPointsA src) in
       [ [((i*4+h, e*2), effs!h!(j*2))
         ,((i*4+h, e*2+1), effs!h!(j*2+1))]
       | h <- [0..3]
       , (e,j) <- zip [a,b,c] [0..]
       ]
     workerRev i dst@(a,b,c) = concat $
-      let effs = coeffOfB (mkAbs pointsB dst) in
+      let effs = coeffOfB (mkAbs meshPointsB dst) in
       [ [((i*4+h, e*2), effs!h!(j*2))
         ,((i*4+h, e*2+1), effs!h!(j*2+1))]
       | h <- [0..3]

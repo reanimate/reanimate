@@ -26,6 +26,7 @@ module Reanimate.Math.Common
   , distSquared         -- :: (Fractional a) => V2 a -> V2 a -> a
   , approxDist          -- :: (Real a, Fractional a) => V2 a -> V2 a -> a
   , distance'           -- :: (Real a, Fractional a) => V2 a -> V2 a -> Double
+  , triangleAngles      -- :: V2 Double -> V2 Double -> V2 Double -> (Double, Double, Double)
   ) where
 
 import           Data.Vector    (Vector)
@@ -155,3 +156,13 @@ approxDist a b = realToFrac (sqrt (realToFrac (distSquared a b) :: Double))
 
 distance' :: (Real a, Fractional a) => V2 a -> V2 a -> Double
 distance' a b = sqrt (realToFrac (distSquared a b))
+
+-- sum of angles is always pi.
+triangleAngles :: V2 Double -> V2 Double -> V2 Double -> (Double, Double, Double)
+triangleAngles a b c =
+    (findAngle (b-a) (c-a)
+    ,findAngle (c-b) (a-b)
+    ,findAngle (a-c) (b-c))
+  where
+    findAngle v1 v2 = abs (atan2 (crossZ v1 v2) (dot v1 v2))
+    -- findAngle v1 v2 = acos (dot v1 v2 / (norm v1 * norm v2))

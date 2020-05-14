@@ -32,10 +32,17 @@ import           Reanimate.Math.Triangulate
 import           Reanimate.Math.Polygon
 import           Reanimate.Math.EarClip
 import           Reanimate.Math.SSSP
+import           Reanimate.Math.Render
 import           Reanimate.Math.Visibility
 import           Reanimate.Math.Compatible
 import           Reanimate.Morph.Common
 import           Reanimate.PolyShape           (svgToPolygons)
+
+p1 = pScale 2 $ pAtCenter $ pAddPoints (0+2) (pSetOffset shape13 0)
+-- p1 = pSetOffset (addPoints 2 shape13) 0
+-- p2 = pScale 0.5 $ centerPolygon shape20
+-- p1 = centerPolygon shape2
+p2 = pScale 2 $ pAtCenter $ pAddPoints 0 (pSetOffset shape14 0)
 
 main :: IO ()
 main = reanimate $ sceneAnimation $ do
@@ -54,34 +61,38 @@ main = reanimate $ sceneAnimation $ do
   -- fork $ play $ mapA (translate (-3) 0) $ drawSSSPVisibilityFast shape2
   -- fork $ play $ mapA (translate (3) 0) $ drawSSSPVisibilityFast shape7
   -- play $ drawOverlap $ fst $ split1Link (fst (split1Link shape7 3 7)) 0 2
-  -- fork $ play $ mapA (translate (-4) 0) $ drawSSSPVisibilityFast $ setOffset (addPoints 0 shape14) 0
-  -- fork $ play $ mapA (translate (4) 0) $ drawSSSPVisibilityFast $ setOffset (addPoints 2 shape13) 0
-  -- fork $ play $ staticFrame 1 $
-  --   let -- pOrigin = (addPoints 10 $ setOffset shape14 0)
-  --       pOrigin = shape21
-  --       --pOrigin = (addPoints 2 shape13)
-  --       p1 = translatePolygon (V2 0 (-3)) $ scalePolygon 1 $ setOffset pOrigin 0
-  --       p2 = fst $ split1Link p1 6 11 0
-  --       p3 = snd $ split1Link p2 1 7 0
-  --       -- p4 = fst $ split2Link p3 2 5
-  --       p4 = fst $ split1Link p3 2 5 1
-  --       p5 = fst $ split1Link p4 3 5 0
-  --       p6 = fst $ split2Link p5 0 2
-  --       p7 = fst $ split1Link p6 1 3 0
-  --       p8 = fst $ split2Link p7 0 2
-  --       p9 = fst $ split1Link p7 1 3 0
-  --       p = p1
-  --   in mkGroup
-  --   [ withFillColor "grey" $ polygonShape p
-  --   , polygonNumDots p ]
+  -- fork $ play $ mapA (translate (-4) 0) $ drawSSSPVisibilityFast $ pSetOffset (addPoints 0 shape14) 0
+  -- fork $ play $ mapA (translate (4) 0) $ drawSSSPVisibilityFast $ pSetOffset (addPoints 2 shape13) 0
+  fork $ play $ staticFrame 1 $ 
+    translate (4) 0 $ mkGroup
+    [ withFillColor "grey" $ polygonShape p1
+    , polygonNumDots p1 ]
+  fork $ play $ staticFrame 1 $
+    let -- pOrigin = (addPoints 10 $ pSetOffset shape14 0)
+        pOrigin = pScale 2 $ pAtCenter $ pAddPoints (0+2) (pSetOffset shape13 0)
+        --pOrigin = (addPoints 2 shape13)
+        p1 = pScale 1 $ pSetOffset pOrigin 0
+        p2 = snd $ split1Link p1 1 11 0
+        p3 = fst $ split1Link p2 0 2 1
+        -- p4 = fst $ split2Link p3 2 5
+        p4 = snd $ split1Link p3 0 9 1
+        p5 = fst $ split1Link p4 1 3 0
+        p6 = fst $ split2Link p5 0 2
+        p7 = fst $ split1Link p6 1 3 0
+        p8 = fst $ split2Link p7 0 2
+        p9 = fst $ split1Link p7 1 3 0
+        p = p4
+    in mkGroup
+    [ withFillColor "grey" $ polygonShape p
+    , polygonNumDots p ]
   -- newSpriteSVG $
-  --   let p1 = setOffset shape14 0
+  --   let p1 = pSetOffset shape14 0
   --       V2 x y = realToFrac <$> steiner2Link p1 2 6
   --   in translate (-4) 0 $
   --     translate x y $ withFillColor "red" $
   --     mkCircle 0.1
   -- newSpriteSVG $
-  --   let p1 = setOffset shape14 0
+  --   let p1 = pSetOffset shape14 0
   --   in translate (-4) 0 $
   --     mkGroup
   --     [ mkGroup
@@ -93,37 +104,37 @@ main = reanimate $ sceneAnimation $ do
   --           V2 x2 y2 = realToFrac <$> eB
   --     ]
   -- play $ staticFrame 1 $
-  --   let p1 = setOffset shape14 0
+  --   let p1 = pSetOffset shape14 0
   --   in mkGroup
   --   [ withFillColor "grey" $ polygonShape p1
   --   , polygonNumDots p1
   --   , drawWindowOverlap p1 1 6
-  --   -- , withStrokeColor "red" $ drawWindow (setOffset p1 2)
-  --   -- , withStrokeColor "blue" $ drawWindow (setOffset p1 6)
+  --   -- , withStrokeColor "red" $ drawWindow (pSetOffset p1 2)
+  --   -- , withStrokeColor "blue" $ drawWindow (pSetOffset p1 6)
   --   ]
-  -- play $ drawCompatible (setOffset (addPoints 2 shape13) 0) (setOffset shape14 0)
+  -- play $ drawCompatible (pSetOffset (addPoints 2 shape13) 0) (pSetOffset shape14 0)
 
   -- play $ drawSSSP shape2 naive
   -- play $ drawSSSP shape3 naive
   -- play $ drawSSSP shape4 naive
   -- play $ drawSSSP shape5 naive
-  -- play $ drawSSSP (scalePolygon 0.5 $ winding 10) (\p -> sssp p (dual (earClip p)))
+  -- play $ drawSSSP (pScale 0.5 $ winding 10) (\p -> sssp p (dual (earClip p)))
   -- play $ drawSSSP shape1 (\p -> sssp p (dual (earClip p)))
-  -- play $ drawTriangulation (cyclePolygon shape5 0.2910962834555265) earClip'
+  -- play $ drawTriangulation (pCycle shape5 0.2910962834555265) earClip'
   -- play $ drawTriangulation shape5 earClip'
   -- play $ mkAnimation 1 $ \t ->
   --   let p = shape4
-  --   in polygonNumDots (cyclePolygon p t)
-  -- play $ setDuration 20 $ drawSSSPVisibility $ scalePolygon 1 $ shape7
+  --   in polygonNumDots (pCycle p t)
+  -- play $ setDuration 20 $ drawSSSPVisibility $ pScale 1 $ shape7
   -- let shapeI = head $ svgToPolygons 0.1 $ scale 8 $ center $ latex "I"
   -- play $ animate $ \_ -> withFillColor "grey" $ polygonNumDots shapeI
-  -- play $ drawTriangulation (scalePolygon 0.5 $ winding 10) earClip'
+  -- play $ drawTriangulation (pScale 0.5 $ winding 10) earClip'
   -- play $ staticFrame 1 $
   --   mkGroup
   --   [ withFillColor "grey" $ polygonShape shape13
   --   , withFillColor "grey" $ polygonDots shape13 ]
   -- let p = balloonP origin
-  --     origin = centerPolygon $ scalePolygon 1 $ shiftLongestDiameter shapeI
+  --     origin = centerPolygon $ pScale 1 $ shiftLongestDiameter shapeI
   --     mkB = balloon (scale 8 $ center $ latex "C")
   --     inf = unsafeSVGToPolygon 0.1 $ (scale 8 $ center $ latex "$\\infty$")
   --     cShape = shiftLongestDiameter $ unsafeSVGToPolygon 0.01 $ (scale 8 $ center $ latex "C")
@@ -141,7 +152,7 @@ main = reanimate $ sceneAnimation $ do
     -- mkGroup
     -- [ mkGroup []
     -- , withStrokeWidth (defaultStrokeWidth*0.05) $
-    --   renderDual (polygonRing shape22) (dual (polygonOffset shape22) $ polygonTriangulation shape22)
+    --   renderDual (pRing shape22) (dual (polygonOffset shape22) $ polygonTriangulation shape22)
     -- , polygonNumDots shape22
     --   -- renderTriangulation cShape (polygonTriangulation cShape)
     -- ]
@@ -161,19 +172,19 @@ main = reanimate $ sceneAnimation $ do
   -- play $ staticFrame 1 $ renderTriangulation shape4 earClip
   -- play $ staticFrame 1 $ renderTriangulation shape5 earClip
   -- play $ staticFrame 1 $ renderTriangulation shape6 earClip
-  let p = deoverlapPolygon shape23
+  -- let p = deoverlapPolygon shape23
   -- newSpriteSVG $ translate (-3) 0 $ scale 2 $ center $ mkGroup
   --   [ withFillColor "grey" $ polygonShape p
   --   , polygonNumDots p
   --   ]
   -- wait 1
-  play $ mapA (scale 2 . withStrokeWidth (defaultStrokeWidth*0.2)) $
-    drawTriangulation p (earClip')
+  -- play $ mapA (scale 2 . withStrokeWidth (defaultStrokeWidth*0.2)) $
+  --   drawTriangulation p (earClip')
   return ()
 
 drawVisibility :: Polygon -> Animation
 drawVisibility p' = mkAnimation 5 $ \t ->
-  let p = cyclePolygon p' (t::Double) in
+  let p = pCycle p' (t::Double) in
   centerUsing (polygonShape p) $
   mkGroup
   [ withFillColor "grey" $ polygonShape p
@@ -187,7 +198,7 @@ drawVisibility p' = mkAnimation 5 $ \t ->
 
 drawSSSPVisibility :: Polygon -> Animation
 drawSSSPVisibility p' = mkAnimation 5 $ \t ->
-  let p = setOffset p' (round $ t*(fromIntegral $ polygonSize p'-1))
+  let p = pSetOffset p' (round $ t*(fromIntegral $ pSize p'-1))
       vis = ssspVisibility p in
   centerUsing (polygonShape p) $
   mkGroup
@@ -201,8 +212,8 @@ drawSSSPVisibility p' = mkAnimation 5 $ \t ->
 
 drawSSSPVisibilityFast :: Polygon -> Animation
 drawSSSPVisibilityFast p' = mkAnimation 5 $ \t ->
-  let root = min (polygonSize p-1) $ (floor $ t*(fromIntegral $ polygonSize p))
-      p = setOffset p' root
+  let root = min (pSize p-1) $ (floor $ t*(fromIntegral $ pSize p))
+      p = pSetOffset p' root
       vis = ssspVisibility p in
   -- centerUsing (polygonShape p) $
   mkGroup
@@ -242,7 +253,7 @@ drawCompatible a b = sceneAnimation $ do
 
 drawOverlap :: Polygon -> Animation
 drawOverlap p' = mkAnimation 5 $ \t ->
-  let p = cyclePolygon p' (t::Double)
+  let p = pCycle p' (t::Double)
       vis = ssspVisibility p
       vis' = ssspVisibility p'
       mWins = ssspWindows p
@@ -315,8 +326,8 @@ drawWindow p =
 
 drawWindowOverlap :: Polygon -> Int -> Int -> SVG
 drawWindowOverlap p a b =
-  let aWins = ssspWindows (modOffset p a)
-      bWins = ssspWindows (modOffset p b)
+  let aWins = ssspWindows (pAdjustOffset p a)
+      bWins = ssspWindows (pAdjustOffset p b)
       in
   mkGroup
   [ mkGroup $
@@ -334,39 +345,13 @@ drawWindowOverlap p a b =
     ]
   ]
 
-polygonShape :: Polygon -> SVG
-polygonShape p = mkLinePathClosed
-  [ (x,y) | V2 x y <- map (fmap realToFrac) $ V.toList (polygonPoints p) ]
-
-polygonDots :: Polygon -> SVG
-polygonDots p = mkGroup
-  [ translate x y $ mkCircle 0.1 | V2 x y <- V.toList $ V.map (fmap realToFrac) $ polygonPoints p ]
-
-polygonNumDots :: Polygon -> SVG
-polygonNumDots p = mkGroup $ reverse
-    [ mkGroup
-      [ colored n $
-        translate x y $ mkCircle circR
-      , withFillColor "black" $
-        translate x y $ ppNum n ]
-    | n <- [0..polygonSize p-1]
-    , let V2 x y = realToFrac <$> pAccess p n ]
-  where
-    circR = 0.05
-    colored n =
-      let c = promotePixel $ turbo (fromIntegral (n+2) / fromIntegral (polygonSize p-1+2))
-      in withStrokeColorPixel c . withFillColorPixel c
-    ppNum n =
-      scaleToSize (circR*1.7) (circR*1.5) $
-      center $ latex $ T.pack $ "\\texttt{" ++ show n ++ "}"
-
 drawSSSP :: Polygon -> (Polygon -> SSSP) -> Animation
 drawSSSP p gen = mkAnimation 5 $ \t -> centerUsing outline $
-  let p' = cyclePolygons p !! (round $ t*(fromIntegral $ polygonSize p-1)) in
+  let p' = pCycles p !! (round $ t*(fromIntegral $ pSize p-1)) in
   mkGroup
   [ outline
   , renderSSSP p' (gen p')
-  -- , let V2 x y = fmap realToFrac $ pAccess (cyclePolygon p t) 0 in
+  -- , let V2 x y = fmap realToFrac $ pAccess (pCycle p t) 0 in
   --   translate x y $ withFillColor "red" $ mkCircle 0.1
   , withFillColor "grey" $ polygonNumDots $ p'
   ]
@@ -378,38 +363,28 @@ drawSSSP p gen = mkAnimation 5 $ \t -> centerUsing outline $
 {-# INLINE drawSSSPFast #-}
 drawSSSPFast :: Polygon -> Animation
 drawSSSPFast p = mkAnimation 5 $ \t -> centerUsing outline $
-  let root = (round $ t*(fromIntegral $ polygonSize p-1))
+  let root = (round $ t*(fromIntegral $ pSize p-1))
       d = dual root triangulation
-      sTree = sssp (polygonRing p) d in
+      sTree = sssp (pRing p) d in
   mkGroup
   [ outline
   , renderSSSP p sTree
-  -- , let V2 x y = fmap realToFrac $ pAccess (cyclePolygon p t) 0 in
+  -- , let V2 x y = fmap realToFrac $ pAccess (pCycle p t) 0 in
   --   translate x y $ withFillColor "red" $ mkCircle 0.1
   , withFillColor "grey" $ polygonNumDots $ p
   ]
   where
-    triangulation = earClip $ polygonRing p
+    triangulation = earClip $ pRing p
     outline =
       withFillColor "grey" $ mkLinePathClosed
         [ (x,y) | V2 x y <- map (fmap realToFrac) (V.toList (polygonPoints p) ++ [pAccess p 0]) ]
-
-renderSSSP :: Polygon -> SSSP -> SVG
-renderSSSP p s = withFillOpacity 0 $ withStrokeColor "white" $ mkGroup
-  [ mkLinePath (lineFrom i)
-  | i <- [0 .. length s-1] ]
-  where
-    lineFrom i =
-      let V2 ax ay = fmap realToFrac $ pAccess p i
-          next = (s V.! i)
-      in (ax,ay) : if next == i then [] else lineFrom next
 
 drawVisibleFrom :: Polygon -> Animation
 drawVisibleFrom p = mkAnimation 5 $ \t -> centerUsing (polygonShape p) $ mkGroup
   [ withFillColor "grey" $ polygonShape p
   , withFillColor "grey" $ polygonDots p
-  , renderVisibleFrom (cyclePolygon p t)
-  , let V2 x y = fmap realToFrac $ pAccess (cyclePolygon p t) 0 in
+  , renderVisibleFrom (pCycle p t)
+  , let V2 x y = fmap realToFrac $ pAccess (pCycle p t) 0 in
     translate x y $ withFillColor "red" $ mkCircle 0.1
   ]
 
@@ -419,28 +394,13 @@ renderVisibleFrom p = withStrokeColor "white" $ withFillColor "white" $ mkGroup
   [ mkGroup
     [ mkLine (ax,ay) (bx,by)
     , translate bx by $ mkCircle 0.1 ]
-  | i <- visibilityArray (polygonRing p) V.! 0
+  | i <- visibilityArray (pRing p) V.! 0
   , let V2 ax ay = fmap realToFrac $ pAccess p 0
         V2 bx by = fmap realToFrac $ pAccess p i ]
 
 drawTriangulation :: Polygon -> (Ring Rational -> [Triangulation]) -> Animation
 drawTriangulation p gen = sceneAnimation $ do
-  forM_ (gen $ polygonRing p) $ \t -> play $ staticFrame 1 $ renderTriangulation p t
-
-renderTriangulation :: Polygon -> Triangulation -> SVG
-renderTriangulation p t = center $ mkGroup
-  [ withFillColor "grey" $ polygonShape p
-  , withStrokeColor "white" $ mkGroup $ concat
-    [ [ mkLine (ax,ay) (bx,by) ]
-    | i <- [0..polygonSize p-1]
-    , y <- t V.! i
-    , let V2 ax ay = fmap realToFrac $ rawAccess i
-          V2 bx by = fmap realToFrac $ rawAccess y
-    ]
-  , withFillColor "grey" $ polygonNumDots p
-  ]
-  where
-    rawAccess x = polygonPoints p V.! x
+  forM_ (gen $ pRing p) $ \t -> play $ staticFrame 1 $ renderTriangulation p t
 
 renderDual :: Ring Rational -> Dual -> SVG
 renderDual ring d = case d of

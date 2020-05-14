@@ -73,6 +73,7 @@ library
                       Reanimate.Math.Balloon
                       Reanimate.Math.Compatible
                       Reanimate.Math.Render
+                      Reanimate.Math.Smooth
                       Reanimate.Morph.Common
                       Reanimate.Morph.Linear
                       Reanimate.Morph.Rotational
