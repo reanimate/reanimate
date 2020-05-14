@@ -72,7 +72,7 @@ animation source code, the browser window will automatically reload and show the
 
 # Documentation
 
- * API reference: http://hackage.haskell.org/package/reanimate/docs/Reanimate.html
+ * API reference: https://hackage.haskell.org/package/reanimate/docs/Reanimate.html
  * Core concepts: https://reanimate.readthedocs.io/en/latest/introduction/
  * Design overview: https://reanimate.readthedocs.io/en/latest/glue_tut/
  * Gallery with source code: https://reanimate.readthedocs.io/en/latest/gallery/
