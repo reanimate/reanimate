@@ -73,14 +73,12 @@ library
                       Reanimate.Math.Balloon
                       Reanimate.Math.Compatible
                       Reanimate.Math.Render
-                      Reanimate.Math.Smooth
                       Reanimate.Morph.Common
                       Reanimate.Morph.Linear
                       Reanimate.Morph.Rotational
                       Reanimate.Morph.LeastWork
                       Reanimate.Morph.LineBend
                       Reanimate.Morph.Cache
-                      Reanimate.Morph.Rigid
                       Reanimate.Raster
                       Reanimate.ColorMap
                       Reanimate.ColorSpace
@@ -120,6 +118,8 @@ library
                        split, fingertree, array, cereal, vector-space
   if flag(hmatrix) {
     build-depends: hmatrix >= 0.20.0.0
+    exposed-modules:  Reanimate.Morph.Rigid
+                      Reanimate.Math.Smooth
   }
   ghc-options: -Wall -fno-ignore-asserts
 
