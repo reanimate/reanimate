@@ -3,7 +3,7 @@ cabal-version:       1.18
 --  see http://haskell.org/cabal/users-guide/
 
 name:                reanimate
-version:             0.3.2.0
+version:             0.3.2.1
 -- synopsis:
 -- description:
 license:             PublicDomain
@@ -38,7 +38,7 @@ Source-Repository head
 
 Flag hmatrix
   Description: Enable hmatrix dependency (requires blas and lapack)
-  Default:     True
+  Default:     False
   Manual:      True
 
 Flag test
