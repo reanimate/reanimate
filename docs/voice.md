@@ -2,9 +2,9 @@
 
 Adding narration to a video 
 
- 1. Create the animation first, record narration over it.
+ 1. Manually time your animation, then record narration over it.
  2. Split the animation into small fragments and use video editing software to align the fragments with the narration.
- 3. Write the animation to automatically get timing cues from a transcript.
+ 3. Write your animation with timings tied directly to a transcript.
 
 # Forced-aligners
 
