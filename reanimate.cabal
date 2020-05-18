@@ -101,6 +101,7 @@ library
                       Reanimate.GeoProjection
                       Reanimate.Builtin.Documentation
                       Reanimate.Builtin.Images
+                      Reanimate.Voice
   other-modules:      Reanimate.Cache
                       Reanimate.Driver
                       Reanimate.Driver.Check

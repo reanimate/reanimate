@@ -17,4 +17,5 @@ nav:
   - Core concepts: introduction.md
   - Gluing together animations: glue_tut.md
   - Morphology (incomplete): morphology.md
+  - Voice control: voice.md
   - Gallery (outdated): gallery.md
