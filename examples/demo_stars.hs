@@ -11,9 +11,9 @@ import           Reanimate
 import           Reanimate.Interpolate
 import           Reanimate.Builtin.Documentation
 import           System.Random
-import Data.List
-import Codec.Picture.Types
-import qualified Data.Vector as V
+import           Data.List
+import           Codec.Picture.Types
+import qualified Data.Vector                   as V
 
 main :: IO ()
 main = reanimate $ sceneAnimation $ do
@@ -45,8 +45,8 @@ trails trailDur raw = mkAnimation (duration raw) $ \t ->
   in  construct $ reverse [idx - trailFrames .. idx]
  where
   fps = 200
-  construct []     = mkGroup []
-  construct (x:xs) = mkGroup
+  construct []       = mkGroup []
+  construct (x : xs) = mkGroup
     [ withGroupOpacity (fromIntegral trailFrames / fromIntegral (trailFrames + 1))
       $ construct xs
     , getFrame x
