@@ -60,7 +60,7 @@ latexAlign :: Text -> Tree
 latexAlign tex = latex $ T.unlines ["\\begin{align*}", tex, "\\end{align*}"]
 
 postprocess :: Tree -> Tree
-postprocess = lowerTransformations . scaleXY 1 (-1) . scale 0.1 . pathify
+postprocess = simplify
 
 -- executable, arguments, header, tex
 latexToSVG :: String -> String -> [String] -> Text -> IO Tree
@@ -71,11 +71,12 @@ latexToSVG dviExt latexExec latexArgs tex = do
     let dvi_file = tmp_dir </> replaceExtension (takeFileName tex_file) dviExt
     T.writeFile tex_file tex
     runCmd latexBin (latexArgs ++ ["-interaction=nonstopmode", "-halt-on-error", "-output-directory="++tmp_dir, tex_file])
-    runCmd dvisvgm [ dvi_file, "--precision=5"
+    runCmd dvisvgm [ dvi_file
+                   , "--precision=5"
                    , "--exact"    -- better bboxes.
-                   -- , "--bbox=1,1" -- increase bbox size.
                    , "--no-fonts" -- use glyphs instead of fonts.
-                   ,"--verbosity=0", "-o",svg_file]
+                   , "--scale=0.1,-0.1"
+                   , "--verbosity=0", "-o",svg_file]
     svg_data <- B.readFile svg_file
     case parseSvgFile svg_file svg_data of
       Nothing  -> error "Malformed svg"
