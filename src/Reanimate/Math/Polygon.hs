@@ -506,9 +506,6 @@ pCycle p 0 = p
 pCycle p t = mkPolygon $ worker 0 0
   where
     worker acc i
-      -- | segment + acc == limit =
-      --   V.drop i p <>
-      --   V.take i p
       | segment + acc > limit =
         V.singleton (lerp (realToFrac $ (segment + acc - limit)/segment) x y) <>
         -- V.drop (i+1) (polygonPoints p) <>

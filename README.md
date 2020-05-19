@@ -33,8 +33,9 @@ main = reanimate $ docEnv $ playThenReverseA drawCircle
 [![Geo JSON](https://i.imgur.com/OrKiOqF.gif)](videos/map-projection/gif.hs)
 [![Object tracing](https://i.imgur.com/Y6NsPWF.gif)](examples/tut_glue_potrace.hs)
 
-## Mathematical typesetting
+## Mathematical typesetting and effects
 [![LaTeX](https://i.imgur.com/e6oO4wz.gif)](examples/tut_glue_latex.hs)
+[![Stars](https://i.imgur.com/yek3v4b.gif)](examples/demo_stars.hs)
 
 ## 2D physics and 3D graphics
 [![2D Physics](https://i.imgur.com/ZHUfWdp.gif)](examples/tut_glue_physics.hs)

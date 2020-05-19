@@ -28,7 +28,6 @@ earClip' p = map (edgesToTriangulation $ ringSize p) $ inits $
     -- worker :: Set.Set Int -> PolyQueue Int -> [(P,P)]
     worker _ears queue | isSimpleQ queue = []
     worker ears queue
-      -- | trace (show (x, Set.member x ears)) False = undefined
       | x `Set.member` ears =
         let dq = dropQ queue
             v0 = prevQ 1 queue

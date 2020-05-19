@@ -23,7 +23,6 @@ visibility _        = undefined
 go :: (Ord a, Fractional a) => V2 a -> [V2 a] -> [V2 a] -> [V2 a]
 go _z stack [] = stack
 go z stack@(s:s':_ss) (v:vs)
-  -- | isLeftTurn z s v && isRightTurn s' s v = trace ("FF: " ++ show (z,s,s',v)) $ fastForward z stack s (v:vs)
   | isLeftTurn z s v  = {-trace ("Left: " ++ show (z,s,v)) $ -}go z (v:stack) vs
   | isLeftTurn s' s v = {-trace ("Right: " ++ show (s',s,v,vs)) $ -}rightTurn z stack v vs
   | otherwise         = {-trace ("FF: " ++ show (z,s,s',v)) $ -}fastForward z stack s (v:vs)
