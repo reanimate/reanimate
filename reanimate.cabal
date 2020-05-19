@@ -99,6 +99,7 @@ library
                       Reanimate.GeoProjection
                       Reanimate.Builtin.Documentation
                       Reanimate.Builtin.Images
+                      Reanimate.Debug
   other-modules:      Reanimate.Cache
                       Reanimate.Driver
                       Reanimate.Driver.Check
