@@ -1,18 +1,29 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Reanimate.LaTeX (latex,xelatex,latexAlign) where
+module Reanimate.LaTeX
+  ( latex
+  , latexWithHeaders
+  , xelatex
+  , latexAlign
+  )
+where
 
-import qualified Data.ByteString   as B
-import           Data.Text         (Text)
-import qualified Data.Text         as T
-import qualified Data.Text.IO      as T
-import           Graphics.SvgTree  (Tree (..), parseSvgFile)
+import qualified Data.ByteString               as B
+import           Data.Text                                ( Text )
+import qualified Data.Text                     as T
+import qualified Data.Text.IO                  as T
+import           Graphics.SvgTree                         ( Tree(..)
+                                                          , parseSvgFile
+                                                          )
 import           Reanimate.Cache
 import           Reanimate.Misc
 import           Reanimate.Svg
 import           Reanimate.Parameters
-import           System.FilePath   (replaceExtension, takeFileName, (</>))
-import           System.IO.Unsafe  (unsafePerformIO)
+import           System.FilePath                          ( replaceExtension
+                                                          , takeFileName
+                                                          , (</>)
+                                                          )
+import           System.IO.Unsafe                         ( unsafePerformIO )
 
 -- | Invoke latex and import the result as an SVG object. SVG objects are
 --   cached to improve performance.
@@ -24,11 +35,23 @@ import           System.IO.Unsafe  (unsafePerformIO)
 --   <<docs/gifs/doc_latex.gif>>
 latex :: T.Text -> Tree
 latex tex | pNoExternals = mkText tex
-latex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG "dvi" exec args)) script
-  where
-    exec = "latex"
-    args = []
-    script = mkTexScript exec args [] tex
+latex tex =
+  (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG "dvi" exec args))
+    script
+ where
+  exec   = "latex"
+  args   = []
+  script = mkTexScript exec args [] tex
+
+latexWithHeaders :: [T.Text] -> T.Text -> Tree
+latexWithHeaders _headers tex | pNoExternals = mkText tex
+latexWithHeaders headers tex =
+  (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG "dvi" exec args))
+    script
+ where
+  exec   = "latex"
+  args   = []
+  script = mkTexScript exec args headers tex
 
 -- | Invoke xelatex and import the result as an SVG object. SVG objects are
 --   cached to improve performance. Xelatex has support for non-western scripts.
@@ -40,12 +63,14 @@ latex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG "dvi" exec 
 --   <<docs/gifs/doc_xelatex.gif>>
 xelatex :: Text -> Tree
 xelatex tex | pNoExternals = mkText tex
-xelatex tex = (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG "xdv" exec args)) script
-  where
-    exec = "xelatex"
-    args = ["-no-pdf"]
-    headers = ["\\usepackage[UTF8]{ctex}"]
-    script = mkTexScript exec args headers tex
+xelatex tex =
+  (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG "xdv" exec args))
+    script
+ where
+  exec    = "xelatex"
+  args    = ["-no-pdf"]
+  headers = ["\\usepackage[UTF8]{ctex}"]
+  script  = mkTexScript exec args headers tex
 
 -- | Invoke latex and import the result as an SVG object. SVG objects are
 --   cached to improve performance. This wraps the TeX code in an 'align*'
@@ -66,34 +91,52 @@ postprocess = simplify
 latexToSVG :: String -> String -> [String] -> Text -> IO Tree
 latexToSVG dviExt latexExec latexArgs tex = do
   latexBin <- requireExecutable latexExec
-  dvisvgm <- requireExecutable "dvisvgm"
-  withTempDir $ \tmp_dir -> withTempFile "tex" $ \tex_file -> withTempFile "svg" $ \svg_file -> do
-    let dvi_file = tmp_dir </> replaceExtension (takeFileName tex_file) dviExt
-    T.writeFile tex_file tex
-    runCmd latexBin (latexArgs ++ ["-interaction=nonstopmode", "-halt-on-error", "-output-directory="++tmp_dir, tex_file])
-    runCmd dvisvgm [ dvi_file
-                   , "--precision=5"
-                   , "--exact"    -- better bboxes.
-                   , "--no-fonts" -- use glyphs instead of fonts.
-                   , "--scale=0.1,-0.1"
-                   , "--verbosity=0", "-o",svg_file]
-    svg_data <- B.readFile svg_file
-    case parseSvgFile svg_file svg_data of
-      Nothing  -> error "Malformed svg"
-      Just svg -> return $ postprocess $ unbox $ replaceUses svg
+  dvisvgm  <- requireExecutable "dvisvgm"
+  withTempDir $ \tmp_dir -> withTempFile "tex" $ \tex_file ->
+    withTempFile "svg" $ \svg_file -> do
+      let dvi_file =
+            tmp_dir </> replaceExtension (takeFileName tex_file) dviExt
+      T.writeFile tex_file tex
+      runCmd
+        latexBin
+        (  latexArgs
+        ++ [ "-interaction=nonstopmode"
+           , "-halt-on-error"
+           , "-output-directory=" ++ tmp_dir
+           , tex_file
+           ]
+        )
+      runCmd
+        dvisvgm
+        [ dvi_file
+        , "--precision=5"
+        , "--exact"    -- better bboxes.
+        , "--no-fonts" -- use glyphs instead of fonts.
+        , "--scale=0.1,-0.1"
+        , "--verbosity=0"
+        , "-o"
+        , svg_file
+        ]
+      svg_data <- B.readFile svg_file
+      case parseSvgFile svg_file svg_data of
+        Nothing  -> error "Malformed svg"
+        Just svg -> return $ postprocess $ unbox $ replaceUses svg
 
 mkTexScript :: String -> [String] -> [Text] -> Text -> Text
-mkTexScript latexExec latexArgs texHeaders tex = T.unlines $
-  [ "% " <> T.pack (unwords (latexExec:latexArgs))
-  , "\\documentclass[preview]{standalone}"
-  , "\\usepackage{amsmath}"
-  , "\\usepackage{gensymb}"
-  ] ++ texHeaders ++
-  [ "\\usepackage[english]{babel}"
-  , "\\linespread{1}"
-  , "\\begin{document}"
-  , tex
-  , "\\end{document}" ]
+mkTexScript latexExec latexArgs texHeaders tex =
+  T.unlines
+    $  [ "% " <> T.pack (unwords (latexExec : latexArgs))
+       , "\\documentclass[preview]{standalone}"
+       , "\\usepackage{amsmath}"
+       , "\\usepackage{gensymb}"
+       ]
+    ++ texHeaders
+    ++ [ "\\usepackage[english]{babel}"
+       , "\\linespread{1}"
+       , "\\begin{document}"
+       , tex
+       , "\\end{document}"
+       ]
 
 {- Packages used by manim.
 

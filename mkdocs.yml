@@ -15,3 +15,5 @@ nav:
   - Gluing together animations: glue_tut.md
   - Morphology (incomplete): morphology.md
   - Gallery (outdated): gallery.md
+  - How to:
+    - Use fonts: fonts.md
