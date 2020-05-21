@@ -174,6 +174,7 @@ svgGlyphs = worker id defaultSvg
   where
     worker acc attr =
       \case
+        None -> []
         GroupTree g ->
           let acc' sub = acc (GroupTree $ g & groupChildren .~ [sub])
               attr' = (g^.drawAttributes) `mappend` attr
