@@ -10,7 +10,7 @@ import           Data.Colour.RGBSpace
 import           Data.Colour.RGBSpace.HSV
 import           Data.Colour.SRGB
 import           Data.Fixed
-import           Reanimate.Signal
+import           Reanimate.Ease
 
 data ColorComponents = ColorComponents
   { colorUnpack :: Colour Double -> (Double, Double, Double)

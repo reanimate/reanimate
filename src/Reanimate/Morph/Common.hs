@@ -31,7 +31,7 @@ import           Reanimate.Math.Polygon (Polygon, mkPolygon, pAddPoints,
                                          polygonPoints)
 import           Reanimate.Math.SSSP
 import           Reanimate.PolyShape
-import           Reanimate.Signal
+import           Reanimate.Ease
 import           Reanimate.Svg
 
 -- Correspondence
