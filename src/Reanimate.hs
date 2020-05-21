@@ -63,7 +63,7 @@ module Reanimate
     freezeAtPercentage,
     addStatic,
     signalA,
-    -- ** Ease
+    -- ** Easing functions
     Signal,
     constantS,
     fromToS,
