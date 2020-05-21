@@ -1,5 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
-module Reanimate.Interpolate where
+module Reanimate.ColorComponents where
 
 import           Codec.Picture
 import           Codec.Picture.Types

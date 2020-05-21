@@ -20,6 +20,7 @@ import           Graphics.SvgTree.Memo
 import           Numeric
 import           Reanimate
 import           Reanimate.Animation
+import           Reanimate.ColorComponents
 import           Reanimate.ColorMap
 import           Reanimate.ColorSpace
 import           Reanimate.Builtin.Flip
@@ -30,7 +31,6 @@ import           Reanimate.Raster
 import           Reanimate.Scene
 import           Reanimate.Ease
 import           Reanimate.Transition
-import           Reanimate.Interpolate
 import           Reanimate.Svg
 import           System.IO.Unsafe
 

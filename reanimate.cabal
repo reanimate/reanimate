@@ -80,9 +80,9 @@ library
                       Reanimate.Morph.LineBend
                       Reanimate.Morph.Cache
                       Reanimate.Raster
+                      Reanimate.ColorComponents
                       Reanimate.ColorMap
                       Reanimate.ColorSpace
-                      Reanimate.Interpolate
                       Reanimate.Memo
                       Reanimate.Scene
                       Reanimate.Povray
