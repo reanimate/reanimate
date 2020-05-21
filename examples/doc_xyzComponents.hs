@@ -3,8 +3,8 @@
 module Main(main) where
 
 import Reanimate
-import Reanimate.Interpolate
 import Reanimate.Builtin.Documentation
+import Reanimate.ColorComponents
 import Codec.Picture
 
 main :: IO ()
