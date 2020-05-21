@@ -14,30 +14,27 @@ import           Graphics.SvgTree                         ( ElementRef(..) )
 transcript :: Transcript
 transcript = loadTranscript "voice_transcript.txt"
 
-rendered :: SVG
-rendered = center $ latex $ T.concatMap helper $ transcriptText transcript
- where
-  helper '\n' = "\n\n"
-  helper c    = T.pack [c]
-
 main :: IO ()
 main = reanimate $ sceneAnimation $ do
   newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
-  waitOn $ forM_ (splitTranscript transcript rendered) $ \(svg, tword) -> do
+  waitOn $ forM_ (splitTranscript transcript) $ \(svg, tword) -> do
     highlighted <- newVar 0
     void $ newSprite $ do
       v <- unVar highlighted
-      pure $ masked (wordKey tword)
-                    v
-                    svg
-                    (withFillColor "grey" $ mkRect 1 1)
-                    (withFillColor "black" $ mkRect 1 1)
+      pure $ centerUsing (latex $ transcriptText transcript) $ masked
+        (wordKey tword)
+        v
+        svg
+        (withFillColor "grey" $ mkRect 1 1)
+        (withFillColor "black" $ mkRect 1 1)
     fork $ do
       wait (wordStart tword)
       let dur = wordEnd tword - wordStart tword
       tweenVar highlighted dur $ \v -> fromToS v 1
   wait 2
-  where wordKey tword = T.unpack (wordReference tword) ++ show (wordStartOffset tword)
+ where
+  wordKey tword =
+    T.unpack (wordReference tword) ++ show (wordStartOffset tword)
 
 {-# INLINE masked #-}
 masked :: String -> Double -> SVG -> SVG -> SVG -> SVG

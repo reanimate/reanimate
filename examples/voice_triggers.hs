@@ -14,19 +14,13 @@ import           Graphics.SvgTree                         ( ElementRef(..) )
 transcript :: Transcript
 transcript = loadTranscript "voice_triggers.txt"
 
-rendered :: SVG
-rendered = center $ latex $ T.concatMap helper $ transcriptText transcript
- where
-  helper '\n' = "\n\n"
-  helper c    = T.pack [c]
-
 transformer :: SVG -> SVG
-transformer = scale 1 . translate (-4) 0
+transformer = scale 1 . translate (-4) 0 . centerUsing (latex $ transcriptText transcript)
 
 main :: IO ()
 main = reanimate $ sceneAnimation $ do
   newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
-  waitOn $ forM_ (splitTranscript transcript rendered) $ \(svg, tword) -> do
+  waitOn $ forM_ (splitTranscript transcript) $ \(svg, tword) -> do
     highlighted <- newVar 0
     void $ newSprite $ do
       v <- unVar highlighted

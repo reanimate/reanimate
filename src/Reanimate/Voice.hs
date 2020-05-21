@@ -4,6 +4,8 @@
 module Reanimate.Voice
   ( Transcript(..)
   , TWord(..)
+  , findWord
+  , findWords
   , loadTranscript  -- :: FilePath -> Transcript
   , fakeTranscript  -- :: T.Text -> Transcript
   , splitTranscript -- :: Transcript -> SVG -> [(SVG, TWord)]
@@ -15,30 +17,35 @@ import           Data.Char
 import           System.IO.Unsafe                         ( unsafePerformIO )
 import           System.Directory
 import           System.FilePath
+import           System.Process
+import           System.Exit
+import           Data.List
+import           Data.Maybe
+import qualified Data.Map                      as Map
+import           Data.Map                                 ( Map )
 import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import           Reanimate.Animation                      ( SVG )
-import           Reanimate.Svg                            ( mkGroup
-                                                          , svgGlyphs
-                                                          , simplify
-                                                          )
+import           Reanimate.Misc
+import           Reanimate.LaTeX
 
 data Transcript = Transcript
   { transcriptText  :: T.Text
+  , transcriptKeys  :: Map T.Text Int
   , transcriptWords :: [TWord]
   } deriving (Show)
 
 instance FromJSON Transcript where
-  parseJSON =
-    withObject "transcript" $ \o -> Transcript <$> o .: "transcript" <*> o .: "words"
+  parseJSON = withObject "transcript" $ \o ->
+    Transcript <$> o .: "transcript" <*> pure Map.empty <*> o .: "words"
 
 data TWord = TWord
   { wordAligned     :: T.Text
   , wordCase        :: T.Text
-  , wordStart       :: Double
-  , wordStartOffset :: Int
-  , wordEnd         :: Double
-  , wordEndOffset   :: Int
+  , wordStart       :: Double -- ^ Start of pronounciation in seconds
+  , wordStartOffset :: Int    -- ^ Character index of word in transcript
+  , wordEnd         :: Double -- ^ End of pronounciation in seconds
+  , wordEndOffset   :: Int    -- ^ Last character index of word in transcript
   , wordPhones      :: [Phone]
   , wordReference   :: T.Text
   } deriving (Show)
@@ -73,30 +80,118 @@ data Phone = Phone
   } deriving (Show)
 
 instance FromJSON Phone where
-  parseJSON = withObject "phone" $ \o -> Phone <$> o .: "duration" <*> o .: "phone"
+  parseJSON =
+    withObject "phone" $ \o -> Phone <$> o .: "duration" <*> o .: "phone"
 
-findWord :: [String] -> String -> TWord
-findWord keys w = case findWords keys w of
-  [] -> error $ "Word not in transcript: " ++ show (keys, w)
-  (tword:_) -> tword
+-- | Locate the first word that occurs after all the given keys.
+--   An error is thrown if no such word exists. An error is thrown
+--   if the keys do not exist in the transcript.
+findWord :: Transcript -> [T.Text] -> T.Text -> TWord
+findWord t keys w = case listToMaybe (findWords t keys w) of
+  Nothing    -> error $ "Word not in transcript: " ++ show (keys, w)
+  Just tword -> tword
 
-findWords :: [String] -> String -> [TWord]
-findWords = undefined
+-- | Locate all words that occur after all the given keys.
+--   May return an empty list. An error is thrown
+--   if the keys do not exist in the transcript.
+findWords :: Transcript -> [T.Text] -> T.Text -> [TWord]
+findWords t [] wd =
+  [ tword | tword <- transcriptWords t, wordReference tword == wd ]
+findWords t (key : keys) wd =
+  [ tword
+  | tword <- findWords t keys wd
+  , wordStartOffset tword > Map.findWithDefault badKey key (transcriptKeys t)
+  ]
+  where badKey = error $ "Missing transcript key: " ++ show key
 
+-- | Loading a transcript does three things depending on which files are available
+--   with the same basename as the input argument:
+--   1. If a JSON file is available, it is parsed and returned.
+--   2. If an audio file is available, reanimate tries to align it by calling out to
+--      Gentle on localhost:8765/. If Gentle is not running, an error will be thrown.
+--   3. If only the text transcript is available, a fake transcript is returned,
+--      with timings roughly at 120 words per minute.
 loadTranscript :: FilePath -> Transcript
 loadTranscript path = unsafePerformIO $ do
-  hasJSON <- doesFileExist jsonPath
-  if hasJSON
+  rawTranscript <- T.readFile path
+  let keys           = parseTranscriptKeys rawTranscript
+      trimTranscript = cutoutKeys keys rawTranscript
+  hasJSON    <- doesFileExist jsonPath
+  transcript <- if hasJSON
     then do
       mbT <- decodeFileStrict jsonPath
       case mbT of
         Nothing -> error "bad json"
         Just t  -> pure t
-    else fakeTranscript <$> T.readFile txtPath
+    else do
+      hasAudio <- findWithExtension path audioExtensions
+      case hasAudio of
+        Nothing        -> return $ fakeTranscript' trimTranscript
+        Just audioPath -> withTempFile "txt" $ \txtPath -> do
+          T.writeFile txtPath trimTranscript
+          runGentleForcedAligner audioPath txtPath
+          mbT <- decodeFileStrict jsonPath
+          case mbT of
+            Nothing -> error "bad json"
+            Just t  -> pure t
+  pure $ transcript { transcriptKeys = keys }
  where
-  base     = takeBaseName path
-  jsonPath = base <.> "json"
-  txtPath  = base <.> "txt"
+  jsonPath        = replaceExtension path "json"
+  audioExtensions = ["mp3", "m4a", "flac"]
+
+parseTranscriptKeys :: T.Text -> Map T.Text Int
+parseTranscriptKeys = worker Map.empty 0
+ where
+  worker keys offset txt = case T.uncons txt of
+    Nothing -> keys
+    Just ('[', cs) ->
+      let key       = T.takeWhile (/= ']') cs
+          newOffset = T.length key + 2
+      in  worker (Map.insert key offset keys)
+                 (offset + newOffset)
+                 (T.drop newOffset txt)
+    Just (_, cs) -> worker keys (offset + 1) cs
+
+cutoutKeys :: Map T.Text Int -> T.Text -> T.Text
+cutoutKeys keys = T.concat . worker 0 (sortOn snd (Map.toList keys))
+ where
+  worker _offset [] txt = [txt]
+  worker offset ((key, at) : xs) txt =
+    let keyLen          = T.length key + 2
+        (before, after) = T.splitAt (at - offset) txt
+    in  before : worker (at + keyLen) xs (T.drop keyLen after)
+
+findWithExtension :: FilePath -> [String] -> IO (Maybe FilePath)
+findWithExtension _path []       = return Nothing
+findWithExtension path  (e : es) = do
+  let newPath = replaceExtension path e
+  hasFile <- doesFileExist newPath
+  if hasFile then return (Just newPath) else findWithExtension path es
+
+runGentleForcedAligner :: FilePath -> FilePath -> IO ()
+runGentleForcedAligner audioFile transcriptFile = do
+  ret <- rawSystem prog args
+  case ret of
+    ExitSuccess -> return ()
+    ExitFailure e ->
+      error
+        $  "Gentle forced aligner failed with: "
+        ++ show e
+        ++ "\nIs it running locally on port 8765?"
+        ++ "\nCommand: "
+        ++ showCommandForUser prog args
+ where
+  prog = "curl"
+  args =
+    [ "--silent"
+    , "--form"
+    , "audio=@" ++ audioFile
+    , "--form"
+    , "transcript=@" ++ transcriptFile
+    , "--output"
+    , replaceExtension audioFile "json"
+    , "http://localhost:8765/transcriptions?async=false"
+    ]
 
 data Token = TokenWord Int Int T.Text | TokenComma | TokenPeriod | TokenParagraph
   deriving (Show)
@@ -109,7 +204,7 @@ lexText = worker 0
     Just (c, cs)
       | isSpace c
       -> let (w, rest) = T.span (== '\n') txt
-         in  if T.length w >= 2
+         in  if T.length w >= 3
                then TokenParagraph : worker (offset + T.length w) rest
                else worker (offset + 1) cs
       | c == '.'
@@ -117,16 +212,24 @@ lexText = worker 0
       | c == ','
       -> TokenComma : worker (offset + 1) cs
       | isAlphaNum c
-      -> let (w, rest) = T.span isAlphaNum txt
+      -> let (w, rest) = T.span (\c -> isAlphaNum c || c == '\'') txt
              newOffset = offset + T.length w
          in  TokenWord offset newOffset w : worker newOffset rest
       | otherwise
       -> worker (offset + 1) cs
 
+-- | Fake transcript timings at roughly 120 words per minute.
 fakeTranscript :: T.Text -> Transcript
-fakeTranscript input = Transcript { transcriptText  = input
-                                  , transcriptWords = worker 0 (lexText input)
-                                  }
+fakeTranscript rawTranscript =
+  let keys = parseTranscriptKeys rawTranscript
+      t    = fakeTranscript' (cutoutKeys keys rawTranscript)
+  in  t { transcriptKeys = keys }
+
+fakeTranscript' :: T.Text -> Transcript
+fakeTranscript' input = Transcript { transcriptText  = input
+                                   , transcriptKeys  = Map.empty
+                                   , transcriptWords = worker 0 (lexText input)
+                                   }
  where
   worker _now []             = []
   worker now  (token : rest) = case token of
@@ -149,21 +252,15 @@ fakeTranscript input = Transcript { transcriptText  = input
   commaPause     = 0.1
   periodPause    = 0.2
 
-splitTranscript :: Transcript -> SVG -> [(SVG, TWord)]
-splitTranscript Transcript {..} rendered
-  | T.length textSymbols /= length gls
-  = error $ "Bad size: " ++ show (T.length textSymbols, length gls)
-  | otherwise
-  = [ ( mkGroup $ take (wordEndOffset - wordStartOffset) $ drop
-        (wordStartOffset - spaces)
-        gls
-      , tword
-      )
-    | tword@TWord {..} <- transcriptWords
-    , let spaces = nSpaces wordStartOffset
-    ]
- where
-  nSpaces limit = T.length (T.filter isSpace (T.take limit transcriptText))
-  textSymbols = T.filter (not . isSpace) transcriptText
-  gls         = [ ctx g | (ctx, _attr, g) <- svgGlyphs $ simplify rendered ]
-
+-- | Convert the transcript text to an SVG image using LaTeX and associate
+--   each word image with its timing information.
+splitTranscript :: Transcript -> [(SVG, TWord)]
+splitTranscript Transcript {..} =
+  [ (svg, tword)
+  | tword@TWord{..} <- transcriptWords
+  , let wordLength = wordEndOffset - wordStartOffset
+        [_, svg, _] = latexChunks
+          [T.take wordStartOffset transcriptText
+          ,T.take wordLength (T.drop wordStartOffset transcriptText)
+          ,T.drop wordEndOffset transcriptText ]
+  ]
