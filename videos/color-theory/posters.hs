@@ -25,7 +25,7 @@ import           Reanimate
 import           Reanimate.Animation
 import           Reanimate.Raster
 import           Reanimate.Scene
-import           Reanimate.Signal
+import           Reanimate.Ease
 import           Reanimate.Effect
 import           Reanimate.Svg
 import           Reanimate.ColorSpace

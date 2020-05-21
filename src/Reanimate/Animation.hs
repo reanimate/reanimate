@@ -51,7 +51,7 @@ import           Graphics.SvgTree           (Alignment (..), Document (..),
                                              Tree (..), xmlOfTree)
 import           Graphics.SvgTree.Printer
 import           Reanimate.Constants
-import           Reanimate.Signal
+import           Reanimate.Ease
 import           Reanimate.Svg.Constructors
 import           Text.XML.Light.Output
 

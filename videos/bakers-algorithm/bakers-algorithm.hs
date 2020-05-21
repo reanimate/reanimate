@@ -11,7 +11,7 @@ import           Reanimate
 import           Reanimate.LaTeX
 import           Reanimate.Animation
 import           Reanimate.Svg
-import           Reanimate.Signal
+import           Reanimate.Ease
 
 {- Script
 

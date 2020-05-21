@@ -14,7 +14,7 @@ import           Reanimate.Animation
 import           Reanimate.Blender
 import           Reanimate.Raster
 import           Reanimate.Scene
-import           Reanimate.Signal
+import           Reanimate.Ease
 import           Reanimate.Transition
 import           Reanimate.Svg.Constructors
 
