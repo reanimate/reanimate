@@ -14,7 +14,7 @@ import qualified Diagrams.Prelude              as D
 import           Reanimate.Diagrams
 import           Reanimate.Driver              (reanimate)
 import           Reanimate.Animation
-import           Reanimate.Signal
+import           Reanimate.Ease
 import           Reanimate.Svg
 
 

@@ -8,7 +8,7 @@ import           Linear.Vector
 import           Linear.V2
 import           Linear.Metric
 
-import           Reanimate.Signal
+import           Reanimate.Ease
 import           Reanimate.Morph.Common
 import           Reanimate.Math.Polygon
 

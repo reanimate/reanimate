@@ -1,4 +1,4 @@
-module Reanimate.Signal
+module Reanimate.Ease
   ( Signal
   , constantS
   , fromToS

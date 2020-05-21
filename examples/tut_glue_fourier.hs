@@ -7,7 +7,7 @@ import           Data.Complex
 import           Graphics.SvgTree
 import           Linear.V2
 import           Reanimate
-import           Reanimate.Signal
+import           Reanimate.Ease
 import           Codec.Picture
 
 -- layer 3

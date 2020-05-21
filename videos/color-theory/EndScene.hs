@@ -29,7 +29,7 @@ import           Reanimate.Effect
 import           Reanimate.LaTeX
 import           Reanimate.Raster
 import           Reanimate.Scene
-import           Reanimate.Signal
+import           Reanimate.Ease
 import           Reanimate.Svg
 import           System.IO.Unsafe
 
