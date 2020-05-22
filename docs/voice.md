@@ -125,5 +125,5 @@ flash flash flash
   <pre><code class="haskell">{!examples/voice_advanced.hs!}</code></pre>
 </details>
 <video width="640" height="360" controls>
-  <source src="https://i.imgur.com/oNFQwqm.mp4">
+  <source src="https://i.imgur.com/5YIaSmB.mp4">
 </video><br/>
