@@ -1,6 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE RecordWildCards #-}
+{-|
+  Reanimate can automatically synchronize animations to your voice if you have
+  a transcript and an audio recording. This works with the help of Gentle
+  (<https://lowerquality.com/gentle/>). Accuracy is not perfect but it is pretty
+  close, and it is by far the easiest way of adding narration to an animation.
+-}
 module Reanimate.Voice
   ( Transcript(..)
   , TWord(..)
