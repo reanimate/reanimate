@@ -38,18 +38,6 @@ main = reanimate $ sceneAnimation $ do
     writeVar centerTxt $ wordReference tword
 
   wait 2
- where
-  wordKey tword =
-    T.unpack (wordReference tword) ++ show (wordStartOffset tword)
-  highlight dur img =
-    play
-      $ animate
-          (\t ->
-            translate (screenWidth / 4) 0 $ scale t $ scaleToHeight 4 $ center
-              img
-          )
-      # signalA (bellS 2)
-      # setDuration dur
 
 wordDuration :: TWord -> Double
 wordDuration tword = wordEnd tword - wordStart tword
@@ -65,6 +53,7 @@ finalEffect = fork $ do
   ss <- fork $ replicateM 3 (circleSprite radius path <* wait 0.2)
   mapM_ (flip spriteZ (-1)) ss
   forM_ (zip ss ends) $ \(s, end) -> fork $ do
+    spriteMap s flipXAxis
     wait (wordStart end - wordStart begin)
     destroySprite s
 
@@ -73,7 +62,7 @@ squareEffect :: Scene s ()
 squareEffect = fork $ do
   let
     begin = findWord transcript [] "square"
-    end   = findWord transcript ["ending"] "square"
+    end   = findWord transcript ["middle"] "square"
     path =
       QuadBezier (Point 6 (-size / 2)) (Point 0 6) (Point (-6) (-size / 2))
     size = 1
@@ -88,7 +77,7 @@ squareEffect = fork $ do
 circleEffect :: Scene s ()
 circleEffect = fork $ do
   let begin  = findWord transcript [] "circle"
-      end    = findWord transcript ["ending"] "circle"
+      end    = findWord transcript ["middle"] "circle"
       path   = QuadBezier (Point 6 (-radius)) (Point 0 6) (Point (-6) (-radius))
       radius = 0.3
   wait (wordStart begin)
@@ -111,25 +100,21 @@ flashEffect = forM_ (findWords transcript [] "flash") $ \flashWord -> fork $ do
 -- Helpers and sprites
 
 textHandler :: Scene s (Var s T.Text)
-textHandler = do
-  centerTxt <- newVar T.empty
-  newSprite_ $ do
-    txt <- unVar centerTxt
-    t   <- spriteT
-    pure
-      $ let txtSvg      = translate 0 (-0.25) $ centerX $ latex txt
-            activeWidth = svgWidth txtSvg + 0.5
-        in  mkGroup
-              [ withStrokeWidth 0
-              $ withFillColorPixel rtfdBackgroundColor
-              $ mkRect activeWidth 1
-              , txtSvg
-              , withStrokeColor "black"
-                $ mkLine (activeWidth / 2, 0.5) (activeWidth / 2, -0.5)
-              , withStrokeColor "black"
-                $ mkLine (-activeWidth / 2, 0.5) (-activeWidth / 2, -0.5)
-              ]
-  return centerTxt
+textHandler = simpleVar render T.empty
+ where
+  render txt =
+    let txtSvg      = translate 0 (-0.25) $ centerX $ latex txt
+        activeWidth = svgWidth txtSvg + 0.5
+    in  mkGroup
+          [ withStrokeWidth 0 $ withFillColorPixel rtfdBackgroundColor $ mkRect
+            activeWidth
+            1
+          , txtSvg
+          , withStrokeColor "black"
+            $ mkLine (activeWidth / 2, 0.5) (activeWidth / 2, -0.5)
+          , withStrokeColor "black"
+            $ mkLine (-activeWidth / 2, 0.5) (-activeWidth / 2, -0.5)
+          ]
 
 circleSprite :: Double -> QuadBezier Double -> Scene s (Sprite s)
 circleSprite radius path = newSprite $ do

@@ -4,10 +4,10 @@
 module Reanimate.Voice
   ( Transcript(..)
   , TWord(..)
-  , findWord
-  , findWords
+  , findWord        -- :: Transcript -> [Text] -> Text -> TWord
+  , findWords       -- :: Transcript -> [Text] -> Text -> [TWord]
   , loadTranscript  -- :: FilePath -> Transcript
-  , fakeTranscript  -- :: T.Text -> Transcript
+  , fakeTranscript  -- :: Text -> Transcript
   , splitTranscript -- :: Transcript -> SVG -> [(SVG, TWord)]
   )
 where
@@ -23,6 +23,7 @@ import           Data.List
 import           Data.Maybe
 import qualified Data.Map                      as Map
 import           Data.Map                                 ( Map )
+import           Data.Text                                ( Text )
 import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
 import           Reanimate.Animation                      ( SVG )
@@ -30,8 +31,8 @@ import           Reanimate.Misc
 import           Reanimate.LaTeX
 
 data Transcript = Transcript
-  { transcriptText  :: T.Text
-  , transcriptKeys  :: Map T.Text Int
+  { transcriptText  :: Text
+  , transcriptKeys  :: Map Text Int
   , transcriptWords :: [TWord]
   } deriving (Show)
 
@@ -40,14 +41,14 @@ instance FromJSON Transcript where
     Transcript <$> o .: "transcript" <*> pure Map.empty <*> o .: "words"
 
 data TWord = TWord
-  { wordAligned     :: T.Text
-  , wordCase        :: T.Text
-  , wordStart       :: Double -- ^ Start of pronounciation in seconds
+  { wordAligned     :: Text
+  , wordCase        :: Text
+  , wordStart       :: Double -- ^ Start of pronunciation in seconds
   , wordStartOffset :: Int    -- ^ Character index of word in transcript
-  , wordEnd         :: Double -- ^ End of pronounciation in seconds
+  , wordEnd         :: Double -- ^ End of pronunciation in seconds
   , wordEndOffset   :: Int    -- ^ Last character index of word in transcript
   , wordPhones      :: [Phone]
-  , wordReference   :: T.Text
+  , wordReference   :: Text   -- ^ The word being pronounced.
   } deriving (Show)
 
 instance FromJSON TWord where
@@ -76,7 +77,7 @@ instance FromJSON TWord where
 
 data Phone = Phone
   { phoneDuration :: Double
-  , phoneType     :: T.Text
+  , phoneType     :: Text
   } deriving (Show)
 
 instance FromJSON Phone where
@@ -86,7 +87,7 @@ instance FromJSON Phone where
 -- | Locate the first word that occurs after all the given keys.
 --   An error is thrown if no such word exists. An error is thrown
 --   if the keys do not exist in the transcript.
-findWord :: Transcript -> [T.Text] -> T.Text -> TWord
+findWord :: Transcript -> [Text] -> Text -> TWord
 findWord t keys w = case listToMaybe (findWords t keys w) of
   Nothing    -> error $ "Word not in transcript: " ++ show (keys, w)
   Just tword -> tword
@@ -94,7 +95,7 @@ findWord t keys w = case listToMaybe (findWords t keys w) of
 -- | Locate all words that occur after all the given keys.
 --   May return an empty list. An error is thrown
 --   if the keys do not exist in the transcript.
-findWords :: Transcript -> [T.Text] -> T.Text -> [TWord]
+findWords :: Transcript -> [Text] -> Text -> [TWord]
 findWords t [] wd =
   [ tword | tword <- transcriptWords t, wordReference tword == wd ]
 findWords t (key : keys) wd =
@@ -139,7 +140,7 @@ loadTranscript path = unsafePerformIO $ do
   jsonPath        = replaceExtension path "json"
   audioExtensions = ["mp3", "m4a", "flac"]
 
-parseTranscriptKeys :: T.Text -> Map T.Text Int
+parseTranscriptKeys :: Text -> Map Text Int
 parseTranscriptKeys = worker Map.empty 0
  where
   worker keys offset txt = case T.uncons txt of
@@ -152,7 +153,7 @@ parseTranscriptKeys = worker Map.empty 0
                  (T.drop newOffset txt)
     Just (_, cs) -> worker keys (offset + 1) cs
 
-cutoutKeys :: Map T.Text Int -> T.Text -> T.Text
+cutoutKeys :: Map Text Int -> Text -> Text
 cutoutKeys keys = T.concat . worker 0 (sortOn snd (Map.toList keys))
  where
   worker _offset [] txt = [txt]
@@ -193,10 +194,10 @@ runGentleForcedAligner audioFile transcriptFile = do
     , "http://localhost:8765/transcriptions?async=false"
     ]
 
-data Token = TokenWord Int Int T.Text | TokenComma | TokenPeriod | TokenParagraph
+data Token = TokenWord Int Int Text | TokenComma | TokenPeriod | TokenParagraph
   deriving (Show)
 
-lexText :: T.Text -> [Token]
+lexText :: Text -> [Token]
 lexText = worker 0
  where
   worker offset txt = case T.uncons txt of
@@ -212,20 +213,20 @@ lexText = worker 0
       | c == ','
       -> TokenComma : worker (offset + 1) cs
       | isAlphaNum c
-      -> let (w, rest) = T.span (\c -> isAlphaNum c || c == '\'') txt
+      -> let (w, rest) = T.span (\elt -> isAlphaNum elt || elt == '\'') txt
              newOffset = offset + T.length w
          in  TokenWord offset newOffset w : worker newOffset rest
       | otherwise
       -> worker (offset + 1) cs
 
 -- | Fake transcript timings at roughly 120 words per minute.
-fakeTranscript :: T.Text -> Transcript
+fakeTranscript :: Text -> Transcript
 fakeTranscript rawTranscript =
   let keys = parseTranscriptKeys rawTranscript
       t    = fakeTranscript' (cutoutKeys keys rawTranscript)
   in  t { transcriptKeys = keys }
 
-fakeTranscript' :: T.Text -> Transcript
+fakeTranscript' :: Text -> Transcript
 fakeTranscript' input = Transcript { transcriptText  = input
                                    , transcriptKeys  = Map.empty
                                    , transcriptWords = worker 0 (lexText input)
@@ -257,10 +258,11 @@ fakeTranscript' input = Transcript { transcriptText  = input
 splitTranscript :: Transcript -> [(SVG, TWord)]
 splitTranscript Transcript {..} =
   [ (svg, tword)
-  | tword@TWord{..} <- transcriptWords
-  , let wordLength = wordEndOffset - wordStartOffset
+  | tword@TWord {..} <- transcriptWords
+  , let wordLength  = wordEndOffset - wordStartOffset
         [_, svg, _] = latexChunks
-          [T.take wordStartOffset transcriptText
-          ,T.take wordLength (T.drop wordStartOffset transcriptText)
-          ,T.drop wordEndOffset transcriptText ]
+          [ T.take wordStartOffset transcriptText
+          , T.take wordLength (T.drop wordStartOffset transcriptText)
+          , T.drop wordEndOffset transcriptText
+          ]
   ]

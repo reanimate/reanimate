@@ -17,9 +17,9 @@ transcript = loadTranscript "voice_transcript.txt"
 main :: IO ()
 main = reanimate $ sceneAnimation $ do
   newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
-  waitOn $ forM_ (splitTranscript transcript) $ \(svg, tword) -> do
+  waitOn $ forM_ (splitTranscript transcript) $ \(svg, tword) -> fork $ do
     highlighted <- newVar 0
-    void $ newSprite $ do
+    newSprite_ $ do
       v <- unVar highlighted
       pure $ centerUsing (latex $ transcriptText transcript) $ masked
         (wordKey tword)
@@ -27,10 +27,9 @@ main = reanimate $ sceneAnimation $ do
         svg
         (withFillColor "grey" $ mkRect 1 1)
         (withFillColor "black" $ mkRect 1 1)
-    fork $ do
-      wait (wordStart tword)
-      let dur = wordEnd tword - wordStart tword
-      tweenVar highlighted dur $ \v -> fromToS v 1
+    wait (wordStart tword)
+    let dur = wordEnd tword - wordStart tword
+    tweenVar highlighted dur $ \v -> fromToS v 1
   wait 2
  where
   wordKey tword =
