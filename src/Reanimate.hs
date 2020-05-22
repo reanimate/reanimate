@@ -63,7 +63,7 @@ module Reanimate
     freezeAtPercentage,
     addStatic,
     signalA,
-    -- ** Signals
+    -- ** Easing functions
     Signal,
     constantS,
     fromToS,
@@ -197,7 +197,7 @@ import           Reanimate.Povray
 import           Reanimate.Raster
 import           Reanimate.Effect
 import           Reanimate.Scene
-import           Reanimate.Signal
+import           Reanimate.Ease
 import           Reanimate.Svg
 import           Reanimate.Svg.BoundingBox
 import           Reanimate.Svg.Constructors

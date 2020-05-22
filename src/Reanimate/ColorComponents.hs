@@ -1,5 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
-module Reanimate.Interpolate where
+module Reanimate.ColorComponents where
 
 import           Codec.Picture
 import           Codec.Picture.Types
@@ -10,7 +10,7 @@ import           Data.Colour.RGBSpace
 import           Data.Colour.RGBSpace.HSV
 import           Data.Colour.SRGB
 import           Data.Fixed
-import           Reanimate.Signal
+import           Reanimate.Ease
 
 data ColorComponents = ColorComponents
   { colorUnpack :: Colour Double -> (Double, Double, Double)

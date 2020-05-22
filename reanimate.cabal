@@ -52,7 +52,7 @@ library
   default-extensions: PackageImports
   exposed-modules:    Reanimate
                       Reanimate.Animation
-                      Reanimate.Signal
+                      Reanimate.Ease
                       Reanimate.Render
                       Reanimate.LaTeX
                       Reanimate.Svg
@@ -80,9 +80,9 @@ library
                       Reanimate.Morph.LineBend
                       Reanimate.Morph.Cache
                       Reanimate.Raster
+                      Reanimate.ColorComponents
                       Reanimate.ColorMap
                       Reanimate.ColorSpace
-                      Reanimate.Interpolate
                       Reanimate.Memo
                       Reanimate.Scene
                       Reanimate.Povray

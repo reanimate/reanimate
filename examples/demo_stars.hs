@@ -8,8 +8,8 @@ module Main
 where
 
 import           Reanimate
-import           Reanimate.Interpolate
 import           Reanimate.Builtin.Documentation
+import           Reanimate.ColorComponents
 import           System.Random
 import           Data.List
 import           Codec.Picture.Types

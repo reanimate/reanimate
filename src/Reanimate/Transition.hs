@@ -9,7 +9,7 @@ module Reanimate.Transition
   ) where
 
 import Reanimate.Animation
-import Reanimate.Signal
+import Reanimate.Ease
 import Reanimate.Effect
 
 -- | A transition transforms one animation into another.
