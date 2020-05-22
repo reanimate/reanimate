@@ -7,7 +7,7 @@ module Main where
 import           Control.Monad
 import qualified Data.Text                     as T
 import           Reanimate
-import           Reanimate.Signal
+import           Reanimate.Ease
 import           Reanimate.Voice
 import           Reanimate.Builtin.Documentation
 import           Geom2D.CubicBezier                       ( QuadBezier(..)
