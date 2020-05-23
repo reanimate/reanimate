@@ -104,7 +104,7 @@ Words can be looked up in a transcript and ambiguities can be resolved by insert
 
 Below is a transcript with two section markers, 'middle' and 'final'. These markers make it easy to tell the different between the word 'circle' in the first paragraph and the word 'circle' in the second paragraph. In the corresponding video, the words trigger different events depending on which paragraph (or section) they're in. Section markers are only used as references and are not included in the audio recording.
 
-```plaintext
+```text
 Everything in this animation is timed by my voice.
 Every flash, every circle, every square.
 
