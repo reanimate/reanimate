@@ -1,5 +1,12 @@
 # Revision history for reanimate
 
+## 0.3.3.0 -- 2020-05-22
+
+* Voice control via the Gentle forced-aligner.
+* Rename Reanimate.Interpolate to Reanimate.ColorComponents
+* Rename Reanimate.Signals to Reanimate.Ease
+* Fix positioning of latex output such that the baseline starts at (0,0)
+
 ## 0.3.2.0 -- 2020-05-16
 
 * Fix bug that forced GIF width to 320 pixels.
