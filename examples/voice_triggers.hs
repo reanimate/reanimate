@@ -15,20 +15,19 @@ transcript :: Transcript
 transcript = loadTranscript "voice_triggers.txt"
 
 transformer :: SVG -> SVG
-transformer = scale 1 . translate (-4) 0 . centerUsing (latex $ transcriptText transcript)
+transformer =
+  translate (-4) 0 . centerUsing (latex $ transcriptText transcript)
 
 main :: IO ()
 main = reanimate $ sceneAnimation $ do
   newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
   waitOn $ forM_ (splitTranscript transcript) $ \(svg, tword) -> do
-    highlighted <- newVar 0
-    void $ newSprite $ do
-      v <- unVar highlighted
-      pure $ transformer $ masked (wordKey tword)
-                                  v
-                                  svg
-                                  (withFillColor "grey" $ mkRect 1 1)
-                                  (withFillColor "black" $ mkRect 1 1)
+    let render v = transformer $ masked (wordKey tword)
+                                        v
+                                        svg
+                                        (withFillColor "grey" $ mkRect 1 1)
+                                        (withFillColor "black" $ mkRect 1 1)
+    highlighted <- simpleVar render 0
     let dur = wordEnd tword - wordStart tword
     fork $ do
       wait (wordStart tword)
@@ -45,11 +44,15 @@ main = reanimate $ sceneAnimation $ do
         _       -> return ()
   wait 2
  where
-  wordKey tword = T.unpack (wordReference tword) ++ show (wordStartOffset tword)
+  wordKey tword =
+    T.unpack (wordReference tword) ++ show (wordStartOffset tword)
   highlight dur img =
     play
       $ animate
-          (\t -> translate (screenWidth / 4) 0 $ scale t $ scaleToHeight 4 $ center img)
+          (\t ->
+            translate (screenWidth / 4) 0 $ scale t $ scaleToHeight 4 $ center
+              img
+          )
       # signalA (bellS 2)
       # setDuration dur
 

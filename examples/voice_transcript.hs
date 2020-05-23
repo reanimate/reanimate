@@ -18,15 +18,13 @@ main :: IO ()
 main = reanimate $ sceneAnimation $ do
   newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
   waitOn $ forM_ (splitTranscript transcript) $ \(svg, tword) -> fork $ do
-    highlighted <- newVar 0
-    newSprite_ $ do
-      v <- unVar highlighted
-      pure $ centerUsing (latex $ transcriptText transcript) $ masked
-        (wordKey tword)
-        v
-        svg
-        (withFillColor "grey" $ mkRect 1 1)
-        (withFillColor "black" $ mkRect 1 1)
+    let render v = centerUsing (latex $ transcriptText transcript) $ masked
+          (wordKey tword)
+          v
+          svg
+          (withFillColor "grey" $ mkRect 1 1)
+          (withFillColor "black" $ mkRect 1 1)
+    highlighted <- simpleVar render 0
     wait (wordStart tword)
     let dur = wordEnd tword - wordStart tword
     tweenVar highlighted dur $ \v -> fromToS v 1
