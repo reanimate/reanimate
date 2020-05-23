@@ -11,12 +11,12 @@ disjointed and jarring.
 Synchronizing audio and video can be time consuming and difficult to get exactly right even when you
 put in a lot of effort. It is typically done in one of three ways:
 
- 1. Manually time and render your entire animation, then record narration over it. This is relatively quick but it is incredibly difficult match audio and visual cues.
+ 1. Manually time and render your entire animation, then record narration over it. This is relatively quick but it is incredibly difficult to match audio and visual cues.
  2. Split the animation into small fragments and use video editing software to align the fragments with the narration. This approach usually works well but takes a lot of effort.
  3. Write your animation with timings tied directly to a transcript.
 
-The third approach is by far the least time-consuming and it has built-in support in **reanimate**.
-The rest of this article go over the details.
+The third approach is by far the least time-consuming and has built-in support in **reanimate**.
+The rest of this article goes over the details.
 
 # Forced aligners
 
@@ -49,7 +49,7 @@ The video below illustrates how accurate the automatically generated timing info
 
 # Faking transcripts
 
-Scripts and animations are often developed and revised in parallel. It would be too much work to make audio recordings of drafts but a rough idea of the timing information is paramount when development the visuals. To this end, **reanimate** can fake timing information and pretend to "read" the script at roughly 120 words per minute.
+Scripts and animations are often developed and revised in parallel. It would be too much work to make audio recordings of drafts but a rough idea of the timing information is paramount when developing the visuals. To this end, **reanimate** can fake timing information and pretend to "read" the script at roughly 120 words per minute.
 
 Faking data is done automatically by `loadTranscript` if no audio file can be found. It's also possible to directly parse a text as a transcript:
 
