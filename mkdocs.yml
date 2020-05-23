@@ -6,6 +6,8 @@ theme:
   hljs_languages:
     - haskell
     - plaintext
+    - text
+    - txt
 markdown_extensions:
   - markdown_include.include
   - pymdownx.arithmatex
