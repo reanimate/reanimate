@@ -3,7 +3,7 @@ cabal-version:       1.18
 --  see http://haskell.org/cabal/users-guide/
 
 name:                reanimate
-version:             0.3.2.3
+version:             0.3.3.0
 -- synopsis:
 -- description:
 license:             PublicDomain
@@ -52,7 +52,7 @@ library
   default-extensions: PackageImports
   exposed-modules:    Reanimate
                       Reanimate.Animation
-                      Reanimate.Signal
+                      Reanimate.Ease
                       Reanimate.Render
                       Reanimate.LaTeX
                       Reanimate.Svg
@@ -80,9 +80,9 @@ library
                       Reanimate.Morph.LineBend
                       Reanimate.Morph.Cache
                       Reanimate.Raster
+                      Reanimate.ColorComponents
                       Reanimate.ColorMap
                       Reanimate.ColorSpace
-                      Reanimate.Interpolate
                       Reanimate.Memo
                       Reanimate.Scene
                       Reanimate.Povray
@@ -100,6 +100,7 @@ library
                       Reanimate.Builtin.Documentation
                       Reanimate.Builtin.Images
                       Reanimate.Debug
+                      Reanimate.Voice
   other-modules:      Reanimate.Cache
                       Reanimate.Driver
                       Reanimate.Driver.Check

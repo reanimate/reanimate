@@ -30,15 +30,15 @@ import           Reanimate.Animation
 import           Reanimate.Builtin.CirclePlot
 import           Reanimate.Builtin.Documentation
 import qualified Reanimate.Builtin.TernaryPlot   as Ternary
+import           Reanimate.ColorComponents
 import           Reanimate.ColorMap
 import           Reanimate.ColorSpace
 import           Reanimate.Constants
 import           Reanimate.Effect
-import           Reanimate.Interpolate
 import           Reanimate.LaTeX
 import           Reanimate.Raster
 import           Reanimate.Scene
-import           Reanimate.Signal
+import           Reanimate.Ease
 import           Reanimate.Svg
 import           Reanimate.Svg.BoundingBox
 import           System.IO.Unsafe

@@ -8,7 +8,7 @@ module Reanimate.Morph.Linear
 import           Data.Hashable
 import qualified Data.Vector            as V
 import           Linear.Vector
-import           Reanimate.Interpolate
+import           Reanimate.ColorComponents
 import           Reanimate.Math.Common
 import           Reanimate.Math.Polygon
 import           Reanimate.Morph.Cache

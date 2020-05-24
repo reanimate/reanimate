@@ -21,7 +21,7 @@ import           Reanimate.Effect
 import           Reanimate.Povray
 import           Reanimate.Raster
 import           Reanimate.Scene
-import           Reanimate.Signal
+import           Reanimate.Ease
 import           Reanimate.Svg
 
 {- SCRIPT

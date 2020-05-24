@@ -5,6 +5,9 @@ theme:
   highlightjs: true
   hljs_languages:
     - haskell
+    - plaintext
+    - text
+    - txt
 markdown_extensions:
   - markdown_include.include
   - pymdownx.arithmatex
@@ -17,4 +20,5 @@ nav:
   - Core concepts: introduction.md
   - Gluing together animations: glue_tut.md
   - Morphology (incomplete): morphology.md
+  - Voice control: voice.md
   - Gallery (outdated): gallery.md

@@ -37,12 +37,12 @@ replaceUses doc = doc & elements %~ map (mapTree replace)
         Nothing  -> m
         Just tid -> Map.insert tid tree m
 
+-- FIXME: the viewbox is ignored. Can we use the viewbox as a mask?
 -- Transform out viewbox. defs and CSS rules are discarded.
 unbox :: Document -> Tree
-unbox doc@Document{_viewBox = Just (minx, minw, _width, _height)} =
+unbox doc@Document{_viewBox = Just (_minx, _minw, _width, _height)} =
   GroupTree $ defaultSvg
           & groupChildren .~ doc^.elements
-          & transform ?~ [Translate (-minx) (-minw)]
 unbox doc =
   GroupTree $ defaultSvg
     & groupChildren .~ doc^.elements

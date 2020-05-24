@@ -6,7 +6,7 @@ module Main(main) where
 
 import           Codec.Picture
 import           Reanimate
-import           Reanimate.Interpolate
+import           Reanimate.ColorComponents
 import           Reanimate.Morph.Common
 import           Reanimate.Morph.Linear
 
