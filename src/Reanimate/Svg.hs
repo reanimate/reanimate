@@ -12,7 +12,6 @@ import           Control.Monad.State
 import           Graphics.SvgTree             hiding (height, line, path, use,
                                                width)
 import           Linear.V2                    hiding (angle)
-import           Data.Monoid ((<>))
 import           Reanimate.Constants
 import           Reanimate.Animation (SVG)
 import           Reanimate.Svg.Constructors
@@ -175,11 +174,12 @@ svgGlyphs = worker id defaultSvg
   where
     worker acc attr =
       \case
+        None -> []
         GroupTree g ->
           let acc' sub = acc (GroupTree $ g & groupChildren .~ [sub])
               attr' = (g^.drawAttributes) `mappend` attr
           in concatMap (worker acc' attr') (g ^. groupChildren)
-        t -> [(acc, attr, t)]
+        t -> [(acc, (t^.drawAttributes) `mappend` attr, t)]
 
 {-| Convert primitive SVG shapes (like those created by 'mkCircle', 'mkRect', 'mkLine' or
     'mkEllipse') into SVG path. This can be useful for creating animations of these shapes being

@@ -1,21 +1,26 @@
+{-# LANGUAGE MultiWayIf      #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE MultiWayIf #-}
-module Reanimate.Driver ( reanimate ) where
+module Reanimate.Driver
+  ( reanimate
+  )
+where
 
-import           Control.Applicative      ((<|>))
+import           Control.Applicative                      ( (<|>) )
 import           Data.Maybe
-import           Reanimate.Animation      (Animation)
+import           Reanimate.Animation                      ( Animation )
 import           Reanimate.Driver.Check
 import           Reanimate.Driver.CLI
 import           Reanimate.Driver.Compile
 import           Reanimate.Driver.Server
 import           Reanimate.Parameters
-import           Reanimate.Render         (FPS, Format (..), Height, Width,
-                                            render, renderSnippets, renderSvgs)
+import           Reanimate.Render                         ( render
+                                                          , renderSnippets
+                                                          , renderSvgs
+                                                          , selectRaster
+                                                          )
 import           System.Directory
 import           System.FilePath
 import           Text.Printf
-import           Data.Either
 
 presetFormat :: Preset -> Format
 presetFormat Youtube    = RenderMp4
@@ -27,7 +32,7 @@ presetFormat LowFPS     = RenderMp4
 
 presetFPS :: Preset -> FPS
 presetFPS Youtube    = 60
-presetFPS ExampleGif = 24
+presetFPS ExampleGif = 25
 presetFPS Quick      = 15
 presetFPS MediumQ    = 30
 presetFPS HighQ      = 30
@@ -46,7 +51,7 @@ presetHeight preset = presetWidth preset * 9 `div` 16
 
 formatFPS :: Format -> FPS
 formatFPS RenderMp4  = 60
-formatFPS RenderGif  = 24
+formatFPS RenderGif  = 25
 formatFPS RenderWebm = 60
 
 formatWidth :: Format -> Width
@@ -96,18 +101,19 @@ Rendering animation can be controlled with these arguments:
 -}
 reanimate :: Animation -> IO ()
 reanimate animation = do
-  Options{..} <- getDriverOptions
+  Options {..} <- getDriverOptions
   case optsCommand of
-    Raw        -> setFPS 60 >> renderSvgs animation
-    Test       -> do
+    Raw  -> setFPS 60 >> renderSvgs animation
+    Test -> do
       setNoExternals True
       -- hSetBinaryMode stdout True
       renderSnippets animation
-    Check      -> checkEnvironment
-    View       -> serve
-    Render{..} -> do
-      let fmt = guessParameter renderFormat (fmap presetFormat renderPreset) $
-                case renderTarget of
+    Check       -> checkEnvironment
+    View        -> serve
+    Render {..} -> do
+      let fmt =
+            guessParameter renderFormat (fmap presetFormat renderPreset)
+              $ case renderTarget of
                   -- Format guessed from output
                   Just target -> case takeExtension target of
                     ".mp4"  -> RenderMp4
@@ -126,48 +132,56 @@ reanimate animation = do
             RenderWebm -> replaceExtension self "webm"
         Just target -> makeAbsolute target
 
-      let fps = guessParameter renderFPS (fmap presetFPS renderPreset) $ formatFPS fmt
-          (width, height) =
-            fromMaybe
-              ( maybe (formatWidth fmt) presetWidth renderPreset
-              , maybe (formatHeight fmt) presetHeight renderPreset )
-              (userPreferredDimensions renderWidth renderHeight)
+      let
+        fps =
+          guessParameter renderFPS (fmap presetFPS renderPreset) $ formatFPS fmt
+        (width, height) = fromMaybe
+          ( maybe (formatWidth fmt)  presetWidth  renderPreset
+          , maybe (formatHeight fmt) presetHeight renderPreset
+          )
+          (userPreferredDimensions renderWidth renderHeight)
 
       if renderCompile
-        then
-          compile
-            ["render"
-            ,"--fps", show fps
-            ,"--width", show width
-            ,"--height", show height
-            ,"--format", showFormat fmt
-            ,"--raster", showRaster renderRaster
-            ,"--target", target
-            ,"+RTS", "-N", "-RTS"]
+        then compile
+          [ "render"
+          , "--fps"
+          , show fps
+          , "--width"
+          , show width
+          , "--height"
+          , show height
+          , "--format"
+          , showFormat fmt
+          , "--raster"
+          , showRaster renderRaster
+          , "--target"
+          , target
+          , "+RTS"
+          , "-N"
+          , "-RTS"
+          ]
         else do
+          raster <- selectRaster renderRaster
+          setRaster raster
           setFPS fps
           setWidth width
           setHeight height
-          printf "Animation options:\n\
+          printf
+            "Animation options:\n\
                  \  fps:    %d\n\
                  \  width:  %d\n\
                  \  height: %d\n\
                  \  fmt:    %s\n\
-                 \  target: %s\n"
-            fps width height (showFormat fmt) target
-          raster <- selectRaster renderRaster
-          render animation target raster fmt width height fps
+                 \  target: %s\n\
+                 \  raster: %s\n"
+            fps
+            width
+            height
+            (showFormat fmt)
+            target
+            (show raster)
 
-selectRaster :: Raster -> IO Raster
-selectRaster RasterAuto = do
-  rsvg <- hasRSvg
-  ink <- hasInkscape
-  conv <- hasConvert
-  if | isRight rsvg -> pure RasterRSvg
-     | isRight ink  -> pure RasterInkscape
-     | isRight conv -> pure RasterConvert
-     | otherwise    -> pure RasterNone
-selectRaster r = pure r
+          render animation target raster fmt width height fps
 
 guessParameter :: Maybe a -> Maybe a -> a -> a
 guessParameter a b def = fromMaybe def (a <|> b)
@@ -175,13 +189,14 @@ guessParameter a b def = fromMaybe def (a <|> b)
 
 -- If user specifies exactly one dimension explicitly, calculate the other
 userPreferredDimensions :: Maybe Width -> Maybe Height -> Maybe (Width, Height)
-userPreferredDimensions (Just width) (Just height)  = Just (width, height)
-userPreferredDimensions (Just width) Nothing        = Just (width, makeEven $ width * 9 `div` 16)
-userPreferredDimensions Nothing      (Just height)  = Just (makeEven $ height * 16 `div` 9, height)
-userPreferredDimensions Nothing      Nothing        = Nothing
+userPreferredDimensions (Just width) (Just height) = Just (width, height)
+userPreferredDimensions (Just width) Nothing =
+  Just (width, makeEven $ width * 9 `div` 16)
+userPreferredDimensions Nothing (Just height) =
+  Just (makeEven $ height * 16 `div` 9, height)
+userPreferredDimensions Nothing Nothing = Nothing
 
 -- Avoid ffmpeg failures "height not divisible by 2"
 makeEven :: Int -> Int
-makeEven x
-  | even x    = x
-  | otherwise = x - 1
+makeEven x | even x    = x
+           | otherwise = x - 1

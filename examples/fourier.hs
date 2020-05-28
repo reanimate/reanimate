@@ -8,7 +8,6 @@ import qualified Data.Text as T
 
 import           Graphics.SvgTree
 import           Reanimate
-import           Reanimate.LaTeX  (latex)
 
 waveMultiplier :: Int
 -- waveMultiplier = 1 -- Sawtooth wave

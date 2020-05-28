@@ -5,19 +5,23 @@ module Reanimate.Misc
   , runCmdLazy
   , withTempDir
   , withTempFile
+  , renameOrCopyFile
   ) where
 
-import           Control.Exception (evaluate, finally)
+import           Control.Exception (evaluate, finally, throw, catch)
 import qualified Data.Text         as T
 import qualified Data.Text.IO      as T
-import           System.Directory  (createDirectory, findExecutable,
-                                    getTemporaryDirectory, removeFile)
-import           System.Exit       (ExitCode (..))
+import           Foreign.C.Error
+import           GHC.IO.Exception
+import           System.Directory  (copyFile, createDirectory, findExecutable,
+                                    getTemporaryDirectory, removeFile,
+                                    renameFile)
 import           System.FilePath   ((<.>), (</>))
 import           System.IO         (hClose, hGetContents, hIsEOF, openTempFile)
 import           System.Process    (readProcessWithExitCode,
                                     runInteractiveProcess, showCommandForUser,
                                     terminateProcess, waitForProcess)
+
 
 requireExecutable :: String -> IO FilePath
 requireExecutable exec = do
@@ -31,7 +35,7 @@ runCmd exec args = do
   ret <- runCmd_ exec args
   case ret of
     Left err -> error $ showCommandForUser exec args ++ ":\n" ++ err
-    Right{} -> return ()
+    Right{}  -> return ()
 
 runCmd_ :: FilePath -> [String] -> IO (Either String String)
 runCmd_ exec args = do
@@ -61,7 +65,7 @@ runCmdLazy exec args handler = do
             _ <- evaluate (length stderr)
             ret <- waitForProcess pid
             case ret of
-              ExitSuccess -> return (Left "")
+              ExitSuccess   -> return (Left "")
               ExitFailure{} -> return (Left stderr)
               {-ExitFailure errMsg -> do
                 return $ Left $
@@ -75,6 +79,13 @@ runCmdLazy exec args handler = do
     terminateProcess pid
     _ <- waitForProcess pid
     return ()
+
+renameOrCopyFile :: FilePath -> FilePath -> IO ()
+renameOrCopyFile src dst = renameFile src dst `catch` exdev
+  where
+    exdev e = if fmap Errno (ioe_errno e) == Just eXDEV
+                then copyFile src dst >> removeFile src
+                else throw e
 
 withTempDir :: (FilePath -> IO a) -> IO a
 withTempDir action = do

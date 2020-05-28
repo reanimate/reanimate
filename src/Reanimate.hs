@@ -11,20 +11,30 @@ Reanimate is an animation library based on SVGs. It is designed to act like glue
 between external components such as 'latex', 'ffmpeg', 'gnuplot', 'diagrams',
 and 'povray'.
 
+= Canvas
+
+Reanimate uses its own internal, Cartesian coordinate system for animations,
+with a fixed canvas size of 16x9, where X and Y are real numbers. (0, 0) is
+located in the center of the canvas, with positive X going to the right, and
+positive Y going up. This means that e.g. (8, 4.5) is the top right corner
+and (-8, -4.5) is the bottom left corner. Note that this canvas size does not
+affect how large or small output resolution will be, although it /does/ affect
+aspect ratio.
+
+= Driver
+
+Reanimate features a web-based viewer which is opened by default if
+no other parameters are given. Key features:
+
+  * This viewer listens for changes to the source file and recompiles the
+    code automatically as needed.
+  * Animations are rendered with increasing fidelity until the frame
+    rate reaches 60 fps.
+  * Key commands for pausing, frame stepping, forward/rewind.
+    To pause press SPACE, to move -1\/+1\/-10\/+10 frames use LEFT\/RIGHT\/DOWN\/UP arrow keys.
 -}
 module Reanimate
-  ( -- * Driver
-    --
-    -- | Reanimate features a web-based viewer which is opened by default if
-    --   no other parameters are given. Key features:
-    --
-    --   * This viewer listens for changes to the source file and recompiles the
-    --     code automatically as needed.
-    --   * Animations are rendered with increasing fidelity until the frame
-    --     rate eaches 60 fps.
-    --   * Key commands for pausing, frame stepping, forward/rewind.
-    --     To pause press SPACE, to move -1\/+1\/-10\/+10 frames use LEFT\/RIGHT\/DOWN\/UP arrow keys.
-    reanimate,
+  ( reanimate,
     -- * Animations
     SVG,
     Time,
@@ -53,7 +63,7 @@ module Reanimate
     freezeAtPercentage,
     addStatic,
     signalA,
-    -- ** Signals
+    -- ** Easing functions
     Signal,
     constantS,
     fromToS,
@@ -62,6 +72,7 @@ module Reanimate
     bellS,
     oscillateS,
     fromListS,
+    cubicBezierS,
     -- ** Scenes
     (#),
     Scene
@@ -92,9 +103,11 @@ module Reanimate
   , spriteT           -- :: Frame s Time
   , spriteDuration    -- :: Frame s Duration
   , newSprite         -- :: Frame s SVG -> Scene s (Sprite s)
+  , newSprite_        -- :: Frame s SVG -> Scene s ()
   , newSpriteA        -- :: Animation -> Scene s (Sprite s)
   , newSpriteA'       -- :: Sync -> Animation -> Scene s (Sprite s)
   , newSpriteSVG      -- :: SVG -> Scene s (Sprite s)
+  , newSpriteSVG_     -- :: SVG -> Scene s ()
   , destroySprite     -- :: Sprite s -> Scene s ()
   , applyVar          -- :: Var s a -> Sprite s -> (a -> SVG -> SVG) -> Scene s ()
   , spriteModify      -- :: Sprite s -> Frame s ((SVG,ZIndex) -> (SVG, ZIndex)) -> Scene s ()
@@ -130,11 +143,14 @@ module Reanimate
     module Reanimate.Svg.BoundingBox,
     module Reanimate.Svg,
     -- ** Raster data
+    mkImage,
     embedImage,
     embedDynamicImage,
     embedPng,
     raster,
+    rasterSized,
     svgAsPngFile,
+    svgAsPngFile',
     vectorize,
     vectorize_,
     -- ** External SVG providers
@@ -181,7 +197,7 @@ import           Reanimate.Povray
 import           Reanimate.Raster
 import           Reanimate.Effect
 import           Reanimate.Scene
-import           Reanimate.Signal
+import           Reanimate.Ease
 import           Reanimate.Svg
 import           Reanimate.Svg.BoundingBox
 import           Reanimate.Svg.Constructors

@@ -1,17 +1,47 @@
 module Reanimate.Parameters
-  ( pFPS
+  ( Raster(..)
+  , Width
+  , Height
+  , FPS
+  , pRaster
+  , pFPS
   , pWidth
   , pHeight
   , pNoExternals
+  , pRootDirectory
+  , setRaster
   , setFPS
   , setWidth
   , setHeight
   , setNoExternals
+  , setRootDirectory
   ) where
 
 import System.IO.Unsafe
 import Data.IORef
-import Reanimate.Render
+
+type Width = Int
+type Height = Int
+type FPS = Int
+
+data Raster
+  = RasterNone
+  | RasterAuto
+  | RasterInkscape
+  | RasterRSvg
+  | RasterConvert
+  deriving (Show, Eq)
+
+{-# NOINLINE pRasterRef #-}
+pRasterRef :: IORef Raster
+pRasterRef = unsafePerformIO (newIORef RasterNone)
+
+{-# NOINLINE pRaster #-}
+pRaster :: Raster
+pRaster = unsafePerformIO (readIORef pRasterRef)
+
+setRaster :: Raster -> IO ()
+setRaster = writeIORef pRasterRef
 
 {-# NOINLINE pFPSRef #-}
 pFPSRef :: IORef FPS
@@ -58,3 +88,13 @@ pNoExternals = unsafePerformIO (readIORef pNoExternalsRef)
 setNoExternals :: Bool -> IO ()
 setNoExternals = writeIORef pNoExternalsRef
 
+{-# NOINLINE pRootDirectoryRef #-}
+pRootDirectoryRef :: IORef FilePath
+pRootDirectoryRef = unsafePerformIO (newIORef (error "root directory not set"))
+
+{-# NOINLINE pRootDirectory #-}
+pRootDirectory :: FilePath
+pRootDirectory = unsafePerformIO (readIORef pRootDirectoryRef)
+
+setRootDirectory :: FilePath -> IO ()
+setRootDirectory = writeIORef pRootDirectoryRef

@@ -1,5 +1,7 @@
 module Reanimate.Raster
-  ( embedImage
+  ( mkImage
+  , cacheImage
+  , embedImage
   , embedDynamicImage
   , embedPng
   , raster
@@ -11,7 +13,6 @@ module Reanimate.Raster
   ) where
 
 import           Codec.Picture
-import           Codec.Picture.Types         (dynamicMap)
 import           Control.Lens                ((&), (.~))
 import           Control.Monad
 import qualified Data.ByteString             as B
@@ -27,6 +28,7 @@ import           Reanimate.Cache
 import           Reanimate.Misc
 import           Reanimate.Render
 import           Reanimate.Parameters
+import           Reanimate.Constants
 import           Reanimate.Svg.Constructors
 import           Reanimate.Svg.Unuse
 import           System.Directory
@@ -35,15 +37,84 @@ import           System.IO
 import           System.IO.Temp
 import           System.IO.Unsafe
 
+-- | Load an external image. Width and height must be specified,
+--   ignoring the image's aspect ratio. The center of the image is
+--   placed at position (0,0).
+--
+--   For security reasons, must SVG renderer do not allow arbitrary
+--   image links. For some renderers, we can get around this by placing
+--   the images in the same root directory as the parent SVG file. Other
+--   renderers (like Chrome and ffmpeg) requires that the image is inlined
+--   as base64 data. External SVG files are an exception, though, as must
+--   always be inlined directly. `mkImage` attempts to hide all the complexity
+--   but edge-cases may exist.
+--
+--   Example:
+--
+--   > mkImage screenWidth screenHeight "../data/haskell.svg"
+--
+--   <<docs/gifs/doc_mkImage.gif>>
+mkImage :: Double -- ^ Desired image width.
+        -> Double -- ^ Desired image height.
+        -> FilePath -- ^ Path to external image file.
+        -> SVG
+mkImage width height path | takeExtension path == ".svg" = unsafePerformIO $ do
+  svg_data <- B.readFile path
+  case parseSvgFile path svg_data of
+    Nothing  -> error "Malformed svg"
+    Just svg -> return $
+      scaleXY (width/screenWidth) (height/screenHeight) $
+      embedDocument svg
+mkImage width height path | pRaster == RasterNone = unsafePerformIO $ do
+  inp <- LBS.readFile path
+  let imgData = LBS.unpack $ Base64.encode inp
+  return $ flipYAxis $ ImageTree $ defaultSvg
+    & Svg.imageWidth .~ Svg.Num width
+    & Svg.imageHeight .~ Svg.Num height
+    & Svg.imageHref .~ ("data:"++mimeType++";base64,"++imgData)
+    & Svg.imageCornerUpperLeft .~ (Svg.Num (-width/2), Svg.Num (-height/2))
+    & Svg.imageAspectRatio .~ Svg.PreserveAspectRatio False Svg.AlignNone Nothing
+  where
+    -- FIXME: Is there a better way to do this?
+    mimeType =
+      case takeExtension path of
+        ".jpg" -> "image/jpeg"
+        ext    -> "image/" ++ drop 1 ext
+mkImage width height path = unsafePerformIO $ do
+    exists <- doesFileExist target
+    unless exists $ copyFile path target
+    return $ flipYAxis $ ImageTree $ defaultSvg
+      & Svg.imageWidth .~ Svg.Num width
+      & Svg.imageHeight .~ Svg.Num height
+      & Svg.imageHref .~ ("file://"++target)
+      & Svg.imageCornerUpperLeft .~ (Svg.Num (-width/2), Svg.Num (-height/2))
+      & Svg.imageAspectRatio .~ Svg.PreserveAspectRatio False Svg.AlignNone Nothing
+  where
+    target = pRootDirectory </> show hashPath <.> takeExtension path
+    hashPath = hash path
+
+cacheImage :: (PngSavable pixel, Hashable a) => a -> Image pixel -> FilePath
+cacheImage key gen = unsafePerformIO $ cacheFile template $ \path ->
+    writePng path gen
+  where
+    template = show (hash key) <.> "png"
 
 {-# INLINE embedImage #-}
-embedImage :: PngSavable a => Image a -> Tree
+-- | Embed an in-memory PNG image. Note, the pixel size of the image
+--   is used as the dimensions. As such, embedding a 100x100 PNG will
+--   result in an image 100 units wide and 100 units high. Consider
+--   using with 'scaleToSize'.
+embedImage :: PngSavable a => Image a -> SVG
 embedImage img = embedPng width height (encodePng img)
   where
     width  = fromIntegral $ imageWidth img
     height = fromIntegral $ imageHeight img
 
-embedPng :: Double -> Double -> LBS.ByteString -> Tree
+-- | Embed in-memory PNG bytestring without parsing it.
+embedPng :: Double -- ^ Width
+         -> Double -- ^ Height
+         -> LBS.ByteString -- ^ Raw PNG data
+         -> SVG
 -- embedPng w h png = unsafePerformIO $ do
 --     LBS.writeFile path png
 --     return $ ImageTree $ defaultSvg
@@ -64,7 +135,11 @@ embedPng w h png = flipYAxis $
 
 
 {-# INLINE embedDynamicImage #-}
-embedDynamicImage :: DynamicImage -> Tree
+-- | Embed an in-memory image. Note, the pixel size of the image
+--   is used as the dimensions. As such, embedding a 100x100 image will
+--   result in an image 100 units wide and 100 units high. Consider
+--   using with 'scaleToSize'.
+embedDynamicImage :: DynamicImage -> SVG
 embedDynamicImage img = embedPng width height imgData
   where
     width   = fromIntegral $ dynamicMap imageWidth img
@@ -89,21 +164,29 @@ embedDynamicImage img = embedPng width height imgData
 --           & Svg.imageHref .~ ("file://" ++ path)
 
 
-
-raster :: Tree -> DynamicImage
+-- | Convert an SVG object to a pixel-based image. The default resolution
+--   is 2560x1440. See also 'rasterSized'. Multiple raster engines are supported
+--   and are selected using the '--raster' flag in the driver.
+raster :: SVG -> DynamicImage
 raster = rasterSized 2560 1440
 
-rasterSized :: Int -> Int -> Tree -> DynamicImage
+-- | Convert an SVG object to a pixel-based image.
+rasterSized :: Int -- ^ X resolution in pixels
+            -> Int -- ^ Y resolution in pixels
+            -> SVG -- ^ SVG object
+            -> DynamicImage
 rasterSized w h svg = unsafePerformIO $ do
     png <- B.readFile (svgAsPngFile' w h svg)
     case decodePng png of
       Left{}    -> error "bad image"
       Right img -> return img
 
-vectorize :: FilePath -> Tree
+-- | Use 'potrace' to trace edges in a raster image and convert them to SVG polygons.
+vectorize :: FilePath -> SVG
 vectorize = vectorize_ []
 
-vectorize_ :: [String] -> FilePath -> Tree
+-- | Same as 'vectorize' but takes a list of arguments for 'potrace'.
+vectorize_ :: [String] -> FilePath -> SVG
 vectorize_ _ path | pNoExternals = mkText $ T.pack path
 vectorize_ args path = unsafePerformIO $ do
     root <- getXdgDirectory XdgCache "reanimate"
@@ -119,7 +202,7 @@ vectorize_ args path = unsafePerformIO $ do
         convert <- requireExecutable "convert"
         runCmd convert [ path, "-flatten", tmpBmpPath ]
         runCmd potrace (args ++ ["--svg", "--output", tmpSvgPath, tmpBmpPath])
-        renameFile tmpSvgPath svgPath
+        renameOrCopyFile tmpSvgPath svgPath
     svg_data <- B.readFile svgPath
     case parseSvgFile svgPath svg_data of
       Nothing  -> do
@@ -132,22 +215,28 @@ vectorize_ args path = unsafePerformIO $ do
 -- imageAsFile :: DynamicImage -> FilePath
 -- imageAsFile img
 
-svgAsPngFile :: Tree -> FilePath
+-- | Convert an SVG object to a pixel-based image and save it to disk, returning
+--   the filepath. The default resolution is 2560x1440. See also 'svgAsPngFile''.
+--   Multiple raster engines are supported and are selected using the '--raster'
+--   flag in the driver.
+svgAsPngFile :: SVG -> FilePath
 svgAsPngFile = svgAsPngFile' width height
   where
     width = 2560
     height = width * 9 `div` 16
 
-svgAsPngFile' :: Int -> Int -> Tree -> FilePath
+-- | Convert an SVG object to a pixel-based image and save it to disk, returning
+--   the filepath.
+svgAsPngFile' :: Int -- ^ Width
+              -> Int -- ^ Height
+              -> SVG -- ^ SVG object
+              -> FilePath
 svgAsPngFile' _ _ _ | pNoExternals = "/svgAsPngFile/has/been/disabled"
 svgAsPngFile' width height svg = unsafePerformIO $ cacheFile template $ \pngPath -> do
     let svgPath = replaceExtension pngPath "svg"
-    -- ffmpeg <- requireExecutable "ffmpeg"
-    -- convert <- requireExecutable "convert"
-    -- inkscape <- requireExecutable "inkscape"
     writeFile svgPath rendered
-    -- FIXME: raster should be configurable.
-    applyRaster RasterRSvg svgPath
+    engine <- requireRaster pRaster
+    applyRaster engine svgPath
   where
     template = show (hash rendered) <.> "png"
     rendered = renderSvg (Just $ Px $ fromIntegral width) (Just $ Px $ fromIntegral height) svg

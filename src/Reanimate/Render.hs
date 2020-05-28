@@ -1,29 +1,36 @@
+{-# LANGUAGE MultiWayIf #-}
 module Reanimate.Render
   ( render
-  , renderSvgs
-  , renderSnippets
+  , renderSvgs            -- :: Animation -> IO ()
+  , renderSnippets        -- :: Animation -> IO ()
   , Format(..)
   , Raster(..)
   , Width, Height, FPS
-  , applyRaster
+  , requireRaster         -- :: Raster -> IO Raster
+  , selectRaster          -- :: Raster -> IO Raster
+  , applyRaster           -- :: Raster -> FilePath -> IO ()
   ) where
 
 import           Control.Concurrent
 import           Control.Exception
-import           Control.Monad       (forM_, void)
+import           Control.Monad       (forM_, void, unless, forever)
 import qualified Data.Text           as T
 import qualified Data.Text.IO        as T
+import           Data.Time
+import Data.Either
 import           Graphics.SvgTree    (Number (..))
 import           Numeric
 import           Reanimate.Animation
 import           Reanimate.Misc
-import           System.FilePath     ((</>))
-import           System.FilePath    (replaceExtension)
+import           Reanimate.Parameters
+import           Reanimate.Driver.Check
 import           System.Exit
+import           System.FilePath     ((</>))
+import           System.FilePath     (replaceExtension)
 import           System.IO
 import           Text.Printf         (printf)
 
-renderSvgs :: Animation ->  IO ()
+renderSvgs :: Animation -> IO ()
 renderSvgs ani = do
     print frameCount
     lock <- newMVar ()
@@ -71,20 +78,8 @@ filterFrameList seen nthFrame nFrames =
   where
     isSeen x = any (\y -> x `mod` y == 0) seen
 
-data Raster
-  = RasterNone
-  | RasterAuto
-  | RasterInkscape
-  | RasterRSvg
-  | RasterConvert
-  deriving (Show)
-
 data Format = RenderMp4 | RenderGif | RenderWebm
   deriving (Show)
-
-type Width = Int
-type Height = Int
-type FPS = Int
 
 render :: Animation
        -> FilePath
@@ -110,14 +105,18 @@ render ani target raster format width height fps = do
                       , "-pix_fmt", "yuv420p", target]
       RenderGif -> withTempFile "png" $ \palette -> do
         runCmd ffmpeg ["-i", template, "-y"
-                      ,"-vf", "fps="++show fps++",scale=320:-1:flags=lanczos,palettegen"
+                      ,"-vf", "fps="++show fps++
+                        ",scale="++show width++":"++show height ++
+                        ":flags=lanczos,palettegen"
                       ,"-t", showFFloat Nothing (duration ani) ""
                       , palette ]
         runCmd ffmpeg ["-framerate", show fps,"-i", template, "-y"
                       ,"-i", palette
                       ,"-progress", progress
                       ,"-filter_complex"
-                      ,"fps="++show fps++",scale=320:-1:flags=lanczos[x];[x][1:v]paletteuse"
+                      ,"fps="++show fps++
+                        ",scale="++show width++":"++show height ++
+                        ":flags=lanczos[x];[x][1:v]paletteuse"
                       ,"-t", showFFloat Nothing (duration ani) ""
                       , target]
       RenderWebm ->
@@ -131,18 +130,35 @@ render ani target raster format width height fps = do
 
 generateFrames :: Raster -> Animation -> Width -> Height -> FPS -> (FilePath -> IO a) -> IO a
 generateFrames raster ani width_ height_ rate action = withTempDir $ \tmp -> do
+    setRootDirectory tmp
     done <- newMVar (0::Int)
     let frameName nth = tmp </> printf nameTemplate nth
-    putStr $ "\r0/" ++ show frameCount
+    putStr $ "\rFrames rendered: 0/" ++ show frameCount ++ "\27[K\r"
     hFlush stdout
-    handle h $ concurrentForM_ frames $ \n -> do
-      writeFile (frameName n) $ renderSvg width height $ nthFrame n
-      applyRaster raster (frameName n)
-      modifyMVar_ done $ \nDone -> do
-        putStr $ "\r" ++ show (nDone+1) ++ "/" ++ show frameCount
-        hFlush stdout
-        return (nDone+1)
-    putStrLn "\n"
+    start <- getCurrentTime
+    let statusPrinter = forever $ do
+          nDone <- readMVar done
+          now <- getCurrentTime
+          let spent = diffUTCTime now start
+              remaining = (spent / (fromIntegral nDone / fromIntegral frameCount)) - spent
+          putStr $ "\rFrames rendered: " ++ show nDone ++ "/" ++ show frameCount
+          putStr $ ", time spent: " ++ ppDiff spent
+          unless (nDone==0) $ do
+            putStr $ ", time remaining: " ++ ppDiff remaining
+            putStr $ ", total time: " ++ ppDiff (remaining+spent)
+          putStr $ "\27[K\r"
+          hFlush stdout
+          threadDelay 1000000
+    withBackgroundThread statusPrinter $ do
+      handle h $ concurrentForM_ frames $ \n -> do
+        writeFile (frameName n) $ renderSvg width height $ nthFrame n
+        applyRaster raster (frameName n)
+        modifyMVar_ done $ \nDone -> return (nDone+1)
+    now <- getCurrentTime
+    let spent = diffUTCTime now start
+    putStr $ "\rFrames rendered: " ++ show frameCount ++ "/" ++ show frameCount
+    putStr $ ", time spent: " ++ ppDiff spent
+    putStr $ "\27[K\n"
     action (tmp </> rasterTemplate raster)
   where
     width = Just $ Px $ fromIntegral width_
@@ -152,15 +168,50 @@ generateFrames raster ani width_ height_ rate action = withTempDir $ \tmp -> do
                        \Hit ctrl-c again to abort."
       return ()
     h other = throwIO other
-    frames = [0..frameCount-1]
+    -- frames = [0..frameCount-1]
+    frames = frameOrder rate frameCount
     nthFrame nth = frameAt (recip (fromIntegral rate) * fromIntegral nth) ani
     frameCount = round (duration ani * fromIntegral rate) :: Int
     nameTemplate :: String
     nameTemplate = "render-%05d.svg"
 
+withBackgroundThread :: IO () -> IO a -> IO a
+withBackgroundThread t = bracket (forkIO t) killThread . const
+
+ppDiff :: NominalDiffTime -> String
+ppDiff diff
+  | hours == 0 && mins == 0 = show secs ++ "s"
+  | hours == 0 = printf "%.2d:%.2d" mins secs
+  | otherwise  = printf "%.2d:%.2d:%.2d" hours mins secs
+  where
+    (osecs, secs) = round diff `divMod` (60::Int)
+    (hours, mins) = osecs `divMod` 60
+
 rasterTemplate :: Raster -> String
 rasterTemplate RasterNone = "render-%05d.svg"
 rasterTemplate _          = "render-%05d.png"
+
+requireRaster :: Raster -> IO Raster
+requireRaster raster = do
+  raster' <- selectRaster (if raster==RasterNone then RasterAuto else raster)
+  case raster' of
+    RasterNone -> do
+      hPutStrLn stderr
+        "Raster required but none could be found. \
+        \Please install either inkscape, imagemagick, or rsvg-convert."
+      exitWith (ExitFailure 1)
+    _ -> pure raster'
+
+selectRaster :: Raster -> IO Raster
+selectRaster RasterAuto = do
+  rsvg <- hasRSvg
+  ink <- hasInkscape
+  conv <- hasConvert
+  if | isRight rsvg -> pure RasterRSvg
+     | isRight ink  -> pure RasterInkscape
+     | isRight conv -> pure RasterConvert
+     | otherwise    -> pure RasterNone
+selectRaster r = pure r
 
 applyRaster :: Raster -> FilePath -> IO ()
 applyRaster RasterNone _ = return ()

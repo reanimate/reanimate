@@ -38,6 +38,10 @@ data CacheMap = CacheMap !(Map.Map DynamicName CacheMap) !(Map.Map DynamicName D
 emptyCacheMap :: CacheMap
 emptyCacheMap = CacheMap Map.empty Map.empty
 
+-- sizeCacheMap :: CacheMap -> Int
+-- sizeCacheMap (CacheMap sub vals) =
+--   sum (map sizeCacheMap (Map.elems sub)) + Map.size vals
+
 cacheMapLookup :: [DynamicName] -> CacheMap -> Maybe Dynamic
 cacheMapLookup [] _ = Nothing
 cacheMapLookup [k] (CacheMap _ vals) = Map.lookup k vals

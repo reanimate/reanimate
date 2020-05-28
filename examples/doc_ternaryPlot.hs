@@ -5,7 +5,7 @@ module Main(main) where
 import Reanimate hiding (raster)
 import Reanimate.Builtin.Documentation
 import Reanimate.Builtin.TernaryPlot
-import Reanimate.Interpolate
+import Reanimate.ColorComponents
 import Data.Colour.CIE
 import Codec.Picture.Types
 

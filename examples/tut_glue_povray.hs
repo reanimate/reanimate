@@ -6,7 +6,7 @@
 module Main (main) where
 
 import           Reanimate
-import           Reanimate.Povray      (povraySlow)
+import           Reanimate.Povray      (povraySlow')
 
 import           Codec.Picture
 import           Codec.Picture.Types
@@ -21,7 +21,8 @@ import           System.Random.Shuffle
 
 
 main :: IO ()
-main = reanimate $ parA bg $ sceneAnimation $ do
+main = reanimate $ sceneAnimation $ do
+    newSpriteSVG $ mkBackgroundPixel $ PixelRGBA8 252 252 252 0xFF
     zPos <- newVar 0
     xRot <- newVar 0
     zRot <- newVar 0
@@ -32,17 +33,14 @@ main = reanimate $ parA bg $ sceneAnimation $ do
       t <- spriteT
       dur <- spriteDuration
       pure $
-        povraySlow [] $
+        mkImage screenWidth screenHeight $ povraySlow' [] $
         script (svgAsPngFile (texture (t/dur))) transZ getX getZ
     wait 2
-    tweenVar zPos 9 (\t v -> fromToS v 8 (t/9))
-    tweenVar xRot 9 (\t v -> fromToS v 360 $ curveS 2 (t/9))
-    tweenVar zRot 9 (\t v -> fromToS v 360 $ curveS 2 (t/9))
+    fork $ tweenVar zPos 9 $ \v -> fromToS v 8
+    fork $ tweenVar xRot 9 $ \v -> fromToS v 360 . curveS 2
+    fork $ tweenVar zRot 9 $ \v -> fromToS v 360 . curveS 2
     wait 10
-    tweenVar zPos 2 (\t v -> fromToS v 0 $ curveS 3 (t/2))
-    wait 2
-  where
-    bg = animate $ const $ mkBackgroundPixel $ PixelRGBA8 252 252 252 0xFF
+    tweenVar zPos 2 $ \v -> fromToS v 0 . curveS 3
 
 texture :: Double -> SVG
 texture t = frameAt (t*duration latexExample) latexExample
@@ -92,7 +90,7 @@ latexExample = sceneAnimation $ do
     -- Draw equation
     play $ drawAnimation strokedSvg
     sprites <- forM glyphs $ \(fn, _, elt) ->
-      newSpriteA $ animate $ const $ fn elt
+      newSpriteSVG $ fn elt
     -- Yoink each glyph
     forM_ (reverse sprites) $ \sprite -> do
       spriteE sprite (overBeginning 1 $ aroundCenterE $ highlightE)

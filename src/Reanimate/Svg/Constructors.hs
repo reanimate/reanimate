@@ -9,6 +9,7 @@ module Reanimate.Svg.Constructors
   , mkPathString
   , mkPathText
   , mkLinePath
+  , mkLinePathClosed
   , mkClipPath
   , mkText
   -- * Grouping shapes and definitions
@@ -19,6 +20,7 @@ module Reanimate.Svg.Constructors
   , withId
   , withStrokeColor
   , withStrokeColorPixel
+  , withStrokeDashArray
   , withStrokeLineJoin
   , withFillColor
   , withFillColorPixel
@@ -30,6 +32,7 @@ module Reanimate.Svg.Constructors
   , center
   , centerX
   , centerY
+  , centerUsing
   , translate
   , rotate
   , rotateAroundCenter
@@ -45,6 +48,7 @@ module Reanimate.Svg.Constructors
   , aroundCenterX
   , aroundCenterY
   , withTransformations
+  , withViewBox
   -- * Other
   , mkColor
   , mkBackground
@@ -167,9 +171,7 @@ flipYAxis = scaleXY 1 (-1)
 -- | Translate given image so that the center of its bouding box coincides with coordinates
 --   @(0, 0)@.
 center :: Tree -> Tree
-center t = translate (-x-w/2) (-y-h/2) t
-  where
-    (x, y, w, h) = boundingBox t
+center t = centerUsing t t
 
 -- | Translate given image so that the X-coordinate of the center of its bouding box is 0.
 centerX :: Tree -> Tree
@@ -182,6 +184,11 @@ centerY :: Tree -> Tree
 centerY t = translate 0 (-y-h/2) t
   where
     (_x, y, _w, h) = boundingBox t
+
+centerUsing :: Tree -> Tree -> Tree
+centerUsing a = translate (-x-w/2) (-y-h/2)
+  where
+    (x, y, w, h) = boundingBox a
 
 -- | Create 'Texture' based on SVG color name.
 --   See <https://en.wikipedia.org/wiki/Web_colors#X11_color_names> for the list of available names.
@@ -198,6 +205,9 @@ withStrokeColor color = strokeColor .~ pure (mkColor color)
 
 withStrokeColorPixel :: PixelRGBA8 -> Tree -> Tree
 withStrokeColorPixel color = strokeColor .~ pure (ColorRef color)
+
+withStrokeDashArray :: [Double] -> Tree -> Tree
+withStrokeDashArray arr = strokeDashArray .~ pure (map Num arr)
 
 -- | See <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke-linejoin>
 withStrokeLineJoin :: LineJoin -> Tree -> Tree
@@ -316,6 +326,16 @@ mkLinePath ((startX, startY):rest) =
     cmds = [ MoveTo OriginAbsolute [V2 startX startY]
            , LineTo OriginAbsolute [ V2 x y | (x, y) <- rest ] ]
 
+-- | Create a path from a list of @(x, y)@ coordinates of points along the path.
+mkLinePathClosed :: [(Double, Double)] -> Tree
+mkLinePathClosed [] = mkGroup []
+mkLinePathClosed ((startX, startY):rest) =
+    PathTree $ defaultSvg & pathDefinition .~ cmds
+  where
+    cmds = [ MoveTo OriginAbsolute [V2 startX startY]
+           , LineTo OriginAbsolute [ V2 x y | (x, y) <- rest ]
+           , EndPath ]
+
 -- | Rectangle with a uniform color and the same size as the screen.
 --
 --   Example:
@@ -339,15 +359,15 @@ mkBackgroundPixel pixel =
 --   rows. Each row can contain different number of cells.
 gridLayout :: [[Tree]] -> Tree
 gridLayout rows = mkGroup
-    [ translate (-screenWidth/2+colSep*nCol)
-                (screenHeight/2-rowSep*nRow)
+    [ translate (-screenWidth/2+colSep*nCol + colSep*0.5)
+                (screenHeight/2-rowSep*nRow - rowSep*0.5)
       elt
-    | (nRow, row) <- zip [1..] rows
+    | (nRow, row) <- zip [0..] rows
     , let nCols = length row
-          colSep = screenWidth / fromIntegral (nCols+1)
-    , (nCol, elt) <- zip [1..] row ]
+          colSep = screenWidth / fromIntegral nCols
+    , (nCol, elt) <- zip [0..] row ]
   where
-    rowSep = screenHeight / fromIntegral (nRows+1)
+    rowSep = screenHeight / fromIntegral nRows
     nRows = length rows
 
 -- | Insert a native text object anchored at the middle.
@@ -368,3 +388,26 @@ mkText str =
     -- be overwritten by the user.
   where
     span_ = defaultSvg & spanContent .~ [SpanText str]
+
+-- | Switch from the default viewbox to a custom viewbox. Nesting custom viewboxes is
+--   unlikely to give good results. If you need nested custom viewboxes, you will have
+--   to configure them by hand.
+--
+--   The viewbox argument is (min-x, min-y, width, height).
+--
+--   Example:
+--
+--   > withViewBox (0,0,1,1) $ mkBackground "yellow"
+--
+--   <<docs/gifs/doc_withViewBox.gif>>
+withViewBox :: (Double, Double, Double, Double) -> Tree -> Tree
+withViewBox vbox child = translate (-screenWidth/2) (-screenHeight/2) $
+  SvgTree $ Document
+  { _viewBox = Just vbox
+  , _width = Just (Num screenWidth)
+  , _height = Just (Num screenHeight)
+  , _elements = [child]
+  , _description = ""
+  , _documentLocation = ""
+  , _documentAspectRatio = PreserveAspectRatio False AlignNone Nothing
+  }

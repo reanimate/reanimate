@@ -19,7 +19,7 @@ import           Reanimate.Animation
 import           Reanimate.ColorMap
 import           Reanimate
 import           Reanimate.LaTeX
-import           Reanimate.Signal
+import           Reanimate.Ease
 import           Reanimate.Svg
 import           Reanimate.Constants
 import           Reanimate.Scene
