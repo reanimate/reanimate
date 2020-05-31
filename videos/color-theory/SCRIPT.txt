@@ -5,8 +5,8 @@ However, if we take each number and assign it a shade of grey, suddenly
 the data becomes understandable and the face of the monalisa stares out at us.
 
 [colormap]
-Using shades of grey is not the only possible color palette, though,
-and many colorful alternatives exists, such as sinebow.
+Shades of grey are not the only possible color palettes, though,
+and many colorful alternatives exist, such as sinebow.
 Some of these colormaps have been around for a while, with the widely used Jet first
 appearing in the 1970s.
 However,
@@ -22,7 +22,7 @@ So, why were so many new colormaps invented in this 5-year period? How are these
 colormaps created? Are they merely the favorite colors of their creators? How
 can a colormap be interesting enough to be published in a science journal?
 
-To answer these questions, first we have to explore a bit of color theory.
+To answer these questions, we have to explore a bit of color theory.
 
 [theory]
 Visible light roughly lies between 400 and 700nm, and the colors we see
@@ -32,7 +32,7 @@ For example, a lotus leaf might emit a complicated light spectrum like this.
 [simplify]
 Fortunately, our eyes will simplify this jumble of data down to just three
 values. This is because there are three types of color sensing cones,
-sensing short, medium and long wavelenghts, and thus named S, M, and L.
+sensing short, medium and long wavelengths, and thus named S, M, and L.
 
 All colors now have a position in a three dimensional space with S, M and L
 as the axes. However, due to the overlap in cone sensitivities, this space
@@ -64,7 +64,7 @@ guarantee that it will be particularly good. The sRGB colorspace captures
 the physics of light but doesn't concern itself with how colors are perceived.
 Blues are perceived to be darker than greens given the same number of photons,
 and it's easier to tell the difference between shades of green than shades of blue.
-These facts makes it difficult to draw a path through the sRGB colorspace that
+These facts make it difficult to draw a path through the sRGB colorspace that
 is perceptually smooth, meaning the rate of color change stays constant.
 It is also difficult to draw a path that increases or decreases linearly in
 brightness.
@@ -75,7 +75,7 @@ different properties. For example, the Hue-Saturation-Value space makes it
 easier to draw paths that smoothly transition through hue and saturation.
 
 [lab]
-The HSV isn't perceptually smooth, though, and creating a colorspace that is
+The HSV isn't perceptually smooth, though, and creating a smooth colorspace
 took a lot of effort. Scientists recruited a bunch of subjects and showed them
 countless pairs of colors, asking if they could tell them apart and which color
 they thought was the brightest.
@@ -90,7 +90,7 @@ the human visual cortex.
 Cividis was specifically designed for accuracy even when the viewer is
 colorblind.
 And of the new colormaps, Turbo is the only one that does not build on perceptual
-smoothness, choosing instead to optimize for high contrast.
+smoothness, optimizing instead for high contrast.
 
 [grid]
 Looking at the colormaps side-by-side, we can get a better feel for strengths
