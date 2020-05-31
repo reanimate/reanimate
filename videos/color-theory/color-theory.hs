@@ -140,7 +140,7 @@ monalisaScene = spriteScope $ do
   --     # pauseAround drawPixelDelay 3
   destroySprite hex
 
-  waitUntil $ wordStart $ findWord ["colormap"] "Using"
+  waitUntil $ wordStart $ findWord ["colormap"] "Shades"
   destroySprite img
     -- Move monalisa to the side of the screen
   play $ sceneFalseColorIntro
@@ -202,7 +202,7 @@ falseColorScene = spriteScope $ do
   pushCM "turbo, 2019" turbo
 
   waitUntil $ wordEnd $ findWord ["why"] "theory"
-  return ()
+  wait 1
 
 
 

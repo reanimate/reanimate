@@ -380,7 +380,7 @@ scene2 = spriteScope $ do
 
   writeVar cmName "jet"
   writeVar cmFunc jet
-  tweenVar cmDelta 1 $ \d -> fromToS d 1
+  tweenVar cmDelta 5 $ \d -> fromToS d 1
 
   waitUntil $ wordStart $ findWord ["draw"] "Hue-Saturation-Value"
 

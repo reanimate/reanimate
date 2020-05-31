@@ -9,7 +9,7 @@ Shades of grey are not the only possible color palettes, though,
 and many colorful alternatives exist, such as sinebow.
 Some of these colormaps have been around for a while, with the widely used Jet first
 appearing in the 1970s.
-In recent years, a lot of attention has gone into addressing the shortcomings
+In recent years, a lot of attention has gone into addressing shortcomings
 of the early colormaps and creating better standards for the future.
 Particularly, Jet was replaced by the proprietary Parula in 2014,
 the open-source community countered with Viridis in 2015,
@@ -74,7 +74,7 @@ different properties. For example, the Hue-Saturation-Value space makes it
 easier to draw paths that smoothly transition through hue and saturation.
 
 [lab]
-The HSV isn't perceptually smooth, though, and creating a smooth colorspace
+The HSV space isn't perceptually smooth, though, and creating a smooth colorspace
 took a lot of effort. Scientists recruited a bunch of subjects and showed them
 countless pairs of colors, asking if they could tell them apart and which color
 they thought was the brightest.
@@ -98,7 +98,7 @@ For example, Turbo has a lot of contrast but that same contrast leads to distort
 And Cividis, along with inferno and plasma, avoids shades of green since red-green
 color blindness is the most common form.
 
-Returning to the questions in the beginning of the video, I hope you have a
+Returning to the questions in the beginning of the video, I hope you now have a
 rough idea of how colormaps are created, the theory that underpins them,
 and why they're still being developed to this day.
 
