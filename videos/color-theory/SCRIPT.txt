@@ -9,8 +9,7 @@ Shades of grey are not the only possible color palettes, though,
 and many colorful alternatives exist, such as sinebow.
 Some of these colormaps have been around for a while, with the widely used Jet first
 appearing in the 1970s.
-However,
-in recent years, a lot of attention has gone into addressing the shortcomings
+In recent years, a lot of attention has gone into addressing the shortcomings
 of the early colormaps and creating better standards for the future.
 Particularly, Jet was replaced by the proprietary Parula in 2014,
 the open-source community countered with Viridis in 2015,
