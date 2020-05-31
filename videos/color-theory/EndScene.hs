@@ -4,35 +4,11 @@
 {-# LANGUAGE RecordWildCards   #-}
 module EndScene (endScene) where
 
-import           Control.Lens          ()
-import           Control.Monad
-import qualified Data.ByteString       as BS
-import qualified Data.Map              as Map
-import           Data.Monoid
-import qualified Data.Text             as T
-
-import           Codec.Picture
-import           Codec.Picture.Jpg
-import           Codec.Picture.Types
-import           Data.Maybe
-import           Data.Word
-import           Graphics.SvgTree      hiding (Image, imageHeight, imageWidth)
-import           Graphics.SvgTree.Memo
-import           Numeric
 import           Reanimate
-import           Reanimate.Animation
-import           Reanimate.ColorMap
-import           Reanimate.ColorSpace
 import           Reanimate.Builtin.Images
-import           Reanimate.Constants
-import           Reanimate.Effect
-import           Reanimate.LaTeX
-import           Reanimate.Raster
-import           Reanimate.Scene
-import           Reanimate.Ease
-import           Reanimate.Svg
-import           System.IO.Unsafe
+import Transcript
 
-endScene :: Animation
-endScene = mkAnimation 5 $ const $
-  scale 0.5 $ githubIcon
+endScene :: Scene s ()
+endScene = do
+  newSpriteSVG_ $ scale 0.5 $ githubWhiteIcon
+  waitUntil $ wordStart $ findWord ["end"] "domain"

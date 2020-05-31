@@ -31,17 +31,11 @@ import           Reanimate.Builtin.CirclePlot
 import           Reanimate.Builtin.Documentation
 import qualified Reanimate.Builtin.TernaryPlot   as Ternary
 import           Reanimate.ColorComponents
-import           Reanimate.ColorMap
 import           Reanimate.ColorSpace
-import           Reanimate.Constants
-import           Reanimate.Effect
-import           Reanimate.LaTeX
-import           Reanimate.Raster
 import           Reanimate.Scene
-import           Reanimate.Ease
-import           Reanimate.Svg
-import           Reanimate.Svg.BoundingBox
 import           System.IO.Unsafe
+
+import Transcript
 
 {- STORYBOARD
  - Wavelength scene
@@ -66,109 +60,35 @@ blueName = "royalblue"
 greenName = "green"
 redName = "maroon"
 
-drawSensitivities :: Animation
-drawSensitivities = sceneAnimation $ do
-    bg <- newSpriteSVG $ spectrumGrid True
-    spriteZ bg 1
+drawSensitivities :: Scene s ()
+drawSensitivities = spriteScope $ do
+    -- bg <- newSpriteSVG $ spectrumGrid True
+    -- spriteZ bg 1
 
-    forM_ [(short, blueName), (medium, greenName), (long, redName)] $
+    waitOn $ forM_ [(short, blueName), (medium, greenName), (long, redName)] $
       \(dat,name) -> do
-        fork $ newSpriteA' SyncFreeze $ drawSensitivity 1 dat name
+        fork $ newSpriteA' SyncFreeze $ drawSensitivity dat name
           # setDuration drawDur
         wait drawStagger
+    wait 1
   where
     drawDur = 3
     drawStagger = 1
 
-drawMorphingSensitivities :: Animation
-drawMorphingSensitivities = sceneAnimation $ do
-    bg <- newSpriteSVG $ spectrumGrid True
-    spriteZ bg 1
+-- drawMorphingSensitivities :: Animation
+-- drawMorphingSensitivities = sceneAnimation $ do
+--     bg <- newSpriteSVG $ spectrumGrid True
+--     spriteZ bg 1
 
-    forM_ keys $ \(datA, datB, name) -> do
-      fork $ newSpriteA $ morphSensitivity datA datB name
-        # setDuration drawDur
-  where
-    keys = [ (short, zCoords, blueName)
-           , (medium, yCoords, greenName)
-           , (long, xCoords, redName)]
-    drawDur = 3
-{-
-colorSpacesScene :: Animation
-colorSpacesScene = sceneAnimation $ mdo
-    beginT <- queryNow
-    fork $ play $ frame
-      # setDuration (endT-beginT)
-    fork $ playZ 1 $ animate (const spectrumGrid)
-      # setDuration (endT-beginT)
-    dur <- withSceneDuration $ do
-      fork $ play $ drawSensitivity 1 short blueName
-        # setDuration drawDur
-        # pauseAtBeginning (drawStagger*0)
-        # pauseUntil dur
-      fork $ do
-        wait (drawStagger*0 + drawDur)
-        play $ drawLabel "S" blueName
-          # setDuration 2
-          # applyE (overBeginning 0.3 fadeInE)
-      fork $ play $ drawSensitivity 1 medium greenName
-        # setDuration drawDur
-        # pauseAtBeginning (drawStagger*1)
-        # pauseUntil dur
-      fork $ do
-        wait (drawStagger*1 + drawDur)
-        play $ drawLabel "M" greenName
-          # setDuration 2
-          # applyE (overBeginning 0.3 fadeInE)
-      fork $ do
-        wait (drawStagger*2 + drawDur)
-        play $ drawLabel "L" redName
-          # setDuration 2
-          # applyE (overBeginning 0.3 fadeInE)
-      play $ drawSensitivity 1 long redName
-        # setDuration drawDur
-        # pauseAtBeginning (drawStagger*2)
-        # pauseAtEnd drawPause
+--     forM_ keys $ \(datA, datB, name) -> do
+--       fork $ newSpriteA $ morphSensitivity datA datB name
+--         # setDuration drawDur
+--   where
+--     keys = [ (short, zCoords, blueName)
+--            , (medium, yCoords, greenName)
+--            , (long, xCoords, redName)]
+--     drawDur = 3
 
-    dur2 <- withSceneDuration $ do
-
-      fork $ do
-        wait drawDur
-        zLabel <- newSpriteA $ drawLabel "Z" blueName
-        zLabelFade <- spriteVar zLabel 0 withGroupOpacity
-        fork $ tweenVar zLabelFade 0.3 (\v -> fromToS v 1)
-
-        wait drawStagger
-        fork $ play $ drawLabel "Y" greenName
-          # setDuration 2
-          # applyE (overBeginning 0.3 fadeInE)
-        wait drawStagger
-        fork $ play $ drawLabel "X" redName
-          # setDuration 2
-          # applyE (overBeginning 0.3 fadeInE)
-
-      fork $ play $ morphSensitivity short zCoords blueName
-        # setDuration drawDur
-        -- # pauseAtBeginning (drawStagger*0)
-        # pauseUntil dur2
-      fork $ play $ morphSensitivity medium yCoords greenName
-        # setDuration drawDur
-        -- # pauseAtBeginning (drawStagger*1)
-        # pauseUntil dur2
-      play $ morphSensitivity long xCoords redName
-        # setDuration drawDur
-        -- # pauseAtBeginning (drawStagger*2)
-        # pauseAtEnd drawPause
-    endT <- queryNow
-    return ()
-  where
-    playAndFreezeUntil endT ani = do
-      now <- queryNow
-      fork $ play $ ani # pauseUntil (now-endT)
-    drawDur = 3
-    drawStagger = 1
-    drawPause = 4
--}
 drawLabelS = drawLabelSVG "S" blueName
 drawLabelM = drawLabelSVG "M" greenName
 drawLabelL = drawLabelSVG "L" redName
@@ -177,21 +97,18 @@ drawLabelZ = drawLabelSVG "Z" blueName
 drawLabelY = drawLabelSVG "Y" greenName
 drawLabelX = drawLabelSVG "X" redName
 
-scene2Intro :: Animation
-scene2Intro = staticFrame 10 $ mkGroup [spectrumGridIntensity, spectrumGrid False]
-
-illustrateSpectrum :: Animation
-illustrateSpectrum = sceneAnimation $ do
+illustrateSpectrum :: Scene s ()
+illustrateSpectrum = spriteScope $ do
     intensity <- newSpriteSVG spectrumGridIntensity
     spriteE intensity $ overEnding 0.2 fadeOutE
     grid <- newSpriteSVG $ spectrumGrid False
     spriteZ grid 1
+    waitUntil $ wordStart $ findWord ["theory"] "spectrum"
     forM_ (zip [0 ..] spectrum) $ \(nth, intensity) -> do
       let nm = fromIntegral nth * (300/23/2) + 400
       fork $ drawLine nm intensity
       wait 0.05
-    wait 5
-    return ()
+    waitUntil $ wordEnd $ findWord ["simplify"] "sensing"
   where
     spectrum =
         [ 0.02, 0.03, 0.07, 0.1, 0.2, 0.35, 0.7, 0.8, 0.9 ,0.75, 0.5 ] ++
@@ -211,25 +128,39 @@ illustrateSpectrum = sceneAnimation $ do
       -- spriteTween s intensity $ partialSvg . curveS 2
       spriteTween s 0.8 $ partialSvg . curveS 2
 
-scene2 :: Animation
-scene2 = seqA scene2Intro $ seqA illustrateSpectrum $ sceneAnimation $ do
+scene2 :: Scene s ()
+scene2 = spriteScope $ do
+  illustrateSpectrum
   oldGrid <- newSpriteSVG $ spectrumGrid False
   newGrid <- newSpriteSVG $ spectrumGrid True
+  spriteZ newGrid 1
   spriteTween newGrid 0.5 withGroupOpacity
-  destroySprite newGrid
   destroySprite oldGrid
+  
+  (longL, longD) <- plotLineSprite newGrid redName
+  writeVar longD long
 
-  -- SML labels and timings.
-  labelS <- newSpriteSVG $ drawLabelS
+  (mediumL, mediumD) <- plotLineSprite newGrid greenName
+  writeVar mediumD medium
+
+  (shortL, shortD) <- plotLineSprite newGrid blueName
+  writeVar shortD short
+
+  labelS <- do
+    waitUntil $ wordStart $ findWord ["simplify"] "short"
+    fork $ tweenVar shortL 3 $ \v -> fromToS v 1
+    newSpriteSVG $ drawLabelS
   spriteMap labelS $ uncurry translate (labelPosition short)
 
   labelM <- fork $ do
-    wait 2.1
+    waitUntil $ wordStart $ findWord ["simplify"] "medium"
+    fork $ tweenVar mediumL 3 $ \v -> fromToS v 1
     newSpriteSVG $ drawLabelM
   spriteMap labelM $ uncurry translate (labelPosition medium)
 
   labelL <- fork $ do
-    wait 3.5
+    waitUntil $ wordStart $ findWord ["simplify"] "long"
+    fork $ tweenVar longL 3 $ \v -> fromToS v 1
     newSpriteSVG $ drawLabelL
   spriteMap labelL $ uncurry translate (labelPosition long)
 
@@ -237,16 +168,18 @@ scene2 = seqA scene2Intro $ seqA illustrateSpectrum $ sceneAnimation $ do
     spriteE label $ overBeginning 0.3 fadeInE
     spriteE label $ overEnding 0.3 fadeOutE
 
-  play $ drawSensitivities
-    # pauseAtEnd 1
-
+  waitUntil $ wordStart $ findWord ["xyz"] "stretched"
   -- Drop SML labels
   forM_ [labelS, labelM, labelL] destroySprite
 
-  xyzGraph <- fork $ newSpriteA' SyncFreeze $ drawMorphingSensitivities
+  waitOn $ do
+    now <- queryNow
+    let dur = wordEnd (findWord ["xyz"] "squeezed") - now
+    fork $ tweenVar shortD dur  $ \v -> morphSensitivity v zCoords . curveS 2
+    fork $ tweenVar mediumD dur $ \v -> morphSensitivity v yCoords . curveS 2
+    fork $ tweenVar longD dur   $ \v -> morphSensitivity v xCoords . curveS 2
 
   -- XYZ labels and timings
-  wait (duration drawMorphingSensitivities)
   labelZ <- fork $ newSpriteSVG $ drawLabelZ
   spriteE labelZ $ overBeginning 0.3 fadeInE
   labelZPos <- spriteVar labelZ (labelPosition zCoords) $ uncurry translate
@@ -259,10 +192,10 @@ scene2 = seqA scene2Intro $ seqA illustrateSpectrum $ sceneAnimation $ do
   spriteE labelX $ overBeginning 0.3 fadeInE
   labelXPos <- spriteVar labelX (labelPosition xCoords) $ uncurry translate
 
-  wait 4
+  waitUntil $ wordStart $ findWord ["xyz"] "2D"
 
-  fork $ spriteTween xyzGraph 2 $ \t -> scale (fromToS 1 0.5 $ curveS 2 t)
-  fork $ spriteTween xyzGraph 2 $ \t -> translate (fromToS 0 (screenWidth/4) $ curveS 2 t) 0
+  fork $ spriteTween newGrid 2 $ \t -> scale (fromToS 1 0.5 $ curveS 2 t)
+  fork $ spriteTween newGrid 2 $ \t -> translate (fromToS 0 (screenWidth/4) $ curveS 2 t) 0
 
   fork $ tweenVar labelZPos 2 $ \(x,y) t ->
     let (newX, newY) = Ternary.toOffsetCartesianCoords 0 0
@@ -292,22 +225,27 @@ scene2 = seqA scene2Intro $ seqA illustrateSpectrum $ sceneAnimation $ do
       <*> pure imgSize
   spriteMap xyzSpace $ translate (-screenWidth/4) 0
   spriteZ xyzSpace (-1)
+  
+  waitUntil $ wordStart $ findWord ["pyramid"] "pyramid"
   spriteTween xyzSpace 0.5 $ aroundCenter . scale . curveS 2
 
   wait 1
 
 
-
+  waitUntil $ wordStart $ findWord ["pyramid"] "reds"
   spriteE labelX (overBeginning 1 $ aroundCenterE highlightE)
   tweenVar redFactor 1 $ \v -> fromToS v 1 . curveS 2
 
+  waitUntil $ wordStart $ findWord ["pyramid"] "greens"
   spriteE labelY (overBeginning 1 $ aroundCenterE highlightE)
   tweenVar greenFactor 1 $ \v -> fromToS v 1 . curveS 2
 
+  waitUntil $ wordStart $ findWord ["pyramid"] "blues"
   spriteE labelZ (overBeginning 1 $ aroundCenterE highlightE)
   tweenVar blueFactor 1 $ \v -> fromToS v 1 . curveS 2
 
-  wait 3
+  waitUntil $ wordStart $ findWord ["pyramid"] "filter"
+
   let downShift = 1
   visCurve <- newVar 0
   waveLine <- fork $ newSpriteSVG $
@@ -402,7 +340,7 @@ scene2 = seqA scene2Intro $ seqA illustrateSpectrum $ sceneAnimation $ do
   fork $ spriteTween xyzSpace 1 $ \t -> withGroupOpacity (1-t)
   wait 2
 
-  fork $ spriteTween xyzGraph 0.5 $ \t -> withGroupOpacity (1-t)
+  fork $ spriteTween newGrid 0.5 $ \t -> withGroupOpacity (1-t)
 
   fork $ tweenVar labelXPos 1 $ \(x,y) t ->
     let (newX, newY) = (-1,3)
@@ -416,22 +354,18 @@ scene2 = seqA scene2Intro $ seqA illustrateSpectrum $ sceneAnimation $ do
     let (newX, newY) = (1,3)
         s = curveS 2 t
     in (fromToS x newX s, fromToS y newY s)
-  -- fork $ spriteTween labelX 1 $ \t -> withGroupOpacity (1-t)
-  -- fork $ spriteTween labelY 1 $ \t -> withGroupOpacity (1-t)
-  -- fork $ spriteTween labelZ 1 $ \t -> withGroupOpacity (1-t)
-
-  -- wait 1
 
   spriteZ visSpace (-1)
 
   spriteTween visSpace 1 $ \t ->
     translate (fromToS 0 (screenWidth/4) $ curveS 2 t) 0
 
-  wait 2
+  waitUntil $ wordStart $ findWord ["rgb"] "triangle"
 
   rgb <- newSprite $ withStrokeColor "white" . sRGBTriangle <$> unVar gamut
   spriteTween rgb 1 $ partialSvg
-  wait 1
+  
+  waitUntil $ wordStart $ findWord ["rgb"] "Finally"
   fork $ spriteTween rgb 1 $ \t -> withGroupOpacity (1-t)
 
   fork $ spriteTween labelX 1 $ \t -> withGroupOpacity (1-t)
@@ -440,16 +374,15 @@ scene2 = seqA scene2Intro $ seqA illustrateSpectrum $ sceneAnimation $ do
 
   tweenVar obsVisible 1 $ \v -> fromToS v 0 . curveS 2
 
-  wait 1
-
-  -- tweenVar gamut 1 $ \v -> fromToS v 1 . curveS 2
   tweenVar reorient 1 $ \v -> fromToS v 1 . curveS 2
-  wait 1
+
+  waitUntil $ wordStart $ findWord [] "path"
+
   writeVar cmName "jet"
   writeVar cmFunc jet
   tweenVar cmDelta 1 $ \d -> fromToS d 1
 
-  wait 2
+  waitUntil $ wordStart $ findWord ["draw"] "Hue-Saturation-Value"
 
   spriteTween visSpace 1 $ \t -> translate (-2.5*curveS 2 t) 0
 
@@ -474,7 +407,7 @@ scene2 = seqA scene2Intro $ seqA illustrateSpectrum $ sceneAnimation $ do
   spriteTween hsv 0 $ const $ translate 3 1.5
   spriteTween hsv 1 withGroupOpacity
 
-  wait 1
+  waitUntil $ wordStart $ findWord ["hsv"] "draw"
 
   tweenVar cmOpacity 0.3 $ \o t -> fromToS o 0 t
   writeVar cmName "sinebow"
@@ -483,17 +416,9 @@ scene2 = seqA scene2Intro $ seqA illustrateSpectrum $ sceneAnimation $ do
   writeVar cmDelta 0
   tweenVar cmDelta 5 $ \d -> fromToS d 1
 
-  wait 1
 
-  tweenVar cmOpacity 0.3 $ \o t -> fromToS o 0 t
-  writeVar cmName "parula"
-  writeVar cmFunc parula
-  writeVar cmOpacity 1
-  writeVar cmDelta 0
-  tweenVar cmDelta 5 $ \d -> fromToS d 1
-
-  wait 1
-
+  waitUntil $ wordStart $ findWord ["lab"] "LAB"
+  wait (-2)
 
   fork $ spriteTween hsv 1 $ \t -> translate (2*curveS 2 t) 0
   spriteTween visSpace 1 $ \t -> translate (-2*curveS 2 t) 0
@@ -516,10 +441,15 @@ scene2 = seqA scene2Intro $ seqA illustrateSpectrum $ sceneAnimation $ do
   spriteTween lab 0 $ const $ translate 0 1.5
   spriteTween lab 1 withGroupOpacity
 
-  -- tweenVar rgbCM 1 $ \(cm,d) t -> (parula ,fromToS 0 1 t)
+  waitUntil $ wordStart $ findWord ["made"] "Parula"
+  tweenVar cmOpacity 0.3 $ \o t -> fromToS o 0 t
+  writeVar cmName "parula"
+  writeVar cmFunc parula
+  writeVar cmOpacity 1
+  writeVar cmDelta 0
+  tweenVar cmDelta 5 $ \d -> fromToS d 1
 
-  wait 1
-
+  waitUntil $ wordStart $ findWord ["made"] "Viridis"
   tweenVar cmOpacity 0.3 $ \o t -> fromToS o 0 t
   writeVar cmName "viridis"
   writeVar cmFunc viridis
@@ -527,17 +457,7 @@ scene2 = seqA scene2Intro $ seqA illustrateSpectrum $ sceneAnimation $ do
   writeVar cmDelta 0
   tweenVar cmDelta 5 $ \d -> fromToS d 1
 
-  wait 1
-
-  tweenVar cmOpacity 0.3 $ \o t -> fromToS o 0 t
-  writeVar cmName "plasma"
-  writeVar cmFunc plasma
-  writeVar cmOpacity 1
-  writeVar cmDelta 0
-  tweenVar cmDelta 5 $ \d -> fromToS d 1
-
-  wait 1
-
+  waitUntil $ wordStart $ findWord ["made"] "Cividis"
   tweenVar cmOpacity 0.3 $ \o t -> fromToS o 0 t
   writeVar cmName "cividis"
   writeVar cmFunc cividis
@@ -545,17 +465,7 @@ scene2 = seqA scene2Intro $ seqA illustrateSpectrum $ sceneAnimation $ do
   writeVar cmDelta 0
   tweenVar cmDelta 5 $ \d -> fromToS d 1
 
-  wait 1
-
-  tweenVar cmOpacity 0.3 $ \o t -> fromToS o 0 t
-  writeVar cmName "jet"
-  writeVar cmFunc jet
-  writeVar cmOpacity 1
-  writeVar cmDelta 0
-  tweenVar cmDelta 5 $ \d -> fromToS d 1
-
-  wait 1
-
+  waitUntil $ wordStart $ findWord ["made"] "Turbo"
   tweenVar cmOpacity 0.3 $ \o t -> fromToS o 0 t
   writeVar cmName "turbo"
   writeVar cmFunc turbo
@@ -563,9 +473,7 @@ scene2 = seqA scene2Intro $ seqA illustrateSpectrum $ sceneAnimation $ do
   writeVar cmDelta 0
   tweenVar cmDelta 5 $ \d -> fromToS d 1
 
-  wait 3
-
-  return ()
+  waitUntil $ wordEnd $ findWord ["grid"] "Looking"
   where
     imgSize = 50
     obsColors =
@@ -583,136 +491,6 @@ renderColorMap delta width height cmap =
     withStrokeColor "white" $ withFillOpacity 0 $
     mkRect (width*delta) height
   ]
-
-{-
-scene3 :: Animation
-scene3 = sceneAnimation $ do
-    play $ mkAnimation 1 $ \t -> cieXYImage 0 0 t imgSize
-    play $ mkAnimation 1 $ \t -> cieXYImage t 0 1 imgSize
-    play $ mkAnimation 1 (\t -> cieXYImage 1 t 1 imgSize)
-      # pauseAtEnd 2
-  where
-    imgSize :: Num a => a
-    imgSize = 300
-    img1 t = cieXYImage t t t imgSize
-    obsColors =
-      lowerTransformations $
-      scale 5 $
-      renderXYZCoordinatesTernary
-    labColors =
-      lowerTransformations $
-      scale (100/2) $
-      renderLABCoordinates
--}
-
-{-
-frame = mkAnimation 2 $ \t ->
-    -- emit $ mkBackground "black"
-    -- emit $ spectrumGrid
-    let s = t
-        cm = hsv
-    in mkGroup
-      [ mkClipPath "sRGB"
-        [ simplify $
-          sRGBTriangle 0
-        ]
-      , mkClipPath "visible"
-        [ simplify
-          obsColors
-        ]
-      , mkClipPath "spectrum" $
-        let margin = 1 in
-        [ simplify $ lowerTransformations $
-          translate 0 (margin/2) $
-          pathify $
-          mkRect spectrumWidth (spectrumHeight+margin)
-        ]
-      ]
-
-    -- emit $ mkGroup
-    --   [ translate (-screenWidth*0.2) 0 $ mkGroup
-    --     [ -- withClipPathRef (Ref "sRGB") $
-    --       --withClipPathRef (Ref "visible") $
-    --       mkGroup [img1]
-    --     , withStrokeColor "white" $
-    --       sRGBTriangle
-    --     , withStrokeColor "white" $
-    --       obsColors
-    --     ]
-    --   , translate (screenWidth*0.2) 0 $ mkGroup
-    --     [ -- withClipPathRef (Ref "sRGB") $
-    --       withClipPathRef (Ref "sRGB") $
-    --       mkGroup [img1]
-    --     ]
-    --   ]
-  where
-    imgSize :: Num a => a
-    imgSize = 1000
-    img1 = cieXYImage 1 1 1 imgSize
-    img2 = cieLABImage imgSize 50
-    obsColors =
-      lowerTransformations $
-      scale 5 $
-      renderXYZCoordinatesTernary
-    labColors =
-      lowerTransformations $
-      scale (100/2) $
-      renderLABCoordinates
--}
-
-{-
-xyzTernaryPlot = mkAnimation 2 $ \t ->
-    -- emit $ mkBackground "black"
-    -- emit $ spectrumGrid
-    let s = t
-        cm = hsv
-    in mkGroup
-      [ mkClipPath "sRGB"
-        [ simplify $
-          sRGBTriangle 0
-        ]
-      , mkClipPath "sRGBGamut"
-        [ simplify $
-          sRGBTriangle t
-        ]
-      , mkClipPath "visible"
-        [ simplify
-          obsColors
-        ]
-      , translate (-screenWidth*0.2) 0 $ mkGroup
-        [ -- withClipPathRef (Ref "sRGB") $
-          --withClipPathRef (Ref "visible") $
-          mkGroup [img1 t]
-        , withStrokeColor "white" $
-          sRGBTriangle 0
-        , withStrokeColor "white" $
-          obsColors
-        ]
-      , translate (screenWidth*0.2) 0 $ mkGroup
-        [ withClipPathRef (Ref "sRGBGamut") $
-          --withClipPathRef (Ref "visible") $
-          mkGroup [cieXYImageGamut t imgSize]
-        ]
-      -- , translate (screenWidth*0.2) 0 $ mkGroup
-      --   [ -- withClipPathRef (Ref "sRGB") $
-      --     withClipPathRef (Ref "sRGB") $
-      --     mkGroup [img1 t]
-      --   ]
-      ]
-  where
-    imgSize :: Num a => a
-    imgSize = 50
-    img1 t = cieXYImage t t t imgSize
-    img2 = cieLABImage imgSize 50
-    obsColors =
-      lowerTransformations $
-      scale 5 $
-      renderXYZCoordinatesTernary
-    labColors =
-      lowerTransformations $
-      scale (100/2) $
-      renderLABCoordinates
--}
 
 renderXYZCoordinatesTernary :: Tree
 renderXYZCoordinatesTernary =
@@ -1058,27 +836,31 @@ spectrumGrid includeSensitivity =
       latex "700 nm"
 
 
-drawSensitivity :: Double -> [(Nanometer, Double)] -> String -> Animation
-drawSensitivity maxHeight dat c = animate $ \limit ->
-  sensitivitySVG maxHeight limit dat c
+drawSensitivity :: [(Nanometer, Double)] -> String -> Animation
+drawSensitivity dat c = animate $ \limit ->
+  sensitivitySVG limit dat c
 
 morphSensitivity
   :: [(Nanometer, Double)]
   -> [(Nanometer, Double)]
-  -> String
-  -> Animation
-morphSensitivity datA datB c = animate $ \t ->
-  let m = curveS 2 t
-      dat = [ (nm, fromToS a b m)
-            | ((nm,a),(_,b)) <- zip datA datB ]
-  in sensitivitySVG 1 1 dat c
+  -> Double
+  -> [(Nanometer, Double)]
+morphSensitivity datA datB m =
+  [ (nm, fromToS a b m)
+  | ((nm,a),(_,b)) <- zip datA datB ]
 
-  -- emit $
-  --  withClipPathRef (Ref "spectrum") $
-  --  simplify $ lowerTransformations $ pathify $
-  --  mkBackground "green"
-sensitivitySVG :: Double -> Double -> [(Nanometer, Double)] -> String -> Tree
-sensitivitySVG maxHeight limit dat c =
+plotLineSprite :: Sprite s -> String -> Scene s (Var s Double, Var s [(Nanometer, Double)])
+plotLineSprite parent color = do
+  limitV <- newVar 0
+  datV <- newVar []
+  spriteModify parent $ do
+    l <- unVar limitV
+    d <- unVar datV
+    return $ \(svg,z) -> (mkGroup [sensitivitySVG l d color, svg], z)
+  return (limitV, datV)
+
+sensitivitySVG :: Double -> [(Nanometer, Double)] -> String -> Tree
+sensitivitySVG limit dat c =
     mkGroup
     [ mkClipPath "spectrum" $
       let margin = 1 in
@@ -1103,6 +885,7 @@ sensitivitySVG maxHeight limit dat c =
       , percent <= limit
       ] ]
   where
+    maxHeight = 1
     initNM = fromIntegral $ fst (head dat)
     lastNM = 700 -- fromIntegral $ fst (last dat)
 
