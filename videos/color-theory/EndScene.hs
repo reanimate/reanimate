@@ -8,5 +8,4 @@ import           Transcript
 endScene :: Scene s ()
 endScene = do
   newSpriteSVG_ $ scale 0.5 $ githubWhiteIcon
-  waitUntil $ wordEnd $ findWord ["end"] "domain"
-  wait 1
+  waitUntil $ wordEnd (findWord ["end"] "domain") + 1

@@ -1,45 +1,27 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
 module Main
   ( main
   )
 where
 
-import           Control.Lens                             ( )
-import           Control.Monad
-import qualified Data.ByteString               as BS
-import qualified Data.Map                      as Map
-import           Data.Monoid
 import qualified Data.Text                     as T
 
 import           Codec.Picture
-import           Codec.Picture.Jpg
 import           Codec.Picture.Types
 import           Data.Word
 import           Graphics.SvgTree                  hiding ( Image
                                                           , imageHeight
                                                           , imageWidth
                                                           )
-import           Graphics.SvgTree.Memo
 import           Numeric
 import           Reanimate
-import           Reanimate.Animation
 import           Reanimate.ColorComponents
-import           Reanimate.ColorMap
-import           Reanimate.ColorSpace
-import           Reanimate.Builtin.Flip
 import           Reanimate.Builtin.Slide
-import           Reanimate.Constants
-import           Reanimate.Effect
-import           Reanimate.LaTeX
 import           Reanimate.Raster
 import           Reanimate.Scene
-import           Reanimate.Ease
 import           Reanimate.Transition
-import           Reanimate.Svg
-import           Reanimate.Parameters
 import           System.IO.Unsafe
 
 import           Grid
@@ -47,32 +29,6 @@ import           Spectrum
 import           EndScene
 import           Transcript
 import           Common
-
-{- Scene sequence
-
- - black
- - numbers
- - monalisa
- - monalisa to right side
- - colormaps added to left side
- - screen slide transition
- - draw LMS sensitivities
- - morph to XYZ sensitivities
- - move graph to right side
- - fade in ternary plot
- - move over XYZ labels
- - move over spectrum line
- - hide spectrum & center ternary plot
- - cut to visible colors
- - draw sRGB triangle
- - cut to sRGB triangle
- - scale sRGB triangle to ternary plot
- - show interpolation between green and red
- - it has yellow in the middle because xyz-space is based on physical reality
- - show interpolation between cyan and red
- - show that grey is in the middle
- - transition xyz-space to hsv-space
--}
 
 -- beginWord = findWord ["why"] "theory"
 -- beginWord = findWord ["theory"] "spectrum"
@@ -103,15 +59,14 @@ main =
     $ sceneAnimation
     $ do
         newSpriteSVG_ $ mkBackground "black"
-        -- fork $ adjustZ (\x -> x + 100) $ annotateWithTranscript transcript
         monalisaScene
-        transitionO transition1 1 falseColorScene $ do
-          transitionO transition2 1 scene2 $ do
+        transitionO transition1 1 falseColorScene $
+          transitionO transition2 1 scene2 $
             transitionO transition3 2 gridScene endScene
  where
   transition1 = signalT (curveS 2) slideDownT
   transition2 = signalT (curveS 2) slideUpT
-  transition3 = signalT (curveS 2) slideDownT -- flipTransition
+  transition3 = signalT (curveS 2) slideDownT
 
 monalisaScene :: Scene s ()
 monalisaScene = spriteScope $ do
@@ -123,7 +78,7 @@ monalisaScene = spriteScope $ do
   -- Show colormap  
   waitUntil $ wordStart $ findWord [] "if"
   cmapT <- newVar 0
-  cmap  <- newSprite $ showColorMap 0x00 0xFF <$> unVar cmapT
+  cmap  <- newSprite $ showColorMap 0 1 <$> unVar cmapT
   spriteE cmap $ overBeginning stdFade fadeInE
   spriteE cmap $ overEnding stdFade fadeOutE
 
@@ -143,7 +98,7 @@ monalisaScene = spriteScope $ do
   waitUntil $ wordStart $ findWord ["colormap"] "Shades"
   destroySprite img
     -- Move monalisa to the side of the screen
-  play $ sceneFalseColorIntro
+  play sceneFalseColorIntro
  where
   PixelRGB8 minR _ _ = minPixel monalisa
   PixelRGB8 maxR _ _ = maxPixel monalisa
@@ -290,7 +245,7 @@ showColorMap start end t = mkGroup
   $ withStrokeColor "black"
   $ mkLine (0, 0) (0, height)
   , center $ withStrokeColor "white" $ withFillOpacity 0 $ mkRect width height
-  , translate (t * width - width / 2) (height)
+  , translate (t * width - width / 2) height
   $ scale 0.3
   $ centerX
   $ withFillColorPixel (promotePixel $ cm n)

@@ -1,15 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecursiveDo       #-}
 {-# LANGUAGE ApplicativeDo     #-}
 module Spectrum
   ( scene2
   )
 where
 
-import           Control.Lens                             ( (&)
-                                                          , (.~)
-                                                          )
-
+import           Control.Lens
 import           Codec.Picture
 import           Codec.Picture.Types
 import           Control.Monad
@@ -23,13 +19,11 @@ import           Data.Colour.SRGB
 import           Data.Colour.SRGB.Linear
 import           Data.List
 import qualified Data.Map                      as Map
-import           Data.Maybe
 import           Data.Ord
 import           Data.Text                                ( Text )
 import           Graphics.SvgTree                  hiding ( Text )
 import           Linear.V2
 import           Reanimate
-import           Reanimate.Animation
 import           Reanimate.Builtin.CirclePlot
 import           Reanimate.Builtin.Documentation
 import qualified Reanimate.Builtin.TernaryPlot as Ternary
@@ -40,15 +34,6 @@ import           Reanimate.Raster
 import           System.IO.Unsafe
 
 import           Transcript
-
-{- STORYBOARD
- - Wavelength scene
-    * Background: wavelength/sensitivity grid
-    * Draw SML sensitivities with labels
-    * Hide labels
-    * Morph to XYZ sensitivities
-    * Label as XYZ
--}
 
 long = [ (nm, l) | (nm, (l, m, s)) <- Map.toList coneSensitivity ]
 medium = [ (nm, m) | (nm, (l, m, s)) <- Map.toList coneSensitivity ]
@@ -90,19 +75,8 @@ illustrateSpectrum = spriteScope $ do
       ++ [0.3, 0.27, 0.31, 0.25, 0.3, 0.35, 0.4, 0.5]
       ++ [0.65, 0.8, 0.95, 1.0, 0.95, 0.98, 0.93, 0.97]
       ++ [0.85, 0.75, 0.65, 0.60, 0.55, 0.52, 0.48, 0.45]
-      ++ [ 0.45
-         , 0.40
-         , 0.35
-         , 0.30
-         , 0.25
-         , 0.20
-         , 0.15
-         , 0.15
-         , 0.15
-         , 0.13
-         , 0.11
-         , 0.08
-         ]
+      ++ [0.45, 0.40, 0.35, 0.30, 0.25, 0.20, 0.15]
+      ++ [0.15, 0.15, 0.13, 0.11, 0.08]
   drawLine nm intensity = do
     let Just c = fmap (promotePixel . toRGB8) (nmToColor (round nm))
     s <-
@@ -133,31 +107,22 @@ scene2 = spriteScope $ do
   (shortL, shortD) <- plotLineSprite newGrid blueName
   writeVar shortD short
 
-  labelS <- do
-    waitUntil $ wordStart $ findWord ["simplify"] "short"
-    fork $ tweenVar shortL 3 $ \v -> fromToS v 1
-    newSpriteSVG $ drawLabelS
-  spriteMap labelS $ uncurry translate (labelPosition short)
+  let drawCone keyVar svg dat key = fork $ do
+        waitUntil $ wordStart $ findWord ["simplify"] key
+        fork $ tweenVar keyVar 3 $ \v -> fromToS v 1
+        label <- newSpriteSVG svg
+        spriteE label $ overBeginning 0.3 fadeInE
+        spriteE label $ overEnding 0.3 fadeOutE
+        spriteMap label $ uncurry translate (labelPosition dat)
+        waitUntil $ wordStart $ findWord ["xyz"] "stretched"
+        destroySprite label
 
-  labelM <- fork $ do
-    waitUntil $ wordStart $ findWord ["simplify"] "medium"
-    fork $ tweenVar mediumL 3 $ \v -> fromToS v 1
-    newSpriteSVG $ drawLabelM
-  spriteMap labelM $ uncurry translate (labelPosition medium)
-
-  labelL <- fork $ do
-    waitUntil $ wordStart $ findWord ["simplify"] "long"
-    fork $ tweenVar longL 3 $ \v -> fromToS v 1
-    newSpriteSVG $ drawLabelL
-  spriteMap labelL $ uncurry translate (labelPosition long)
-
-  forM_ [labelS, labelM, labelL] $ \label -> do
-    spriteE label $ overBeginning 0.3 fadeInE
-    spriteE label $ overEnding 0.3 fadeOutE
+  drawCone shortL  drawLabelS short  "short"
+  drawCone mediumL drawLabelM medium "medium"
+  drawCone longL   drawLabelL long   "long"
 
   waitUntil $ wordStart $ findWord ["xyz"] "stretched"
-  -- Drop SML labels
-  forM_ [labelS, labelM, labelL] destroySprite
+  -- SML label are deleted now.
 
   waitOn $ do
     now <- queryNow
@@ -167,15 +132,15 @@ scene2 = spriteScope $ do
     fork $ tweenVar longD dur $ \v -> morphSensitivity v xCoords . curveS 2
 
   -- XYZ labels and timings
-  labelZ <- fork $ newSpriteSVG $ drawLabelZ
+  labelZ <- newSpriteSVG drawLabelZ
   spriteE labelZ $ overBeginning 0.3 fadeInE
   labelZPos <- spriteVar labelZ (labelPosition zCoords) $ uncurry translate
 
-  labelY    <- fork $ newSpriteSVG $ drawLabelY
+  labelY    <- newSpriteSVG drawLabelY
   spriteE labelY $ overBeginning 0.3 fadeInE
   labelYPos <- spriteVar labelY (labelPosition yCoords) $ uncurry translate
 
-  labelX    <- fork $ newSpriteSVG $ drawLabelX
+  labelX    <- newSpriteSVG drawLabelX
   spriteE labelX $ overBeginning 0.3 fadeInE
   labelXPos <- spriteVar labelX (labelPosition xCoords) $ uncurry translate
 
@@ -238,12 +203,10 @@ scene2 = spriteScope $ do
   let downShift = 1
   visCurve <- newVar 0
   waveLine <-
-    fork
-    $ newSpriteSVG
-    $ translate (screenWidth / 4) 0
-    $ scale 0.5
-    $ translate 0 (-spectrumHeight / 2)
-    $ wavelengthAxis
+    fork $ newSpriteSVG $ translate (screenWidth / 4) 0 $ scale 0.5 $ translate
+      0
+      (-spectrumHeight / 2)
+      wavelengthAxis
   spriteTween waveLine 1
     $ \d -> translate 0 (fromToS 0 (-downShift) $ curveS 2 d)
   -- wait 1
@@ -253,7 +216,7 @@ scene2 = spriteScope $ do
     .   withStrokeColor "white"
     .   morphXYZCoordinates
     <$> unVar visCurve
-  spriteZ visLine (1)
+  spriteZ visLine 1
 
   spriteTween waveLine 0.5 $ \t -> withGroupOpacity (1 - t)
   destroySprite waveLine
@@ -307,11 +270,10 @@ scene2 = spriteScope $ do
       ]
 
   colorMap <- newSprite $ do
-    getOpacity <- unVar cmOpacity
-    getDelta   <- unVar cmDelta
-    getFunc    <- unVar cmFunc
-    getName    <- unVar cmName
-    return $ withGroupOpacity getOpacity $ mkGroup
+    getDelta <- unVar cmDelta
+    getFunc  <- unVar cmFunc
+    getName  <- unVar cmName
+    return $ mkGroup
       [ renderColorMap getDelta
                        (screenWidth * 0.75)
                        (screenHeight * 0.15)
@@ -323,7 +285,8 @@ scene2 = spriteScope $ do
       $ center
       $ latex getName
       ]
-  spriteTween colorMap 0 $ const $ translate 0 (-3)
+  spriteMap colorMap $ translate 0 (-3)
+  applyVar cmOpacity colorMap withGroupOpacity
 
   wait 4
   fork $ spriteTween visLine 1 $ \t -> withGroupOpacity (1 - t)
@@ -353,7 +316,7 @@ scene2 = spriteScope $ do
   waitUntil $ wordStart $ findWord ["rgb"] "triangle"
 
   rgb <- newSprite $ withStrokeColor "white" . sRGBTriangle <$> unVar gamut
-  spriteTween rgb 1 $ partialSvg
+  spriteTween rgb 1 partialSvg
 
   waitUntil $ wordStart $ findWord ["rgb"] "Finally"
   fork $ spriteTween rgb 1 $ \t -> withGroupOpacity (1 - t)
@@ -388,21 +351,20 @@ scene2 = spriteScope $ do
       , translate 0 2 $ scale 0.5 $ center $ withFillColor "white" $ latex "HSV"
       ]
 
-    -- lchColorSpace 100
-    -- cieLABImage 100 50
-    -- cieLABImage 2000 2000
-  spriteTween hsv 0 $ const $ translate 3 1.5
+  spriteMap hsv $ translate 3 1.5
   spriteTween hsv 1 withGroupOpacity
 
   waitUntil $ wordStart $ findWord ["hsv"] "draw"
 
-  tweenVar cmOpacity 0.3 $ \o t -> fromToS o 0 t
-  writeVar cmName    "sinebow"
-  writeVar cmFunc    sinebow
-  writeVar cmOpacity 1
-  writeVar cmDelta   0
-  tweenVar cmDelta 5 $ \d -> fromToS d 1
+  let drawColormap generator txt = do
+        tweenVar cmOpacity 0.3 $ \o t -> fromToS o 0 t
+        writeVar cmName    txt
+        writeVar cmFunc    generator
+        writeVar cmOpacity 1
+        writeVar cmDelta   0
+        tweenVar cmDelta 5 $ \d -> fromToS d 1
 
+  drawColormap sinebow "sinebow"
 
   waitUntil $ wordStart $ findWord ["lab"] "LAB"
   wait (-2)
@@ -422,48 +384,28 @@ scene2 = spriteScope $ do
       , translate 0 2 $ scale 0.5 $ center $ withFillColor "white" $ latex "LAB"
       ]
 
-  spriteTween lab 0 $ const $ translate 0 1.5
+  spriteMap lab $ translate 0 1.5
   spriteTween lab 1 withGroupOpacity
 
   waitUntil $ wordStart $ findWord ["made"] "Parula"
-  tweenVar cmOpacity 0.3 $ \o t -> fromToS o 0 t
-  writeVar cmName    "parula"
-  writeVar cmFunc    parula
-  writeVar cmOpacity 1
-  writeVar cmDelta   0
-  tweenVar cmDelta 5 $ \d -> fromToS d 1
+  drawColormap parula "parula"
 
   waitUntil $ wordStart $ findWord ["made"] "Viridis"
-  tweenVar cmOpacity 0.3 $ \o t -> fromToS o 0 t
-  writeVar cmName    "viridis"
-  writeVar cmFunc    viridis
-  writeVar cmOpacity 1
-  writeVar cmDelta   0
-  tweenVar cmDelta 5 $ \d -> fromToS d 1
+  drawColormap viridis "viridis"
 
   waitUntil $ wordStart $ findWord ["made"] "Cividis"
-  tweenVar cmOpacity 0.3 $ \o t -> fromToS o 0 t
-  writeVar cmName    "cividis"
-  writeVar cmFunc    cividis
-  writeVar cmOpacity 1
-  writeVar cmDelta   0
-  tweenVar cmDelta 5 $ \d -> fromToS d 1
+  drawColormap cividis "cividis"
 
   waitUntil $ wordStart $ findWord ["made"] "Turbo"
-  tweenVar cmOpacity 0.3 $ \o t -> fromToS o 0 t
-  writeVar cmName    "turbo"
-  writeVar cmFunc    turbo
-  writeVar cmOpacity 1
-  writeVar cmDelta   0
-  tweenVar cmDelta 5 $ \d -> fromToS d 1
+  drawColormap turbo "turbo"
 
   waitUntil $ wordEnd $ findWord ["grid"] "Looking"
  where
   imgSize   = 2000
-  obsColors = lowerTransformations $ scale 5 $ renderXYZCoordinatesTernary
+  obsColors = lowerTransformations $ scale 5 renderXYZCoordinatesTernary
 
 
-renderColorMap :: Double -> Double -> Double -> (Double -> PixelRGB8) -> Tree
+renderColorMap :: Double -> Double -> Double -> (Double -> PixelRGB8) -> SVG
 renderColorMap delta width height cmap =
   translate (-width / 2 * (1 - delta)) 0 $ mkGroup
     [ scaleToSize (width * delta) height $ showColorMap (\t -> cmap (t * delta))
@@ -473,7 +415,7 @@ renderColorMap delta width height cmap =
     $ mkRect (width * delta) height
     ]
 
-renderXYZCoordinatesTernary :: Tree
+renderXYZCoordinatesTernary :: SVG
 renderXYZCoordinatesTernary =
   withFillOpacity 0
     $ mkLinePath
@@ -482,7 +424,7 @@ renderXYZCoordinatesTernary =
       , let (x, y) = Ternary.toOffsetCartesianCoords green red
       ]
 
-morphXYZCoordinates :: Double -> Tree
+morphXYZCoordinates :: Double -> SVG
 morphXYZCoordinates t =
   withFillOpacity 0
     $ mkLinePath
@@ -502,14 +444,18 @@ morphXYZCoordinates t =
 -- Blue corner: 0.15 0.06 0.79
 --1 0 0 -> 0.64 0.33 0.0
 --0 1 0 -> 0.30 0.60 0.1
-cieXYImageGamut :: Double -> Int -> Tree
-cieXYImageGamut t density = cacheSvg ("cieXYImageGamut"::String, t, density) $ 
-  Ternary.ternaryPlot density $ \aCoord bCoord cCoord ->
-    let aCoord'   = fromToS aCoord (rX * aCoord + gX * bCoord + bX * cCoord) t
-        bCoord'   = fromToS bCoord (rY * aCoord + gY * bCoord + bY * cCoord) t
-        cCoord'   = fromToS cCoord (rZ * aCoord + gZ * bCoord + bZ * cCoord) t
-        RGB r g b = toSRGBBounded (cieXYZ aCoord' bCoord' cCoord')
-    in  PixelRGBA8 r g b 0xFF
+cieXYImageGamut :: Double -> Int -> SVG
+cieXYImageGamut t density =
+  cacheSvg ("cieXYImageGamut" :: String, t, density)
+    $ Ternary.ternaryPlot density
+    $ \aCoord bCoord cCoord ->
+        let
+          aCoord'   = fromToS aCoord (rX * aCoord + gX * bCoord + bX * cCoord) t
+          bCoord'   = fromToS bCoord (rY * aCoord + gY * bCoord + bY * cCoord) t
+          cCoord'   = fromToS cCoord (rZ * aCoord + gZ * bCoord + bZ * cCoord) t
+          RGB r g b = toSRGBBounded (cieXYZ aCoord' bCoord' cCoord')
+        in
+          PixelRGBA8 r g b 0xFF
  where
   RGB r g b    = primaries sRGBGamut
   (rX, rY, rZ) = chromaCoords $ chromaConvert r
@@ -527,16 +473,14 @@ gamutSlope gamut = atan2 (y1 / y2) (x1 / x2) / pi * 180
   (x2, y2)      = Ternary.toCartesianCoords bX bY
 
 strokeLine :: Double -> [(Double, Double)] -> SVG
-strokeLine t points = mkGroup
-  [ withStrokeWidth (defaultStrokeWidth * 1)
-  $  withFillOpacity 0
+strokeLine t points = withFillOpacity 0 $ mkGroup
+  [ withStrokeWidth (defaultStrokeWidth * 2)
   $  withStrokeColor "black"
   $  partialSvg t
   $  mkLinePath points
   &  strokeLineCap
   .~ pure CapRound
-  , withStrokeWidth (defaultStrokeWidth * 0.5)
-  $  withFillOpacity 0
+  , withStrokeWidth defaultStrokeWidth
   $  withStrokeColor "white"
   $  partialSvg t
   $  mkLinePath points
@@ -545,7 +489,7 @@ strokeLine t points = mkGroup
   ]
 
 -- 0.15 0.06 -> 0 0
-cmToTernary :: Double -> (Double -> PixelRGB8) -> Tree
+cmToTernary :: Double -> (Double -> PixelRGB8) -> SVG
 cmToTernary 0 _  = mkGroup []
 cmToTernary t cm = lowerTransformations $ scale 5 $ strokeLine t points
  where
@@ -558,7 +502,7 @@ cmToTernary t cm = lowerTransformations $ scale 5 $ strokeLine t points
           s                        = cieX + cieY + cieZ
     ]
 
-cmToHSV :: Double -> (Double -> PixelRGB8) -> Tree
+cmToHSV :: Double -> (Double -> PixelRGB8) -> SVG
 cmToHSV t cm = lowerTransformations $ scale (screenHeight / 2) $ strokeLine
   t
   points
@@ -577,7 +521,7 @@ cmToHSV t cm = lowerTransformations $ scale (screenHeight / 2) $ strokeLine
 -- 0 = dim/2
 -- +labScaleX = dim
 -- -labScaleX to +labScaleX
-cmToLAB :: Double -> (Double -> PixelRGB8) -> Tree
+cmToLAB :: Double -> (Double -> PixelRGB8) -> SVG
 cmToLAB t cm =
   lowerTransformations
     $ translate (-screenHeight / 2) (-screenHeight / 2)
@@ -598,7 +542,7 @@ cmToLAB t cm =
 -- bCoord = green
 -- cCoord = blue
 -- closer to white when (aCoord+cCoord) approaches 0
-cieXYImage :: Double -> Double -> Double -> Int -> Tree
+cieXYImage :: Double -> Double -> Double -> Int -> SVG
 cieXYImage redFactor greenFactor blueFactor density =
   cacheSvg ("cieXYImage" :: String, redFactor, greenFactor, blueFactor, density)
     $ Ternary.ternaryPlot density
@@ -612,10 +556,8 @@ cieXYImage redFactor greenFactor blueFactor density =
                 toSRGBBounded
                   $ blend (1 - redD)   white
                   $ blend (1 - greenD) white
-                  $ blend (1 - blueD)  white
-                  $ c
-          -- RGB r g b = toSRGBBounded (chromaColour d65 1)
-        in  PixelRGBA8 r g b 0xFF
+                  $ blend (1 - blueD) white c
+        in  promotePixel (PixelRGB8 r g b)
 
 cieLABImagePixels :: SVG
 cieLABImagePixels =
@@ -625,44 +567,7 @@ cieLABImagePixels =
       Left  err -> error err
       Right img -> return $ convertRGBA8 img
 
-cieLABImages :: Int -> Tree
-cieLABImages dim = mkGroup [ cieLABImage dim lStar | lStar <- [40 .. 95] ]
-
-cieLABImage :: Int -> Double -> Tree
-cieLABImage dim = embedImage . cieLABImage' dim
-
-cieLABImage' dim lStar = generateImage gen dim dim
- where
-  gen x y =
-    let aStar = (fromIntegral x / fromIntegral dim) * labScaleX * 2 - labScaleX
-        bStar =
-            (1 - (fromIntegral y / fromIntegral dim)) * labScaleY * 2 - labScaleY
-        color     = cieLAB d65 lStar aStar bStar
-        RGB r g b = toSRGBBounded (cieLAB d65 lStar aStar bStar)
-    in  if inGamut sRGBGamut color
-          then PixelRGBA8 r g b 0xFF
-          else PixelRGBA8 0xFF 0xFF 0xFF 0x00
-
-cieLABImage_ :: Int -> Tree
-cieLABImage_ = embedImage . cieLABImage_'
-
-cieLABImage_' dim = generateImage gen dim dim
- where
-  gen x y =
-    let aStar = (fromIntegral x / fromIntegral dim) * labScaleX * 2 - labScaleX
-        bStar =
-            (1 - (fromIntegral y / fromIntegral dim)) * labScaleY * 2 - labScaleY
-        colors =
-            [ toSRGBBounded color
-            | lStar <- reverse [40 .. 95]
-            , let color = cieLAB d65 lStar aStar bStar
-            , inGamut sRGBGamut color
-            ]
-    in  case listToMaybe colors of
-          Nothing          -> PixelRGBA8 0xFF 0xFF 0xFF 0x00
-          Just (RGB r g b) -> PixelRGBA8 r g b 0xFF
-
-colorMapToLABCoords :: (Double -> PixelRGB8) -> Tree
+colorMapToLABCoords :: (Double -> PixelRGB8) -> SVG
 colorMapToLABCoords colorMap = withFillOpacity 0 $ mkLinePath
   [ (aStar, 1 - bStar)
   | n <- [0 .. steps]
@@ -671,7 +576,7 @@ colorMapToLABCoords colorMap = withFillOpacity 0 $ mkLinePath
   ]
   where steps = 100
 
-colorMapToXYZCoords :: (Double -> PixelRGB8) -> Tree
+colorMapToXYZCoords :: (Double -> PixelRGB8) -> SVG
 colorMapToXYZCoords colorMap = withFillOpacity 0 $ mkLinePath
   [ (x / s, 1 - (y / s))
   | n <- [0 .. steps]
@@ -681,40 +586,27 @@ colorMapToXYZCoords colorMap = withFillOpacity 0 $ mkLinePath
   ]
   where steps = 100
 
-sRGBTriangle :: Double -> Tree
+sRGBTriangle :: Double -> SVG
 sRGBTriangle t =
-  lowerTransformations $ scale 5 $ withFillOpacity 0 $ mkClosedLinePath
-    [ Ternary.toOffsetCartesianCoords (fromToS rY 0 t) (fromToS rX 1 t)
-    , Ternary.toOffsetCartesianCoords (fromToS gY 1 t) (fromToS gX 0 t)
-    , Ternary.toOffsetCartesianCoords (fromToS bY 0 t) (fromToS bX 0 t)
-    ]
+  lowerTransformations
+    $ scale 5
+    $ withFillOpacity 0
+    $ withStrokeLineJoin JoinRound
+    $ mkLinePathClosed
+        [ Ternary.toOffsetCartesianCoords (fromToS rY 0 t) (fromToS rX 1 t)
+        , Ternary.toOffsetCartesianCoords (fromToS gY 1 t) (fromToS gX 0 t)
+        , Ternary.toOffsetCartesianCoords (fromToS bY 0 t) (fromToS bX 0 t)
+        ]
  where
   RGB r g b   = primaries sRGBGamut
   (rX, rY, _) = chromaCoords $ chromaConvert r
   (gX, gY, _) = chromaCoords $ chromaConvert g
   (bX, bY, _) = chromaCoords $ chromaConvert b
 
-mkClosedLinePath :: [(Double, Double)] -> Tree
-mkClosedLinePath [] = mkGroup []
-mkClosedLinePath ((startX, startY) : rest) =
-  PathTree
-    $  defaultSvg
-    &  pathDefinition
-    .~ cmds
-    &  strokeLineJoin
-    .~ pure JoinRound
- where
-  cmds =
-    [ MoveTo OriginAbsolute [V2 startX startY]
-    , LineTo OriginAbsolute [ V2 x y | (x, y) <- rest ]
-    , EndPath
-    ]
-
 spectrumHeight = screenHeight * 0.5
 spectrumWidth = screenWidth * 0.7
 
-
-wavelengthAxis :: Tree
+wavelengthAxis :: SVG
 wavelengthAxis = withStrokeWidth strokeWidth $ mkGroup
   [ translate (-spectrumWidth / 2) 0
     $  withFillOpacity 0
@@ -735,17 +627,14 @@ wavelengthAxis = withStrokeWidth strokeWidth $ mkGroup
  where
   strokeWidth = 0.03
   nTicksX     = 24
-  nTicksY     = fromIntegral (round (spectrumHeight / spectrumWidth * nTicksX))
   tickLength  = spectrumHeight * 0.02
 
 spectrumGridIntensity :: SVG
-spectrumGridIntensity =
-  withFillColor "white"
-    $ translate (-spectrumWidth * 0.5 - svgWidth svg * 0.7) 0
-    $ svg
+spectrumGridIntensity = withFillColor "white"
+  $ translate (-spectrumWidth * 0.5 - svgWidth svg * 0.7) 0 svg
   where svg = center $ scale 0.7 $ rotate 90 $ latex "Intensity $\\rightarrow$"
 
-spectrumGrid :: Bool -> Tree
+spectrumGrid :: Bool -> SVG
 spectrumGrid includeSensitivity = withStrokeWidth strokeWidth $ mkGroup
   [ translate (-spectrumWidth / 2) (spectrumHeight / 2)
   $  withFillOpacity 0
@@ -771,23 +660,19 @@ spectrumGrid includeSensitivity = withStrokeWidth strokeWidth $ mkGroup
          ]
        | n <- [0 .. nTicksY - 1]
        ]
-  , if includeSensitivity
-    then
-      withFillColor "white"
-      $ translate (-spectrumWidth * 0.5 - svgWidth sensitivity * 0.7) 0
-      $ sensitivity
-    else None
-  , withFillColor "white"
-  $ translate 0 (-spectrumHeight * 0.5 - svgHeight wavelength * 0.7)
-  $ wavelength
-  , withFillColor "white"
-  $ translate (-spectrumWidth * 0.5 + svgWidth shortWaves * 0.5)
-              (-spectrumHeight * 0.5 - svgHeight shortWaves * 0.7)
-  $ shortWaves
-  , withFillColor "white"
-  $ translate (spectrumWidth * 0.5 + svgWidth longWaves * 0.5)
-              (-spectrumHeight * 0.5 - svgHeight longWaves * 0.7)
-  $ longWaves
+  , withFillColor "white" $ mkGroup
+    [ translate (-spectrumWidth * 0.5 - svgWidth sensitivity * 0.7) 0
+      $ if includeSensitivity then sensitivity else None
+    , translate 0
+                (-spectrumHeight * 0.5 - svgHeight wavelength * 0.7)
+                wavelength
+    , translate (-spectrumWidth * 0.5 + svgWidth shortWaves * 0.5)
+                (-spectrumHeight * 0.5 - svgHeight shortWaves * 0.7)
+                shortWaves
+    , translate (spectrumWidth * 0.5 + svgWidth longWaves * 0.5)
+                (-spectrumHeight * 0.5 - svgHeight longWaves * 0.7)
+                longWaves
+    ]
   ]
  where
   strokeWidth = 0.03
@@ -819,16 +704,16 @@ plotLineSprite parent color = do
     return $ \(svg, z) -> (mkGroup [sensitivitySVG l d color, svg], z)
   return (limitV, datV)
 
-sensitivitySVG :: Double -> [(Nanometer, Double)] -> String -> Tree
+sensitivitySVG :: Double -> [(Nanometer, Double)] -> String -> SVG
 sensitivitySVG limit dat c = mkGroup
   [ mkClipPath "spectrum"
     $ let margin = 1
-      in  [ simplify
-            $ lowerTransformations
-            $ translate 0 (margin / 2)
-            $ pathify
-            $ mkRect spectrumWidth (spectrumHeight + margin)
-          ]
+      in  removeGroups
+          $ simplify
+          $ lowerTransformations
+          $ translate 0 (margin / 2)
+          $ pathify
+          $ mkRect spectrumWidth (spectrumHeight + margin)
   , withClipPathRef (Ref "spectrum")
   $ simplify
   $ lowerTransformations
@@ -842,14 +727,13 @@ sensitivitySVG limit dat c = mkGroup
     , fromIntegral nm <= lastNM
     , let percent = (fromIntegral nm - initNM) / (lastNM - initNM)
           x       = percent * spectrumWidth
-          y       = n / maxHeight * spectrumHeight
+          y       = n * spectrumHeight
     , percent <= limit
     ]
   ]
  where
-  maxHeight = 1
-  initNM    = fromIntegral $ fst (head dat)
-  lastNM    = 700 -- fromIntegral $ fst (last dat)
+  initNM = fromIntegral $ fst (head dat)
+  lastNM = 700 -- fromIntegral $ fst (last dat)
 
 labelPosition :: [(Nanometer, Double)] -> (Double, Double)
 labelPosition dat =
@@ -862,17 +746,11 @@ labelPosition dat =
   percent = (fromIntegral nm - initNM) / (lastNM - initNM)
 
 drawLabelSVG :: Text -> String -> SVG
-drawLabelSVG label c =
-  translate (0) (svgHeight labelSVG * 0.7) $ withFillColor c $ labelSVG
-  where labelSVG = center $ scale 1 $ latex label
+drawLabelSVG label c = translate 0 (svgHeight labelSVG * 0.7)
+  $ withFillColor c labelSVG
+  where labelSVG = center $ latex label
 
-moveUp :: SVG -> SVG
-moveUp svg = translate 0 (-svgHeight svg * 1.5) svg
-
-moveDown :: SVG -> SVG
-moveDown svg = translate 0 (svgHeight svg * 1.5) svg
-
-hsvColorSpace :: Int -> Tree
+hsvColorSpace :: Int -> SVG
 hsvColorSpace width =
   cacheSvg ("hsvColorSpace" :: String, width)
     $ circlePlot width

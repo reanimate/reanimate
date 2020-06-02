@@ -9,7 +9,6 @@ module Transcript
 
 import qualified Reanimate.Voice as V
 
-
 transcript :: V.Transcript
 transcript = V.loadTranscript "SCRIPT.txt"
 
