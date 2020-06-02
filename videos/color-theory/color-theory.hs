@@ -39,12 +39,14 @@ import           Reanimate.Scene
 import           Reanimate.Ease
 import           Reanimate.Transition
 import           Reanimate.Svg
+import           Reanimate.Parameters
 import           System.IO.Unsafe
 
 import           Grid
 import           Spectrum
 import           EndScene
 import           Transcript
+import           Common
 
 {- Scene sequence
 
@@ -72,8 +74,6 @@ import           Transcript
  - transition xyz-space to hsv-space
 -}
 
-highdef = False
-
 -- beginWord = findWord ["why"] "theory"
 -- beginWord = findWord ["theory"] "spectrum"
 -- beginWord = findWord ["simplify"] "awkward"
@@ -81,25 +81,29 @@ highdef = False
 -- beginWord = findWord ["xyz"] "Taking"
 -- beginWord = findWord ["rgb"] "Finally"
 -- beginWord = findWord ["hsv"] "we"
--- beginWord = findWord ["lab"] "LAB"
-beginWord = findWord ["made"] "instead"
+-- beginWord = findWord ["lab"] "The"
+-- beginWord = findWord ["pyramid"] "Taking"
+-- beginWord = findWord ["made"] "instead"
+beginWord = findWord ["colormap"] "Shades"
 
 -- endWord = findWord ["xyz"] "colors"
 -- endWord = findWord ["simplify"] "All"
 -- endWord = findWord ["xyz"] "sRGB"
--- endWord = findWord ["pyramid"] "approximations"
+-- endWord = findWord ["rgb"] "While"
 -- endWord = findWord ["hsv"] "saturation"
-endWord = findWord ["lab"] "THEEND"
+-- endWord = findWord ["lab"] "brightness"
+endWord = findWord ["colormap"] "1970s"
 
 main :: IO ()
 main =
   reanimate
     -- $ dropA (wordStart beginWord)
     -- $ takeA (wordEnd endWord)
+    -- $ takeA 20
     $ sceneAnimation
     $ do
         newSpriteSVG_ $ mkBackground "black"
-        fork $ adjustZ (\x -> x + 100) $ annotateWithTranscript transcript
+        -- fork $ adjustZ (\x -> x + 100) $ annotateWithTranscript transcript
         monalisaScene
         transitionO transition1 1 falseColorScene $ do
           transitionO transition2 1 scene2 $ do
@@ -119,7 +123,7 @@ monalisaScene = spriteScope $ do
   -- Show colormap  
   waitUntil $ wordStart $ findWord [] "if"
   cmapT <- newVar 0
-  cmap  <- newSprite $ showColorMap minV maxV <$> unVar cmapT
+  cmap  <- newSprite $ showColorMap 0x00 0xFF <$> unVar cmapT
   spriteE cmap $ overBeginning stdFade fadeInE
   spriteE cmap $ overEnding stdFade fadeOutE
 
@@ -134,10 +138,6 @@ monalisaScene = spriteScope $ do
         - wordStart (findWord [] "understandable")
   tweenVar imgT imgDur $ \v -> fromToS v 1 . curveS 2
 
-  -- play
-  --     $ drawPixelImage (fromIntegral minR / 255) ((fromIntegral maxR + 1) / 255)
-  --     # setDuration toGrayScaleTime
-  --     # pauseAround drawPixelDelay 3
   destroySprite hex
 
   waitUntil $ wordStart $ findWord ["colormap"] "Shades"
@@ -183,7 +183,7 @@ falseColorScene = spriteScope $ do
 
   pushCM "greyscale" greyscale
 
-  waitUntil $ wordStart $ findWord ["colormap"] "sinebow"
+  waitUntil $ wordStart $ findWord ["colormap"] "sine"
   pushCM "sinebow" sinebow
 
   waitUntil $ wordStart $ findWord ["colormap"] "Jet"
@@ -204,35 +204,11 @@ falseColorScene = spriteScope $ do
   waitUntil $ wordEnd $ findWord ["why"] "theory"
   wait 1
 
-
-
-monalisa :: Image PixelRGB8
-monalisa = unsafePerformIO $ do
-  dat <- BS.readFile "monalisa.jpg"
-  case decodeJpeg dat of
-    Left  err -> error err
-    Right img -> return $ convertRGB8 img
-
-monalisaLarge :: Image PixelRGB8
-monalisaLarge = scaleImage (if highdef then 15 else 1) monalisa
-
 maxPixel :: Image PixelRGB8 -> PixelRGB8
 maxPixel img = pixelFold (\acc _ _ pix -> max acc pix) (pixelAt img 0 0) img
 
 minPixel :: Image PixelRGB8 -> PixelRGB8
 minPixel img = pixelFold (\acc _ _ pix -> min acc pix) (pixelAt img 0 0) img
-
-scaleImage :: Pixel a => Int -> Image a -> Image a
-scaleImage factor img = generateImage fn
-                                      (imageWidth img * factor)
-                                      (imageHeight img * factor)
-  where fn x y = pixelAt img (x `div` factor) (y `div` factor)
-
-applyColorMap :: (Double -> PixelRGB8) -> Image PixelRGB8 -> Image PixelRGB8
-applyColorMap cmap img = generateImage fn (imageWidth img) (imageHeight img)
- where
-  fn x y = case pixelAt img x y of
-    PixelRGB8 r _ _ -> cmap (fromIntegral r / 255)
 
 -- RGB interpolation
 interpolateColorMap
@@ -240,15 +216,8 @@ interpolateColorMap
   -> (Double -> PixelRGB8)
   -> (Double -> PixelRGB8)
   -> (Double -> PixelRGB8)
-interpolateColorMap d cmap1 cmap2 = \t ->
-  let PixelRGB8 r1 g1 b1 = cmap1 t
-      PixelRGB8 r2 g2 b2 = cmap2 t
-      i a b = round (fromIntegral a + (fromIntegral b - fromIntegral a) * d)
-  in  PixelRGB8 (i r1 r2) (i g1 g2) (i b1 b2)
-
-sceneFalseColorChain (x : y : xs) =
-  sceneFalseColor x y `seqA` sceneFalseColorChain (y : xs)
-sceneFalseColorChain _ = pause 0
+interpolateColorMap d cmap1 cmap2 t =
+  interpolateRGB8 xyzComponents (cmap1 t) (cmap2 t) d
 
 sceneFalseColorIntro :: Animation
 sceneFalseColorIntro = mkAnimation 2 $ \t ->
@@ -311,37 +280,26 @@ renderColorMap width height cmap = mkGroup
   ]
 
 showColorMap :: Double -> Double -> Double -> SVG
-showColorMap start end t =
-  let s = t
-      n = fromToS start end s
-  in  translate 0 offsetY $ mkGroup
-        [ withGroupOpacity 0.9
-        $ withFillColor "black"
-        $ translate 0 (0)
-        $ center
-        $ mkRect (width + height * 2) (height * 3)
-        , scaleToSize width height $ mkColorMap (cm . fromToS start end)
-        , translate (s * width - width / 2) 0
-        $ center
-        $ withStrokeColor "black"
-        $ mkLine (0, 0) (0, height)
-        , center
-        $ --withStrokeWidth (Num 0.5) $
-          withStrokeColor "white"
-        $ withFillOpacity 0
-        $ mkRect width height
-        , translate (s * width - width / 2) (height)
-        $ scale 0.3
-        $ centerX
-        $
-      -- withStrokeWidth (Num 0.2) $
-          withFillColorPixel (promotePixel $ cm n)
-        $ withStrokeColor "white"
-        $ getNthSet (round (n * 255) `div` stepSize * stepSize)
-        ]
+showColorMap start end t = mkGroup
+  [ withGroupOpacity 0.9 $ withFillColor "black" $ center $ mkRect
+    (width + height * 2)
+    (height * 3)
+  , scaleToSize width height $ mkColorMap (cm . fromToS start end)
+  , translate (t * width - width / 2) 0
+  $ center
+  $ withStrokeColor "black"
+  $ mkLine (0, 0) (0, height)
+  , center $ withStrokeColor "white" $ withFillOpacity 0 $ mkRect width height
+  , translate (t * width - width / 2) (height)
+  $ scale 0.3
+  $ centerX
+  $ withFillColorPixel (promotePixel $ cm n)
+  $ withStrokeColor "white"
+  $ getNthSet (round (n * 255) `div` stepSize * stepSize)
+  ]
  where
+  n        = fromToS start end t
   cm       = greyscale
-  offsetY  = 0 -- -screenHeight * 0.30
   stepSize = 0x1
   width    = screenWidth * 0.50
   height   = screenHeight * 0.08
@@ -367,20 +325,16 @@ mkColorMap f = center $ embedImage img
 
 drawPixelImage :: Double -> Double -> Double -> SVG
 drawPixelImage start end t =
-  let limit = fromToS start end t
-  in  scaleToSize screenWidth screenHeight
-        $  center
-        $  embedImage
-        $  cache
-        !! floor (limit * 255)
-  where cache = [ limitGreyPixels n monalisaLarge | n <- [0 .. 255] ]
+  scaleToSize screenWidth screenHeight $ center $ embedImage $ cache !! idx
+ where
+  cache = [ limitGreyPixels n monalisaLarge | n <- [0 .. 255] ]
+  idx   = floor (fromToS start end t * 255)
 
 drawHexPixels :: SVG
-drawHexPixels = svg
+drawHexPixels = cacheSvg ("drawHexPixels" :: String) svg
  where
-  svg = -- scaleToSize screenWidth screenHeight $ embedDynamicImage $ raster $
-        simplify $ simplify $ simplify $ mkGroup
-    [ if True || highdef then defs else None
+  svg = simplify $ simplify $ simplify $ mkGroup
+    [ mkDefinitions images
     , withFillOpacity 1 $ withStrokeWidth 0 $ withFillColor "white" $ mkGroup
       [ translate
             ( (fromIntegral x + 0.5)
@@ -395,13 +349,12 @@ drawHexPixels = svg
             / fromIntegral height
             * screenHeight
             )
-          $ if True || highdef then mkUse ("tag" ++ show r) else mkCircle 0.5
+          $ mkUse ("tag" ++ show r)
       | x <- [0 .. width - 1]
       , y <- [0 .. height - 1]
       , let pixel@(PixelRGB8 r _ _) = pixelAt monalisa x y
       ]
     ]
-  defs = preRender $ mkDefinitions images
   getNthSet n = centerX $ snd (splitGlyphs [n * 2, n * 2 + 1] allGlyphs)
   allGlyphs =
     lowerTransformations
@@ -411,18 +364,7 @@ drawHexPixels = svg
       $  "\\texttt{"
       <> T.concat [ ppHex n | n <- [0 .. 255] ]
       <> "}"
-  images =
-    [ withId ("tag" ++ show n) $ getNthSet n
-      -- lowerTransformations $ scale 0.3 $ alignTxt $ latex $ "\\texttt{" <> ppHex n <> "}"
-    | n <- [0 .. 255]
-    ]
+  images = [ withId ("tag" ++ show n) $ getNthSet n | n <- [0 .. 255] ]
   width  = imageWidth monalisa
   height = imageHeight monalisa
   ppHex n = T.pack $ reverse (take 2 (reverse (showHex n "") ++ repeat '0'))
-
-
-fadeIn :: Double -> Animation -> Animation
-fadeIn t = applyE (overBeginning t fadeInE)
-
-fadeOut :: Double -> Animation -> Animation
-fadeOut t = applyE (overEnding t fadeOutE)

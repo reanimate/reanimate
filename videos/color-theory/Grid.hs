@@ -13,6 +13,7 @@ import           Data.Maybe
 import           Reanimate
 import           Reanimate.Scene
 import           Transcript
+import           Common
 import           System.IO.Unsafe
 
 gridScene :: Scene s ()
@@ -32,7 +33,7 @@ gridScene = spriteScope $ do
   waitUntil $ wordStart $ findWord ["grid"] "Turbo"
   showMap sTurbo "distortions"
 
-  waitUntil $ wordStart $ findWord ["grid"] "Cividis"
+  waitUntil $ wordEnd $ findWord ["grid"] "And"
   showMap sCividis "form"
 
   waitUntil $ wordStart $ findWord ["end"] "The"
@@ -107,25 +108,3 @@ monalisaPoster = mkGroup
       $ withFillColor "white"
       $ latex ("\\texttt{" <> txt <> "}")
       ]
-
-monalisa :: Image PixelRGB8
-monalisa = unsafePerformIO $ do
-  dat <- BS.readFile "monalisa.jpg"
-  case decodeJpeg dat of
-    Left  err -> error err
-    Right img -> return $ convertRGB8 img
-
-monalisaLarge :: Image PixelRGB8
-monalisaLarge = scaleImage 15 monalisa
-
-scaleImage :: Pixel a => Int -> Image a -> Image a
-scaleImage factor img = generateImage fn
-                                      (imageWidth img * factor)
-                                      (imageHeight img * factor)
-  where fn x y = pixelAt img (x `div` factor) (y `div` factor)
-
-applyColorMap :: (Double -> PixelRGB8) -> Image PixelRGB8 -> Image PixelRGB8
-applyColorMap cmap img = generateImage fn (imageWidth img) (imageHeight img)
- where
-  fn x y = case pixelAt img x y of
-    PixelRGB8 r _ _ -> cmap (fromIntegral r / 255)

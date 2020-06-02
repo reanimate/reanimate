@@ -6,7 +6,7 @@ the data becomes understandable and the face of the monalisa stares out at us.
 
 [colormap]
 Shades of grey are not the only possible color palettes, though,
-and many colorful alternatives exist, such as sinebow.
+and many colorful alternatives exist, such as sine-bow.
 Some of these colormaps have been around for a while, with the widely used Jet first
 appearing in the 1970s.
 In recent years, a lot of attention has gone into addressing shortcomings
