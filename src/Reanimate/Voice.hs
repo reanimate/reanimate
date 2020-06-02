@@ -10,11 +10,11 @@
 module Reanimate.Voice
   ( Transcript(..)
   , TWord(..)
-  , findWord        -- :: Transcript -> [Text] -> Text -> TWord
-  , findWords       -- :: Transcript -> [Text] -> Text -> [TWord]
-  , loadTranscript  -- :: FilePath -> Transcript
-  , fakeTranscript  -- :: Text -> Transcript
-  , splitTranscript -- :: Transcript -> SVG -> [(SVG, TWord)]
+  , findWord                -- :: Transcript -> [Text] -> Text -> TWord
+  , findWords               -- :: Transcript -> [Text] -> Text -> [TWord]
+  , loadTranscript          -- :: FilePath -> Transcript
+  , fakeTranscript          -- :: Text -> Transcript
+  , splitTranscript         -- :: Transcript -> SVG -> [(SVG, TWord)]
   , annotateWithTranscript  -- :: Transcript -> Scene s ()
   )
 where
@@ -34,7 +34,6 @@ import           Data.Map                                 ( Map )
 import           Data.Text                                ( Text )
 import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
-import           Reanimate.Animation                      ( SVG )
 import           Reanimate.Misc
 import           Reanimate.LaTeX
 import           Reanimate.Scene
@@ -167,10 +166,10 @@ parseTranscriptKeys = worker Map.empty 0
 
 finalizeKeys :: Map Text Int -> Map Text Int
 finalizeKeys = Map.fromList . worker 0 . sortOn snd . Map.toList
-  where
-    worker _offset [] = []
-    worker offset ((key,at):rest) =
-      (key,at-offset) : worker (offset + T.length key + 2) rest
+ where
+  worker _offset [] = []
+  worker offset ((key, at) : rest) =
+    (key, at - offset) : worker (offset + T.length key + 2) rest
 
 cutoutKeys :: Map Text Int -> Text -> Text
 cutoutKeys keys = T.concat . worker 0 (sortOn snd (Map.toList keys))
@@ -255,17 +254,17 @@ fakeTranscript' input = Transcript { transcriptText  = input
   worker _now []             = []
   worker now  (token : rest) = case token of
     TokenWord start end w ->
-      let duration = realToFrac (end - start) * 0.1
+      let dur = realToFrac (end - start) * 0.1
       in  TWord { wordAligned     = T.toLower w
                 , wordCase        = "success"
                 , wordStart       = now
                 , wordStartOffset = start
-                , wordEnd         = now + duration
+                , wordEnd         = now + dur
                 , wordEndOffset   = end
                 , wordPhones      = []
                 , wordReference   = w
                 }
-            : worker (now + duration) rest
+            : worker (now + dur) rest
     TokenComma     -> worker (now + commaPause) rest
     TokenPeriod    -> worker (now + periodPause) rest
     TokenParagraph -> worker (now + paragraphPause) rest
@@ -288,15 +287,14 @@ splitTranscript Transcript {..} =
   ]
 
 annotateWithTranscript :: Transcript -> Scene s ()
-annotateWithTranscript t =
-  forM_ (transcriptWords t) $ \tword -> do
-    let svg = scale 1 $ latex (wordReference tword)
-    waitUntil (wordStart tword)
-    let dur = wordEnd tword - wordStart tword
-    play $ staticFrame dur $ position $ outline svg
+annotateWithTranscript t = forM_ (transcriptWords t) $ \tword -> do
+  let svg = scale 1 $ latex (wordReference tword)
+  waitUntil (wordStart tword)
+  let dur = wordEnd tword - wordStart tword
+  play $ staticFrame dur $ position $ outline svg
  where
-  position = translate (-screenWidth/2) (-screenHeight/2)
+  position = translate (-screenWidth / 2) (-screenHeight / 2)
   outline txt = mkGroup
-    [ withStrokeWidth (defaultStrokeWidth*10) $ withStrokeColor "white" $ txt
+    [ withStrokeWidth (defaultStrokeWidth * 10) $ withStrokeColor "white" $ txt
     , withStrokeWidth 0 $ txt
     ]

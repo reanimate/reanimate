@@ -10,7 +10,7 @@ slideLeftT :: Transition
 slideLeftT = effectT slideLeft (andE slideLeft moveRight)
   where
     slideLeft = translateE (-screenWidth) 0
-    moveRight = constE (translate screenHeight 0)
+    moveRight = constE (translate screenWidth 0)
     andE a b d t = a d t . b d t
 
 slideDownT :: Transition

@@ -355,9 +355,16 @@ newSprite render = do
     return $ \d absT ->
       let relD = (if spriteDur < 0 then d else spriteDur) - now
           relT = absT - now
-      in  if relT < 0 || (spriteDur >= 0 && relD <= relT)
-            then (None, 0)
-            else spriteEffect relD relT (fn absT relD relT)
+          -- Sprite is live [now;duration[
+          -- If we're at the end of a scene, sprites
+          -- are live: [now;duration]
+          -- This behavior is difficult to get right. See the 'bug_*' examples for
+          -- automated tests.
+          inTimeSlice = relT >= 0 && relT < relD
+          isLastFrame = d==absT && relT == relD
+      in  if inTimeSlice || isLastFrame
+            then spriteEffect relD relT (fn absT relD relT)
+            else (None, 0)
   return $ Sprite now ref
 
 -- | Create new sprite defined by a frame generator. The sprite will die at
@@ -571,7 +578,7 @@ asAnimation scene = do
   now <- queryNow
   return $ dropA now (sceneAnimation (wait now >> scene))
 
-transitionO :: Transition -> Double -> (forall s. Scene s a) -> (forall s. Scene s b) -> Scene s ()
+transitionO :: Transition -> Double -> (forall s'. Scene s' a) -> (forall s'. Scene s' b) -> Scene s ()
 transitionO t o a b = do
   aA <- asAnimation a
   bA <- fork $ do
