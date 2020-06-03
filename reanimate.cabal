@@ -95,6 +95,7 @@ library
                       Reanimate.Builtin.Slide
                       Reanimate.Constants
                       Reanimate.Parameters
+                      Reanimate.Chiphunk
                       Reanimate.PolyShape
                       Reanimate.GeoProjection
                       Reanimate.Builtin.Documentation
@@ -114,7 +115,7 @@ library
                        cubicbezier, websockets >= 0.12.7.0,
                        hashable, fsnotify, open-browser, random, random-shuffle, base64-bytestring,
                        vector >= 0.12.0.0, colour, cassava, ansi-wl-pprint, here, temporary,
-                       optparse-applicative,
+                       optparse-applicative, chiphunk >= 0.1.2.1,
                        geojson, aeson >= 1.3.0.0,
                        split, fingertree, array, cereal, vector-space
   if flag(hmatrix) {
