@@ -111,7 +111,7 @@ library
   build-depends:       base >=4.10 && <5,
                        time, text, filepath, process, directory,
                        containers, reanimate-svg >= 0.9.7.0, xml, bytestring, lens, linear, mtl, matrix,
-                       JuicyPixels, attoparsec, parallel,
+                       JuicyPixels >= 3.3.3, attoparsec, parallel,
                        cubicbezier, websockets >= 0.12.7.0,
                        hashable, fsnotify, open-browser, random, random-shuffle, base64-bytestring,
                        vector >= 0.12.0.0, colour, cassava, ansi-wl-pprint, here, temporary,
