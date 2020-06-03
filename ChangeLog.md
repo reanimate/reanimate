@@ -1,5 +1,12 @@
 # Revision history for reanimate
 
+## 0.4.0.0
+
+* Move 2D physics (chiphunk) to a separate library.
+* Add GHC-8.4.4 build test to CI.
+* Small improvements to the scene API.
+* Bug fixes to the voice API.
+
 ## 0.3.3.0 -- 2020-05-22
 
 * Voice control via the Gentle forced-aligner.
