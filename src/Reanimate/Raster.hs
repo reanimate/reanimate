@@ -237,8 +237,8 @@ vectorize = vectorize_ []
 
 -- | Same as 'vectorize' but takes a list of arguments for 'potrace'.
 vectorize_ :: [String] -> FilePath -> SVG
-vectorize_ _ path | pNoExternals = mkText $ T.pack path
-vectorize_ args path             = unsafePerformIO $ do
+vectorize_ _    path | pNoExternals = mkText $ T.pack path
+vectorize_ args path                = unsafePerformIO $ do
   root <- getXdgDirectory XdgCache "reanimate"
   createDirectoryIfMissing True root
   let svgPath = root </> show key <.> "svg"

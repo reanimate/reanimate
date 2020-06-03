@@ -32,7 +32,6 @@ module Reanimate.PolyShape
   , plGroupTouching
   ) where
 
-import           Chiphunk.Low
 import           Control.Lens           ((&), (.~))
 import           Data.AdditiveGroup
 import           Data.List              (minimumBy, nub, partition, sortOn)
@@ -89,9 +88,9 @@ plLength = sum . map cubicLength . plCurves
     cubicLength c = arcLength c 1 polyShapeTolerance
 
 plArea :: PolyShape -> Double
-plArea pl = areaForPoly (map toVect $ plPolygonify polyShapeTolerance pl) 0
-  where
-    toVect (Point x y) = Vect x y
+plArea _pl = error "plArea is undefined" -- areaForPoly (map toVect $ plPolygonify polyShapeTolerance pl) 0
+  -- where
+  --   toVect (Point x y) = Vect x y
 
 -- 1/10th of a pixel if rendered at 2560x1440
 polyShapeTolerance :: Double
@@ -207,14 +206,14 @@ plDecompose' tol =
   unionPolyShapes
 
 decomposePolygon :: [Point Double] -> [[RPoint]]
-decomposePolygon poly =
-  map (map fromVect . adjust) $ convexDecomposition (map toVect poly) tol
-  where
-    tol = polyShapeTolerance
-    toVect (Point x y) = Vect x y
-    fromVect (Vect x y) = V2 x y
-    adjust [] = []
-    adjust x  = if head x == last x then adjust (init x) else x
+decomposePolygon _poly = error "decomposePolygon is undefined"
+  -- map (map fromVect . adjust) $ convexDecomposition (map toVect poly) tol
+  -- where
+  --   tol = polyShapeTolerance
+  --   toVect (Point x y) = Vect x y
+  --   fromVect (Vect x y) = V2 x y
+  --   adjust [] = []
+  --   adjust x  = if head x == last x then adjust (init x) else x
 
 plPolygonify :: Double -> PolyShape -> [Point Double]
 plPolygonify tol shape =
