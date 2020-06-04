@@ -2,7 +2,6 @@
 
 ## 0.4.0.0
 
-* Move 2D physics (chiphunk) to a separate library.
 * Add GHC-8.4.4 build test to CI.
 * Small improvements to the scene API.
 * Bug fixes to the voice API.
