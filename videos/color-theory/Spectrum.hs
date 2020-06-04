@@ -232,7 +232,6 @@ scene2 = spriteScope $ do
     translate 0 (fromToS 0 downShift $ curveS 2 d)
 
   obsVisible <- newVar 1
-  gamut      <- newVar 0
   reorient   <- newVar 0
   cmOpacity  <- newVar 1
   cmDelta    <- newVar 0
@@ -240,14 +239,13 @@ scene2 = spriteScope $ do
   cmFunc     <- newVar sinebow
   visSpace   <- fork $ newSprite $ do
     getObs      <- unVar obsVisible
-    getGamut    <- unVar gamut
     getReorient <- unVar reorient
     getOpacity  <- unVar cmOpacity
     getDelta    <- unVar cmDelta
     getFunc     <- unVar cmFunc
     return $ translate (-screenWidth / 4) 0 $ mkGroup
       [ mkClipPath "visible" [simplify obsColors]
-      , mkClipPath "sRGB"    [simplify $ sRGBTriangle getGamut]
+      , mkClipPath "sRGB"    [simplify sRGBTriangle]
       , withGroupOpacity getObs $ withClipPathRef (Ref "visible") $ mkGroup
         [cieXYImage 1 1 1 imgSize]
       , translate 0 (1 * getReorient)
@@ -255,7 +253,7 @@ scene2 = spriteScope $ do
       $ mkGroup
           [ scale (1 + 0.5 * getReorient)
           $ withClipPathRef (Ref "sRGB")
-          $ mkGroup [cieXYImageGamut getGamut imgSize]
+          $ mkGroup [cieXYImage 1 1 1 imgSize]
           , lowerTransformations
           $ scale (1 + 0.5 * getReorient)
           $ withGroupOpacity getOpacity
@@ -315,7 +313,7 @@ scene2 = spriteScope $ do
 
   waitUntil $ wordStart $ findWord ["rgb"] "triangle"
 
-  rgb <- newSprite $ withStrokeColor "white" . sRGBTriangle <$> unVar gamut
+  rgb <- newSpriteSVG $ withStrokeColor "white" sRGBTriangle
   spriteTween rgb 1 partialSvg
 
   waitUntil $ wordStart $ findWord ["rgb"] "Finally"
@@ -439,29 +437,6 @@ morphXYZCoordinates t =
   initNM = fromIntegral $ fst (head dat)
   lastNM = 700 -- fromIntegral $ fst (last dat)
 
--- Red corner: 0.64 0.33 0
--- Green corner: 0.3 0.6 0.1
--- Blue corner: 0.15 0.06 0.79
---1 0 0 -> 0.64 0.33 0.0
---0 1 0 -> 0.30 0.60 0.1
-cieXYImageGamut :: Double -> Int -> SVG
-cieXYImageGamut t density =
-  cacheSvg ("cieXYImageGamut" :: String, t, density)
-    $ Ternary.ternaryPlot density
-    $ \aCoord bCoord cCoord ->
-        let
-          aCoord'   = fromToS aCoord (rX * aCoord + gX * bCoord + bX * cCoord) t
-          bCoord'   = fromToS bCoord (rY * aCoord + gY * bCoord + bY * cCoord) t
-          cCoord'   = fromToS cCoord (rZ * aCoord + gZ * bCoord + bZ * cCoord) t
-          RGB r g b = toSRGBBounded (cieXYZ aCoord' bCoord' cCoord')
-        in
-          PixelRGBA8 r g b 0xFF
- where
-  RGB r g b    = primaries sRGBGamut
-  (rX, rY, rZ) = chromaCoords $ chromaConvert r
-  (gX, gY, gZ) = chromaCoords $ chromaConvert g
-  (bX, bY, bZ) = chromaCoords $ chromaConvert b
-
 -- slope in degrees
 gamutSlope :: RGBGamut -> Double
 gamutSlope gamut = atan2 (y1 / y2) (x1 / x2) / pi * 180
@@ -544,7 +519,7 @@ cmToLAB t cm =
 -- closer to white when (aCoord+cCoord) approaches 0
 cieXYImage :: Double -> Double -> Double -> Int -> SVG
 cieXYImage redFactor greenFactor blueFactor density =
-  cacheSvg ("cieXYImage" :: String, redFactor, greenFactor, blueFactor, density)
+  prerenderSvg ("cieXYImage" :: String, redFactor, greenFactor, blueFactor, density)
     $ Ternary.ternaryPlot density
     $ \aCoord bCoord cCoord ->
         let white  = chromaColour d65 1
@@ -586,16 +561,16 @@ colorMapToXYZCoords colorMap = withFillOpacity 0 $ mkLinePath
   ]
   where steps = 100
 
-sRGBTriangle :: Double -> SVG
-sRGBTriangle t =
+sRGBTriangle :: SVG
+sRGBTriangle =
   lowerTransformations
     $ scale 5
     $ withFillOpacity 0
     $ withStrokeLineJoin JoinRound
     $ mkLinePathClosed
-        [ Ternary.toOffsetCartesianCoords (fromToS rY 0 t) (fromToS rX 1 t)
-        , Ternary.toOffsetCartesianCoords (fromToS gY 1 t) (fromToS gX 0 t)
-        , Ternary.toOffsetCartesianCoords (fromToS bY 0 t) (fromToS bX 0 t)
+        [ Ternary.toOffsetCartesianCoords rY rX
+        , Ternary.toOffsetCartesianCoords gY gX
+        , Ternary.toOffsetCartesianCoords bY bX
         ]
  where
   RGB r g b   = primaries sRGBGamut
@@ -752,7 +727,7 @@ drawLabelSVG label c = translate 0 (svgHeight labelSVG * 0.7)
 
 hsvColorSpace :: Int -> SVG
 hsvColorSpace width =
-  cacheSvg ("hsvColorSpace" :: String, width)
+  prerenderSvg ("hsvColorSpace" :: String, width)
     $ circlePlot width
     $ \ang radius ->
         let h         = ang / pi * 180
