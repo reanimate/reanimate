@@ -7,7 +7,7 @@ There are several interesting color maps in reanimate, like
 and
 [parula](http://hackage.haskell.org/package/reanimate/docs/Reanimate.html#v:parula).
 This got me interested in the color theory that underpins them and I decided to make
-a short video presenting what I learned. This is not about color theory, thought,
+a short video presenting what I learned. This is not about color theory, though,
 but rather the technical details involved with writing and rendering a fairly long
 animation in Haskell.
 
