@@ -22,7 +22,7 @@ The color-theory video contains a programmatically generated map of the XYZ colo
 This map is expensive to generate at high resolutions but it almost never changes and
 is a prime candidate for caching.
 
-Videos don't have to be particular long before render times become a serious concern. The
+Videos don't have to be particularly long before render times become a serious concern. The
 color-theory video is 6m 13s long, consisting of 22403 frames at 60 frames per second, rendered
 at a resolution of 2560x1440. Even at this small scale, rendering without any caching is
 infeasible, clocking in at about **10 hours** using my (admittedly underpowered) 4 core / 8
