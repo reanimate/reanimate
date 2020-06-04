@@ -286,7 +286,7 @@ drawPixelImage start end t =
   idx   = floor (fromToS start end t * 255)
 
 drawHexPixels :: SVG
-drawHexPixels = cacheSvg ("drawHexPixels" :: String) svg
+drawHexPixels = prerenderSvg ("drawHexPixels" :: String) svg
  where
   svg = simplify $ simplify $ simplify $ mkGroup
     [ mkDefinitions images

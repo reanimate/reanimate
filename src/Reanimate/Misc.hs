@@ -13,11 +13,12 @@ import qualified Data.Text         as T
 import qualified Data.Text.IO      as T
 import           Foreign.C.Error
 import           GHC.IO.Exception
-import           System.Directory  (copyFile, createDirectory, findExecutable,
-                                    getTemporaryDirectory, removeFile,
+import           System.IO.Temp (withSystemTempFile, withSystemTempDirectory)
+import           System.Directory  (copyFile, findExecutable,
+                                    removeFile,
                                     renameFile)
-import           System.FilePath   ((<.>), (</>))
-import           System.IO         (hClose, hGetContents, hIsEOF, openTempFile)
+import           System.FilePath   ((<.>))
+import           System.IO         (hClose, hGetContents, hIsEOF)
 import           System.Process    (readProcessWithExitCode,
                                     runInteractiveProcess, showCommandForUser,
                                     terminateProcess, waitForProcess)
@@ -40,20 +41,26 @@ runCmd exec args = do
 runCmd_ :: FilePath -> [String] -> IO (Either String String)
 runCmd_ exec args = do
   (ret, stdout, stderr) <- readProcessWithExitCode exec args ""
-  _ <- evaluate (length stdout + length stderr)
+  _                     <- evaluate (length stdout + length stderr)
   case ret of
     ExitSuccess -> return (Right stdout)
     ExitFailure err | False ->
-      return $ Left $
-        "Failed to run: " ++ showCommandForUser exec args ++ "\n" ++
-        "Error code: " ++ show err ++ "\n" ++
-        "stderr: " ++ stderr
+      return
+        $  Left
+        $  "Failed to run: "
+        ++ showCommandForUser exec args
+        ++ "\n"
+        ++ "Error code: "
+        ++ show err
+        ++ "\n"
+        ++ "stderr: "
+        ++ stderr
     ExitFailure{} | null stderr -> -- LaTeX prints errors to stdout. :(
       return $ Left stdout
-    ExitFailure{} ->
-      return $ Left stderr
+    ExitFailure{} -> return $ Left stderr
 
-runCmdLazy :: FilePath -> [String] -> (IO (Either String T.Text) -> IO a) -> IO a
+runCmdLazy
+  :: FilePath -> [String] -> (IO (Either String T.Text) -> IO a) -> IO a
 runCmdLazy exec args handler = do
   (inp, out, err, pid) <- runInteractiveProcess exec args Nothing Nothing
   hClose inp
@@ -62,8 +69,8 @@ runCmdLazy exec args handler = do
         if eof
           then do
             stderr <- hGetContents err
-            _ <- evaluate (length stderr)
-            ret <- waitForProcess pid
+            _      <- evaluate (length stderr)
+            ret    <- waitForProcess pid
             case ret of
               ExitSuccess   -> return (Left "")
               ExitFailure{} -> return (Left stderr)
@@ -80,25 +87,19 @@ runCmdLazy exec args handler = do
     _ <- waitForProcess pid
     return ()
 
+-- renameFile fails if we're crossing filesystem boundaries. If this happens,
+-- revert back to copyFile + removeFile.
 renameOrCopyFile :: FilePath -> FilePath -> IO ()
 renameOrCopyFile src dst = renameFile src dst `catch` exdev
-  where
-    exdev e = if fmap Errno (ioe_errno e) == Just eXDEV
-                then copyFile src dst >> removeFile src
-                else throw e
+ where
+  exdev e = if fmap Errno (ioe_errno e) == Just eXDEV
+    then copyFile src dst >> removeFile src
+    else throw e
 
 withTempDir :: (FilePath -> IO a) -> IO a
-withTempDir action = do
-  dir <- getTemporaryDirectory
-  (path, handle) <- openTempFile dir "reanimate"
-  hClose handle
-  removeFile path
-  createDirectory (dir </> path)
-  action (dir </> path) -- `finally` removeDirectoryRecursive (dir </> path)
+withTempDir = withSystemTempDirectory "reanimate"
 
 withTempFile :: String -> (FilePath -> IO a) -> IO a
-withTempFile ext action = do
-  dir <- getTemporaryDirectory
-  (path, handle) <- openTempFile dir ("reanimate" <.> ext)
-  hClose handle
-  action path -- `finally` removeFile path
+withTempFile ext action =
+  withSystemTempFile ("reanimate" <.> ext) $ \path hd -> do
+    hClose hd >> action path

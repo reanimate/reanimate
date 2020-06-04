@@ -1,8 +1,8 @@
 module Reanimate.Raster
   ( mkImage           -- :: Double -> Double -> FilePath -> SVG
   , cacheImage        -- :: (PngSavable pixel, Hashable a) => a -> Image pixel -> FilePath
-  , cacheSvg          -- :: Hashable a => a -> SVG -> SVG
-  , cacheSvgFile      -- :: Hashable a => a -> Width -> Height -> SVG -> FilePath
+  , prerenderSvg      -- :: Hashable a => a -> SVG -> SVG
+  , prerenderSvgFile  -- :: Hashable a => a -> Width -> Height -> SVG -> FilePath
   , embedImage        -- :: PngSavable a => Image a -> SVG
   , embedDynamicImage -- :: DynamicImage -> SVG
   , embedPng          -- :: Double -> Double -> LBS.ByteString -> SVG
@@ -125,8 +125,8 @@ cacheImage key gen = unsafePerformIO $ cacheFile template $ \path ->
 
 -- Warning: Caching svg elements with links to external objects does
 --          not work. 2020-06-01
-cacheSvgFile :: Hashable a => a -> Width -> Height -> SVG -> FilePath
-cacheSvgFile key width height svg =
+prerenderSvgFile :: Hashable a => a -> Width -> Height -> SVG -> FilePath
+prerenderSvgFile key width height svg =
   unsafePerformIO $ cacheFile template $ \path -> do
     let svgPath = replaceExtension path "svg"
     writeFile svgPath rendered
@@ -138,9 +138,9 @@ cacheSvgFile key width height svg =
                        (Just $ Px $ fromIntegral height)
                        svg
 
-cacheSvg :: Hashable a => a -> SVG -> SVG
-cacheSvg key =
-  mkImage screenWidth screenHeight . cacheSvgFile key pWidth pHeight
+prerenderSvg :: Hashable a => a -> SVG -> SVG
+prerenderSvg key =
+  mkImage screenWidth screenHeight . prerenderSvgFile key pWidth pHeight
 
 
 {-# INLINE embedImage #-}
