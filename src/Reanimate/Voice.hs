@@ -10,11 +10,12 @@
 module Reanimate.Voice
   ( Transcript(..)
   , TWord(..)
-  , findWord        -- :: Transcript -> [Text] -> Text -> TWord
-  , findWords       -- :: Transcript -> [Text] -> Text -> [TWord]
-  , loadTranscript  -- :: FilePath -> Transcript
-  , fakeTranscript  -- :: Text -> Transcript
-  , splitTranscript -- :: Transcript -> SVG -> [(SVG, TWord)]
+  , findWord                -- :: Transcript -> [Text] -> Text -> TWord
+  , findWords               -- :: Transcript -> [Text] -> Text -> [TWord]
+  , loadTranscript          -- :: FilePath -> Transcript
+  , fakeTranscript          -- :: Text -> Transcript
+  , splitTranscript         -- :: Transcript -> SVG -> [(SVG, TWord)]
+  , annotateWithTranscript  -- :: Transcript -> Scene s ()
   )
 where
 
@@ -25,6 +26,7 @@ import           System.Directory
 import           System.FilePath
 import           System.Process
 import           System.Exit
+import           Control.Monad
 import           Data.List
 import           Data.Maybe
 import qualified Data.Map                      as Map
@@ -32,9 +34,12 @@ import           Data.Map                                 ( Map )
 import           Data.Text                                ( Text )
 import qualified Data.Text                     as T
 import qualified Data.Text.IO                  as T
-import           Reanimate.Animation                      ( SVG )
 import           Reanimate.Misc
 import           Reanimate.LaTeX
+import           Reanimate.Scene
+import           Reanimate.Animation
+import           Reanimate.Svg
+import           Reanimate.Constants
 
 data Transcript = Transcript
   { transcriptText  :: Text
@@ -107,7 +112,7 @@ findWords t [] wd =
 findWords t (key : keys) wd =
   [ tword
   | tword <- findWords t keys wd
-  , wordStartOffset tword > Map.findWithDefault badKey key (transcriptKeys t)
+  , wordStartOffset tword >= Map.findWithDefault badKey key (transcriptKeys t)
   ]
   where badKey = error $ "Missing transcript key: " ++ show key
 
@@ -141,7 +146,7 @@ loadTranscript path = unsafePerformIO $ do
           case mbT of
             Nothing -> error "bad json"
             Just t  -> pure t
-  pure $ transcript { transcriptKeys = keys }
+  pure $ transcript { transcriptKeys = finalizeKeys keys }
  where
   jsonPath        = replaceExtension path "json"
   audioExtensions = ["mp3", "m4a", "flac"]
@@ -158,6 +163,13 @@ parseTranscriptKeys = worker Map.empty 0
                  (offset + newOffset)
                  (T.drop newOffset txt)
     Just (_, cs) -> worker keys (offset + 1) cs
+
+finalizeKeys :: Map Text Int -> Map Text Int
+finalizeKeys = Map.fromList . worker 0 . sortOn snd . Map.toList
+ where
+  worker _offset [] = []
+  worker offset ((key, at) : rest) =
+    (key, at - offset) : worker (offset + T.length key + 2) rest
 
 cutoutKeys :: Map Text Int -> Text -> Text
 cutoutKeys keys = T.concat . worker 0 (sortOn snd (Map.toList keys))
@@ -218,19 +230,20 @@ lexText = worker 0
       -> TokenPeriod : worker (offset + 1) cs
       | c == ','
       -> TokenComma : worker (offset + 1) cs
-      | isAlphaNum c
-      -> let (w, rest) = T.span (\elt -> isAlphaNum elt || elt == '\'') txt
+      | isWord c
+      -> let (w, rest) = T.span isWord txt
              newOffset = offset + T.length w
          in  TokenWord offset newOffset w : worker newOffset rest
       | otherwise
       -> worker (offset + 1) cs
+  isWord c = isAlphaNum c || c `elem` ['\'', '-']
 
 -- | Fake transcript timings at roughly 120 words per minute.
 fakeTranscript :: Text -> Transcript
 fakeTranscript rawTranscript =
   let keys = parseTranscriptKeys rawTranscript
       t    = fakeTranscript' (cutoutKeys keys rawTranscript)
-  in  t { transcriptKeys = keys }
+  in  t { transcriptKeys = finalizeKeys keys }
 
 fakeTranscript' :: Text -> Transcript
 fakeTranscript' input = Transcript { transcriptText  = input
@@ -241,17 +254,17 @@ fakeTranscript' input = Transcript { transcriptText  = input
   worker _now []             = []
   worker now  (token : rest) = case token of
     TokenWord start end w ->
-      let duration = realToFrac (end - start) * 0.1
+      let dur = realToFrac (end - start) * 0.1
       in  TWord { wordAligned     = T.toLower w
                 , wordCase        = "success"
                 , wordStart       = now
                 , wordStartOffset = start
-                , wordEnd         = now + duration
+                , wordEnd         = now + dur
                 , wordEndOffset   = end
                 , wordPhones      = []
                 , wordReference   = w
                 }
-            : worker (now + duration) rest
+            : worker (now + dur) rest
     TokenComma     -> worker (now + commaPause) rest
     TokenPeriod    -> worker (now + periodPause) rest
     TokenParagraph -> worker (now + paragraphPause) rest
@@ -272,3 +285,16 @@ splitTranscript Transcript {..} =
           , T.drop wordEndOffset transcriptText
           ]
   ]
+
+annotateWithTranscript :: Transcript -> Scene s ()
+annotateWithTranscript t = forM_ (transcriptWords t) $ \tword -> do
+  let svg = scale 1 $ latex (wordReference tword)
+  waitUntil (wordStart tword)
+  let dur = wordEnd tword - wordStart tword
+  play $ staticFrame dur $ position $ outline svg
+ where
+  position = translate (-screenWidth / 2) (-screenHeight / 2)
+  outline txt = mkGroup
+    [ withStrokeWidth (defaultStrokeWidth * 10) $ withStrokeColor "white" $ txt
+    , withStrokeWidth 0 $ txt
+    ]

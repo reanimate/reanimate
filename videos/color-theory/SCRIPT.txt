@@ -1,0 +1,109 @@
+On its own, data does not look like much.
+Often it appears as a wall of unintelligible numbers.
+
+However, if we take each number and assign it a shade of grey, suddenly
+the data becomes understandable and the face of the monalisa stares out at us.
+
+[colormap]
+Shades of grey are not the only possible color palettes, though,
+and many colorful alternatives exist, such as sine-bow.
+Some of these colormaps have been around for a while, with the widely used Jet first
+appearing in the 1970s.
+In recent years, a lot of attention has gone into addressing shortcomings
+of the early colormaps and creating better standards for the future.
+Particularly, Jet was replaced by the proprietary Parula in 2014,
+the open-source community countered with Viridis in 2015,
+a research paper describing Cividis was published in
+2018, and Google created Turbo as a less-radical, spiritual successor to Jet in 2019.
+
+[why]
+So, why were so many new colormaps invented in this 5-year period? How are these
+colormaps created? Are they merely the favorite colors of their creators? How
+can a colormap be interesting enough to be published in a science journal?
+
+To answer these questions, we have to explore a bit of color theory.
+
+[theory]
+Visible light roughly lies between 400 and 700nm, and the colors we see
+in the natural world are usually made up of a mixture of all these wavelengths.
+For example, a lotus leaf might emit a complicated light spectrum like this.
+
+[simplify]
+Fortunately, our eyes will simplify this jumble of data down to just three
+values. This is because there are three types of color sensing cones,
+sensing short, medium and long wavelengths, and thus named S, M, and L.
+
+All colors now have a position in a three dimensional space with S, M and L
+as the axes. However, due to the overlap in cone sensitivities, this space
+is quite awkward to work with and has lots of positions that do not match real
+colors. For example,
+this space has a position for the color that only stimulates the M-cone but no
+light can stimulate that cone without also stimulating one or two other cones.
+
+[xyz]
+So, to make colors easier, the LMS space was stretched and
+squeezed into a new shape, called the XYZ space. This space is equivalent to the
+LMS space but its shape is much more convenient to handle.
+
+[pyramid]
+Taking a 2D slice of this space gives a pyramid of colors with reds to the
+right, greens at the top, and blues to the left.
+This space still contains non-sensible colors but we can filter them out by
+mapping each wavelength of visible light over on to the pyramid.
+
+[rgb]
+While this shape represents all the visible colors, most computer monitors can only show
+the subset of colors inside of this triangle, and all the colors outside of
+this triangle are approximations.
+Finally we arrive at a usable space of colors: sRGB.
+
+[draw]
+Drawing a path through the sRGB space gives us a colormap but it doesn't
+guarantee that it will be particularly good. The sRGB colorspace captures
+the physics of light but doesn't concern itself with how colors are perceived.
+Blues are perceived to be darker than greens given the same number of photons,
+and it's easier to tell the difference between shades of green than shades of blue.
+These facts make it difficult to draw a path through the sRGB colorspace that
+is perceptually smooth, meaning the rate of color change stays constant.
+It is also difficult to draw a path that increases or decreases linearly in
+brightness.
+
+[hsv]
+Fortunately, we can just invent new color spaces on top of sRGB that have
+different properties. For example, the Hue-Saturation-Value space makes it
+easier to draw paths that smoothly transition through hue and saturation.
+
+[lab]
+The HSV space isn't perceptually smooth, though, and creating a smooth colorspace
+took a lot of effort. Scientists recruited a bunch of subjects and showed them
+countless pairs of colors, asking if they could tell them apart and which color
+they thought was the brightest.
+In the end, the scientists created the LAB colorspace: a colorspace that captures
+how humans perceive color and brightness.
+
+[made]
+Parula is a path through LAB space that took so much work to create that it has
+been copyrighted. Although what it means to copyright colors is anyone's guess.
+Viridis was created using an even newer colorspace that more accurately maps
+the human visual cortex.
+Cividis was specifically designed for accuracy even when the viewer is
+colorblind.
+And of the new colormaps, Turbo is the only one that does not build on perceptual
+smoothness, optimizing instead for high contrast.
+
+[grid]
+Looking at the colormaps side-by-side, we can get a better feel for strengths
+and weaknesses.
+For example, Turbo has a lot of contrast but that same contrast leads to distortions.
+And Cividis, along with inferno and plasma, avoids shades of green since red-green
+color blindness is the most common form.
+
+Returning to the questions in the beginning of the video, I hope you now have a
+rough idea of how colormaps are created, the theory that underpins them,
+and why they're still being developed to this day.
+
+[end]
+The full source code for this animation is available on GitHub and released into the
+public domain.
+
+THEEND
