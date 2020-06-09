@@ -18,8 +18,9 @@ import           Reanimate.Ease
 import           Reanimate.Transition
 import           Reanimate.Svg.Constructors
 
-import           Data.String.Here
+import           Language.Haskell.Printf (t)
 import qualified Data.Text           as T
+import qualified Data.Text.Lazy      as L
 
 data FlipSprite s = FlipSprite
   { fsSprite :: Sprite s
@@ -37,12 +38,12 @@ flipSprite front back = do
       getBend <- unVar bend
       getTrans <- unVar trans
       getRotX <- unVar rotX
-      t <- spriteT
+      time <- spriteT
       dur <- spriteDuration
       return $
-        let rotY = fromToS 0 pi (t/dur)
-            frontTexture = svgAsPngFile (frameAt t $ setDuration dur front)
-            backTexture = svgAsPngFile (flipXAxis $ frameAt t $ setDuration dur back)
+        let rotY = fromToS 0 pi (time/dur)
+            frontTexture = svgAsPngFile (frameAt time $ setDuration dur front)
+            backTexture = svgAsPngFile (flipXAxis $ frameAt time $ setDuration dur back)
            -- seq'ing frontTexture and backTexture is required to avoid segfaults. :(
         in frontTexture `seq` backTexture `seq`
            blender (script frontTexture backTexture getBend getTrans getRotX rotY)
@@ -69,7 +70,7 @@ flipTransition = flipTransitionOpts bend zoom wobble
     wobble = -pi*0.10
 
 script :: FilePath -> FilePath -> Double -> Double -> Double -> Double -> T.Text
-script frontImage backImage bend transZ rotX rotY = [iTrim|
+script frontImage backImage bend transZ rotX rotY = L.toStrict $ [t|
 import os
 import math
 
@@ -82,7 +83,7 @@ bpy.ops.object.delete()
 
 
 cam = bpy.data.objects['Camera']
-cam.location = (0,0,22.22 + ${transZ})
+cam.location = (0,0,22.22 + %f)
 cam.rotation_euler = (0, 0, 0)
 bpy.ops.object.empty_add(location=(0.0, 0, 0))
 focus_target = bpy.context.object
@@ -91,7 +92,7 @@ cam.select_set(True)
 focus_target.select_set(True)
 bpy.ops.object.parent_set()
 
-focus_target.rotation_euler = (${rotX}, 0, 0)
+focus_target.rotation_euler = (%f, 0, 0)
 
 
 origin = bpy.data.objects['Cube']
@@ -99,10 +100,10 @@ bpy.ops.object.select_all(action='DESELECT')
 origin.select_set(True)
 bpy.ops.object.delete()
 
-x = ${bend}
+x = %f
 bpy.ops.mesh.primitive_plane_add()
 plane = bpy.context.object
-plane.scale = (16/2,${fromToS (9/2) 4 bend},1)
+plane.scale = (16/2,%f,1)
 bpy.ops.object.shade_smooth()
 
 bpy.context.object.active_material = bpy.data.materials['Material']
@@ -129,10 +130,10 @@ mat.node_tree.links.new(gh_node.outputs['Alpha'], gh_mix.inputs['Fac'])
 mat.node_tree.links.new(transparent.outputs['BSDF'], gh_mix.inputs[1])
 mat.node_tree.links.new(gh_mix.outputs['Shader'], mix.inputs[2])
 
-image_node.image = bpy.data.images.load('${T.pack frontImage}')
+image_node.image = bpy.data.images.load('%s')
 image_node.interpolation = 'Closest'
 
-gh_node.image = bpy.data.images.load('${T.pack backImage}')
+gh_node.image = bpy.data.images.load('%s')
 gh_node.interpolation = 'Closest'
 
 
@@ -166,7 +167,7 @@ plane.select_set(True);
 bpy.ops.object.origin_clear()
 bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN')
 
-plane.rotation_euler = (0, ${rotY}, 0)
+plane.rotation_euler = (0, %f, 0)
 
 scn = bpy.context.scene
 
@@ -182,4 +183,4 @@ scn.render.resolution_y = 1440
 scn.render.film_transparent = True
 
 bpy.ops.render.render( write_still=True )
-|]
+|] transZ rotX bend (fromToS (9/2) 4 bend) frontImage backImage rotY
