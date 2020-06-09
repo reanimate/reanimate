@@ -18,9 +18,8 @@ import           Reanimate.Ease
 import           Reanimate.Transition
 import           Reanimate.Svg.Constructors
 
-import           Language.Haskell.Printf (t)
+import           Language.Haskell.Printf (s)
 import qualified Data.Text           as T
-import qualified Data.Text.Lazy      as L
 
 data FlipSprite s = FlipSprite
   { fsSprite :: Sprite s
@@ -34,7 +33,7 @@ flipSprite front back = do
     bend <- newVar 0
     trans <- newVar 0
     rotX <- newVar 0
-    s <- newSprite $ do
+    sprite <- newSprite $ do
       getBend <- unVar bend
       getTrans <- unVar trans
       getRotX <- unVar rotX
@@ -48,7 +47,7 @@ flipSprite front back = do
         in frontTexture `seq` backTexture `seq`
            blender (script frontTexture backTexture getBend getTrans getRotX rotY)
     return FlipSprite
-      { fsSprite = s
+      { fsSprite = sprite
       , fsBend = bend
       , fsZoom = trans
       , fsWobble = rotX }
@@ -70,7 +69,7 @@ flipTransition = flipTransitionOpts bend zoom wobble
     wobble = -pi*0.10
 
 script :: FilePath -> FilePath -> Double -> Double -> Double -> Double -> T.Text
-script frontImage backImage bend transZ rotX rotY = L.toStrict $ [t|
+script frontImage backImage bend transZ rotX rotY = T.pack $ [s|
 import os
 import math
 
