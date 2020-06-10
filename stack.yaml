@@ -1,9 +1,8 @@
-resolver: lts-15.4
+resolver: lts-16.0
 
 allow-newer: false
 
 packages:
 - .
 
-extra-deps:
-- chiphunk-0.1.2.1
+extra-deps: []
