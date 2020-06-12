@@ -23,6 +23,7 @@ import           System.Directory        (createDirectoryIfMissing,
                                           withCurrentDirectory)
 import           System.Environment      (getProgName)
 import           System.Exit
+import           System.Process
 import           System.FilePath
 import           System.FSNotify
 import           System.IO
@@ -33,10 +34,12 @@ opts :: ConnectionOptions
 opts = defaultConnectionOptions
   { connectionCompressionOptions = PermessageDeflateCompression defaultPermessageDeflate }
 
-serve :: IO ()
-serve = withManager $ \watch -> do
+serve :: Bool -> Maybe FilePath -> Maybe FilePath -> IO ()
+serve verbose mbGHCPath mbSelfPath = withManager $ \watch -> do
   hSetBuffering stdin NoBuffering
-  self <- findOwnSource
+  self <- case mbSelfPath of
+    Nothing   -> findOwnSource
+    Just path -> pure path
   hasConnectionVar <- newMVar False
 
   -- There might already browser window open. Wait 2s to see if that window
@@ -66,7 +69,7 @@ serve = withManager $ \watch -> do
         let handler = modifyMVar_ slave $ \tid -> do
               putStrLn "Reloading code..."
               killThread tid
-              forkIO $ ignoreErrors $ slaveHandler conn self tmpDir
+              forkIO $ ignoreErrors $ slaveHandler verbose mbGHCPath conn self tmpDir
             killSlave = do
               tid <- takeMVar slave
               killThread tid
@@ -92,8 +95,8 @@ openViewer = do
       then putStrLn "Browser opened."
       else hPutStrLn stderr $ "Failed to open browser. Manually visit: " ++ url
 
-slaveHandler :: Connection -> FilePath -> FilePath -> IO ()
-slaveHandler conn self svgDir =
+slaveHandler :: Bool -> Maybe FilePath -> Connection -> FilePath -> FilePath -> IO ()
+slaveHandler verbose mbGHCPath conn self svgDir =
   withCurrentDirectory (takeDirectory self) $
   withSystemTempDirectory "reanimate" $ \tmpDir ->
   withTempFile tmpDir "reanimate.exe" $ \tmpExecutable handle -> do
@@ -103,7 +106,17 @@ slaveHandler conn self svgDir =
     hClose handle
     lock <- newMVar ()
     sendTextData conn (T.pack "status\nCompiling")
-    ret <- runCmd_ "stack" $ ["ghc", "--"] ++ ghcOptions tmpDir ++ [takeFileName self, "-o", tmpExecutable]
+    ret <- case mbGHCPath of
+      Nothing -> do
+        when verbose $
+          putStrLn $ "Running: " ++ showCommandForUser "stack"
+            (["ghc", "--"] ++ ghcOptions tmpDir ++ [takeFileName self, "-o", tmpExecutable])
+        runCmd_ "stack" $ ["ghc", "--"] ++ ghcOptions tmpDir ++ [takeFileName self, "-o", tmpExecutable]
+      Just ghc -> do
+        when verbose $
+          putStrLn $ "Running: " ++ showCommandForUser ghc
+            (ghcOptions tmpDir ++ [takeFileName self, "-o", tmpExecutable])
+        runCmd_ ghc $ ghcOptions tmpDir ++ [takeFileName self, "-o", tmpExecutable]
     case ret of
       Left err ->
         sendTextData conn $ T.pack $ "error\n" ++ unlines (drop 3 (lines err))
