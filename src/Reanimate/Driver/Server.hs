@@ -40,6 +40,8 @@ serve verbose mbGHCPath mbSelfPath = withManager $ \watch -> do
   self <- case mbSelfPath of
     Nothing   -> findOwnSource
     Just path -> pure path
+  when verbose $
+    putStrLn $ "Found own source code at: " ++ self
   hasConnectionVar <- newMVar False
 
   -- There might already browser window open. Wait 2s to see if that window
