@@ -27,6 +27,7 @@ data Command
   | View
     { viewVerbose   :: Bool
     , viewGHCPath   :: Maybe FilePath
+    , viewGHCOpts   :: [String]
     , viewOrigin    :: Maybe FilePath
     }
   | Render
@@ -137,6 +138,9 @@ viewCommand = info parse
       <*> optional (strOption (long "ghc"
                     <> metavar "PATH"
                     <> help "Path to GHC binary"))
+      <*> many (strOption (long "ghc-opt"
+                <> short 'G'
+                <> help "Additional option to pass to ghc"))
       <*> optional (strOption (long "self"
                     <> metavar "PATH"
                     <> help "Source file used for live-reloading"))
