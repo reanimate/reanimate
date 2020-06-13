@@ -109,7 +109,7 @@ reanimate animation = do
       -- hSetBinaryMode stdout True
       renderSnippets animation
     Check       -> checkEnvironment
-    View {..}   -> serve viewVerbose viewGHCPath viewOrigin
+    View {..}   -> serve viewVerbose viewGHCPath viewGHCOpts viewOrigin
     Render {..} -> do
       let fmt =
             guessParameter renderFormat (fmap presetFormat renderPreset)
