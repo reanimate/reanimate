@@ -13,23 +13,24 @@ module Reanimate.Render
 
 import           Control.Concurrent
 import           Control.Exception
-import           Control.Monad       (forM_, void, unless, forever, when)
-import qualified Data.Text           as T
-import qualified Data.Text.IO        as T
-import           Data.Time
+import           Control.Monad          (forM_, forever, unless, void, when)
 import           Data.Either
 import           Data.Function
-import           Graphics.SvgTree    (Number (..))
+import qualified Data.Text              as T
+import qualified Data.Text.IO           as T
+import           Data.Time
+import           Graphics.SvgTree       (Number (..))
 import           Numeric
 import           Reanimate.Animation
+import           Reanimate.Driver.Check
 import           Reanimate.Misc
 import           Reanimate.Parameters
-import           Reanimate.Driver.Check
+import           System.Console.ANSI
 import           System.Exit
-import           System.FilePath     ((</>))
-import           System.FilePath     (replaceExtension)
+import           System.FilePath        ((</>))
+import           System.FilePath        (replaceExtension)
 import           System.IO
-import           Text.Printf         (printf)
+import           Text.Printf            (printf)
 
 renderSvgs :: Animation -> IO ()
 renderSvgs ani = do
@@ -123,10 +124,9 @@ render ani target raster format width height fps = do
       progressH <- openFile progress ReadMode
       hSetBuffering progressH NoBuffering
       allFinished <- newEmptyMVar
-      void
-        $ forkIO
-        $ progressPrinter "rendered" (animationFrameCount ani fps)
-        $ \done -> fix $ \loop -> do
+      void $ forkIO $ do
+        progressPrinter "rendered" (animationFrameCount ani fps)
+          $ \done -> fix $ \loop -> do
             eof <- hIsEOF progressH
             if eof
               then threadDelay 1000000 >> loop
@@ -139,8 +139,9 @@ render ani target raster format width height fps = do
                       "frame=" -> do
                         void $ swapMVar done (read (drop 6 str))
                         loop
-                      _ | str == "progress=end" -> putMVar allFinished ()
+                      _ | str == "progress=end" -> return ()
                       _                         -> loop
+        putMVar allFinished ()
       case format of
         RenderMp4 -> runCmd ffmpeg (mp4Arguments fps progress template target)
         RenderGif -> withTempFile "png" $ \palette -> do
@@ -206,7 +207,8 @@ render ani target raster format width height fps = do
 
 progressPrinter :: String -> Int -> (MVar Int -> IO ()) -> IO ()
 progressPrinter typeName maxCount action = do
-  printf "\rFrames %s: 0/%d\27[K\r" typeName maxCount
+  printf "\rFrames %s: 0/%d" typeName maxCount
+  putStr $ clearFromCursorToLineEndCode ++ "\r"
   done  <- newMVar (0 :: Int)
   start <- getCurrentTime
   let bgThread = forever $ do
@@ -220,7 +222,7 @@ progressPrinter typeName maxCount action = do
         unless (nDone == 0) $ do
           putStr $ ", time remaining: " ++ ppDiff remaining
           putStr $ ", total time: " ++ ppDiff (remaining + spent)
-        putStr $ "\27[K\r"
+        putStr $ clearFromCursorToLineEndCode ++ "\r"
         hFlush stdout
         threadDelay 1000000
   withBackgroundThread bgThread $ action done
@@ -228,7 +230,7 @@ progressPrinter typeName maxCount action = do
   let spent = diffUTCTime now start
   printf "\rFrames %s: %d/%d" typeName maxCount maxCount
   putStr $ ", time spent: " ++ ppDiff spent
-  putStr $ "\27[K\n"
+  putStr $ clearFromCursorToLineEndCode ++ "\n"
 
 animationFrameCount :: Animation -> FPS -> Int
 animationFrameCount ani rate = round (duration ani * fromIntegral rate) :: Int
