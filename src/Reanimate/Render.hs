@@ -25,7 +25,7 @@ import           Reanimate.Animation
 import           Reanimate.Driver.Check
 import           Reanimate.Misc
 import           Reanimate.Parameters
-import           System.Console.ANSI
+import           System.Console.ANSI.Codes
 import           System.Exit
 import           System.FilePath        ((</>))
 import           System.FilePath        (replaceExtension)

@@ -11,7 +11,7 @@ import           Control.Monad
 import           Data.Maybe
 import           Data.Version
 import           Reanimate.Misc               (runCmd_)
-import           System.Console.ANSI
+import           System.Console.ANSI.Codes
 import           System.Directory             (findExecutable)
 import           System.IO
 import           System.IO.Temp
