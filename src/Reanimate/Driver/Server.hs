@@ -34,8 +34,8 @@ opts :: ConnectionOptions
 opts = defaultConnectionOptions
   { connectionCompressionOptions = PermessageDeflateCompression defaultPermessageDeflate }
 
-serve :: Bool -> Maybe FilePath -> Maybe FilePath -> IO ()
-serve verbose mbGHCPath mbSelfPath = withManager $ \watch -> do
+serve :: Bool -> Maybe FilePath -> [String] -> Maybe FilePath -> IO ()
+serve verbose mbGHCPath extraGHCOpts mbSelfPath = withManager $ \watch -> do
   hSetBuffering stdin NoBuffering
   self <- case mbSelfPath of
     Nothing   -> findOwnSource
@@ -71,7 +71,7 @@ serve verbose mbGHCPath mbSelfPath = withManager $ \watch -> do
         let handler = modifyMVar_ slave $ \tid -> do
               putStrLn "Reloading code..."
               killThread tid
-              forkIO $ ignoreErrors $ slaveHandler verbose mbGHCPath conn self tmpDir
+              forkIO $ ignoreErrors $ slaveHandler verbose mbGHCPath extraGHCOpts conn self tmpDir
             killSlave = do
               tid <- takeMVar slave
               killThread tid
@@ -97,8 +97,8 @@ openViewer = do
       then putStrLn "Browser opened."
       else hPutStrLn stderr $ "Failed to open browser. Manually visit: " ++ url
 
-slaveHandler :: Bool -> Maybe FilePath -> Connection -> FilePath -> FilePath -> IO ()
-slaveHandler verbose mbGHCPath conn self svgDir =
+slaveHandler :: Bool -> Maybe FilePath -> [String] -> Connection -> FilePath -> FilePath -> IO ()
+slaveHandler verbose mbGHCPath extraGHCOpts conn self svgDir =
   withCurrentDirectory (takeDirectory self) $
   withSystemTempDirectory "reanimate" $ \tmpDir ->
   withTempFile tmpDir "reanimate.exe" $ \tmpExecutable handle -> do
@@ -110,15 +110,15 @@ slaveHandler verbose mbGHCPath conn self svgDir =
     sendTextData conn (T.pack "status\nCompiling")
     ret <- case mbGHCPath of
       Nothing -> do
+        let opts = ["ghc", "--"] ++ ghcOptions tmpDir ++ extraGHCOpts ++ [takeFileName self, "-o", tmpExecutable]
         when verbose $
-          putStrLn $ "Running: " ++ showCommandForUser "stack"
-            (["ghc", "--"] ++ ghcOptions tmpDir ++ [takeFileName self, "-o", tmpExecutable])
-        runCmd_ "stack" $ ["ghc", "--"] ++ ghcOptions tmpDir ++ [takeFileName self, "-o", tmpExecutable]
+          putStrLn $ "Running: " ++ showCommandForUser "stack" opts
+        runCmd_ "stack" opts
       Just ghc -> do
+        let opts = ghcOptions tmpDir ++ extraGHCOpts ++ [takeFileName self, "-o", tmpExecutable]
         when verbose $
-          putStrLn $ "Running: " ++ showCommandForUser ghc
-            (ghcOptions tmpDir ++ [takeFileName self, "-o", tmpExecutable])
-        runCmd_ ghc $ ghcOptions tmpDir ++ [takeFileName self, "-o", tmpExecutable]
+          putStrLn $ "Running: " ++ showCommandForUser ghc opts
+        runCmd_ ghc opts
     case ret of
       Left err ->
         sendTextData conn $ T.pack $ "error\n" ++ unlines (drop 3 (lines err))
