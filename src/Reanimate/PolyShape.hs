@@ -407,7 +407,7 @@ cutSingleHole parent child =
       [x2p]
     )
   where
-    vect = (childOrigin ^-^ p) ^* 0.0001
+    vect = (childOrigin ^-^ p) ^* 0 -- 0.0001
     vectL = rotate90L $* vect
     vectR = rotate90R $* vect
     score = vectorDistance childOrigin p
