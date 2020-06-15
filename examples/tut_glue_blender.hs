@@ -1,5 +1,5 @@
 #!/usr/bin/env stack
--- stack runghc --package reanimate
+-- stack runghc --package reanimate --package here
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE ApplicativeDo     #-}
@@ -25,7 +25,7 @@ main = seq texture $ reanimate $ pauseAtEnd 1 $ parA bg $ sceneAnimation $ do
     trans <- newVar 0
     rotX <- newVar 0
     rotY <- newVar 0
-    _ <- newSprite $ do
+    newSprite_ $ do
       getBend <- unVar bend
       getTrans <- unVar trans
       getRotX <- unVar rotX
@@ -35,17 +35,16 @@ main = seq texture $ reanimate $ pauseAtEnd 1 $ parA bg $ sceneAnimation $ do
       return $ seq (texture (t/dur)) $
         blender (script (texture (t/dur)) getBend getTrans getRotX getRotY)
     wait 2
-    tweenVar trans 5 (\t v -> fromToS v (-2) $ curveS 2 t)
-    tweenVar bend 5 (\t v -> fromToS v 1 $ curveS 2 t)
-    tweenVar rotY 15 (\t v -> fromToS v (pi*2*2) $ curveS 2 t)
+    fork $ tweenVar trans 5 $ \v -> fromToS v (-2) .  curveS 2
+    fork $ tweenVar bend 5 $ \v -> fromToS v 1 . curveS 2
+    fork $ tweenVar rotY 15 $ \v -> fromToS v (pi*2*2) . curveS 2
     fork $ do
-      tweenVar rotX 5 (\t v -> fromToS v (-pi/5) $ curveS 2 t)
-      wait 5
-      tweenVar rotX 5 (\t v -> fromToS v (pi/5) $ curveS 2 t)
+      tweenVar rotX 5 $ \v -> fromToS v (-pi/5) . curveS 2
+      tweenVar rotX 5 $ \v -> fromToS v (pi/5) . curveS 2
     wait (15-5)
-    tweenVar bend 5 (\t v -> fromToS v 0 $ curveS 2 t)
-    tweenVar rotX 5 (\t v -> fromToS v 0 $ curveS 2 t)
-    tweenVar trans 5 (\t v -> fromToS v 0 $ curveS 2 t)
+    fork $ tweenVar bend 5 $ \v -> fromToS v 0 . curveS 2
+    fork $ tweenVar rotX 5 $ \v -> fromToS v 0 . curveS 2
+    fork $ tweenVar trans 5 $ \v -> fromToS v 0 . curveS 2
     wait 4
     -- tweenVar trans 1 (\t v -> fromToS v 0 $ curveS 2 t)
     wait 1
@@ -180,7 +179,7 @@ latexExample = sceneAnimation $ do
     -- Draw equation
     play $ drawAnimation strokedSvg
     sprites <- forM glyphs $ \(fn, _, elt) ->
-      newSpriteA $ animate $ const $ fn elt
+      newSpriteSVG $ fn elt
     -- Yoink each glyph
     forM_ (reverse sprites) $ \sprite -> do
       spriteE sprite (overBeginning 1 $ aroundCenterE $ highlightE)
