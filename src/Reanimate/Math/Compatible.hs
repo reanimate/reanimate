@@ -236,10 +236,7 @@ showStep a b = mkGroup
 
 compatiblyTriangulateP' :: Polygon -> Polygon -> Polygon -> [(Polygon, Polygon)]
 compatiblyTriangulateP' aOrigin a b
-  -- | not (pIsSimple a) = error "A is not simple"
-  -- | not (pIsSimple b) = error "B is not simple"
-  -- | trace ("Polygon size: " ++ show (pSize a, pSize b)) False = undefined
-  | n == 3 = traceSVG (showStep a b) $ trace ("Done") $ [(a, b)]
+  | n == 3 = traceSVG (showStep a b) $ {- trace ("Done") $ -} [(a, b)]
   | otherwise =
     -- trace ("aOneLink: " ++ show aOneLink) $
     -- trace ("bOneLink: " ++ show bOneLink) $
@@ -249,11 +246,12 @@ compatiblyTriangulateP' aOrigin a b
     Nothing -> case bestTwoLink of
       Nothing -> error $ "no 2-links"
       Just (nodeL, nodeR) ->
-        trace
+        {-trace
             (show
               ("two link" :: String, toOriginIndex nodeL, toOriginIndex nodeR)
             )
-          $ let (aL, aR) = if (nodeL, nodeR) `elem` aOneLink
+          $ -}
+            let (aL, aR) = if (nodeL, nodeR) `elem` aOneLink
                   then split1Link a nodeL nodeR 1
                   else split2Link a nodeL nodeR
                 (bL, bR) = if (nodeL, nodeR) `elem` bOneLink
@@ -262,10 +260,11 @@ compatiblyTriangulateP' aOrigin a b
             in  compatiblyTriangulateP' aOrigin aL bL
                   ++ compatiblyTriangulateP' aOrigin aR bR
     Just (nodeL, nodeR) ->
-      trace
+      {-trace
           (show ("one link" :: String, toOriginIndex nodeL, toOriginIndex nodeR)
           )
-        $ let (aL, aR) = split1Link a nodeL nodeR 0
+        $ -}
+          let (aL, aR) = split1Link a nodeL nodeR 0
               (bL, bR) = split1Link b nodeL nodeR 0
           in  compatiblyTriangulateP' aOrigin aL bL
                 ++ compatiblyTriangulateP' aOrigin aR bR
