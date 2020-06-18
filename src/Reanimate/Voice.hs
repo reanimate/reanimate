@@ -295,6 +295,6 @@ annotateWithTranscript t = forM_ (transcriptWords t) $ \tword -> do
  where
   position = translate (-screenWidth / 2) (-screenHeight / 2)
   outline txt = mkGroup
-    [ withStrokeWidth (defaultStrokeWidth * 10) $ withStrokeColor "white" $ txt
-    , withStrokeWidth 0 $ txt
+    [ withStrokeWidth (defaultStrokeWidth * 10) $ withStrokeColor "white" txt
+    , withStrokeWidth 0 txt
     ]

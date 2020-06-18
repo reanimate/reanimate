@@ -274,7 +274,7 @@ cmdsToPolyShapes cmds =
   where
     bad = error $ "Reanimate.PolyShape: Invalid commands: " ++ show cmds
     finalize [] rest  = rest
-    finalize acc rest = (ClosedPath $ reverse acc) : rest
+    finalize acc rest = ClosedPath (reverse acc) : rest
     worker _from acc [] = finalize acc []
     worker _from acc (LineMove newStart : xs) =
       finalize acc $

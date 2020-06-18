@@ -45,6 +45,7 @@ haskellLogo = unsafePerformIO $ embedImage "data/haskell.svg"
 githubIcon :: SVG
 githubIcon = unsafePerformIO $ embedImage "data/github-icon.svg"
 
+{-# NOINLINE githubWhiteIcon #-}
 githubWhiteIcon :: SVG
 githubWhiteIcon = unsafePerformIO $ embedImage "data/github-icon-white.svg"
 

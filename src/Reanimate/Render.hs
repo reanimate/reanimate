@@ -27,8 +27,7 @@ import           Reanimate.Misc
 import           Reanimate.Parameters
 import           System.Console.ANSI.Codes
 import           System.Exit
-import           System.FilePath        ((</>))
-import           System.FilePath        (replaceExtension)
+import           System.FilePath        ((</>), replaceExtension)
 import           System.IO
 import           Text.Printf            (printf)
 
@@ -118,7 +117,7 @@ render
 render ani target raster format width height fps = do
   printf "Starting render of animation: %.1f\n" (duration ani)
   ffmpeg <- requireExecutable "ffmpeg"
-  generateFrames raster ani width height fps $ \template -> do
+  generateFrames raster ani width height fps $ \template ->
     withTempFile "txt" $ \progress -> do
       writeFile progress ""
       progressH <- openFile progress ReadMode
@@ -134,7 +133,7 @@ render ani target raster format width height fps = do
                 l <- try (hGetLine progressH)
                 case l of
                   Left  SomeException{} -> return ()
-                  Right str             -> do
+                  Right str             ->
                     case take 6 str of
                       "frame=" -> do
                         void $ swapMVar done (read (drop 6 str))
