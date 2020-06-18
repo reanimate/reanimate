@@ -25,7 +25,7 @@ main = reanimate $ parA bg $ sceneAnimation $ do
     xRot <- newVar (-30)
     yRot <- newVar 180
     zRot <- newVar 0
-    _ <- newSprite $ do
+    newSprite_ $ do
       getX <- unVar xRot
       getY <- unVar yRot
       getZ <- unVar zRot
@@ -36,11 +36,11 @@ main = reanimate $ parA bg $ sceneAnimation $ do
         script (svgAsPngFile (texture (t/dur))) getX getY getZ
     wait 2
     let tDuration = 10
-    tweenVar yRot tDuration (\t v -> fromToS v (v+180) $ curveS 2 (t/tDuration))
-    tweenVar xRot (tDuration/2) (\t v -> fromToS v (v+60) $ curveS 2 (t/(tDuration/2)))
+    fork $ tweenVar yRot tDuration $ \v -> fromToS v (v+180) . curveS 2
+    fork $ tweenVar xRot (tDuration/2) $ \v -> fromToS v (v+60) . curveS 2
     fork $ do
       wait (tDuration/2)
-      tweenVar xRot (tDuration/2) (\t v -> fromToS v (v-60) $ curveS 2 (t/(tDuration/2)))
+      tweenVar xRot (tDuration/2) $ \v -> fromToS v (v-60) . curveS 2
     wait tDuration
     wait 2
   where
@@ -128,7 +128,7 @@ latexExample = sceneAnimation $ do
     -- Draw equation
     play $ drawAnimation strokedSvg
     sprites <- forM glyphs $ \(fn, _, elt) ->
-      newSpriteA $ animate $ const $ fn elt
+      newSpriteSVG $ fn elt
     -- Yoink each glyph
     forM_ (reverse sprites) $ \sprite -> do
       spriteE sprite (overBeginning 1 $ aroundCenterE $ highlightE)

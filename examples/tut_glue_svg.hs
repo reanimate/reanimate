@@ -32,7 +32,7 @@ main = reanimate $ bg `parA` chainT (overlapT transitionTime fadeT)
     comp4 = svgComponent "Images" (scale 0.5 svgLogo)
     comp5 = svgComponent "Paths" $
       withFillOpacity 0 $
-      scale 8 $ withStrokeWidth (defaultStrokeWidth*0.3) $
+      scale 8 $ withStrokeWidth defaultStrokeWidth $
       center $ latex "$\\pi$"
     comp6 = svgComponent "Blurs" mkBlur
     comp7 = svgComponent "Blobs" mkBlob

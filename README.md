@@ -77,7 +77,7 @@ animation source code, the browser window will automatically reload and show the
  * API reference: https://hackage.haskell.org/package/reanimate/docs/Reanimate.html
  * Core concepts: https://reanimate.readthedocs.io/en/latest/introduction/
  * Design overview: https://reanimate.readthedocs.io/en/latest/glue_tut/
- * Gallery with source code: https://reanimate.readthedocs.io/en/latest/gallery/
+ * N-Queens tutorial (somewhat dated, uses reanimate from October 2019): https://williamyaoh.com/posts/2020-05-31-reanimate-nqueens-tutorial.html
 
 # Authors
 

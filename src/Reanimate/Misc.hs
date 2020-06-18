@@ -101,5 +101,5 @@ withTempDir = withSystemTempDirectory "reanimate"
 
 withTempFile :: String -> (FilePath -> IO a) -> IO a
 withTempFile ext action =
-  withSystemTempFile ("reanimate" <.> ext) $ \path hd -> do
+  withSystemTempFile ("reanimate" <.> ext) $ \path hd ->
     hClose hd >> action path

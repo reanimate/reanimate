@@ -43,7 +43,7 @@ The video below illustrates how accurate the automatically generated timing info
   <summary>Toggle source code.</summary>
   <pre><code class="haskell">{!examples/voice_transcript.hs!}</code></pre>
 </details>
-<video width="640" height="360" controls>
+<video style="width:100%" controls>
   <source src="https://i.imgur.com/9Fxqgkz.mp4">
 </video><br/>
 
@@ -59,7 +59,7 @@ Faking data is done automatically by `loadTranscript` if no audio file can be fo
   <summary>Toggle source code.</summary>
   <pre><code class="haskell">{!examples/voice_fake.hs!}</code></pre>
 </details>
-<video width="640" height="360" controls>
+<video style="width:100%" controls>
   <source src="https://i.imgur.com/5o0gQ0F.mp4">
 </video><br/>
 
@@ -86,7 +86,7 @@ Looking at the `TWord` data structure, the key fields are `wordStart`, `wordEnd`
   <summary>Toggle source code.</summary>
   <pre><code class="haskell">{!examples/voice_triggers.hs!}</code></pre>
 </details>
-<video width="640" height="360" controls>
+<video style="width:100%" controls>
   <source src="https://i.imgur.com/efPy460.mp4">
 </video><br/>
 
@@ -124,6 +124,6 @@ flash flash flash
   <summary>Toggle source code.</summary>
   <pre><code class="haskell">{!examples/voice_advanced.hs!}</code></pre>
 </details>
-<video width="640" height="360" controls>
+<video style="width:100%" controls>
   <source src="https://i.imgur.com/5YIaSmB.mp4">
 </video><br/>

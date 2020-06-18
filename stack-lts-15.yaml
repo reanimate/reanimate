@@ -1,0 +1,9 @@
+resolver: lts-15.16
+
+allow-newer: false
+
+packages:
+- .
+
+extra-deps:
+- chiphunk-0.1.2.1

@@ -25,7 +25,7 @@ Running the above code should open a browser window containing this animation:
   </code></pre>
 </details>
 <br/>
-<video width="640" height="360" muted autoplay loop>
+<video style="width:100%" muted autoplay loop>
   <source src="https://i.imgur.com/bvLqalX.mp4">
 </video>
 

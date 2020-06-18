@@ -23,6 +23,6 @@ slideDownT = effectT slideDown (andE slideDown moveUp)
 slideUpT :: Transition
 slideUpT = effectT slideUp (andE slideUp moveDown)
   where
-    slideUp = translateE 0 (screenHeight)
+    slideUp = translateE 0 screenHeight
     moveDown = constE (translate 0 (-screenHeight))
     andE a b d t = a d t . b d t

@@ -274,7 +274,7 @@ cmdsToPolyShapes cmds =
   where
     bad = error $ "Reanimate.PolyShape: Invalid commands: " ++ show cmds
     finalize [] rest  = rest
-    finalize acc rest = (ClosedPath $ reverse acc) : rest
+    finalize acc rest = ClosedPath (reverse acc) : rest
     worker _from acc [] = finalize acc []
     worker _from acc (LineMove newStart : xs) =
       finalize acc $
@@ -407,7 +407,7 @@ cutSingleHole parent child =
       [x2p]
     )
   where
-    vect = (childOrigin ^-^ p) ^* 0.0001
+    vect = (childOrigin ^-^ p) ^* 0 -- 0.0001
     vectL = rotate90L $* vect
     vectR = rotate90R $* vect
     score = vectorDistance childOrigin p
