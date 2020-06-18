@@ -81,7 +81,7 @@ removeGroups = worker defaultSvg
   where
     worker _attr None = []
     worker _attr (DefinitionTree d) =
-      concatMap dropNulls $
+      concatMap dropNulls
       [DefinitionTree $ d & groupChildren %~ concatMap (worker defaultSvg)]
     worker attr (GroupTree g)
       | g ^. drawAttributes == defaultSvg =

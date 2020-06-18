@@ -37,9 +37,7 @@ opts = defaultConnectionOptions
 serve :: Bool -> Maybe FilePath -> [String] -> Maybe FilePath -> IO ()
 serve verbose mbGHCPath extraGHCOpts mbSelfPath = withManager $ \watch -> do
   hSetBuffering stdin NoBuffering
-  self <- case mbSelfPath of
-    Nothing   -> findOwnSource
-    Just path -> pure path
+  self <- maybe findOwnSource pure mbSelfPath
   when verbose $
     putStrLn $ "Found own source code at: " ++ self
   hasConnectionVar <- newMVar False
