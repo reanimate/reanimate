@@ -15,10 +15,10 @@ import           Data.Maybe
 import qualified Data.Set               as S
 import qualified Data.Text              as T
 import qualified Data.Vector            as V
-import           Debug.Trace
+-- import           Debug.Trace
 import           Linear.Metric
 import           Linear.V2
-import           Linear.Vector
+import           Linear.Vector (lerp, (^/))
 import           Reanimate
 import           Reanimate.Math.Common  (isInside, lineIntersect, triangleAngles)
 import           Reanimate.Math.Polygon
@@ -184,7 +184,7 @@ polygonsMesh outer trigs = do
   forM_ trigs $ \pts -> do
     innerFace <- createFace
     vIds <- mapM getVertex pts
-    edges     <- forM (zip vIds (tail vIds ++ take 1 vIds)) $ \(v0, v1) -> do
+    edges     <- forM (zip vIds (tail vIds ++ take 1 vIds)) $ \(_v0, v1) -> do
       e <- createEdge v1
       setFace e innerFace
       -- modifyVertex (vertexEdge .~ e) v0
@@ -432,14 +432,14 @@ splitEdge t e = do
 
 splitTriangle :: V2 Double -> EdgeId -> MeshM (V2 Double) (FaceId, FaceId, FaceId, FaceId)
 splitTriangle vertex e = do
-  outer <- gets _meshOuterFace
+  -- outer <- gets _meshOuterFace
   edge <- getEdge e
   next <- getEdge (edge^.edgeNext)
   twin <- getEdge (edge^.edgeTwin)
   next' <- getEdge (twin^.edgeNext)
 
   t         <- createVertex vertex
-  splitEdge t e
+  _ <- splitEdge t e
 
   smoothVertex t
 
@@ -449,13 +449,13 @@ splitTriangle vertex e = do
 
 splitOuterTriangle :: V2 Double -> EdgeId -> MeshM (V2 Double) (FaceId, FaceId)
 splitOuterTriangle vertex e = do
-  outer <- gets _meshOuterFace
+  -- outer <- gets _meshOuterFace
   edge <- getEdge e
   twin <- getEdge (edge^.edgeTwin)
   next' <- getEdge (twin^.edgeNext)
 
   t         <- createVertex vertex
-  splitEdge t e
+  _ <- splitEdge t e
 
   (f1,f2) <- insertEdge (twin^.edgeFace) t (next'^.edgeVertex)
   return (f1,f2)
@@ -680,7 +680,7 @@ edgeLength eid m =
   in distance p1 p2
 
 applyCompatible :: (t -> Mesh a -> Maybe (Mesh a)) -> (Mesh a -> [t]) -> Mesh a -> Mesh a -> (Mesh a, Mesh a)
-applyCompatible fn vs m1 m2
+applyCompatible _fn _vs m1 m2
   | _meshIdCounter m1 /= _meshIdCounter m2 = error "invalid ID counter"
 applyCompatible fn vs m1 m2 = worker m1 m2 (vs m1)
   where
@@ -746,9 +746,6 @@ splitLongestEdge m1 m2 =
 splitInternalEdgeForced :: EdgeId -> Mesh (V2 Double) -> Mesh (V2 Double)
 splitInternalEdgeForced eid m = execState worker m
   where
-    edgeFaces edge = do
-      twin <- getEdge (edge^.edgeTwin)
-      return (edge^.edgeFace, twin^.edgeFace)
     worker = do
       edge <- getEdge eid
       twin <- getEdge (edge^.edgeTwin)
@@ -763,9 +760,6 @@ splitOuterEdges = applyCompatible splitOuterEdge outerEdges
 splitOuterEdge :: EdgeId -> Mesh (V2 Double) -> Maybe (Mesh (V2 Double))
 splitOuterEdge eid m = evalState worker m
   where
-    edgeFaces edge = do
-      twin <- getEdge (edge^.edgeTwin)
-      return (edge^.edgeFace, twin^.edgeFace)
     worker = do
       edge <- getEdge eid
       twin <- getEdge (edge^.edgeTwin)
@@ -852,7 +846,7 @@ renderMeshColored m@Mesh{..} = mkGroup
 
 renderMeshStats :: Mesh (V2 Double) -> SVG
 renderMeshStats mesh = mkGroup
-    [ latex $ T.pack $ printf "Min:  %.1f" (minAngle/pi*180)
+    [ latex $ T.pack $ printf "Min:  %.1f" (minAng/pi*180)
     , translate 0 (sep*1) $
       latex $ T.pack $ printf "Mean: %.1f" (meanAngle/pi*180)
     , translate 0 (sep*2) $
@@ -863,7 +857,7 @@ renderMeshStats mesh = mkGroup
   where
     sep = -1
     angs = meshAngles mesh
-    minAngle = minimum angs
+    minAng = minimum angs
     meanAngle = L.sort angs !! (length angs `div` 2)
     avgAngle = sum angs / (fromIntegral $ length angs)
     maxAngle = maximum angs
