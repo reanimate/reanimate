@@ -14,7 +14,7 @@ import           Reanimate.Math.Render
 import           Reanimate.Svg
 import           Reanimate.Animation
 
-import           Debug.Trace
+-- import           Debug.Trace
 
 truncateP :: V2 Rational -> V2 Rational
 truncateP = fmap (realToFrac . (realToFrac :: Rational -> Double))
@@ -269,11 +269,11 @@ compatiblyTriangulateP' aOrigin a b
           in  compatiblyTriangulateP' aOrigin aL bL
                 ++ compatiblyTriangulateP' aOrigin aR bR
  where
-  toOriginIndex idx =
-    ( idx
-    , fromMaybe (-1) (V.elemIndex (pAccess a idx) (polygonPoints aOrigin))
-      + polygonOffset aOrigin
-    )
+  -- toOriginIndex idx =
+  --   ( idx
+  --   , fromMaybe (-1) (V.elemIndex (pAccess a idx) (polygonPoints aOrigin))
+  --     + polygonOffset aOrigin
+  --   )
   n = pSize a
   bestOneLink =
     listToMaybe (sortOn (Down . nodeDist) (aOneLink `intersect` bOneLink))
