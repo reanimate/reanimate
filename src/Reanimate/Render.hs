@@ -61,7 +61,7 @@ renderSnippets ani = forM_ [0 .. frameCount - 1] $ \nth -> do
       svg   = renderSvg Nothing Nothing frame
   putStr (show nth)
   T.putStrLn $ T.concat . T.lines . T.pack $ svg
-  where frameCount = 50 :: Integer
+  where frameCount = 10 :: Integer
 
 frameOrder :: Int -> Int -> [Int]
 frameOrder fps nFrames = worker [] fps

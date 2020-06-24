@@ -117,7 +117,7 @@ rawCommand = info parse
 
 testCommand :: ParserInfo Command
 testCommand = info (parse <**> helper)
-    (progDesc "Generate 50 frames spread out evenly across the animation. Used \
+    (progDesc "Generate 10 frames spread out evenly across the animation. Used \
               \internally by the test-suite.")
   where
     parse = pure Test
