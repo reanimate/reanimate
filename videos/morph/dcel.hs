@@ -1,10 +1,13 @@
 #!/usr/bin/env stack
--- stack --resolver lts-15.04 runghc --package reanimate
+-- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE ApplicativeDo #-}
 module Main where
 
-import           Control.Lens                             ( )
+import           Control.Lens
 import           Control.Monad
+import           Control.Monad.State
 import           Data.Function
 import           Data.List
 import           Text.Printf
@@ -49,27 +52,98 @@ p2 = pCopy p2'
   -- normalizePolygons
              closestLinearCorrespondence
   -- leastWork defaultStretchCosts defaultBendCosts
-  (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 4 $ latex "S")
-  (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 4 $ latex "C")
+  (pAtCenter $ unsafeSVGToPolygon 0.01 $ scale 4 $ latex "S")
+  (pAtCenter $ unsafeSVGToPolygon 0.01 $ scale 4 $ latex "C")
 
 (p1s,p2s) = unzip (compatiblyTriangulateP p1 p2)
+
+m2 = buildMesh $ polygonsMesh 
+        (map (fmap realToFrac) $ V.toList $ polygonPoints p2)
+        (map (map (fmap realToFrac) . V.toList . polygonPoints) p2s)
+
+m1 = buildMesh $ polygonsMesh 
+        (map (fmap realToFrac) $ V.toList $ polygonPoints p1)
+        (map (map (fmap realToFrac) . V.toList . polygonPoints) p1s)
+
 
 main :: IO ()
 main = reanimate $ sceneAnimation $ do
   -- newSpriteSVG_ $ mkBackground "black"
   newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
   -- let m = buildMesh $ polygonMesh $ map (fmap realToFrac) $ V.toList $ polygonPoints p2
-  let m = buildMesh $ polygonsMesh 
-            (map (fmap realToFrac) $ V.toList $ polygonPoints p2)
-            (map (map (fmap realToFrac) . V.toList . polygonPoints) p2s)
-  -- newSpriteSVG_ $
+  
+  -- newSpriteSVG_ $ withStrokeWidth (defaultStrokeWidth*0.5) $ scale 2 $
   --   DCEL.renderMesh m
-  newSpriteSVG_ $ scale 3 $ 
-    mkGroup $ map polygonShape p2s
-  newSpriteSVG_ $ scale 0.5 $ withFillColor "red" $
-    mkGroup $ map (polygonDots . pScale 6) p2s
+  s <- newVar 1
+  mVar <- newVar (m1, m2)
+  let V2 centerX centerY = V2 0 0 -- realToFrac <$> pAccess p2 33
+  adjustZ 2 $ newSprite_ $ do
+    ~(m1, m2) <- unVar mVar
+    pure $ mkGroup
+      [ translate 5 3.5 $ scale 0.5 $ renderMeshStats m1
+      , translate 5 0.5 $ scale 0.5 $ renderMeshStats m2 ]
+  newSprite_ $ do
+    ~(m1,m2) <- unVar mVar
+    sc <- unVar s
+    pure $ mkGroup
+      [translate (-4) 0 $ withStrokeWidth (defaultStrokeWidth*1) $ lowerTransformations $ scale sc $
+        translate (negate centerX) (negate centerY) $ mkGroup
+        [ mkGroup []
+        , DCEL.renderMeshColored m1
+        , DCEL.renderMesh (0.05/sc) m1
+        -- , renderMeshEdges m
+        -- , DCEL.renderMeshSimple (0.10/sc) m
+        ]
+      ,translate 2 0 $ withStrokeWidth (defaultStrokeWidth*1) $ lowerTransformations $ scale sc $
+        translate (negate centerX) (negate centerY) $ mkGroup
+        [ mkGroup []
+        , DCEL.renderMeshColored m2
+        , DCEL.renderMesh (0.05/sc) m2
+        -- , renderMeshEdges m
+        -- , DCEL.renderMeshSimple (0.10/sc) m
+        ]]
+  writeVar s 2
+  wait (1/60)
+  let pipeline1 = last . take 20 . iterate 
+        (uncurry delaunayFlip .
+         uncurry splitInternalEdges . 
+         (\(a,b) -> (meshSmoothPosition a, meshSmoothPosition b)))
+      stages = take 30 $ iterate 
+        (pipeline1 .
+         uncurry splitLongestEdge .
+         pipeline1
+         ) (m1,m2)
+  let pipeline = do
+        modifyVar mVar (uncurry delaunayFlip)
+        modifyVar mVar (uncurry splitInternalEdges)
+        modifyVar mVar $ \(a,b) -> (meshSmoothPosition a, meshSmoothPosition b)
+  forM_ stages $ \newM -> do
+    writeVar mVar newM
+    wait (1/60)
+  -- replicateM_ 30 $ do
+  --   pipeline
+  --   wait (1/60)
+
+  -- replicateM_ 200 $ do
+  --   modifyVar mVar (uncurry splitOuterEdges)
+  --   modifyVar mVar (uncurry splitLongestEdge)
+  --   wait (1/60)
+
+  --   replicateM_ 5 $ do
+  --     pipeline
+  --     wait (1/60)
+
+  -- let m' = execState (flipEdge 39 17) m
+  -- writeVar mVar m'
+  -- wait 1
+  -- tweenVar s 5 $ \v -> fromToS v 10
+    
+  -- newSpriteSVG_ $ scale 3 $ 
+  --   mkGroup $ map polygonShape p2s
+  -- newSpriteSVG_ $ scale 0.5 $ withFillColor "red" $
+  --   mkGroup $ map (polygonDots . pScale 6) p2s
   -- newSpriteSVG_ $ withFillColor "red" $ scale 3 $ polygonNumDots p2
-  wait 1
+  -- wait 1
   return ()
  where
    
