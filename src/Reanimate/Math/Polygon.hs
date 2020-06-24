@@ -597,6 +597,7 @@ pIsCCW p = V.sum (pMapEdges fn p) < 0
   where
     fn (V2 x1 y1) (V2 x2 y2) = (x2-x1)*(y2+y1)
 
+{-# INLINE pRayIntersect #-}
 pRayIntersect :: Polygon -> (Int, Int) -> (Int,Int) -> Maybe (V2 Rational)
 pRayIntersect p (a,b) (c,d) =
   rayIntersect (pAccess p a, pAccess p b) (pAccess p c, pAccess p d)

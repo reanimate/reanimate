@@ -43,7 +43,9 @@ closestLinearCorrespondence src' dst' =
         then worker x newScore xs
         else worker bestP bestPScore xs
     options = pCycles dst
-    score = V.sum . V.zipWith approxDist (polygonPoints src) . polygonPoints
+    score p = sum
+      [ approxDist (pAccess src n) (pAccess p n)
+      | n <- [0 .. pSize src-1] ]
 
 linearTrajectory :: Trajectory
 linearTrajectory (src,dst)

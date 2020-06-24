@@ -21,5 +21,7 @@ nav:
   - Gluing together animations: glue_tut.md
   - Morphology (incomplete): morphology.md
   - Voice control: voice.md
+  - How to:
+    - Use fonts (incomplete): fonts.md
   - Showcase:
     - Color Theory: showcase_colortheory.md

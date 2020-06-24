@@ -108,15 +108,15 @@ slaveHandler verbose mbGHCPath extraGHCOpts conn self svgDir =
     sendTextData conn (T.pack "status\nCompiling")
     ret <- case mbGHCPath of
       Nothing -> do
-        let opts = ["ghc", "--"] ++ ghcOptions tmpDir ++ extraGHCOpts ++ [takeFileName self, "-o", tmpExecutable]
+        let args = ["ghc", "--"] ++ ghcOptions tmpDir ++ extraGHCOpts ++ [takeFileName self, "-o", tmpExecutable]
         when verbose $
-          putStrLn $ "Running: " ++ showCommandForUser "stack" opts
-        runCmd_ "stack" opts
+          putStrLn $ "Running: " ++ showCommandForUser "stack" args
+        runCmd_ "stack" args
       Just ghc -> do
-        let opts = ghcOptions tmpDir ++ extraGHCOpts ++ [takeFileName self, "-o", tmpExecutable]
+        let args = ghcOptions tmpDir ++ extraGHCOpts ++ [takeFileName self, "-o", tmpExecutable]
         when verbose $
-          putStrLn $ "Running: " ++ showCommandForUser ghc opts
-        runCmd_ ghc opts
+          putStrLn $ "Running: " ++ showCommandForUser ghc args
+        runCmd_ ghc args
     case ret of
       Left err ->
         sendTextData conn $ T.pack $ "error\n" ++ unlines (drop 3 (lines err))

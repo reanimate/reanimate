@@ -76,6 +76,9 @@ import           Linear.V3
 import qualified Numeric.LinearAlgebra         as Matrix
 import           Numeric.LinearAlgebra.HMatrix (GMatrix, Matrix,
                                                 toLists, (!), (><))
+import Reanimate.Animation
+import Reanimate.Svg
+
 
 type P = V2 Double
 type Trig = (P,P,P)
@@ -87,6 +90,18 @@ data Mesh = Mesh
   , meshOutline :: Vector Int
   -- , meshSteiner :: Vector Int
   , meshTriangles :: Vector RelTrig }
+
+renderMeshPair :: Mesh -> SVG
+renderMeshPair Mesh{..} = withStrokeColor "black" $ mkGroup
+  [ mkLinePathClosed
+    [ (aPx, aPy)
+    , (bPx, bPy)
+    , (cPx, cPy)]
+  | (a,b,c) <- V.toList meshTriangles
+  , let V2 aPx aPy = meshPointsA V.! a
+        V2 bPx bPy = meshPointsA V.! b
+        V2 cPx cPy = meshPointsA V.! c
+  ]
 
 -- applyA (computeA a b) a = b + some_constant_translation
 -- A = Q P_inv
@@ -189,8 +204,9 @@ prepare Mesh{..} = Prep
   where
     aOrigin = meshPointsA V.! pivotIdx
     bOrigin = meshPointsB V.! pivotIdx
-    pivotIdx = case V.head meshTriangles of
-        (a,_,_) -> a
+    pivotIdx = 0 
+    -- pivotIdx = case V.head meshTriangles of
+    --     (a,_,_) -> a
     mkAbs p (a,b,c) = (p V.! a,p V.! b,p V.! c)
     absATrigs = V.map (mkAbs meshPointsA) meshTriangles
     absBTrigs = V.map (mkAbs meshPointsB) meshTriangles

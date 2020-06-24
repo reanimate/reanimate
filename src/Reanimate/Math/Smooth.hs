@@ -266,6 +266,8 @@ splitMeshEdges maxLen mesh = runST $ do
       insertEdge t j p
       insertEdge t c p
       insertEdge t d p
+  -- Add 'newPoints' to mesh points
+  -- Convert edges to triangles
   return undefined
  where
   splitEdge i j =
@@ -282,8 +284,8 @@ splitMeshEdges maxLen mesh = runST $ do
   insertEdge v a b = do
     MV.modify v (b :) a
     MV.modify v (a :) b
-  -- sortEdges :: V.Vector (V2 Double) -> V2 Double -> V2 Double -> [Int] -> [Int]
-  -- sortEdges v prev pt = sortOn (\i -> dir prev pt (v V.! i))
+  -- sortEdges :: V.Vector (V2 Double) -> V2 Double -> [Int] -> [Int]
+  -- sortEdges v pt = sortOn (\i -> dir pt (v V.! i))
 
-  -- dir :: V2 Double -> V2 Double -> V2 Double -> Double
-  -- dir l a b = atan2 (crossZ (l - a) (b - a)) (dot (l - a) (b - a))
+  -- dir :: V2 Double -> V2 Double -> Double
+  -- dir a b = (atan2 (crossZ (V2 0 1) (b - a)) (dot (V2 0 1) (b - a)))

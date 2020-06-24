@@ -21,7 +21,7 @@ import           Reanimate.Svg.Unuse
 import qualified Reanimate.Transform          as Transform
 
 lowerTransformations :: Tree -> Tree
-lowerTransformations = worker Transform.identity
+lowerTransformations = worker False Transform.identity
   where
     updLineCmd m cmd =
       case cmd of
@@ -30,17 +30,30 @@ lowerTransformations = worker Transform.identity
         LineBezier ps -> LineBezier $ map (Transform.transformPoint m) ps
         LineEnd p     -> LineEnd $ Transform.transformPoint m p
     updPath m = lineToPath . map (updLineCmd m) . toLineCommands
-    worker m t =
+    updPoint m (Num a,Num b) =
+      case Transform.transformPoint m (V2 a b) of
+        V2 x y -> (Num x, Num y)
+    updPoint _ other = other -- XXX: Can we do better here?
+    worker hasPathified m t =
       let m' = m * Transform.mkMatrix (t^.transform) in
       case t of
         PathTree path -> PathTree $
           path & pathDefinition %~ updPath m'
                & transform .~ Nothing
         GroupTree g -> GroupTree $
-          g & groupChildren %~ map (worker m')
+          g & groupChildren %~ map (worker hasPathified m')
             & transform .~ Nothing
+        LineTree line ->
+          LineTree $
+            line & linePoint1 %~ updPoint m
+                 & linePoint2 %~ updPoint m
         ClipPathTree{} -> t
-        _ -> mkGroup [t] & transform ?~ [ Transform.toTransformation m ]
+        -- If we encounter an unknown node and we've already tried to convert
+        -- to paths, give up and insert an explicit transformation.
+        _ | hasPathified ->
+          mkGroup [t] & transform ?~ [ Transform.toTransformation m ]
+        -- If we haven't tried to pathify, run pathify only once.
+        _ -> worker True m (pathify t)
 
 lowerIds :: Tree -> Tree
 lowerIds = mapTree worker
