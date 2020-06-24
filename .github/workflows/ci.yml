@@ -14,5 +14,5 @@ jobs:
       with:
         name: cdodev
         signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-    - run: cachix use cdodev
+    - run: cachix use iohk && cachix use cdodev
     - run: nix-build -A reanimate.components.all
