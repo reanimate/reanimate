@@ -1,7 +1,8 @@
 [![Hackage](https://img.shields.io/hackage/v/reanimate.svg?color=success)](http://hackage.haskell.org/package/reanimate)
-[![Build Status](https://dev.azure.com/lemmih0612/reanimate/_apis/build/status/Lemmih.reanimate?branchName=master)](https://dev.azure.com/lemmih0612/reanimate/_build/latest?definitionId=1&branchName=master)
+[![Build Status](https://dev.azure.com/lemmih0612/reanimate/_apis/build/status/Lemmih.reanimate?branchName=master)](https://dev.azure.com/lemmih0612/reanimate/_build?definitionId=1&branchName=master)
 [![Documentation Status](https://readthedocs.org/projects/reanimate/badge/?version=latest)](https://reanimate.readthedocs.io/en/latest/?badge=latest)
 ![Platforms](https://img.shields.io/badge/platform-linux%20%7C%20osx%20%7C%20windows-informational)
+![GitHub repo size](https://img.shields.io/github/repo-size/Lemmih/reanimate)
 
 # Reanimate
 
@@ -76,7 +77,7 @@ animation source code, the browser window will automatically reload and show the
  * API reference: https://hackage.haskell.org/package/reanimate/docs/Reanimate.html
  * Core concepts: https://reanimate.readthedocs.io/en/latest/introduction/
  * Design overview: https://reanimate.readthedocs.io/en/latest/glue_tut/
- * Gallery with source code: https://reanimate.readthedocs.io/en/latest/gallery/
+ * N-Queens tutorial (somewhat dated, uses reanimate from October 2019): https://williamyaoh.com/posts/2020-05-31-reanimate-nqueens-tutorial.html
 
 # Authors
 

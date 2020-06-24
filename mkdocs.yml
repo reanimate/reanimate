@@ -2,6 +2,12 @@ site_name: Reanimate
 repo_url: https://github.com/Lemmih/reanimate
 theme:
   name: readthedocs
+  highlightjs: true
+  hljs_languages:
+    - haskell
+    - plaintext
+    - text
+    - txt
 markdown_extensions:
   - markdown_include.include
   - pymdownx.arithmatex
@@ -14,6 +20,8 @@ nav:
   - Core concepts: introduction.md
   - Gluing together animations: glue_tut.md
   - Morphology (incomplete): morphology.md
-  - Gallery (outdated): gallery.md
+  - Voice control: voice.md
   - How to:
     - Use fonts (incomplete): fonts.md
+  - Showcase:
+    - Color Theory: showcase_colortheory.md

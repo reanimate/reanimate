@@ -2,6 +2,7 @@ module Reanimate.Builtin.Images
   ( svgLogo
   , haskellLogo
   , githubIcon
+  , githubWhiteIcon
   , smallEarth
   ) where
 
@@ -43,6 +44,10 @@ haskellLogo = unsafePerformIO $ embedImage "data/haskell.svg"
 -- | <<docs/gifs/doc_githubIcon.gif>>
 githubIcon :: SVG
 githubIcon = unsafePerformIO $ embedImage "data/github-icon.svg"
+
+{-# NOINLINE githubWhiteIcon #-}
+githubWhiteIcon :: SVG
+githubWhiteIcon = unsafePerformIO $ embedImage "data/github-icon-white.svg"
 
 -- | 300x150 equirectangular earth
 --

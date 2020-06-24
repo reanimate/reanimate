@@ -55,9 +55,12 @@ module Reanimate.Scene
   , spriteVar         -- :: Sprite s -> a -> (a -> SVG -> SVG) -> Scene s (Var s a)
   , spriteE           -- :: Sprite s -> Effect -> Scene s ()
   , spriteZ           -- :: Sprite s -> ZIndex -> Scene s ()
+  , spriteScope       -- :: Scene s a -> Scene s a
 
   -- * ST internals
   , liftST
+  , asAnimation       -- :: (forall s. Scene s a) -> Scene s Animation
+  , transitionO
   )
 where
 
@@ -69,6 +72,7 @@ import           Data.STRef
 import           Graphics.SvgTree                         ( Tree(None) )
 import           Reanimate.Animation
 import           Reanimate.Effect
+import           Reanimate.Transition
 import           Reanimate.Svg.Constructors
 
 -- | The ZIndex property specifies the stack order of sprites and animations. Elements
@@ -351,9 +355,16 @@ newSprite render = do
     return $ \d absT ->
       let relD = (if spriteDur < 0 then d else spriteDur) - now
           relT = absT - now
-      in  if relT < 0 || (relD + now /= d && relD <= relT)
-            then (None, 0)
-            else spriteEffect relD relT (fn absT relD relT)
+          -- Sprite is live [now;duration[
+          -- If we're at the end of a scene, sprites
+          -- are live: [now;duration]
+          -- This behavior is difficult to get right. See the 'bug_*' examples for
+          -- automated tests.
+          inTimeSlice = relT >= 0 && relT < relD
+          isLastFrame = d==absT && relT == relD
+      in  if inTimeSlice || isLastFrame
+            then spriteEffect relD relT (fn absT relD relT)
+            else (None, 0)
   return $ Sprite now ref
 
 -- | Create new sprite defined by a frame generator. The sprite will die at
@@ -548,3 +559,30 @@ spriteZ (Sprite born ref) zindex = do
       return $ \d t svg ->
         let (svg', z) = render d t svg in (svg', if t < now - born then z else zindex)
     )
+
+-- Destroy all local sprites at the end of a scene.
+spriteScope :: Scene s a -> Scene s a
+spriteScope (M action) = M $ \t -> do
+  (a, s, p, gens) <- action t
+  return (a, s, p, map (genFn (t+max s p)) gens)
+ where
+  genFn maxT gen = do
+    frameGen <- gen
+    return $ \_ t ->
+      if t < maxT
+        then frameGen maxT t
+        else (None, 0)
+
+asAnimation :: (forall s'. Scene s' a) -> Scene s Animation
+asAnimation scene = do
+  now <- queryNow
+  return $ dropA now (sceneAnimation (wait now >> scene))
+
+transitionO :: Transition -> Double -> (forall s'. Scene s' a) -> (forall s'. Scene s' b) -> Scene s ()
+transitionO t o a b = do
+  aA <- asAnimation a
+  bA <- fork $ do
+    wait (duration aA - o)
+    asAnimation b
+  play $ overlapT o t aA bA
+

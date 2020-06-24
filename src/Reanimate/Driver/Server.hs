@@ -23,6 +23,7 @@ import           System.Directory        (createDirectoryIfMissing,
                                           withCurrentDirectory)
 import           System.Environment      (getProgName)
 import           System.Exit
+import           System.Process
 import           System.FilePath
 import           System.FSNotify
 import           System.IO
@@ -33,10 +34,12 @@ opts :: ConnectionOptions
 opts = defaultConnectionOptions
   { connectionCompressionOptions = PermessageDeflateCompression defaultPermessageDeflate }
 
-serve :: IO ()
-serve = withManager $ \watch -> do
+serve :: Bool -> Maybe FilePath -> [String] -> Maybe FilePath -> IO ()
+serve verbose mbGHCPath extraGHCOpts mbSelfPath = withManager $ \watch -> do
   hSetBuffering stdin NoBuffering
-  self <- findOwnSource
+  self <- maybe findOwnSource pure mbSelfPath
+  when verbose $
+    putStrLn $ "Found own source code at: " ++ self
   hasConnectionVar <- newMVar False
 
   -- There might already browser window open. Wait 2s to see if that window
@@ -66,7 +69,7 @@ serve = withManager $ \watch -> do
         let handler = modifyMVar_ slave $ \tid -> do
               putStrLn "Reloading code..."
               killThread tid
-              forkIO $ ignoreErrors $ slaveHandler conn self tmpDir
+              forkIO $ ignoreErrors $ slaveHandler verbose mbGHCPath extraGHCOpts conn self tmpDir
             killSlave = do
               tid <- takeMVar slave
               killThread tid
@@ -92,8 +95,8 @@ openViewer = do
       then putStrLn "Browser opened."
       else hPutStrLn stderr $ "Failed to open browser. Manually visit: " ++ url
 
-slaveHandler :: Connection -> FilePath -> FilePath -> IO ()
-slaveHandler conn self svgDir =
+slaveHandler :: Bool -> Maybe FilePath -> [String] -> Connection -> FilePath -> FilePath -> IO ()
+slaveHandler verbose mbGHCPath extraGHCOpts conn self svgDir =
   withCurrentDirectory (takeDirectory self) $
   withSystemTempDirectory "reanimate" $ \tmpDir ->
   withTempFile tmpDir "reanimate.exe" $ \tmpExecutable handle -> do
@@ -103,7 +106,17 @@ slaveHandler conn self svgDir =
     hClose handle
     lock <- newMVar ()
     sendTextData conn (T.pack "status\nCompiling")
-    ret <- runCmd_ "stack" $ ["ghc", "--"] ++ ghcOptions tmpDir ++ [takeFileName self, "-o", tmpExecutable]
+    ret <- case mbGHCPath of
+      Nothing -> do
+        let opts = ["ghc", "--"] ++ ghcOptions tmpDir ++ extraGHCOpts ++ [takeFileName self, "-o", tmpExecutable]
+        when verbose $
+          putStrLn $ "Running: " ++ showCommandForUser "stack" opts
+        runCmd_ "stack" opts
+      Just ghc -> do
+        let opts = ghcOptions tmpDir ++ extraGHCOpts ++ [takeFileName self, "-o", tmpExecutable]
+        when verbose $
+          putStrLn $ "Running: " ++ showCommandForUser ghc opts
+        runCmd_ ghc opts
     case ret of
       Left err ->
         sendTextData conn $ T.pack $ "error\n" ++ unlines (drop 3 (lines err))

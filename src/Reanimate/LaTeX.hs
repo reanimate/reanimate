@@ -3,6 +3,7 @@
 module Reanimate.LaTeX
   ( latex
   , latexWithHeaders
+  , latexChunks
   , xelatex
   , latexAlign
   )
@@ -43,6 +44,7 @@ latex tex =
   args   = []
   script = mkTexScript exec args [] tex
 
+<<<<<<< HEAD
 latexWithHeaders :: [T.Text] -> T.Text -> Tree
 latexWithHeaders _headers tex | pNoExternals = mkText tex
 latexWithHeaders headers tex =
@@ -52,6 +54,18 @@ latexWithHeaders headers tex =
   exec   = "latex"
   args   = []
   script = mkTexScript exec args headers tex
+=======
+latexChunks :: [T.Text] -> [Tree]
+latexChunks chunks | pNoExternals = map mkText chunks
+latexChunks chunks                = worker (svgGlyphs $ latex $ T.concat chunks) chunks
+ where
+  merge lst = mkGroup [ fmt svg | (fmt, _, svg) <- lst ]
+  worker [] [] = []
+  worker _ [] = error "latex chunk mismatch"
+  worker everything (x : xs) =
+    let width = length $ svgGlyphs (latex x)
+    in merge (take width everything) : worker (drop width everything) xs
+>>>>>>> master
 
 -- | Invoke xelatex and import the result as an SVG object. SVG objects are
 --   cached to improve performance. Xelatex has support for non-western scripts.

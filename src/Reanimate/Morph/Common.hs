@@ -24,14 +24,14 @@ import           Graphics.SvgTree       (DrawAttributes, Texture (..),
                                          strokeOpacity)
 import           Linear.V2
 import           Reanimate.Animation
-import           Reanimate.Interpolate
+import           Reanimate.ColorComponents
 import           Reanimate.Math.EarClip
 import           Reanimate.Math.Polygon (Polygon, mkPolygon, pAddPoints,
                                          pCentroid, pRing, pSize, pdualPolygons,
                                          polygonPoints)
 import           Reanimate.Math.SSSP
 import           Reanimate.PolyShape
-import           Reanimate.Signal
+import           Reanimate.Ease
 import           Reanimate.Svg
 
 -- Correspondence

@@ -9,7 +9,7 @@ module Reanimate.Transition
   ) where
 
 import Reanimate.Animation
-import Reanimate.Signal
+import Reanimate.Ease
 import Reanimate.Effect
 
 -- | A transition transforms one animation into another.
@@ -21,7 +21,7 @@ signalT = mapT . signalA
 
 -- | Map the result of a transition.
 mapT :: (Animation -> Animation) -> Transition -> Transition
-mapT fn t = \a b -> fn (t a b)
+mapT fn t a b = fn (t a b)
 
 -- | Apply transition only to @N@ seconds of the first
 --   animation and to the last @N@ seconds of the second animation.

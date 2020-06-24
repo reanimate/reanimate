@@ -5,7 +5,7 @@ module Main(main) where
 import Reanimate hiding (raster, hsv)
 import Reanimate.Builtin.Documentation
 import Reanimate.Builtin.CirclePlot
-import Reanimate.Interpolate
+import Reanimate.ColorComponents
 import Data.Colour.RGBSpace.HSV
 import Data.Colour.RGBSpace
 import Data.Colour.SRGB

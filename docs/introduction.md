@@ -24,7 +24,7 @@ We'll start with a minimal animation that prints "Hello world" on top of a cyan 
   <summary>Toggle source code.</summary>
   <pre><code class="haskell">{!examples/intro_hello.hs!}</code></pre>
 </details>
-<video width="640" height="360" muted autoplay loop>
+<video style="width:100%" muted autoplay loop>
   <source src="https://i.imgur.com/dJIl8dy.mp4">
 </video><pre><code class="haskell">{!examples/intro_hello.hs!}</code></pre>
 
@@ -60,7 +60,7 @@ To make animations agnostic to resolution, **reanimate** uses its own coordinate
   <summary>Toggle source code.</summary>
   <pre><code class="haskell">{!examples/intro_canvas.hs!}</code></pre>
 </details>
-<video width="640" height="360" muted autoplay loop>
+<video style="width:100%" muted autoplay loop>
   <source src="https://i.imgur.com/E2hrppM.mp4">
 </video><br/>
 
@@ -100,6 +100,6 @@ SVG text nodes can be undesirable for two reasons: (a) How they are rendered dep
   <summary>Toggle source code.</summary>
   <pre><code class="haskell">{!examples/intro_canvas_square.hs!}</code></pre>
 </details>
-<video width="360" height="360" muted autoplay loop>
+<video style="width:100%; max-width: 320px" muted autoplay loop>
   <source src="https://i.imgur.com/XaKIn8W.mp4">
 </video>

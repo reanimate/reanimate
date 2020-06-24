@@ -11,11 +11,11 @@ import           Control.Monad
 import           Data.Maybe
 import           Data.Version
 import           Reanimate.Misc               (runCmd_)
+import           System.Console.ANSI.Codes
 import           System.Directory             (findExecutable)
 import           System.IO
 import           System.IO.Temp
 import           Text.ParserCombinators.ReadP
-import qualified Text.PrettyPrint.ANSI.Leijen as Doc
 import           Text.Printf
 
 --------------------------------------------------------------------------
@@ -66,8 +66,12 @@ checkEnvironment = do
       printf "  %-35s" (msg ++ ":")
       val <- fn
       case val of
-        Left err -> print $ Doc.red $ Doc.text err
-        Right ok -> print $ Doc.green $ Doc.text ok
+        Left err -> putStrLnColor Red err
+        Right ok -> putStrLnColor Green ok
+
+putStrLnColor :: Color -> String -> IO ()
+putStrLnColor color msg =
+  putStrLn $ setSGRCode [SetColor Foreground Vivid color] ++ msg ++ setSGRCode [Reset]
 
 -- latex, dvisvgm, xelatex
 
@@ -112,31 +116,31 @@ ffmpegVersion :: IO (Maybe Version)
 ffmpegVersion = extractVersion "ffmpeg" ["-version"] $ \line ->
       case take 3 $ words line of
         ["ffmpeg", "version", vs] -> vs
-        _ -> ""
+        _                         -> ""
 
 blenderVersion :: IO (Maybe Version)
 blenderVersion = extractVersion "blender" ["--version"] $ \line ->
     case take 2 (words line) of
       ["Blender", vs] -> vs
-      _ -> ""
+      _               -> ""
 
 rsvgVersion :: IO (Maybe Version)
 rsvgVersion = extractVersion "rsvg-convert" ["--version"] $ \line ->
   case words line of
     ["rsvg-convert", "version", vs] -> vs
-    _ -> ""
+    _                               -> ""
 
 inkscapeVersion :: IO (Maybe Version)
 inkscapeVersion = extractVersion "inkscape" ["--version"] $ \line ->
     case take 2 $ words line of
       ["Inkscape", vs] -> vs
-      _ -> ""
+      _                -> ""
 
 convertVersion :: IO (Maybe Version)
 convertVersion = extractVersion "convert" ["-version"] $ \line ->
     case take 3 $ words line of
       ["Version:", "ImageMagick", vs] -> vs
-      _ -> ""
+      _                               -> ""
 
 checkMinVersion :: Version -> Maybe Version -> Either String String
 checkMinVersion _minVersion Nothing = Left "no"

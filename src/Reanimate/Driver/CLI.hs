@@ -25,6 +25,11 @@ data Command
   | Test
   | Check
   | View
+    { viewVerbose   :: Bool
+    , viewGHCPath   :: Maybe FilePath
+    , viewGHCOpts   :: [String]
+    , viewOrigin    :: Maybe FilePath
+    }
   | Render
     { renderTarget  :: Maybe String
     , renderFPS     :: Maybe FPS
@@ -127,7 +132,18 @@ viewCommand :: ParserInfo Command
 viewCommand = info parse
     (progDesc "Play animation in browser window.")
   where
-    parse = pure View
+    parse = View
+      <$> switch
+        (long "verbose" <> short 'v')
+      <*> optional (strOption (long "ghc"
+                    <> metavar "PATH"
+                    <> help "Path to GHC binary"))
+      <*> many (strOption (long "ghc-opt"
+                <> short 'G'
+                <> help "Additional option to pass to ghc"))
+      <*> optional (strOption (long "self"
+                    <> metavar "PATH"
+                    <> help "Source file used for live-reloading"))
 
 renderCommand :: ParserInfo Command
 renderCommand = info parse

@@ -51,7 +51,7 @@ mainScene = sceneAnimation $ mdo
     svgCAF = center $ latex "\\LaTeX"
     getNth n = snd (splitGlyphs [n] svgCAF)
     svgs = [
-        withStrokeWidth 0.01 $
+        withStrokeWidth defaultStrokeWidth $
         scale 2 $
         translate 0 (tickLength*2) $
         withStrokeColor "black" $
