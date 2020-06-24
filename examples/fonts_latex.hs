@@ -9,7 +9,6 @@ where
 import           Reanimate
 import           Reanimate.LaTeX
 import           Reanimate.Builtin.Documentation
-import qualified Data.Text                     as T
 
 main :: IO ()
 main =
