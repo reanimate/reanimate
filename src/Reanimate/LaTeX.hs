@@ -2,6 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Reanimate.LaTeX
   ( latex
+  , latexWithHeaders
   , latexChunks
   , xelatex
   , latexAlign
@@ -42,6 +43,16 @@ latex tex =
   exec   = "latex"
   args   = []
   script = mkTexScript exec args [] tex
+
+latexWithHeaders :: [T.Text] -> T.Text -> Tree
+latexWithHeaders _headers tex | pNoExternals = mkText tex
+latexWithHeaders headers tex =
+  (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG "dvi" exec args))
+    script
+ where
+  exec   = "latex"
+  args   = []
+  script = mkTexScript exec args headers tex
 
 latexChunks :: [T.Text] -> [Tree]
 latexChunks chunks | pNoExternals = map mkText chunks
