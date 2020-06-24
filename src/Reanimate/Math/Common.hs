@@ -72,43 +72,48 @@ area2X (V2 a1 a2) (V2 b1 b2) (V2 c1 c2) =
             (V3 c1 c2 1))
 
 epsilon :: Fractional a => a
-epsilon = 1e-9
+epsilon = 1e-13
 
 epsEq :: (Ord a, Fractional a) => a -> a -> Bool
 epsEq a b = abs (a-b) < epsilon
 
+{-# INLINE isLeftTurn #-}
 -- Left turn.
 isLeftTurn :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
 isLeftTurn p1 p2 p3 =
-  let d = direction p1 p2 p3 in
-  case compare d 0 of
+  case compare (direction p1 p2 p3) 0 of
     LT -> True
     EQ -> False -- colnear
     GT -> False
 
+{-# INLINE isLeftTurnOrLinear #-}
 isLeftTurnOrLinear :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
 isLeftTurnOrLinear p1 p2 p3 =
-  let d = direction p1 p2 p3 in
-  case compare d 0 of
+  case compare (direction p1 p2 p3) 0 of
     LT -> True
     EQ -> True -- colnear
     GT -> False
 
+{-# INLINE isRightTurn #-}
 isRightTurn :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
 isRightTurn a b c = not (isLeftTurnOrLinear a b c)
 
+{-# INLINE isRightTurnOrLinear #-}
 isRightTurnOrLinear :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
 isRightTurnOrLinear a b c = not (isLeftTurn a b c)
 
+{-# INLINE direction #-}
 direction :: Fractional a => V2 a -> V2 a -> V2 a -> a
 direction p1 p2 p3 = crossZ (p3-p1) (p2-p1)
 
+{-# INLINE isInside #-}
 isInside :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> V2 a -> Bool
 isInside a b c d =
     s >= 0 && s <= 1 && t >= 0 && t <= 1
   where
     (s, t, _) = barycentricCoords a b c d
 
+{-# INLINE barycentricCoords #-}
 barycentricCoords :: Fractional a => V2 a -> V2 a -> V2 a -> V2 a -> (a, a, a)
 barycentricCoords (V2 x1 y1) (V2 x2 y2) (V2 x3 y3) (V2 x y) =
     (lam1, lam2, lam3)

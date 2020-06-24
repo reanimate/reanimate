@@ -66,7 +66,6 @@ library
                       Reanimate.Math.Common
                       Reanimate.Math.Polygon
                       Reanimate.Math.Triangulate
-                      Reanimate.Math.DCEL
                       Reanimate.Math.EarClip
                       Reanimate.Math.Visibility
                       Reanimate.Math.SSSP
@@ -100,6 +99,7 @@ library
                       Reanimate.GeoProjection
                       Reanimate.Builtin.Documentation
                       Reanimate.Builtin.Images
+                      Reanimate.Debug
                       Reanimate.Voice
   other-modules:      Reanimate.Cache
                       Reanimate.Driver
@@ -122,6 +122,7 @@ library
     build-depends: hmatrix >= 0.20.0.0
     exposed-modules:  Reanimate.Morph.Rigid
                       Reanimate.Math.Smooth
+                      Reanimate.Math.DCEL
   }
   ghc-options: -Wall -fno-ignore-asserts
 
