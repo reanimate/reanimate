@@ -10,7 +10,7 @@
 ## Viewing a basic animation
 
 ```console
-$ git clone https://github.com/Lemmih/reanimate.git
+$ git clone https://github.com/reanimate/reanimate.git
 $ cd reanimate/
 $ stack build
 $ stack ./examples/doc_andThen.hs
@@ -95,5 +95,5 @@ $ stack ./examples/doc_andThen.hs render --format gif
 * [API documentation](http://hackage.haskell.org/package/reanimate/docs/Reanimate.html)
 * [Core concepts](introduction)
 * [Gallery](gallery)
-* [Examples](https://github.com/Lemmih/reanimate/tree/master/examples)
+* [Examples](https://github.com/reanimate/reanimate/tree/master/examples)
 * [Design overview](glue_tut)

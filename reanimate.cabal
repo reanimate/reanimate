@@ -11,7 +11,7 @@ author:              David Himmelstrup
 maintainer:          lemmih@gmail.com
 category:            Graphics
 synopsis:            Animation library based on SVGs.
-homepage:            https://github.com/Lemmih/reanimate
+homepage:            https://github.com/reanimate/reanimate
 build-type:          Simple
 extra-source-files:  ChangeLog.md, examples/*.hs, examples/*.golden
 extra-doc-files:     docs/gifs/*.gif

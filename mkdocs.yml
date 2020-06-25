@@ -1,5 +1,5 @@
 site_name: Reanimate
-repo_url: https://github.com/Lemmih/reanimate
+repo_url: https://github.com/reanimate/reanimate
 theme:
   name: readthedocs
   highlightjs: true

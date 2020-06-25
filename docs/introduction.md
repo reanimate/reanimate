@@ -15,7 +15,7 @@ with respect to the output format, the resolution, and the framerate.
 By default, when you run the executable, the animation will open and play in a new browser window. Running the executable with `render` will create an .mp4 file with the same basename as the source file. For more details, have a look at the [driver documentation](http://hackage.haskell.org/package/reanimate/docs/Reanimate.html#v:reanimate).
 
 Let's get our feet wet and have a look at an animation written with **reanimate**.
-By the way, all animations in this document are available from the [`examples/`](https://github.com/Lemmih/reanimate/tree/master/examples) folder in the
+By the way, all animations in this document are available from the [`examples/`](https://github.com/reanimate/reanimate/tree/master/examples) folder in the
 project repository. Playing with the examples is a good way to learn.
 
 We'll start with a minimal animation that prints "Hello world" on top of a cyan background, and then go over what the code means:
