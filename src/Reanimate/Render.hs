@@ -23,6 +23,7 @@ import           Graphics.SvgTree       (Number (..))
 import           Numeric
 import           Reanimate.Animation
 import           Reanimate.Driver.Check
+import           Reanimate.Driver.Magick
 import           Reanimate.Misc
 import           Reanimate.Parameters
 import           System.Console.ANSI.Codes
@@ -298,14 +299,14 @@ requireRaster raster = do
 
 selectRaster :: Raster -> IO Raster
 selectRaster RasterAuto = do
-  rsvg <- hasRSvg
-  ink  <- hasInkscape
-  conv <- hasConvert
+  rsvg   <- hasRSvg
+  ink    <- hasInkscape
+  magick <- hasMagick
   if
-    | isRight rsvg -> pure RasterRSvg
-    | isRight ink  -> pure RasterInkscape
-    | isRight conv -> pure RasterConvert
-    | otherwise    -> pure RasterNone
+    | isRight rsvg   -> pure RasterRSvg
+    | isRight ink    -> pure RasterInkscape
+    | isRight magick -> pure RasterMagick
+    | otherwise      -> pure RasterNone
 selectRaster r = pure r
 
 applyRaster :: Raster -> FilePath -> IO ()
@@ -320,8 +321,8 @@ applyRaster RasterInkscape path = runCmd
 applyRaster RasterRSvg path = runCmd
   "rsvg-convert"
   [path, "--unlimited", "--output", replaceExtension path "png"]
-applyRaster RasterConvert path =
-  runCmd "convert" [path, replaceExtension path "png"]
+applyRaster RasterMagick path =
+  runCmd magickCmd [path, replaceExtension path "png"]
 
 concurrentForM_ :: [a] -> (a -> IO ()) -> IO ()
 concurrentForM_ lst action = do

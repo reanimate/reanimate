@@ -44,7 +44,7 @@ reanimate checks:
   Has blender:                       2.82
   Has rsvg-convert:                  2.44.10
   Has inkscape:                      0.92.4
-  Has convert:                       6.9.10-14
+  Has imagemagick:                   6.9.10-14
   Has LaTeX:                         /usr/bin/latex
   Has LaTeX package 'babel':         OK
   Has LaTeX package 'preview':       OK

@@ -105,6 +105,7 @@ library
                       Reanimate.Driver
                       Reanimate.Driver.Check
                       Reanimate.Driver.CLI
+                      Reanimate.Driver.Magick
                       Reanimate.Driver.Server
                       Reanimate.Driver.Compile
                       Paths_reanimate
