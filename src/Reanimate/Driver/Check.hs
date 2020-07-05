@@ -3,7 +3,7 @@ module Reanimate.Driver.Check
   ( checkEnvironment
   , hasRSvg
   , hasInkscape
-  , hasConvert
+  , hasMagick
   ) where
 
 import           Control.Exception            (SomeException, handle)
@@ -11,6 +11,7 @@ import           Control.Monad
 import           Data.Maybe
 import           Data.Version
 import           Reanimate.Misc               (runCmd_)
+import           Reanimate.Driver.Magick      (magickCmd)
 import           System.Console.ANSI.Codes
 import           System.Directory             (findExecutable)
 import           System.IO
@@ -30,7 +31,7 @@ checkEnvironment = do
     runCheck "Has blender" hasBlender
     runCheck "Has rsvg-convert" hasRSvg
     runCheck "Has inkscape" hasInkscape
-    runCheck "Has convert" hasConvert
+    runCheck "Has imagemagick" hasMagick
     runCheck "Has LaTeX" hasLaTeX
     runCheck ("Has LaTeX package '"++ "babel" ++ "'") $ hasTeXPackage "latex"
       "[english]{babel}"
@@ -107,8 +108,8 @@ hasInkscape = checkMinVersion minVersion <$> inkscapeVersion
   where
     minVersion = Version [0,92] []
 
-hasConvert :: IO (Either String String)
-hasConvert = checkMinVersion minVersion <$> convertVersion
+hasMagick :: IO (Either String String)
+hasMagick = checkMinVersion minVersion <$> magickVersion
   where
     minVersion = Version [6,0,0] []
 
@@ -136,8 +137,8 @@ inkscapeVersion = extractVersion "inkscape" ["--version"] $ \line ->
       ["Inkscape", vs] -> vs
       _                -> ""
 
-convertVersion :: IO (Maybe Version)
-convertVersion = extractVersion "convert" ["-version"] $ \line ->
+magickVersion :: IO (Maybe Version)
+magickVersion = extractVersion magickCmd ["-version"] $ \line ->
     case take 3 $ words line of
       ["Version:", "ImageMagick", vs] -> vs
       _                               -> ""

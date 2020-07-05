@@ -33,6 +33,7 @@ import           Graphics.SvgTree                         ( Number(..)
 import qualified Graphics.SvgTree              as Svg
 import           Reanimate.Animation
 import           Reanimate.Cache
+import           Reanimate.Driver.Magick
 import           Reanimate.Misc
 import           Reanimate.Render
 import           Reanimate.Parameters
@@ -248,8 +249,8 @@ vectorize_ args path             = unsafePerformIO $ do
       hClose svgH
       hClose bmpH
       potrace <- requireExecutable "potrace"
-      convert <- requireExecutable "convert"
-      runCmd convert [path, "-flatten", tmpBmpPath]
+      magick <- requireExecutable magickCmd
+      runCmd magick [path, "-flatten", tmpBmpPath]
       runCmd potrace (args ++ ["--svg", "--output", tmpSvgPath, tmpBmpPath])
       renameOrCopyFile tmpSvgPath svgPath
   svg_data <- B.readFile svgPath
