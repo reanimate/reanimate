@@ -5,6 +5,7 @@
 * Show progress when running ffmpeg.
 * Small improvements to the scene API.
 * Bug fixes to the voice API.
+* Support ImageMagick version 7.
 
 ## 0.3.3.0 -- 2020-05-22
 
