@@ -119,7 +119,7 @@ library
                        optparse-applicative, chiphunk >= 0.1.2.1,
                        geojson, aeson >= 1.3.0.0,
                        split, fingertree, array, cereal, vector-space
-  if flag(hmatrix) {
+  if flag(hmatrix) && !os(windows) {
     build-depends: hmatrix >= 0.20.0.0
     exposed-modules:  Reanimate.Morph.Rigid
                       Reanimate.Math.Smooth
