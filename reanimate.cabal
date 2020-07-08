@@ -39,6 +39,7 @@ Source-Repository head
 Flag hmatrix
   Description: Enable hmatrix dependency (requires blas and lapack)
   Default:     False
+  Manual:      True
 
 Flag test
   Description: Enable testing (requires stack)
