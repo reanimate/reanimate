@@ -4,6 +4,7 @@ module Reanimate.Driver.Check
   , hasRSvg
   , hasInkscape
   , hasMagick
+  , hasFFmpegRSvg
   ) where
 
 import           Control.Exception            (SomeException, handle)
@@ -26,6 +27,7 @@ checkEnvironment :: IO ()
 checkEnvironment = do
     putStrLn "reanimate checks:"
     runCheck "Has ffmpeg" hasFFmpeg
+    runCheck "Has ffmpeg(rsvg)" hasFFmpegRSvg
     runCheck "Has dvisvgm" hasDvisvgm
     runCheck "Has povray" hasPovray
     runCheck "Has blender" hasBlender
@@ -92,6 +94,18 @@ hasFFmpeg :: IO (Either String String)
 hasFFmpeg = checkMinVersion minVersion <$> ffmpegVersion
   where
     minVersion = Version [4,1,3] []
+
+hasFFmpegRSvg :: IO (Either String String)
+hasFFmpegRSvg = do
+  mbPath <- findExecutable "ffmpeg"
+  case mbPath of
+    Nothing -> return $ Left "n/a"
+    Just path -> do
+      ret <- runCmd_ path ["-version"]
+      pure $ case ret of
+        Right out | "--enable-librsvg" `elem` words out
+          -> Right "yes"
+        _ -> Left "no"
 
 hasBlender :: IO (Either String String)
 hasBlender = checkMinVersion minVersion <$> blenderVersion
