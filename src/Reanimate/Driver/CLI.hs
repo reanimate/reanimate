@@ -39,6 +39,7 @@ data Command
     , renderFormat  :: Maybe Format
     , renderPreset  :: Maybe Preset
     , renderRaster  :: Raster
+    , renderPartial :: Bool
     }
    deriving (Show)
 
@@ -186,6 +187,10 @@ renderCommand = info parse
           <> metavar "RASTER"
           <> value RasterNone
           <> help "Raster engine: none, auto, inkscape, rsvg, imagemagick")
+      <*> switch
+        (long "partial"
+        <> help "Produce partial animation even if frame generation was \
+                \interrupted by ctrl-c")
 
 opts :: ParserInfo Options
 opts = info (options <**> helper )

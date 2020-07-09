@@ -158,7 +158,7 @@ reanimate animation = do
         else selectRaster renderRaster
 
       if renderCompile
-        then compile
+        then compile $
           [ "render"
           , "--fps"
           , show fps
@@ -175,7 +175,7 @@ reanimate animation = do
           , "+RTS"
           , "-N"
           , "-RTS"
-          ]
+          ] ++ [ "--partial" | renderPartial ]
         else do
           setRaster raster
           setFPS fps
@@ -196,7 +196,7 @@ reanimate animation = do
             target
             (show raster)
 
-          render animation target raster fmt width height fps
+          render animation target raster fmt width height fps renderPartial
 
 guessParameter :: Maybe a -> Maybe a -> a -> a
 guessParameter a b def = fromMaybe def (a <|> b)

@@ -114,11 +114,12 @@ render
   -> Width
   -> Height
   -> FPS
+  -> Bool
   -> IO ()
-render ani target raster format width height fps = do
+render ani target raster format width height fps partial = do
   printf "Starting render of animation: %.1f\n" (duration ani)
   ffmpeg <- requireExecutable "ffmpeg"
-  generateFrames raster ani width height fps $ \template ->
+  generateFrames raster ani width height fps partial $ \template ->
     withTempFile "txt" $ \progress -> do
       writeFile progress ""
       progressH <- openFile progress ReadMode
@@ -236,8 +237,8 @@ animationFrameCount :: Animation -> FPS -> Int
 animationFrameCount ani rate = round (duration ani * fromIntegral rate) :: Int
 
 generateFrames
-  :: Raster -> Animation -> Width -> Height -> FPS -> (FilePath -> IO a) -> IO a
-generateFrames raster ani width_ height_ rate action = withTempDir $ \tmp -> do
+  :: Raster -> Animation -> Width -> Height -> FPS -> Bool -> (FilePath -> IO a) -> IO a
+generateFrames raster ani width_ height_ rate partial action = withTempDir $ \tmp -> do
   let frameName nth = tmp </> printf nameTemplate nth
   setRootDirectory tmp
   progressPrinter "generated" frameCount
@@ -256,7 +257,7 @@ generateFrames raster ani width_ height_ rate action = withTempDir $ \tmp -> do
 
   width  = Just $ Px $ fromIntegral width_
   height = Just $ Px $ fromIntegral height_
-  h UserInterrupt = do
+  h UserInterrupt | partial = do
     hPutStrLn
       stderr
       "\nCtrl-C detected. Trying to generate video with available frames. \
