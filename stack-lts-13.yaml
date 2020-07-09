@@ -5,10 +5,6 @@ allow-newer: false
 packages:
 - .
 
-flags:
-  hmatrix:
-    openblas: true
-
 extra-deps:
 - reanimate-svg-0.9.8.0
 - chiphunk-0.1.2.1

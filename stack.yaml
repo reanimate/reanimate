@@ -5,8 +5,4 @@ allow-newer: false
 packages:
 - .
 
-flags:
-  hmatrix:
-    openblas: true
-
 extra-deps: []
