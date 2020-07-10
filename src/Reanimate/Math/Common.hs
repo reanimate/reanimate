@@ -19,6 +19,7 @@ module Reanimate.Math.Common
   , isRightTurnOrLinear -- :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
   , direction           -- :: Fractional a => V2 a -> V2 a -> V2 a -> a
   , isInside            -- :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> V2 a -> Bool
+  , isInsideStrict      -- :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> V2 a -> Bool
   , barycentricCoords   -- :: Fractional a => V2 a -> V2 a -> V2 a -> V2 a -> (a, a, a)
   , rayIntersect        -- :: (Fractional a, Ord a) => (V2 a,V2 a) -> (V2 a,V2 a) -> Maybe (V2 a)
   , isBetween           -- :: (Ord a, Fractional a) => V2 a -> (V2 a, V2 a) -> Bool
@@ -109,9 +110,16 @@ direction p1 p2 p3 = crossZ (p3-p1) (p2-p1)
 {-# INLINE isInside #-}
 isInside :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> V2 a -> Bool
 isInside a b c d =
-    s >= 0 && s <= 1 && t >= 0 && t <= 1
+    s >= 0 && s <= 1 && t >= 0 && t <= 1 && i >= 0 && i <= 1
   where
-    (s, t, _) = barycentricCoords a b c d
+    (s, t, i) = barycentricCoords a b c d
+
+{-# INLINE isInsideStrict #-}
+isInsideStrict :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> V2 a -> Bool
+isInsideStrict a b c d =
+    s > 0 && s < 1 && t > 0 && t < 1 && i > 0 && i < 1
+  where
+    (s, t, i) = barycentricCoords a b c d
 
 {-# INLINE barycentricCoords #-}
 barycentricCoords :: Fractional a => V2 a -> V2 a -> V2 a -> V2 a -> (a, a, a)

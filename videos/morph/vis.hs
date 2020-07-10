@@ -63,28 +63,51 @@ main = reanimate $ sceneAnimation $ do
   -- play $ drawOverlap $ fst $ split1Link (fst (split1Link shape7 3 7)) 0 2
   -- fork $ play $ mapA (translate (-4) 0) $ drawSSSPVisibilityFast $ pSetOffset (addPoints 0 shape14) 0
   -- fork $ play $ mapA (translate (4) 0) $ drawSSSPVisibilityFast $ pSetOffset (addPoints 2 shape13) 0
-  fork $ play $ staticFrame 1 $ 
-    translate (4) 0 $ mkGroup
-    [ withFillColor "grey" $ polygonShape p1
-    , polygonNumDots p1 ]
-  fork $ play $ staticFrame 1 $
-    let -- pOrigin = (addPoints 10 $ pSetOffset shape14 0)
-        pOrigin = pScale 2 $ pAtCenter $ pAddPoints (0+2) (pSetOffset shape13 0)
-        --pOrigin = (addPoints 2 shape13)
-        p1 = pScale 1 $ pSetOffset pOrigin 0
-        p2 = snd $ split1Link p1 1 11 0
-        p3 = fst $ split1Link p2 0 2 1
-        -- p4 = fst $ split2Link p3 2 5
-        p4 = snd $ split1Link p3 0 9 1
-        p5 = fst $ split1Link p4 1 3 0
-        p6 = fst $ split2Link p5 0 2
-        p7 = fst $ split1Link p6 1 3 0
-        p8 = fst $ split2Link p7 0 2
-        p9 = fst $ split1Link p7 1 3 0
-        p = p4
-    in mkGroup
-    [ withFillColor "grey" $ polygonShape p
-    , polygonNumDots p ]
+  let origin = pSetOffset shape14 0
+      v1 = ssspVisibility (pSetOffset origin 11)
+      v2 = ssspVisibility (pSetOffset origin 8)
+      o1 = pOverlap v1 v2
+  play $ staticFrame 1 $
+    mkGroup
+    [ mkGroup
+      [ withFillColor "grey" $ polygonShape origin
+      , polygonNumDots origin ]
+    , translate 2 0 $ mkGroup
+      [ withFillColor "grey" $ polygonShape origin
+      , withFillColor "lightgrey" $ polygonShape v1
+      , polygonNumDots v1 ]
+    , translate 2 (-3) $ mkGroup
+      [ withFillColor "grey" $ polygonShape origin
+      , withFillColor "lightgrey" $ polygonShape v2
+      , polygonNumDots v2 ]
+    , translate 4 0 $ mkGroup
+      [ withFillColor "grey" $ polygonShape origin
+      , withFillColor "lightgrey" $ polygonShape o1
+      , polygonNumDots o1 ]
+    ]
+
+  -- fork $ play $ staticFrame 1 $ 
+  --   translate (4) 0 $ mkGroup
+  --   [ withFillColor "grey" $ polygonShape p1
+  --   , polygonNumDots p1 ]
+  -- fork $ play $ staticFrame 1 $
+  --   let -- pOrigin = (addPoints 10 $ pSetOffset shape14 0)
+  --       pOrigin = pScale 2 $ pAtCenter $ pAddPoints (0+2) (pSetOffset shape13 0)
+  --       --pOrigin = (addPoints 2 shape13)
+  --       p1 = pScale 1 $ pSetOffset pOrigin 0
+  --       p2 = snd $ split1Link p1 1 11 0
+  --       p3 = fst $ split1Link p2 0 2 1
+  --       -- p4 = fst $ split2Link p3 2 5
+  --       p4 = snd $ split1Link p3 0 9 1
+  --       p5 = fst $ split1Link p4 1 3 0
+  --       p6 = fst $ split2Link p5 0 2
+  --       p7 = fst $ split1Link p6 1 3 0
+  --       p8 = fst $ split2Link p7 0 2
+  --       p9 = fst $ split1Link p7 1 3 0
+  --       p = p4
+  --   in mkGroup
+  --   [ withFillColor "grey" $ polygonShape p
+  --   , polygonNumDots p ]
   -- newSpriteSVG $
   --   let p1 = pSetOffset shape14 0
   --       V2 x y = realToFrac <$> steiner2Link p1 2 6

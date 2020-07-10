@@ -77,6 +77,7 @@ library
                       Reanimate.Morph.Rotational
                       Reanimate.Morph.LeastWork
                       Reanimate.Morph.LineBend
+                      Reanimate.Morph.LeastDifference
                       Reanimate.Morph.Cache
                       Reanimate.Raster
                       Reanimate.ColorComponents

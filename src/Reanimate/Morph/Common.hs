@@ -28,11 +28,13 @@ import           Reanimate.ColorComponents
 import           Reanimate.Math.EarClip
 import           Reanimate.Math.Polygon (Polygon, mkPolygon, pAddPoints,
                                          pCentroid, pRing, pSize, pdualPolygons,
-                                         polygonPoints)
+                                         polygonPoints, polygonTriangulation)
 import           Reanimate.Math.SSSP
 import           Reanimate.PolyShape
 import           Reanimate.Ease
 import           Reanimate.Svg
+
+import Debug.Trace
 
 -- Correspondence
 -- Trajectory
@@ -55,8 +57,9 @@ data Morph = Morph
   , morphObjectCorrespondence :: ObjectCorrespondence
   }
 
+{-# INLINE morph #-}
 morph :: Morph -> SVG -> SVG -> Double -> SVG
-morph Morph{..} src dst = \t ->
+morph Morph{..} src dst = \t -> trace ("Frame: " ++ show t) $
   case t of
     -- 0 -> lowerTransformations src
     -- 1 -> lowerTransformations dst
@@ -145,8 +148,9 @@ splitObjectCorrespondence left right =
       (x,y) : splitObjectCorrespondence xs ys
 
 splitPolygon :: Int -> Polygon -> [Polygon]
-splitPolygon n polygon =
-    let trig = earClip $ pRing polygon
+splitPolygon n polygon_ =
+    let polygon = pAddPoints (max 0 (n*3 - pSize polygon_)) polygon_
+        trig = polygonTriangulation polygon -- earClip $ pRing polygon
         d = dual 0 trig
         pd = toPDual (pRing polygon) d
         reduced = pdualReduce (pRing polygon) pd n

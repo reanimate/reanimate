@@ -33,7 +33,9 @@ module Reanimate.Math.Polygon
   , pCircumference   -- :: (Real a, Fractional a) => APolygon a -> a
   , pCircumference'  -- :: (Real a, Fractional a) => APolygon a -> Double
   , pAddPoints       -- :: Int -> Polygon -> Polygon
+  , pAddPointsRestricted -- :: [Int] -> Int -> Polygon -> Polygon
   , pRayIntersect    -- :: Polygon -> (Int, Int) -> (Int,Int) -> Maybe (V2 Rational)
+  , pOverlap         -- :: Polygon -> Polygon -> Polygon
   -- * Triangulation
   , isValidTriangulation     -- :: Polygon -> Triangulation -> Bool
   , triangulationsToPolygons -- :: Polygon -> Triangulation -> [Polygon]
@@ -78,7 +80,7 @@ module Reanimate.Math.Polygon
   ) where
 
 import           Data.Hashable
-import           Data.List                  (intersect, tails, sort, maximumBy)
+import           Data.List                  (intersect, tails, sort, maximumBy, sortOn, (\\))
 import           Data.Maybe
 import           Data.Ratio
 import           Data.Serialize
@@ -567,6 +569,28 @@ pAddPoints n p = pAddPoints (n-1) $
       distSquared (pAccess p a) (pAccess p $ a+1) `compare`
       distSquared (pAccess p b) (pAccess p $ b+1)
 
+pAddPointsRestricted :: [(V2 Rational, V2 Rational)] -> Int -> Polygon -> Polygon
+pAddPointsRestricted _immutableEdges n p | n <= 0 = p
+pAddPointsRestricted immutableEdges n p = pAddPointsRestricted immutableEdges (n-1) $
+    mkPolygon $ V.fromList $ concatMap worker [0 .. pSize p-1]
+  where
+    isImmutable idx =
+      (pAccess p idx, pAccess p $ idx+1) `elem` immutableEdges ||
+      (pAccess p $ idx+1, pAccess p idx) `elem` immutableEdges
+    worker idx
+      | idx == longestEdge && not (isImmutable idx) =
+        let start = pAccess p idx
+            end = pAccess p $ idx+1
+            middle = lerp 0.5 end start
+        in [start, middle]
+      | otherwise = [pAccess p idx]
+    longestEdge = maximumBy cmpLength [0 .. pSize p-1]
+    cmpLength a _ | isImmutable a = LT
+    cmpLength _ b | isImmutable b = GT
+    cmpLength a b =
+      distSquared (pAccess p a) (pAccess p $ a+1) `compare`
+      distSquared (pAccess p b) (pAccess p $ b+1)
+
 -- addPoints :: Int -> Polygon -> Polygon
 -- addPoints n p = mkPolygon $ V.fromList $ worker n 0 (map (pAccess p) [0..s])
 --   where
@@ -604,7 +628,22 @@ pRayIntersect p (a,b) (c,d) =
 
 
 
-
+pOverlap :: Polygon -> Polygon -> Polygon
+pOverlap a b = mkPolygon $ V.fromList $ clearDups $ concatMap edgeIntersect [0 .. pSize a-1]
+  where
+    clearDups (x:y:xs)
+      | x == y = clearDups (y:xs)
+      | otherwise = x : clearDups (y:xs)
+    clearDups xs = xs
+    edgeIntersect edge =
+      sortOn (distSquared (pAccess a edge)) $ catMaybes
+      [ lineIntersect (aP, aP') (bP, bP')
+      | i <- [0 .. pSize b-1]
+      , let aP = pAccess a edge
+            aP' = pAccess a (edge+1)
+            bP = pAccess b i
+            bP' = pAccess b (i+1)
+      ]
 
 ---------------------------------------------------------
 -- SSSP visibility and SSSP windows

@@ -4,17 +4,21 @@ module Reanimate.Math.Compatible where
 import           Data.List
 import           Data.Maybe
 import           Data.Ord
-import qualified Data.Vector                   as V
+import qualified Data.Text              as T
+import qualified Data.Vector            as V
 import           Linear.V2
 import           Linear.Vector
+import           Reanimate.Animation
+import           Reanimate.Debug
 import           Reanimate.Math.Common
 import           Reanimate.Math.Polygon
-import           Reanimate.Debug
 import           Reanimate.Math.Render
 import           Reanimate.Svg
-import           Reanimate.Animation
+import           Reanimate.LaTeX
+import Data.Hashable
 
--- import           Debug.Trace
+import           Debug.Trace
+import GHC.Stack
 
 truncateP :: V2 Rational -> V2 Rational
 truncateP = fmap (realToFrac . (realToFrac :: Rational -> Double))
@@ -46,10 +50,27 @@ steiner2Link p i j
   = error
     $  "steiner2Link: Cannot construct 2-link chain between points: "
     ++ show (i, j, pParent p i j, pParent p i (pParent p i j))
+  | trigger && traceSVG info False = undefined
   | otherwise
-  = truncateP $ lerp 0.5 (fst vect) (intersects !! 0)
+  = let pI = ssspVisibility $ pSetOffset p i
+        pJ = ssspVisibility $ pSetOffset p j
+    in truncateP $ pCentroid $ pOverlap pI pJ
+  | otherwise
+  = truncateP $ lerp 0.5 windowCommon (intersects !! 0)
  where
-  distToV       = approxDist (fst vect)
+  trigger = True -- i == 4 && j == 8
+  info = mkGroup
+    [ scale 2 $ mkGroup
+      [ mkGroup [withFillColor "grey" $ polygonShape p, polygonNumDots p]
+      , let V2 x1 y1 = realToFrac <$> windowCommon
+        in translate x1 y1 $ withFillColor "red" $ mkCircle 0.08
+      , let V2 x1 y1 = realToFrac <$> iWindow
+        in translate x1 y1 $ withFillColor "blue" $ mkCircle 0.04
+      , let V2 x1 y1 = realToFrac <$> jWindow
+        in translate x1 y1 $ withFillColor "green" $ mkCircle 0.04
+      ]
+    , translate 5 0 $ withFillColor "white" $ latex $ T.pack $ show (i, j) ]
+  distToV       = approxDist windowCommon
   isNeighbour   = i == pNext p j || i == pPrev p j
   isParent      = pParent p i j == i
   isGrandparent = pParent p i (pParent p i j) == i
@@ -57,32 +78,37 @@ steiner2Link p i j
     direction (pAccess p j) (pAccess p $ pParent p i j) (pAccess p i) == 0
   intersects =
     sortOn distToV
-      $ snd vect
+      $ snd windowDirection
       : [ u
         | n <- [0 .. pSize p - 1]
         , let edge = (pAccess p n, pAccess p $ pNext p n)
-        , u <- case rayIntersect vect edge of
+        , u <- case rayIntersect windowDirection edge of
           Nothing -> []
           Just u  -> [u]
         , isBetween u edge
-        , u /= fst vect
-        , isForward vect u
-        ]
+        , u /= windowCommon
+        , isForward windowDirection u
+        ] ++
+        [ u
+        | not isStraightLine
+        , ray <- [(pAccess p i, jWindow), (pAccess p j, iWindow)]
+        , u <- maybeToList $ rayIntersect windowDirection ray ]
   iP = pAdjustOffset p i
   jP = pAdjustOffset p j
-  vect
+  windowDirection = (windowCommon, windowOpposite)
+  (windowCommon, iWindow, jWindow, windowOpposite)
     | isStraightLine
     = let p1 = lerp 0.5 (pAccess p i) (pAccess p j)
           p2 = case p1 - pAccess p i of
             V2 x y -> p1 + V2 (-y) x -- rotate 90 degrees.
-      in  (p1, p2)
+      in  (p1, undefined, undefined, p2)
     | otherwise
     = fromMaybe
         (error $ "No window overlap: " ++ show
           (isStraightLine, isGrandparent, oneBendBetween p i j)
         )
       $ listToMaybe
-      $ [ (p1, p1 + (p2 - p1) + (p3 - p1))
+      $ [ (p1, p2, p3, p2+p3-p1)
         | (a, b)       <- ssspWindows iP
         , (c, d)       <- ssspWindows jP
         , (p1, p2, p3) <- if
@@ -228,37 +254,53 @@ compatiblyTriangulateP a b
 
 showStep :: Polygon -> Polygon -> SVG
 showStep a b = mkGroup
-  [ translate (-3) 0
+  [ translate (-3) 0 $ scale 2
     $ mkGroup [withFillColor "grey" $ polygonShape a, polygonNumDots a]
-  , translate 3    0
+  , translate 3    0 $ scale 2
     $ mkGroup [withFillColor "grey" $ polygonShape b, polygonNumDots b]
   ]
 
-compatiblyTriangulateP' :: Polygon -> Polygon -> Polygon -> [(Polygon, Polygon)]
+showSolution :: Polygon -> Polygon -> (Int, Int) -> SVG
+showSolution a b (nodeL, nodeR) = mkGroup
+  [ showStep a b
+  -- , translate (-3) 0 $ scale 2 $
+  --   translate xA yA $ withFillColor "red" $
+  --   mkCircle 0.05
+  , withFillColor "white" $ latex $ T.pack $ show (nodeL, nodeR)
+  ]
+  where
+    -- V2 xA yA = realToFrac <$> steiner2Link a nodeL nodeR
+    -- V2 xB yB = steiner2Link b nodeL nodeR
+
+compatiblyTriangulateP' :: HasCallStack => Polygon -> Polygon -> Polygon -> [(Polygon, Polygon)]
 compatiblyTriangulateP' aOrigin a b
   | n == 3 = traceSVG (showStep a b) $ {- trace ("Done") $ -} [(a, b)]
   | otherwise =
+    -- trace ("PolygonA " ++ show a) $
+    -- trace ("PolygonB " ++ show b) $
+    -- trace ("pSize: " ++ show (pSize a)) $
     -- trace ("aOneLink: " ++ show aOneLink) $
     -- trace ("bOneLink: " ++ show bOneLink) $
     -- trace ("aTwoLink: " ++ show aTwoLink) $
     -- trace ("bTwoLink: " ++ show bTwoLink) $
+    -- trace ("bestOneLink: " ++ show bestOneLink) $
+    -- trace ("bestTwoLink: " ++ show bestTwoLink) $
     traceSVG (showStep a b) $ case bestOneLink of
     Nothing -> case bestTwoLink of
       Nothing -> error $ "no 2-links"
-      Just (nodeL, nodeR) ->
-        {-trace
-            (show
-              ("two link" :: String, toOriginIndex nodeL, toOriginIndex nodeR)
-            )
-          $ -}
-            let (aL, aR) = if (nodeL, nodeR) `elem` aOneLink
+      Just (nodeL, nodeR) -> -- trace "Creating steiner node" $
+            let isTwolink =
+                  (nodeL, nodeR) `notElem` aOneLink ||
+                  (nodeL, nodeR) `notElem` bOneLink
+                (aL, aR) = if (nodeL, nodeR) `elem` aOneLink
                   then split1Link a nodeL nodeR 1
                   else split2Link a nodeL nodeR
                 (bL, bR) = if (nodeL, nodeR) `elem` bOneLink
                   then split1Link b nodeL nodeR 1
                   else split2Link b nodeL nodeR
-            in  compatiblyTriangulateP' aOrigin aL bL
-                  ++ compatiblyTriangulateP' aOrigin aR bR
+            in (if isTwolink then traceSVG (showSolution a b (nodeL, nodeR)) else id) $
+             (compatiblyTriangulateP' aOrigin aL bL
+             ++ compatiblyTriangulateP' aOrigin aR bR)
     Just (nodeL, nodeR) ->
       {-trace
           (show ("one link" :: String, toOriginIndex nodeL, toOriginIndex nodeR)
@@ -285,7 +327,7 @@ compatiblyTriangulateP' aOrigin a b
   bOneLink = polygonOneLinks b
   aTwoLink = polygonTwoLinks a
   bTwoLink = polygonTwoLinks b
-  nodeDist (i, j) = min (j - i) (n - j + i)
+  nodeDist (i, j) = (min (j - i) (n - j + i), hash (i,j))
 
 oneBendBetween :: Polygon -> Int -> Int -> Bool
 oneBendBetween _p _a _b = False

@@ -15,14 +15,13 @@ import           Data.Maybe
 import qualified Data.Set               as S
 import qualified Data.Text              as T
 import qualified Data.Vector            as V
--- import           Debug.Trace
+import           Debug.Trace
 import           Linear.Metric
 import           Linear.V2
 import           Linear.Vector (lerp, (^/))
 import           Reanimate
-import           Reanimate.Math.Common  (isInside, lineIntersect, triangleAngles)
+import           Reanimate.Math.Common  (isInside, isInsideStrict, lineIntersect, triangleAngles)
 import           Reanimate.Math.Polygon
-import qualified Reanimate.Morph.Rigid  as Rigid
 import           Text.Printf
 
 type VertexId = Int
@@ -179,8 +178,8 @@ emptyMesh = Mesh 1 0 M.empty M.empty M.empty
 
 polygonsMesh :: Eq a => [a] -> [[a]] -> MeshM a ()
 polygonsMesh outer trigs = do
-  polygonMeshOuter (reverse outer)
   modify $ meshFaces .~ M.empty
+  polygonMeshOuter (reverse outer)
   forM_ trigs $ \pts -> do
     innerFace <- createFace
     vIds <- mapM getVertex pts
@@ -552,15 +551,28 @@ meshSmoothPosition :: Mesh (V2 Double) -> Mesh (V2 Double)
 meshSmoothPosition = execState worker
   where
     worker = gets steinerNodes >>= mapM_ smoothVertex
+    -- worker = mapM_ smoothVertex [221]
 
 smoothVertex :: VertexId -> MeshM (V2 Double) ()
 smoothVertex steiner = do
     self <- _vertexPosition <$> requireVertex steiner
     es <- gets (outgoingEdges steiner)
     vs <- mapM (requireVertex . _edgeVertex) es
-    let ps = V.fromList (sortEdges self (map _vertexPosition vs))
+    let ps = V.fromList (map _vertexPosition vs')
+        vs' = sortVertices self vs
         angleBased = angleSmooth self ps
         laplacian  = sum ps ^/ (fromIntegral $ length ps) -- laplacian
+    -- trace ("self: " ++ show self) $ return ()
+    -- trace ("angleBased: " ++ show angleBased) $ return ()
+    -- trace ("Edges: " ++ show (map _vertexId vs')) $ return ()
+    -- trace ("Valid angleBased: " ++ show (isValidLocation self ps angleBased)) $ return ()
+    -- trace ("Valid laplacian: " ++ show (isValidLocation self ps laplacian)) $ return ()
+    -- let checks = [ isInsideStrict self a b angleBased
+    --       | i <- [0 .. length ps - 1]
+    --       , let a = ps V.! i
+    --             b = ps V.! mod (i + 1) (length ps)
+    --       ]
+    -- trace ("Checks: " ++ show checks) $ return ()
     if isValidLocation self ps angleBased
       then modifyVertex (vertexPosition .~ angleBased) steiner
       else if isValidLocation self ps laplacian
@@ -569,9 +581,13 @@ smoothVertex steiner = do
   where
     sortEdges :: V2 Double -> [V2 Double] -> [V2 Double]
     sortEdges = sortOn . dir
+    sortVertices :: V2 Double -> [Vertex (V2 Double)] -> [Vertex (V2 Double)]
+    sortVertices self = sortOn (dirV self)
     -- Direction from south of 'a', to 'a', to 'b'.
     dir :: V2 Double -> V2 Double -> Double
     dir a b = (atan2 (crossZ (V2 0 1) (b - a)) (dot (V2 0 1) (b - a)))
+    dirV :: V2 Double -> Vertex (V2 Double) -> Double
+    dirV a v = dir a (_vertexPosition v)
 
 
 angleSmooth :: V2 Double -> V.Vector (V2 Double) -> V2 Double
@@ -604,7 +620,7 @@ angleSmooth origin js = V.sum (V.generate n nth) ^/ V.sum (V.generate n factor)
 isValidLocation :: V2 Double -> V.Vector (V2 Double) -> V2 Double -> Bool
 isValidLocation origin edges newLoc =
   or
-      [ isInside origin a b newLoc
+      [ isInsideStrict origin a b newLoc
       | i <- [0 .. length edges - 1]
       , let a = edges V.! i
             b = edges V.! mod (i + 1) (length edges)
@@ -616,6 +632,10 @@ isValidLocation origin edges newLoc =
  where
   dir :: V2 Double -> V2 Double -> Double
   dir a b = (atan2 (crossZ (V2 0 1) (b - a)) (dot (V2 0 1) (b - a)))
+
+isCCW a b c = sum [fn a b, fn b c, fn c a] < 0
+  where
+    fn (V2 x1 y1) (V2 x2 y2) = (x2-x1)*(y2+y1)
 
 minAngle :: V2 Double -> V.Vector (V2 Double) -> Double
 minAngle origin edges = minimum $ concat
@@ -703,7 +723,7 @@ delaunayFlip' eid m =
       ((f1',f2'), mAfter) = runState (flipEdge edge) m
       afterAng = min (faceMinAngle f1' mAfter) (faceMinAngle f2' mAfter)
   in
-  if (afterAng < beforeAng) || f1' == f1
+  if (afterAng <= beforeAng) || f1' == f1
     then Nothing
     else Just mAfter
 
@@ -861,31 +881,3 @@ renderMeshStats mesh = mkGroup
     meanAngle = L.sort angs !! (length angs `div` 2)
     avgAngle = sum angs / (fromIntegral $ length angs)
     maxAngle = maximum angs
-
-toRigidMesh :: Mesh (V2 Double) -> Mesh (V2 Double) -> Rigid.Mesh
-toRigidMesh meshA meshB = Rigid.Mesh
-    { meshPointsA = pointsA
-    , meshPointsB = pointsB
-    , meshOutline = outline
-    , meshTriangles = trigs }
-  where
-    pointsA = V.fromList $ map _vertexPosition $ M.elems (meshA^.meshVertices)
-    pointsB = V.fromList $ map _vertexPosition $ M.elems (meshB^.meshVertices)
-    outline = V.fromList
-      [ fromJust (V.elemIndex v pointsA)
-      | eid <- faceEdges (meshA^.meshOuterFace) meshA
-      , let edge = meshGetEdge eid meshA
-            v = _vertexPosition (meshGetVertex (edge^.edgeVertex) meshA)
-      ]
-    trigs = V.fromList
-      [ (aIdx, bIdx, cIdx)
-      | fid <- M.keys (meshA^.meshFaces)
-      , fid /= (meshA^.meshOuterFace)
-      , let edges = map (`meshGetEdge` meshA) (faceEdges fid meshA)
-            vs = map (`meshGetVertex` meshA) $ map _edgeVertex edges
-            ps = map _vertexPosition vs
-            [aIdx, bIdx, cIdx] = map (fromJust . (`V.elemIndex` pointsA)) ps
-            p = mkPolygon (V.fromList $ map (fmap realToFrac) ps)
-      , pIsSimple p || error "invalid polygon"
-      ]
-

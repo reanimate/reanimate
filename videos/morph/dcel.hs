@@ -52,8 +52,8 @@ p2 = pCopy p2'
   -- normalizePolygons
              closestLinearCorrespondence
   -- leastWork defaultStretchCosts defaultBendCosts
-  (pAtCenter $ unsafeSVGToPolygon 0.01 $ scale 4 $ latex "S")
-  (pAtCenter $ unsafeSVGToPolygon 0.01 $ scale 4 $ latex "C")
+  (pAtCenter $ unsafeSVGToPolygon 0.5 $ scale 6 $ latex "X")
+  (pAtCenter $ unsafeSVGToPolygon 0.5 $ scale 6 $ latex "S")
 
 (p1s,p2s) = unzip (compatiblyTriangulateP p1 p2)
 
@@ -65,6 +65,10 @@ m1 = buildMesh $ polygonsMesh
         (map (fmap realToFrac) $ V.toList $ polygonPoints p1)
         (map (map (fmap realToFrac) . V.toList . polygonPoints) p1s)
 
+doSmooth (a,b) = (meshSmoothPosition a, meshSmoothPosition b)
+step0 = (m1,m2)
+step1 = uncurry delaunayFlip step0
+step2 = doSmooth step1
 
 main :: IO ()
 main = reanimate $ sceneAnimation $ do
@@ -76,7 +80,7 @@ main = reanimate $ sceneAnimation $ do
   --   DCEL.renderMesh m
   s <- newVar 1
   mVar <- newVar (m1, m2)
-  let V2 centerX centerY = V2 0 0 -- realToFrac <$> pAccess p2 33
+  let V2 centerX centerY = V2 0 0 -- V2 (-0.2) (-2)-- realToFrac <$> pAccess p2 33
   adjustZ 2 $ newSprite_ $ do
     ~(m1, m2) <- unVar mVar
     pure $ mkGroup
@@ -91,27 +95,33 @@ main = reanimate $ sceneAnimation $ do
         [ mkGroup []
         , DCEL.renderMeshColored m1
         , DCEL.renderMesh (0.05/sc) m1
-        -- , renderMeshEdges m
-        -- , DCEL.renderMeshSimple (0.10/sc) m
+        -- , renderMeshEdges m1
+        , withFillColor "grey" $ DCEL.renderMeshSimple (0.15/sc) m1
         ]
       ,translate 2 0 $ withStrokeWidth (defaultStrokeWidth*1) $ lowerTransformations $ scale sc $
         translate (negate centerX) (negate centerY) $ mkGroup
         [ mkGroup []
         , DCEL.renderMeshColored m2
         , DCEL.renderMesh (0.05/sc) m2
-        -- , renderMeshEdges m
-        -- , DCEL.renderMeshSimple (0.10/sc) m
+        -- , renderMeshEdges m2
+        -- , DCEL.renderMeshSimple (0.10/sc) m2
+        , withFillColor "grey" $ DCEL.renderMeshSimple (0.15/sc) m2
         ]]
   writeVar s 2
-  wait (1/60)
-  let pipeline1 = last . take 20 . iterate 
-        (uncurry delaunayFlip .
-         uncurry splitInternalEdges . 
-         (\(a,b) -> (meshSmoothPosition a, meshSmoothPosition b)))
-      stages = take 30 $ iterate 
-        (pipeline1 .
-         uncurry splitLongestEdge .
-         pipeline1
+  -- wait (1/60)
+  let pipeline1 = last . take 20 . iterate (
+          uncurry delaunayFlip .
+          -- uncurry splitInternalEdges . 
+          doSmooth .
+          id
+          )
+      stages = take 30 $ iterate (
+         pipeline1 .
+        --  uncurry splitInternalEdges . 
+        --  pipeline1 .
+        --  uncurry splitLongestEdge .
+         --pipeline1
+         id
          ) (m1,m2)
   let pipeline = do
         modifyVar mVar (uncurry delaunayFlip)

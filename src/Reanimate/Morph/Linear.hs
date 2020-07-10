@@ -44,7 +44,8 @@ closestLinearCorrespondence src' dst' =
         else worker bestP bestPScore xs
     options = pCycles dst
     score p = sum
-      [ approxDist (pAccess src n) (pAccess p n)
+      [ -- approxDist (pAccess src n) (pAccess p n)
+        distSquared (pAccess src n) (pAccess p n)
       | n <- [0 .. pSize src-1] ]
 
 linearTrajectory :: Trajectory
