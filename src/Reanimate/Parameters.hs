@@ -29,7 +29,7 @@ data Raster
   | RasterAuto
   | RasterInkscape
   | RasterRSvg
-  | RasterConvert
+  | RasterMagick
   deriving (Show, Eq)
 
 {-# NOINLINE pRasterRef #-}

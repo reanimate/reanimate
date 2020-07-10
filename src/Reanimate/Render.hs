@@ -23,6 +23,7 @@ import           Graphics.SvgTree       (Number (..))
 import           Numeric
 import           Reanimate.Animation
 import           Reanimate.Driver.Check
+import           Reanimate.Driver.Magick
 import           Reanimate.Misc
 import           Reanimate.Parameters
 import           System.Console.ANSI.Codes
@@ -113,11 +114,12 @@ render
   -> Width
   -> Height
   -> FPS
+  -> Bool
   -> IO ()
-render ani target raster format width height fps = do
+render ani target raster format width height fps partial = do
   printf "Starting render of animation: %.1f\n" (duration ani)
   ffmpeg <- requireExecutable "ffmpeg"
-  generateFrames raster ani width height fps $ \template ->
+  generateFrames raster ani width height fps partial $ \template ->
     withTempFile "txt" $ \progress -> do
       writeFile progress ""
       progressH <- openFile progress ReadMode
@@ -235,8 +237,8 @@ animationFrameCount :: Animation -> FPS -> Int
 animationFrameCount ani rate = round (duration ani * fromIntegral rate) :: Int
 
 generateFrames
-  :: Raster -> Animation -> Width -> Height -> FPS -> (FilePath -> IO a) -> IO a
-generateFrames raster ani width_ height_ rate action = withTempDir $ \tmp -> do
+  :: Raster -> Animation -> Width -> Height -> FPS -> Bool -> (FilePath -> IO a) -> IO a
+generateFrames raster ani width_ height_ rate partial action = withTempDir $ \tmp -> do
   let frameName nth = tmp </> printf nameTemplate nth
   setRootDirectory tmp
   progressPrinter "generated" frameCount
@@ -255,7 +257,7 @@ generateFrames raster ani width_ height_ rate action = withTempDir $ \tmp -> do
 
   width  = Just $ Px $ fromIntegral width_
   height = Just $ Px $ fromIntegral height_
-  h UserInterrupt = do
+  h UserInterrupt | partial = do
     hPutStrLn
       stderr
       "\nCtrl-C detected. Trying to generate video with available frames. \
@@ -298,14 +300,14 @@ requireRaster raster = do
 
 selectRaster :: Raster -> IO Raster
 selectRaster RasterAuto = do
-  rsvg <- hasRSvg
-  ink  <- hasInkscape
-  conv <- hasConvert
+  rsvg   <- hasRSvg
+  ink    <- hasInkscape
+  magick <- hasMagick
   if
-    | isRight rsvg -> pure RasterRSvg
-    | isRight ink  -> pure RasterInkscape
-    | isRight conv -> pure RasterConvert
-    | otherwise    -> pure RasterNone
+    | isRight rsvg   -> pure RasterRSvg
+    | isRight ink    -> pure RasterInkscape
+    | isRight magick -> pure RasterMagick
+    | otherwise      -> pure RasterNone
 selectRaster r = pure r
 
 applyRaster :: Raster -> FilePath -> IO ()
@@ -320,8 +322,8 @@ applyRaster RasterInkscape path = runCmd
 applyRaster RasterRSvg path = runCmd
   "rsvg-convert"
   [path, "--unlimited", "--output", replaceExtension path "png"]
-applyRaster RasterConvert path =
-  runCmd "convert" [path, replaceExtension path "png"]
+applyRaster RasterMagick path =
+  runCmd magickCmd [path, replaceExtension path "png"]
 
 concurrentForM_ :: [a] -> (a -> IO ()) -> IO ()
 concurrentForM_ lst action = do

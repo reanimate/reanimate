@@ -8,20 +8,22 @@ module Reanimate.Misc
   , renameOrCopyFile
   ) where
 
-import           Control.Exception (evaluate, finally, throw, catch)
-import qualified Data.Text         as T
-import qualified Data.Text.IO      as T
+import           Control.Concurrent
+import           Control.Exception  (catch, evaluate, finally, throw)
+import qualified Data.Text          as T
+import qualified Data.Text.IO       as T
 import           Foreign.C.Error
 import           GHC.IO.Exception
-import           System.IO.Temp (withSystemTempFile, withSystemTempDirectory)
-import           System.Directory  (copyFile, findExecutable,
-                                    removeFile,
-                                    renameFile)
-import           System.FilePath   ((<.>))
-import           System.IO         (hClose, hGetContents, hIsEOF)
-import           System.Process    (readProcessWithExitCode,
-                                    runInteractiveProcess, showCommandForUser,
-                                    terminateProcess, waitForProcess)
+import           System.Directory   (copyFile, findExecutable, removeFile,
+                                     renameFile)
+import           System.FilePath    ((<.>))
+import           System.IO          (hClose, hGetContents, hIsEOF, hPutStr,
+                                     stderr)
+import           System.IO.Temp     (withSystemTempDirectory,
+                                     withSystemTempFile)
+import           System.Process     (readProcessWithExitCode,
+                                     runInteractiveProcess, showCommandForUser,
+                                     terminateProcess, waitForProcess)
 
 
 requireExecutable :: String -> IO FilePath
@@ -40,8 +42,8 @@ runCmd exec args = do
 
 runCmd_ :: FilePath -> [String] -> IO (Either String String)
 runCmd_ exec args = do
-  (ret, stdout, stderr) <- readProcessWithExitCode exec args ""
-  _                     <- evaluate (length stdout + length stderr)
+  (ret, stdout, errMsg) <- readProcessWithExitCode exec args ""
+  _                     <- evaluate (length stdout + length errMsg)
   case ret of
     ExitSuccess -> return (Right stdout)
     ExitFailure err | False ->
@@ -54,26 +56,27 @@ runCmd_ exec args = do
         ++ show err
         ++ "\n"
         ++ "stderr: "
-        ++ stderr
-    ExitFailure{} | null stderr -> -- LaTeX prints errors to stdout. :(
+        ++ errMsg
+    ExitFailure{} | null errMsg -> -- LaTeX prints errors to stdout. :(
       return $ Left stdout
-    ExitFailure{} -> return $ Left stderr
+    ExitFailure{} -> return $ Left errMsg
 
 runCmdLazy
   :: FilePath -> [String] -> (IO (Either String T.Text) -> IO a) -> IO a
 runCmdLazy exec args handler = do
   (inp, out, err, pid) <- runInteractiveProcess exec args Nothing Nothing
   hClose inp
+  errOutput <- hGetContents err
+  _ <- forkIO $ hPutStr stderr errOutput
   let fetch = do
         eof <- hIsEOF out
         if eof
           then do
-            stderr <- hGetContents err
-            _      <- evaluate (length stderr)
+            _      <- evaluate (length errOutput)
             ret    <- waitForProcess pid
             case ret of
               ExitSuccess   -> return (Left "")
-              ExitFailure{} -> return (Left stderr)
+              ExitFailure{} -> return (Left errOutput)
               {-ExitFailure errMsg -> do
                 return $ Left $
                   "Failed to run: " ++ showCommandForUser exec args ++ "\n" ++

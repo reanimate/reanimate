@@ -132,6 +132,8 @@ dupObjectCorrespondence left right =
       (x, y) : dupObjectCorrespondence xs ys
 
 splitObjectCorrespondence :: ObjectCorrespondence
+splitObjectCorrespondence = dupObjectCorrespondence
+{- This code is broken. :(
 splitObjectCorrespondence left right =
   case (left, right) of
     (_, []) -> []
@@ -156,7 +158,7 @@ splitPolygon n polygon_ =
         reduced = pdualReduce (pRing polygon) pd n
         polygons = pdualPolygons polygon reduced
     in polygons
-
+-}
 
 -- joinPairs :: Correspondence -> [(DrawAttributes, PolyShape)] -> [(DrawAttributes, PolyShape)]
 --           -> [(DrawAttributes, DrawAttributes, [(RPoint, RPoint)])]

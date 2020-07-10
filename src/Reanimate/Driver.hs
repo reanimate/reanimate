@@ -5,21 +5,22 @@ module Reanimate.Driver
   )
 where
 
-import           Control.Applicative                      ( (<|>) )
+import           Control.Applicative      ((<|>))
+import           Control.Monad
 import           Data.Maybe
-import           Reanimate.Animation                      ( Animation )
+import           Data.Either
+import           Reanimate.Animation      (Animation)
 import           Reanimate.Driver.Check
 import           Reanimate.Driver.CLI
 import           Reanimate.Driver.Compile
 import           Reanimate.Driver.Server
 import           Reanimate.Parameters
-import           Reanimate.Render                         ( render
-                                                          , renderSnippets
-                                                          , renderSvgs
-                                                          , selectRaster
-                                                          )
+import           Reanimate.Render         (render, renderSnippets, renderSvgs,
+                                           selectRaster)
 import           System.Directory
+import           System.Exit
 import           System.FilePath
+import           System.IO
 import           Text.Printf
 
 presetFormat :: Preset -> Format
@@ -141,8 +142,23 @@ reanimate animation = do
           )
           (userPreferredDimensions renderWidth renderHeight)
 
+      raster <-
+        if renderRaster == RasterNone || renderRaster == RasterAuto  then do
+          svgSupport <- hasFFmpegRSvg
+          if isRight svgSupport
+            then selectRaster renderRaster
+            else do
+              raster <- selectRaster RasterAuto
+              when (raster == RasterNone) $ do
+                hPutStrLn stderr $
+                  "Error: your FFmpeg was built without SVG support and no raster engines \
+                  \are available. Please install either inkscape, imagemagick, or rsvg."
+                exitWith (ExitFailure 1)
+              return raster
+        else selectRaster renderRaster
+
       if renderCompile
-        then compile
+        then compile $
           [ "render"
           , "--fps"
           , show fps
@@ -153,15 +169,14 @@ reanimate animation = do
           , "--format"
           , showFormat fmt
           , "--raster"
-          , showRaster renderRaster
+          , showRaster raster
           , "--target"
           , target
           , "+RTS"
           , "-N"
           , "-RTS"
-          ]
+          ] ++ [ "--partial" | renderPartial ]
         else do
-          raster <- selectRaster renderRaster
           setRaster raster
           setFPS fps
           setWidth width
@@ -181,7 +196,7 @@ reanimate animation = do
             target
             (show raster)
 
-          render animation target raster fmt width height fps
+          render animation target raster fmt width height fps renderPartial
 
 guessParameter :: Maybe a -> Maybe a -> a -> a
 guessParameter a b def = fromMaybe def (a <|> b)

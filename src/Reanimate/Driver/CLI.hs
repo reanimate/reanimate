@@ -39,6 +39,7 @@ data Command
     , renderFormat  :: Maybe Format
     , renderPreset  :: Maybe Preset
     , renderRaster  :: Raster
+    , renderPartial :: Bool
     }
    deriving (Show)
 
@@ -48,19 +49,19 @@ data Preset = Youtube | ExampleGif | Quick | MediumQ | HighQ | LowFPS
 readRaster :: String -> Maybe Raster
 readRaster raster =
   case map toLower raster of
-    "none"     -> Just RasterNone
-    "auto"     -> Just RasterAuto
-    "inkscape" -> Just RasterInkscape
-    "rsvg"     -> Just RasterRSvg
-    "convert"  -> Just RasterConvert
-    _          -> Nothing
+    "none"          -> Just RasterNone
+    "auto"          -> Just RasterAuto
+    "inkscape"      -> Just RasterInkscape
+    "rsvg"          -> Just RasterRSvg
+    "imagemagick"   -> Just RasterMagick
+    _               -> Nothing
 
 showRaster :: Raster -> String
 showRaster RasterNone     = "none"
 showRaster RasterAuto     = "auto"
 showRaster RasterInkscape = "inkscape"
 showRaster RasterRSvg     = "rsvg"
-showRaster RasterConvert  = "convert"
+showRaster RasterMagick   = "imagemagick"
 
 readFormat :: String -> Maybe Format
 readFormat fmt =
@@ -185,7 +186,11 @@ renderCommand = info parse
           (long "raster" <> showDefaultWith showRaster
           <> metavar "RASTER"
           <> value RasterNone
-          <> help "Raster engine: none, auto, inkscape, rsvg, convert")
+          <> help "Raster engine: none, auto, inkscape, rsvg, imagemagick")
+      <*> switch
+        (long "partial"
+        <> help "Produce partial animation even if frame generation was \
+                \interrupted by ctrl-c")
 
 opts :: ParserInfo Options
 opts = info (options <**> helper )

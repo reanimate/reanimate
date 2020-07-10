@@ -15,6 +15,10 @@ import qualified Reanimate.Transform       as Transform
 
 -- | Return bounding box of SVG tree.
 --  The four numbers returned are (minimal X-coordinate, minimal Y-coordinate, width, height)
+--
+--  Note: Bounding boxes are computed on a best-effort basis and will not work
+--        in all cases. The only supported SVG nodes are: path, circle, polyline,
+--        ellipse, line, rectangle, image. All other nodes return (0,0,0,0).
 boundingBox :: Tree -> (Double, Double, Double, Double)
 boundingBox t =
     case svgBoundingPoints t of

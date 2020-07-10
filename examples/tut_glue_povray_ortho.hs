@@ -1,5 +1,5 @@
 #!/usr/bin/env stack
--- stack runghc --package reanimate
+-- stack runghc --package reanimate --package here
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE ApplicativeDo     #-}
