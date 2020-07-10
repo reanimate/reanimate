@@ -119,7 +119,7 @@ slaveHandler verbose mbGHCPath extraGHCOpts conn self svgDir =
         runCmd_ ghc args
     case ret of
       Left err ->
-        sendTextData conn $ T.pack $ "error\n" ++ unlines (drop 3 (lines err))
+        sendTextData conn $ T.pack $ "error\n" ++ unlines (lines err)
       Right{} -> runCmdLazy tmpExecutable execOpts $ \getFrame -> do
         (frameCount,_) <- expectFrame sem =<< getFrame
         sendTextData conn (T.pack $ "frame_count\n" ++ show frameCount)
@@ -148,7 +148,7 @@ slaveHandler verbose mbGHCPath extraGHCOpts conn self svgDir =
       sendTextData conn (T.pack "status\nDone")
       exitSuccess
     expectFrame _ (Left err) = do
-      sendTextData conn $ T.pack $ "Error" ++ err
+      sendTextData conn $ T.pack $ "error\n" ++ err
       exitWith (ExitFailure 1)
     expectFrame _ (Right frame) =
       case T.decimal frame of
