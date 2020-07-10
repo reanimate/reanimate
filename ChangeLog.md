@@ -6,6 +6,9 @@
 * Small improvements to the scene API.
 * Bug fixes to the voice API.
 * Support ImageMagick version 7.
+* Improved Windows build support.
+* Improved error reporting in web-viewer.
+* Improved error messages when ffmpeg doesn't support SVGs.
 
 ## 0.3.3.0 -- 2020-05-22
 
