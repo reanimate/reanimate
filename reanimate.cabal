@@ -115,10 +115,11 @@ library
                        JuicyPixels >= 3.3.3, attoparsec, parallel,
                        cubicbezier, websockets >= 0.12.7.0,
                        hashable, fsnotify, open-browser, random, random-shuffle, base64-bytestring,
-                       vector >= 0.12.0.0, colour, cassava, ansi-terminal, th-printf >= 0.6, temporary,
+                       vector >= 0.12.0.0, colour, cassava, ansi-terminal, temporary,
                        optparse-applicative, chiphunk >= 0.1.2.1,
                        geojson, aeson >= 1.3.0.0, earcut >= 0.1.0.4,
-                       split, fingertree, array, cereal, vector-space
+                       split, array, cereal, vector-space,
+                       neat-interpolation >= 0.3
   if flag(hmatrix) || !os(windows) {
     build-depends: hmatrix >= 0.20.0.0
     exposed-modules:  Reanimate.Morph.Rigid
@@ -148,6 +149,5 @@ test-suite spec
     reanimate, vector, linear,
     QuickCheck >= 2.1.0, text,
     tasty, tasty-golden, tasty-hunit,
-    tasty-quickcheck,
-    ansi-wl-pprint,
-    here
+    tasty-quickcheck, tasty-rerun,
+    ansi-wl-pprint

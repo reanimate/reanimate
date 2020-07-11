@@ -1,8 +1,8 @@
 #!/usr/bin/env stack
--- stack runghc --package reanimate --package here
+-- stack runghc --package reanimate
+{-# LANGUAGE ApplicativeDo     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
-{-# LANGUAGE ApplicativeDo     #-}
 module Main (main) where
 
 import           Reanimate
@@ -11,9 +11,9 @@ import           Codec.Picture.Types
 import           Control.Lens          ((^.))
 import           Control.Monad
 import           Data.Monoid
-import           Data.String.Here
 import qualified Data.Text             as T
-import           Graphics.SvgTree
+import           Graphics.SvgTree      hiding (text)
+import           NeatInterpolation
 import           System.Random
 import           System.Random.Shuffle
 
@@ -59,14 +59,21 @@ texture t = svgAsPngFile $ mkGroup
   ]
 
 script :: FilePath -> Double -> Double -> Double -> Double -> T.Text
-script img bend transZ rotX rotY = [iTrim|
+script img bend transZ rotX rotY =
+  let img_ = T.pack img
+      bend_ = T.pack $ show bend
+      transZ_ = T.pack $ show transZ
+      rotX_ = T.pack $ show rotX
+      rotY_ = T.pack $ show rotY
+      yScale_ = T.pack $ show (fromToS (9/2) 4 bend)
+  in [text|
 import os
 import math
 
 import bpy
 
 cam = bpy.data.objects['Camera']
-cam.location = (0,0,22.25 + ${transZ})
+cam.location = (0,0,22.25 + ${transZ_})
 cam.rotation_euler = (0, 0, 0)
 bpy.ops.object.empty_add(location=(0.0, 0, 0))
 focus_target = bpy.context.object
@@ -75,7 +82,7 @@ cam.select_set(True)
 focus_target.select_set(True)
 bpy.ops.object.parent_set()
 
-focus_target.rotation_euler = (${rotX}, 0, 0)
+focus_target.rotation_euler = (${rotX_}, 0, 0)
 
 
 origin = bpy.data.objects['Cube']
@@ -83,10 +90,10 @@ bpy.ops.object.select_all(action='DESELECT')
 origin.select_set(True)
 bpy.ops.object.delete()
 
-x = ${bend}
+x = ${bend_}
 bpy.ops.mesh.primitive_plane_add()
 plane = bpy.context.object
-plane.scale = (16/2,${fromToS (9/2) 4 bend},1)
+plane.scale = (16/2,${yScale_},1)
 bpy.ops.object.shade_smooth()
 
 bpy.context.object.active_material = bpy.data.materials['Material']
@@ -96,7 +103,7 @@ texture = mat.node_tree.nodes['Principled BSDF']
 texture.inputs['Roughness'].default_value = 1
 mat.node_tree.links.new(image_node.outputs['Color'], texture.inputs['Base Color'])
 
-image_node.image = bpy.data.images.load('${T.pack img}')
+image_node.image = bpy.data.images.load('${img_}')
 
 
 modifier = plane.modifiers.new(name='Subsurf', type='SUBSURF')
@@ -130,7 +137,7 @@ plane.select_set(True);
 bpy.ops.object.origin_clear()
 bpy.ops.object.origin_set(type='GEOMETRY_ORIGIN')
 
-plane.rotation_euler = (0, ${rotY}, 0)
+plane.rotation_euler = (0, ${rotY_}, 0)
 
 scn = bpy.context.scene
 
