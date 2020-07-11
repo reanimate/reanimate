@@ -49,8 +49,6 @@ prop_pCycle p = forAll (choose (0,1)) $ \t ->
 
 prop_validEarClip p = isValidTriangulation p (earClip $ pRing p)
 
-prop_validEarCut p = isValidTriangulation p (earCut $ pRing p)
-
 -- dualToTrangulation . dual = id
 prop_dualInv p =
   let t = polygonTriangulation p in
@@ -59,14 +57,6 @@ prop_dualInv p =
 prop_ssspEq p =
   pSize p < 20 ==>
   naive (pRing p) == polygonSSSP p V.! 0
-
-prop_ssspSize :: Polygon -> Bool
-prop_ssspSize p =
-  length (sssp (pRing p) (dual 0 $ polygonTriangulation p)) == pSize p
-
-prop_pCuts p =
-  pSize p < 20 ==>
-  all (\(l,r) -> pIsSimple l && pIsSimple r) (pCuts p)
 
 prop_ssspVisibilityLength (Parameters xs) =
   let p = pGenerate xs in

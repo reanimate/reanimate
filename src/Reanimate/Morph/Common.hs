@@ -17,22 +17,22 @@ module Reanimate.Morph.Common
   ) where
 
 import           Control.Lens
-import qualified Data.Vector               as V
-import           Graphics.SvgTree          (DrawAttributes, Texture (..),
-                                            drawAttributes, fillColor,
-                                            fillOpacity, groupOpacity,
-                                            strokeColor, strokeOpacity)
+import qualified Data.Vector            as V
+import           Graphics.SvgTree       (DrawAttributes, Texture (..),
+                                         drawAttributes, fillColor, fillOpacity,
+                                         groupOpacity, strokeColor,
+                                         strokeOpacity)
 import           Linear.V2
 import           Reanimate.Animation
 import           Reanimate.ColorComponents
-import           Reanimate.Ease
-import           Reanimate.Math.Polygon    (Polygon, mkPolygon, pAddPoints,
-                                            pCentroid, pCutEqual, pSize,
-                                            polygonPoints)
+import           Reanimate.Math.EarClip
+import           Reanimate.Math.Polygon (Polygon, mkPolygon, pAddPoints,
+                                         pCentroid, pRing, pSize, pdualPolygons,
+                                         polygonPoints)
+import           Reanimate.Math.SSSP
 import           Reanimate.PolyShape
+import           Reanimate.Ease
 import           Reanimate.Svg
-
--- import Debug.Trace
 
 -- Correspondence
 -- Trajectory
@@ -129,7 +129,8 @@ dupObjectCorrespondence left right =
       (x, y) : dupObjectCorrespondence xs ys
 
 splitObjectCorrespondence :: ObjectCorrespondence
--- splitObjectCorrespondence = dupObjectCorrespondence
+splitObjectCorrespondence = dupObjectCorrespondence
+{- This code is broken. :(
 splitObjectCorrespondence left right =
   case (left, right) of
     (_, []) -> []
@@ -146,10 +147,14 @@ splitObjectCorrespondence left right =
       (x,y) : splitObjectCorrespondence xs ys
 
 splitPolygon :: Int -> Polygon -> [Polygon]
-splitPolygon 1 p = [p]
-splitPolygon n p =
-  let (a,b) = pCutEqual p
-  in splitPolygon (n`div`2) a ++ splitPolygon ((n+1)`div`2) b
+splitPolygon n polygon =
+    let trig = earClip $ pRing polygon
+        d = dual 0 trig
+        pd = toPDual (pRing polygon) d
+        reduced = pdualReduce (pRing polygon) pd n
+        polygons = pdualPolygons polygon reduced
+    in polygons
+-}
 
 -- joinPairs :: Correspondence -> [(DrawAttributes, PolyShape)] -> [(DrawAttributes, PolyShape)]
 --           -> [(DrawAttributes, DrawAttributes, [(RPoint, RPoint)])]
