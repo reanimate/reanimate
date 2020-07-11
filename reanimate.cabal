@@ -149,5 +149,4 @@ test-suite spec
     reanimate, vector, linear,
     QuickCheck >= 2.1.0, text,
     tasty, tasty-golden, tasty-hunit,
-    tasty-quickcheck, tasty-rerun,
-    ansi-wl-pprint
+    tasty-quickcheck, tasty-rerun >= 1.1.17
