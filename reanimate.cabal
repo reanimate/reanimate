@@ -117,7 +117,7 @@ library
                        hashable, fsnotify, open-browser, random, random-shuffle, base64-bytestring,
                        vector >= 0.12.0.0, colour, cassava, ansi-terminal, th-printf >= 0.6, temporary,
                        optparse-applicative, chiphunk >= 0.1.2.1,
-                       geojson, aeson >= 1.3.0.0, earcut,
+                       geojson, aeson >= 1.3.0.0, earcut >= 0.1.0.4,
                        split, fingertree, array, cereal, vector-space
   if flag(hmatrix) || !os(windows) {
     build-depends: hmatrix >= 0.20.0.0
