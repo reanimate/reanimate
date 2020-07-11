@@ -5,4 +5,5 @@ allow-newer: false
 packages:
 - .
 
-extra-deps: []
+extra-deps:
+- earcut-0.1.0.4

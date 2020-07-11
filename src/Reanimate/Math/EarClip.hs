@@ -1,16 +1,38 @@
 module Reanimate.Math.EarClip
-  ( earClip
+  ( earCut
+  , earCut'
+  , earClip
   , earClip'
   , isEarCorner
   ) where
 
 import           Data.List
 import qualified Data.Set                   as Set
+import           Data.Tuple
 
 import           Reanimate.Math.Common
 import           Reanimate.Math.Triangulate
 
+import qualified Data.Vector                as V
+import qualified Geometry.Earcut            as C
+import           Linear.V2
+
 -- import Debug.Trace
+
+earCut :: (Real a) => Ring a -> Triangulation
+earCut = last . earCut'
+
+earCut' :: (Real a) => Ring a -> [Triangulation]
+earCut' p =
+  map (edgesToTriangulation (ringSize p)) $ inits $ nub
+  [ if fst pair < snd pair then pair else swap pair
+  | (a,b,c) <- V.toList (C.earcut lst)
+  , pair <- [(a,b), (a,c), (b,c)]
+  , fst pair /= (snd pair+1) `mod` ringSize p
+  , fst pair /= (snd pair-1) `mod` ringSize p
+  ]
+  where
+    lst = [ (x,y) | V2 x y <- V.toList $ V.map (fmap realToFrac) $ ringUnpack p ]
 
 -- Triangulation by ear clipping. O(n^2)
 earClip :: (Fractional a, Ord a) => Ring a -> Triangulation

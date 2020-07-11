@@ -35,7 +35,12 @@ module Reanimate.Math.Polygon
   , pAddPoints       -- :: Int -> Polygon -> Polygon
   , pAddPointsRestricted -- :: [Int] -> Int -> Polygon -> Polygon
   , pRayIntersect    -- :: Polygon -> (Int, Int) -> (Int,Int) -> Maybe (V2 Rational)
+<<<<<<< HEAD
   , pOverlap         -- :: Polygon -> Polygon -> Polygon
+=======
+  , pCuts         -- :: Polygon -> [(Polygon,Polygon)]
+  , pCutEqual     -- :: Polygon -> (Polygon, Polygon)
+>>>>>>> master
   -- * Triangulation
   , isValidTriangulation     -- :: Polygon -> Triangulation -> Bool
   , triangulationsToPolygons -- :: Polygon -> Triangulation -> [Polygon]
@@ -79,8 +84,10 @@ module Reanimate.Math.Polygon
   , pUnGenerate -- :: Polygon -> [(Double, Double)]
   ) where
 
+-- import           Control.Exception
 import           Data.Hashable
-import           Data.List                  (intersect, tails, sort, maximumBy, sortOn, (\\))
+import           Data.List                  (intersect, maximumBy, sort, sortOn,
+                                             tails)
 import           Data.Maybe
 import           Data.Ratio
 import           Data.Serialize
@@ -117,14 +124,14 @@ instance Show a => Show (APolygon a) where
 instance Hashable a => Hashable (APolygon a) where
   hashWithSalt s p = V.foldl' hashWithSalt s (polygonPoints p)
 
-instance (Fractional a, Ord a, Serialize a) => Serialize (APolygon a) where
+instance (Real a, Fractional a, Ord a, Serialize a) => Serialize (APolygon a) where
   put = put . V.toList . polygonPoints
   get = mkPolygon . V.fromList <$> get
 
 pRing :: APolygon a -> Ring a
 pRing = ringPack . polygonPoints
 
-mkPolygon :: (Fractional a, Ord a) => V.Vector (V2 a) -> APolygon a
+mkPolygon :: (Real a, Fractional a, Ord a) => V.Vector (V2 a) -> APolygon a
 mkPolygon points = Polygon
     { polygonPoints = points
     , polygonOffset = 0
@@ -134,9 +141,10 @@ mkPolygon points = Polygon
   where
     n = length points
     ring = ringPack points
-    trig = earClip ring
+    trig = earCut ring
+      -- earClip ring
 
-mkPolygonFromRing :: (Fractional a, Ord a) => Ring a -> APolygon a
+mkPolygonFromRing :: (Real a, Fractional a, Ord a) => Ring a -> APolygon a
 mkPolygonFromRing = mkPolygon . ringUnpack
 
 pUnsafeMap :: (Ring a -> Ring a) -> APolygon a -> APolygon a
@@ -626,7 +634,27 @@ pRayIntersect :: Polygon -> (Int, Int) -> (Int,Int) -> Maybe (V2 Rational)
 pRayIntersect p (a,b) (c,d) =
   rayIntersect (pAccess p a, pAccess p b) (pAccess p c, pAccess p d)
 
+pCuts :: Polygon -> [(Polygon,Polygon)]
+pCuts p =
+  [ pCutAt (pAdjustOffset p i) (j-i)
+  | i <- [0 .. pSize p-1 ]
+  , j <- [i+2 .. pSize p-1 ]
+  , (j+1) `mod` pSize p /= i
+  , pParent p i j == i ]
 
+pCutEqual :: Polygon -> (Polygon, Polygon)
+pCutEqual p =
+    fromMaybe (p,p) $ listToMaybe $ sortOn f $ pCuts p
+  where
+    f (a,b) = abs (pArea a - pArea b)
+
+-- FIXME: This should be more efficient
+pCutAt :: Polygon -> Int -> (Polygon, Polygon)
+pCutAt p i = (mkPolygon $ V.fromList left, mkPolygon $ V.fromList right)
+  where
+    n     = pSize p
+    left  = map (pAccess p) [0 .. i]
+    right = map (pAccess p) (0:[i..n-1])
 
 pOverlap :: Polygon -> Polygon -> Polygon
 pOverlap a b = mkPolygon $ V.fromList $ clearDups $ concatMap edgeIntersect [0 .. pSize a-1]
