@@ -35,12 +35,9 @@ module Reanimate.Math.Polygon
   , pAddPoints       -- :: Int -> Polygon -> Polygon
   , pAddPointsRestricted -- :: [Int] -> Int -> Polygon -> Polygon
   , pRayIntersect    -- :: Polygon -> (Int, Int) -> (Int,Int) -> Maybe (V2 Rational)
-<<<<<<< HEAD
   , pOverlap         -- :: Polygon -> Polygon -> Polygon
-=======
   , pCuts         -- :: Polygon -> [(Polygon,Polygon)]
   , pCutEqual     -- :: Polygon -> (Polygon, Polygon)
->>>>>>> master
   -- * Triangulation
   , isValidTriangulation     -- :: Polygon -> Triangulation -> Bool
   , triangulationsToPolygons -- :: Polygon -> Triangulation -> [Polygon]
