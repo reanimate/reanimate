@@ -21,6 +21,7 @@ module Reanimate.Math.SSSP
   ) where
 
 import           Control.Monad
+-- import           Control.Exception
 import           Control.Monad.ST
 -- import           Data.FingerTree            (SearchResult (..), (|>))
 -- import qualified Data.FingerTree            as F
