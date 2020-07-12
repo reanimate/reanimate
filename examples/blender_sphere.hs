@@ -1,11 +1,11 @@
 #!/usr/bin/env stack
--- stack runghc --package reanimate --package here
+-- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 module Main (main) where
 
-import           Data.String.Here
 import qualified Data.Text         as T
+import           NeatInterpolation
 import           Reanimate
 
 main :: IO ()
@@ -13,18 +13,18 @@ main = reanimate $ mkAnimation 5 $ \t ->
     let s = t * pi * 2 in
     mkGroup
     [ mkBackground "black"
-    , blender (script s)
+    , blender (script $ T.pack $ show s)
     ]
 
-texture :: FilePath
-texture = svgAsPngFile (mkGroup
+texture :: T.Text
+texture = T.pack $ svgAsPngFile (mkGroup
   [ checker 10 10
   , withFillColor "red" $
     scale 2 $ center $
     latexAlign "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"])
 
-script :: Double -> T.Text
-script s = [iTrim|
+script :: T.Text -> T.Text
+script s = [text|
 import os
 
 import bpy
@@ -48,7 +48,7 @@ texture = mat.node_tree.nodes['Principled BSDF']
 texture.inputs['Roughness'].default_value = 1
 mat.node_tree.links.new(image_node.outputs['Color'], texture.inputs['Base Color'])
 
-image_node.image = bpy.data.images.load('${T.pack texture}')
+image_node.image = bpy.data.images.load('${texture}')
 
 scn = bpy.context.scene
 #scn.render.engine = 'CYCLES'

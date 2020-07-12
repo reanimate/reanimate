@@ -1,8 +1,8 @@
 #!/usr/bin/env stack
--- stack runghc --package reanimate --package here
+-- stack runghc --package reanimate
+{-# LANGUAGE ApplicativeDo     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
-{-# LANGUAGE ApplicativeDo     #-}
 module Main (main) where
 
 import           Reanimate
@@ -13,9 +13,10 @@ import           Codec.Picture.Types
 import           Control.Lens          ((^.))
 import           Control.Monad
 import           Data.Monoid
-import           Data.String.Here
 import           Data.Text             (Text)
-import           Graphics.SvgTree      hiding (Text)
+import qualified Data.Text             as T
+import           Graphics.SvgTree      hiding (Text,text)
+import           NeatInterpolation
 import           System.Random
 import           System.Random.Shuffle
 
@@ -53,7 +54,12 @@ texture t = mkGroup
   ]
 
 script :: FilePath -> Double -> Double -> Double -> Text
-script png rotX rotY rotZ = [iTrim|
+script png rotX rotY rotZ =
+  let png_ = T.pack png
+      rotX_ = T.pack $ show rotX
+      rotY_ = T.pack $ show rotY
+      rotZ_ = T.pack $ show rotZ
+  in [text|
 //Files with predefined colors and textures
 #include "colors.inc"
 
@@ -82,11 +88,11 @@ sphere {
   <0,0,0>, 4
   texture {
     uv_mapping pigment{
-      image_map{ png ${png} }
+      image_map{ png ${png_} }
     }
   }
-  rotate <0,${rotY},${rotZ}>
-  rotate <${rotX},0,0>
+  rotate <0,${rotY_},${rotZ_}>
+  rotate <${rotX_},0,0>
 }
 
 |]

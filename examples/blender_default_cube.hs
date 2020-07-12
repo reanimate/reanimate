@@ -1,10 +1,11 @@
 #!/usr/bin/env stack
--- stack runghc --package reanimate --package here
+-- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 module Main (main) where
 
-import           Data.String.Here
+import qualified Data.Text         as T
+import           NeatInterpolation
 import           Reanimate
 
 main :: IO ()
@@ -12,13 +13,13 @@ main = reanimate $ mkAnimation 5 $ \t ->
   let s = t * pi in
   mkGroup
   [ mkBackground "black"
-  , blender (script s)
+  , blender (script $ T.pack $ show s)
   , withFillColor "white" $
     translate 0 2 $
     mkText "default cube"
   ]
   where
-    script s = [iTrim|
+    script s = [text|
 import bpy
 
 if __name__ == "__main__":
