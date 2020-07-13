@@ -1,0 +1,35 @@
+FROM ubuntu:20.04
+
+ARG STACK_ROOT=/home/stackage/.stack
+
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    PATH=/root/.local/bin:$PATH \
+    CUDA_PATH=/usr/local/cuda-$CUDA_VERSION \
+    CPATH=$JVM_PATH/include:$JVM_PATH/include/linux:$LLVM_PATH/include \
+    DEBIAN_FRONTEND=noninteractive
+
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      libblas-dev liblapack-dev ffmpeg \
+      curl
+# blender povray texlive texlive-latex-base texlive-latex-extra \
+#      texlive-fonts-extra texlive-science texlive-xetex \
+#      texlive-latex-recommended texlive-lang-english \
+#      texlive-lang-chinese \
+
+RUN apt-get install -y --no-install-recommends \
+        wget netbase ca-certificates g++ gcc libc6-dev libffi-dev libgmp-dev \
+        make xz-utils zlib1g-dev git gnupg libtinfo-dev jq
+
+RUN mkdir -p /root/.local/bin && \
+    curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C /root/.local/bin '*/stack'
+
+ADD reanimate.cabal stack.yaml /src/
+RUN cd /src && stack build --only-dependencies -v
+
+ADD . /src
+RUN cd /src && stack build
+
+CMD bash
