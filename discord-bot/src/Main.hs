@@ -53,7 +53,11 @@ main = forever $ handle (\SomeException{} -> return ()) $ do
 
   void $ exec ghci ":m + System.Environment"
   void $ exec ghci ":m + Reanimate Reanimate.Builtin.Documentation"
+  void $ exec ghci ":m + Reanimate.Builtin.Images"
+  void $ exec ghci ":m + Reanimate.Builtin.CirclePlot"
+  void $ exec ghci ":m + Reanimate.Builtin.TernaryPlot"
   void $ exec ghci ":m + Codec.Picture.Types"
+  void $ exec ghci ":set -XOverloadedStrings"
 
   T.putStrLn =<< runDiscord def
     { discordToken = T.pack tok
