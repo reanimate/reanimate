@@ -8,3 +8,5 @@ cradle:
       config: {cradle: {stack: {component: "reanimate:lib"}} }
     - path: "./test"
       config: {cradle: {none: }}
+    - path: "./discord-bot"
+      config: {cradle: {none: }}
