@@ -7,7 +7,7 @@ import           Control.Monad          (forM_, void, when)
 import           Data.Bits
 import           Data.ByteString        (ByteString)
 import qualified Data.ByteString        as BS
-import           Data.Char              (toLower)
+import           Data.Char              (toLower, isSpace)
 import           Data.Hashable
 import           Data.IORef
 import           Data.Text              (Text)
@@ -20,16 +20,17 @@ import           Language.Haskell.Ghcid
 import           System.Directory
 import           System.Environment
 import           System.FilePath
--- import           System.IO.Temp
 import           System.Process
 
 main :: IO ()
 main = do
   tok <- getEnv "DISCORD_TOKEN"
 
-  (ghci, loads) <- startGhci "stack exec ghci" Nothing (\stream msg -> putStrLn msg)
+  (ghci, loads) <- startGhci "stack exec ghci" Nothing (\_stream msg -> putStrLn msg)
 
-  exec ghci ":m + System.Environment Reanimate Reanimate.Builtin.Documentation"
+  exec ghci ":m + System.Environment"
+  exec ghci ":m + Reanimate Reanimate.Builtin.Documentation"
+  exec ghci ":m + Codec.Picture.Types"
 
   void $ runDiscord $ def
     { discordToken = T.pack tok
@@ -87,7 +88,8 @@ parseCmd = T.stripPrefix ">> " . messageText
 renderVideo :: Ghci -> T.Text -> IO (Maybe Text)
 renderVideo ghci cmd = do
   let script =
-        "reanimate $ docEnv $ \
+        "{-# LINE 2 \"discord\" #-} \
+        \reanimate $ docEnv $ \
         \adjustDuration (min 10) $ \
         \(" ++ T.unpack cmd ++ ")"
   stderr <- newIORef []
@@ -99,7 +101,7 @@ renderVideo ghci cmd = do
   err <- readIORef stderr
   if null err
     then return Nothing
-    else return $ Just $ T.unlines $ reverse err
+    else return $ Just $ T.strip $ T.unlines $ reverse err
 
 cachedRender :: Ghci -> Text -> IO (Either Text ByteString)
 cachedRender ghci cmd = do
@@ -118,7 +120,8 @@ cachedRender ghci cmd = do
       case ret of
         Just err -> return $ Left err
         Nothing -> do
-          renameFile "video.mp4" path
+          copyFile "video.mp4" path
+          removeFile "video.mp4"
           vid <- BS.readFile path
           return $ Right vid
 

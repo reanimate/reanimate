@@ -1,6 +1,4 @@
-FROM ubuntu:20.04
-
-ARG STACK_ROOT=/home/stackage/.stack
+FROM haskell:8.8.3
 
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
@@ -19,17 +17,21 @@ RUN apt-get update && \
 #      texlive-latex-recommended texlive-lang-english \
 #      texlive-lang-chinese \
 
-RUN apt-get install -y --no-install-recommends \
-        wget netbase ca-certificates g++ gcc libc6-dev libffi-dev libgmp-dev \
-        make xz-utils zlib1g-dev git gnupg libtinfo-dev jq
+WORKDIR /src
 
-RUN mkdir -p /root/.local/bin && \
-    curl -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C /root/.local/bin '*/stack'
+# Install reanimate dependencies and cache the layer
+ADD reanimate.cabal stack.yaml ./
+RUN stack build --only-dependencies --no-install-ghc --system-ghc
 
-ADD reanimate.cabal stack.yaml /src/
-RUN cd /src && stack build --only-dependencies -v
+# Install discord-bot dependencies and cache the layer
+ADD discord-bot/discord-bot.cabal discord-bot/stack.yaml ./discord-bot/
+RUN cd discord-bot && stack build --only-dependencies --no-install-ghc --system-ghc
 
-ADD . /src
-RUN cd /src && stack build
+# Add source after dependencies have been installed as to not invalidate the caches
+ADD . .
 
-CMD bash
+# Build discord-bot and reanimate
+RUN cd discord-bot && stack install --no-install-ghc --system-ghc
+RUN stack build --no-install-ghc --system-ghc
+
+ENTRYPOINT discord-bot
