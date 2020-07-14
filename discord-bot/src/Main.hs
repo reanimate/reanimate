@@ -99,10 +99,12 @@ parseCmd = T.stripPrefix ">> " . messageText
 renderVideo :: Ghci -> T.Text -> IO (Maybe Text)
 renderVideo ghci cmd = do
   let script =
-        "{-# LINE 2 \"discord\" #-} \
+        ":{\n\
+        \{-# LINE 1 \"discord\" #-}\n\
         \reanimate $ docEnv $ \
-        \adjustDuration (min 10) $ \
-        \(" ++ T.unpack cmd ++ ")"
+        \adjustDuration (min 10) \
+        \(" ++ T.unpack cmd ++ ")\n\
+        \:}"
   stderr <- newIORef []
   _ <- exec ghci ":set prog discord"
   _ <- exec ghci ":set args render --target video.mp4 --width 320 --fps 30"
