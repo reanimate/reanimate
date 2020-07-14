@@ -4,7 +4,7 @@ services:
     image: reanimate/discord-bot
     volumes:
       - .cache:/root/.cache
-    environment:
+#    environment:
 #      DISCORD_TOKEN: ''
   watch:
     image: v2tec/watchtower

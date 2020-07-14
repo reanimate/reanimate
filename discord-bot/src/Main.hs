@@ -10,6 +10,7 @@ import qualified Data.ByteString        as BS
 import           Data.Char              (toLower, isSpace)
 import           Data.Hashable
 import           Data.IORef
+import           Data.Maybe
 import           Data.Text              (Text)
 import qualified Data.Text              as T
 import qualified Data.Text.IO           as T
@@ -21,6 +22,14 @@ import           System.Directory
 import           System.Environment
 import           System.FilePath
 import           System.Process
+import           System.Timeout
+
+computeLimit :: Int
+computeLimit = 5 * 10^6 -- 5 seconds
+
+-- Maximum size of error messages
+charLimit :: Int
+charLimit = 2000
 
 main :: IO ()
 main = do
@@ -59,9 +68,9 @@ eventHandler ghci dis event = case event of
           Left err -> do
             putStrLn "Video failed!"
             Right dm <- restCall dis (R.CreateDM (userId $ messageAuthor m))
-            void $ restCall dis (R.CreateMessage (channelId dm) ("Error:\n" <> err))
-            void $ restCall dis (R.DeleteOwnReaction (messageChannel m, messageId m) "eyes")
+            void $ restCall dis (R.CreateMessage (channelId dm) err)
             void $ restCall dis (R.CreateReaction (messageChannel m, messageId m) "poop")
+            void $ restCall dis (R.DeleteOwnReaction (messageChannel m, messageId m) "eyes")
             return ()
       _ -> pure ()
 
@@ -95,13 +104,18 @@ renderVideo ghci cmd = do
   stderr <- newIORef []
   _ <- exec ghci ":set prog discord"
   _ <- exec ghci ":set args render --target video.mp4 --width 320 --fps 30"
-  execStream ghci script $ \strm s ->
-    when (strm == Stderr) $
-      modifyIORef stderr (T.pack s:)
-  err <- readIORef stderr
-  if null err
-    then return Nothing
-    else return $ Just $ T.strip $ T.unlines $ reverse err
+  timer <- timeout computeLimit $ execStream ghci script $ \strm s ->
+            when (strm == Stderr) $
+              modifyIORef stderr (T.pack s:)
+  if isNothing timer
+    then do
+      interrupt ghci
+      return $ Just $ "timeout"
+    else do
+      err <- readIORef stderr
+      if null err
+        then return Nothing
+        else return $ Just $ T.strip $ T.take charLimit $ T.unlines $ reverse err
 
 cachedRender :: Ghci -> Text -> IO (Either Text ByteString)
 cachedRender ghci cmd = do
@@ -120,6 +134,7 @@ cachedRender ghci cmd = do
       case ret of
         Just err -> return $ Left err
         Nothing -> do
+          -- can't use 'renameFile' because cache might be mounted separately.
           copyFile "video.mp4" path
           removeFile "video.mp4"
           vid <- BS.readFile path
