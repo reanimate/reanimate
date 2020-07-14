@@ -1,13 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import           Control.Concurrent     (forkIO, threadDelay)
+import           Control.Concurrent     (forkIO)
 import           Control.Exception
 import           Control.Monad
 import           Data.Bits
 import           Data.ByteString        (ByteString)
 import qualified Data.ByteString        as BS
-import           Data.Char              (toLower, isSpace)
 import           Data.Hashable
 import           Data.IORef
 import           Data.Maybe
@@ -25,7 +24,7 @@ import           System.Process
 import           System.Timeout
 
 computeLimit :: Int
-computeLimit = 5 * 10^6 -- 5 seconds
+computeLimit = 5 * 10^(6::Int) -- 5 seconds
 
 -- Maximum size of error messages
 charLimit :: Int
@@ -49,13 +48,12 @@ main :: IO ()
 main = forever $ handle (\SomeException{} -> return ()) $ do
   tok <- getEnv "DISCORD_TOKEN"
 
-  (ghci, loads) <- startGhci
-    ("stack exec ghci --rts-options=" ++ memoryLimit)
-    Nothing (\_stream msg -> putStrLn msg)
+  let p = proc "stack" ["exec", "ghci", "--rts-options="++memoryLimit]
+  (ghci, _loads) <- startGhciProcess p (\_stream msg -> putStrLn msg)
 
-  exec ghci ":m + System.Environment"
-  exec ghci ":m + Reanimate Reanimate.Builtin.Documentation"
-  exec ghci ":m + Codec.Picture.Types"
+  void $ exec ghci ":m + System.Environment"
+  void $ exec ghci ":m + Reanimate Reanimate.Builtin.Documentation"
+  void $ exec ghci ":m + Codec.Picture.Types"
 
   T.putStrLn =<< runDiscord def
     { discordToken = T.pack tok
@@ -81,14 +79,12 @@ eventHandler ghci dis event = case event of
             void $ restCall dis (R.CreateMessageUploadFile (messageChannel m) "video.mp4" vid)
             void $ restCall dis (R.DeleteOwnReaction (messageChannel m, messageId m) "eyes")
             return ()
-          Left (err, requireReset) -> do
+          Left err -> do
             putStrLn "Video failed!"
             Right dm <- restCall dis (R.CreateDM (userId $ messageAuthor m))
             void $ restCall dis (R.CreateMessage (channelId dm) err)
             void $ restCall dis (R.CreateReaction (messageChannel m, messageId m) "poop")
             void $ restCall dis (R.DeleteOwnReaction (messageChannel m, messageId m) "eyes")
-            when requireReset $
-              stopDiscord dis
       _ -> pure ()
 
 fromHuman :: Message -> Bool
@@ -100,18 +96,7 @@ fromBot m = userIsBot (messageAuthor m)
 parseCmd :: Message -> Maybe Text
 parseCmd = T.stripPrefix ">> " . messageText
 
-{- Goals
- - DONE: Error messages (in private)
- - Limit memory
- - Limit CPU time
- - Enable caching (even between upgrades)
- - DONE: Cache videos
- - Automatic upgrade and deploy
- - Command: version
- - Command: clear-cache
--}
-
-renderVideo :: Ghci -> T.Text -> IO (Maybe (Text, Bool))
+renderVideo :: Ghci -> T.Text -> IO (Maybe Text)
 renderVideo ghci cmd = do
   let script =
         "{-# LINE 2 \"discord\" #-} \
@@ -127,14 +112,14 @@ renderVideo ghci cmd = do
   if isNothing timer
     then do
       interrupt ghci
-      return $ Just ("timeout", True)
+      return $ Just "timeout"
     else do
       err <- readIORef stderr
       if null err
         then return Nothing
-        else return $ Just (T.strip $ T.take charLimit $ T.unlines $ reverse err, False)
+        else return $ Just $ T.strip $ T.take charLimit $ T.unlines $ reverse err
 
-cachedRender :: Ghci -> Text -> IO (Either (Text, Bool) ByteString)
+cachedRender :: Ghci -> Text -> IO (Either Text ByteString)
 cachedRender ghci cmd = do
   root <- getXdgDirectory XdgCache "reanimate-bot"
   createDirectoryIfMissing True root
