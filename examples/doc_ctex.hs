@@ -9,4 +9,4 @@ import           Reanimate.Builtin.Documentation
 main :: IO ()
 main = reanimate $ docEnv $ animate $ const $
   withStrokeWidth 0 . withFillOpacity 1 . scale 4 . center $
-  xelatex "中文"
+  ctex "中文"

@@ -157,6 +157,7 @@ module Reanimate
     latex,
     latexAlign,
     xelatex,
+    ctex,
     -- * External 3D renderers
     povray,
     povray',

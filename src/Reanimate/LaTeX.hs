@@ -5,6 +5,9 @@ module Reanimate.LaTeX
   , latexWithHeaders
   , latexChunks
   , xelatex
+  , xelatexWithHeaders
+  , ctex
+  , ctexWithHeaders
   , latexAlign
   )
 where
@@ -35,23 +38,17 @@ import           System.IO.Unsafe                         ( unsafePerformIO )
 --
 --   <<docs/gifs/doc_latex.gif>>
 latex :: T.Text -> Tree
-latex tex | pNoExternals = mkText tex
-latex tex =
-  (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG "dvi" exec args))
-    script
- where
-  exec   = "latex"
-  args   = []
-  script = mkTexScript exec args [] tex
+latex = latexWithHeaders []
 
 latexWithHeaders :: [T.Text] -> T.Text -> Tree
-latexWithHeaders _headers tex | pNoExternals = mkText tex
-latexWithHeaders headers tex =
-  (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG "dvi" exec args))
+latexWithHeaders = someTexWithHeaders "latex" "dvi" []
+
+someTexWithHeaders :: String -> String -> [String] -> [T.Text] -> T.Text -> Tree
+someTexWithHeaders _exec _dvi _args _headers tex | pNoExternals = mkText tex
+someTexWithHeaders exec dvi args headers tex =
+  (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG dvi exec args))
     script
  where
-  exec   = "latex"
-  args   = []
   script = mkTexScript exec args headers tex
 
 latexChunks :: [T.Text] -> [Tree]
@@ -67,22 +64,26 @@ latexChunks chunks                = worker (svgGlyphs $ latex $ T.concat chunks)
 
 -- | Invoke xelatex and import the result as an SVG object. SVG objects are
 --   cached to improve performance. Xelatex has support for non-western scripts.
+xelatex :: Text -> Tree
+xelatex = xelatexWithHeaders []
+
+xelatexWithHeaders :: [T.Text] -> T.Text -> Tree
+xelatexWithHeaders = someTexWithHeaders "xelatex" "xdv" ["-no-pdf"]
+
+-- | Invoke xelatex with "\usepackage[UTF8]{ctex}" and import the result as an
+--   SVG object. SVG objects are cached to improve performance. Xelatex has
+--   support for non-western scripts.
 --
 --   Example:
 --
 --   > xelatex "中文"
 --
 --   <<docs/gifs/doc_xelatex.gif>>
-xelatex :: Text -> Tree
-xelatex tex | pNoExternals = mkText tex
-xelatex tex =
-  (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG "xdv" exec args))
-    script
- where
-  exec    = "xelatex"
-  args    = ["-no-pdf"]
-  headers = ["\\usepackage[UTF8]{ctex}"]
-  script  = mkTexScript exec args headers tex
+ctex :: T.Text -> Tree
+ctex = ctexWithHeaders []
+
+ctexWithHeaders :: [T.Text] -> T.Text -> Tree
+ctexWithHeaders headers = xelatexWithHeaders ("\\usepackage[UTF8]{ctex}" : headers)
 
 -- | Invoke latex and import the result as an SVG object. SVG objects are
 --   cached to improve performance. This wraps the TeX code in an 'align*'
