@@ -71,7 +71,7 @@ main = forever $ handle (\SomeException{} -> return ()) $ do
   (fastGhci, _loads) <- startGhciProcess fastProc (\_stream msg -> putStrLn msg)
 
   -- Load library as bytecode. Haddock documentation will be available.
-  let slowProc = proc "stack" ["ghci", "--ghci-options=-haddock", "--rts-options="++memoryLimit]
+  let slowProc = proc "stack" ["ghci", "--ghci-options=-haddock"]
   (slowGhci, _loads) <- startGhciProcess slowProc (\_stream msg -> putStrLn msg)
 
   void $ exec fastGhci ":m + System.Environment"
@@ -122,7 +122,7 @@ eventHandler fastGhci slowGhci dis event = case event of
         doc <- askDoc slowGhci expr
         void $ restCall dis (R.CreateMessage (messageChannel m) doc)
       Type expr -> do
-        ty <- askDoc slowGhci expr
+        ty <- askType slowGhci expr
         void $ restCall dis (R.CreateMessage (messageChannel m) ty)
       Restart -> do
         void $ restCall dis (R.CreateMessage (messageChannel m) "Restarting...")
