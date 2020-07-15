@@ -29,6 +29,8 @@ executable discord-bot
                        ghcid,
                        filepath,
                        hashable,
+                       githash,
+                       time,
                        discord-haskell
   hs-source-dirs:      src
   default-language:    Haskell2010

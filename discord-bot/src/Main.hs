@@ -1,27 +1,45 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Main (main) where
 
+import           Control.Applicative
 import           Control.Concurrent     (forkIO)
 import           Control.Exception
 import           Control.Monad
 import           Data.Bits
 import           Data.ByteString        (ByteString)
 import qualified Data.ByteString        as BS
+import           Data.Char              (toLower)
 import           Data.Hashable
 import           Data.IORef
 import           Data.Maybe
 import           Data.Text              (Text)
 import qualified Data.Text              as T
 import qualified Data.Text.IO           as T
+import           Data.Time.Format
 import           Discord
 import qualified Discord.Requests       as R
 import           Discord.Types
+import           GitHash
 import           Language.Haskell.Ghcid
 import           System.Directory
 import           System.Environment
 import           System.FilePath
 import           System.Process
 import           System.Timeout
+
+gi :: GitInfo
+gi = $$tGitInfoCwd
+
+botCommitDate :: UTCTime
+Just botCommitDate = parseTimeM
+  True
+  defaultTimeLocale
+  "%a %b %d %X %Y %z" (giCommitDate gi)
+
+botVersion :: Text
+botVersion = T.pack $
+  formatTime defaultTimeLocale "%F" botCommitDate
 
 computeLimit :: Int
 computeLimit = 5 * 10^(6::Int) -- 5 seconds
@@ -74,21 +92,26 @@ startHandler _dis = putStrLn "Ready!"
 eventHandler :: Ghci -> DiscordHandle -> Event -> IO ()
 eventHandler ghci dis event = case event of
       MessageCreate m | Just cmd <- parseCmd m, fromHuman m -> do
-        putStrLn $ "Running script: " ++ T.unpack cmd
-        _ <- forkIO $ void $ restCall dis (R.CreateReaction (messageChannel m, messageId m) "eyes")
-        ret <- cachedRender ghci cmd
-        case ret of
-          Right vid -> do
-            putStrLn "Video rendered!"
-            void $ restCall dis (R.CreateMessageUploadFile (messageChannel m) "video.mp4" vid)
-            void $ restCall dis (R.DeleteOwnReaction (messageChannel m, messageId m) "eyes")
-            return ()
-          Left err -> do
-            putStrLn "Video failed!"
-            Right dm <- restCall dis (R.CreateDM (userId $ messageAuthor m))
-            void $ restCall dis (R.CreateMessage (channelId dm) err)
-            void $ restCall dis (R.CreateReaction (messageChannel m, messageId m) "poop")
-            void $ restCall dis (R.DeleteOwnReaction (messageChannel m, messageId m) "eyes")
+        case cmd of
+          Animate script -> do
+            putStrLn $ "Running script: " ++ T.unpack script
+            _ <- forkIO $ void $ restCall dis (R.CreateReaction (messageChannel m, messageId m) "eyes")
+            ret <- cachedRender ghci script
+            case ret of
+              Right vid -> do
+                putStrLn "Video rendered!"
+                void $ restCall dis (R.CreateMessageUploadFile (messageChannel m) "video.mp4" vid)
+                void $ restCall dis (R.DeleteOwnReaction (messageChannel m, messageId m) "eyes")
+                return ()
+              Left err -> do
+                putStrLn "Video failed!"
+                Right dm <- restCall dis (R.CreateDM (userId $ messageAuthor m))
+                void $ restCall dis (R.CreateMessage (channelId dm) err)
+                void $ restCall dis (R.CreateReaction (messageChannel m, messageId m) "poop")
+                void $ restCall dis (R.DeleteOwnReaction (messageChannel m, messageId m) "eyes")
+          Version ->
+            void $ restCall dis (R.CreateMessage (messageChannel m) botVersion)
+          Doc _ -> return () -- not implemented
       _ -> pure ()
 
 fromHuman :: Message -> Bool
@@ -97,8 +120,18 @@ fromHuman = not . fromBot
 fromBot :: Message -> Bool
 fromBot m = userIsBot (messageAuthor m)
 
-parseCmd :: Message -> Maybe Text
-parseCmd = T.stripPrefix ">> " . messageText
+data Command
+  = Animate Text
+  | Version
+  | Doc Text
+
+parseCmd :: Message -> Maybe Command
+parseCmd m =
+    Animate <$> T.stripPrefix ">> " t <|>
+    (guard (T.map toLower t==":version") >> pure Version) <|>
+    Doc <$> T.stripPrefix ":doc" t
+  where
+    t = messageText m
 
 renderVideo :: Ghci -> T.Text -> IO (Maybe Text)
 renderVideo ghci cmd = do
