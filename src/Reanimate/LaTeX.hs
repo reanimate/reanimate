@@ -6,6 +6,8 @@ module Reanimate.LaTeX
   , latexChunks
   , xelatex
   , xelatexWithHeaders
+  , ctex
+  , ctexWithHeaders
   , latexAlign
   )
 where
@@ -62,18 +64,26 @@ latexChunks chunks                = worker (svgGlyphs $ latex $ T.concat chunks)
 
 -- | Invoke xelatex and import the result as an SVG object. SVG objects are
 --   cached to improve performance. Xelatex has support for non-western scripts.
+xelatex :: Text -> Tree
+xelatex = xelatexWithHeaders []
+
+xelatexWithHeaders :: [T.Text] -> T.Text -> Tree
+xelatexWithHeaders = someTexWithHeaders "xelatex" "xdv" ["-no-pdf"]
+
+-- | Invoke xelatex with "\usepackage[UTF8]{ctex}" and import the result as an
+--   SVG object. SVG objects are cached to improve performance. Xelatex has
+--   support for non-western scripts.
 --
 --   Example:
 --
 --   > xelatex "中文"
 --
 --   <<docs/gifs/doc_xelatex.gif>>
-xelatex :: Text -> Tree
-xelatex = xelatexWithHeaders []
+ctex :: T.Text -> Tree
+ctex = ctexWithHeaders []
 
-xelatexWithHeaders :: [T.Text] -> T.Text -> Tree
-xelatexWithHeaders headers = someTexWithHeaders "xelatex" "xdv" ["-no-pdf"]
-  ("\\usepackage[UTF8]{ctex}" : headers)
+ctexWithHeaders :: [T.Text] -> T.Text -> Tree
+ctexWithHeaders headers = xelatexWithHeaders ("\\usepackage[UTF8]{ctex}" : headers)
 
 -- | Invoke latex and import the result as an SVG object. SVG objects are
 --   cached to improve performance. This wraps the TeX code in an 'align*'
