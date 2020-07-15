@@ -11,11 +11,10 @@ ENV LANG=C.UTF-8 \
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       libblas-dev liblapack-dev ffmpeg \
-      curl
-# blender povray texlive texlive-latex-base texlive-latex-extra \
-#      texlive-fonts-extra texlive-science texlive-xetex \
-#      texlive-latex-recommended texlive-lang-english \
-#      texlive-lang-chinese \
+      curl blender povray texlive texlive-latex-base texlive-latex-extra \
+      texlive-fonts-extra texlive-science texlive-xetex \
+      texlive-latex-recommended texlive-lang-english \
+      texlive-lang-chinese
 
 WORKDIR /src
 
