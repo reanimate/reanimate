@@ -66,21 +66,28 @@ main :: IO ()
 main = forever $ handle (\SomeException{} -> return ()) $ do
   tok <- getEnv "DISCORD_TOKEN"
 
-  let p = proc "stack" ["exec", "ghci", "--rts-options="++memoryLimit]
-  (ghci, _loads) <- startGhciProcess p (\_stream msg -> putStrLn msg)
+  -- Load library as compiled code. Documentation will not be available.
+  let fastProc = proc "stack" ["exec", "ghci", "--rts-options="++memoryLimit]
+  (fastGhci, _loads) <- startGhciProcess fastProc (\_stream msg -> putStrLn msg)
 
-  void $ exec ghci ":m + System.Environment"
-  void $ exec ghci ":m + Reanimate Reanimate.Builtin.Documentation"
-  void $ exec ghci ":m + Reanimate.Builtin.Images"
-  void $ exec ghci ":m + Reanimate.Builtin.CirclePlot"
-  void $ exec ghci ":m + Reanimate.Builtin.TernaryPlot"
-  void $ exec ghci ":m + Codec.Picture.Types"
-  void $ exec ghci ":set -XOverloadedStrings"
+  -- Load library as bytecode. Haddock documentation will be available.
+  let slowProc = proc "stack" ["ghci", "--ghci-options=-haddock", "--rts-options="++memoryLimit]
+  (slowGhci, _loads) <- startGhciProcess slowProc (\_stream msg -> putStrLn msg)
+
+  void $ exec fastGhci ":m + System.Environment"
+  void $ exec fastGhci ":m + Reanimate Reanimate.Builtin.Documentation"
+  void $ exec fastGhci ":m + Reanimate.Builtin.Images"
+  void $ exec fastGhci ":m + Reanimate.Builtin.CirclePlot"
+  void $ exec fastGhci ":m + Reanimate.Builtin.TernaryPlot"
+  void $ exec fastGhci ":m + Codec.Picture.Types"
+  void $ exec fastGhci ":set -XOverloadedStrings"
+  
+  void $ exec slowGhci ":set -XOverloadedStrings"
 
   T.putStrLn =<< runDiscord def
     { discordToken = T.pack tok
     , discordOnStart = startHandler
-    , discordOnEvent = eventHandler ghci
+    , discordOnEvent = eventHandler fastGhci slowGhci
     , discordOnLog = \s -> T.putStrLn s >> T.putStrLn ""
     , discordForkThreadForEvents = False
     }
@@ -89,30 +96,38 @@ startHandler :: DiscordHandle -> IO ()
 startHandler _dis = putStrLn "Ready!"
 
 -- If an event handler throws an exception, discord-haskell will continue to run
-eventHandler :: Ghci -> DiscordHandle -> Event -> IO ()
-eventHandler ghci dis event = case event of
-      MessageCreate m | Just cmd <- parseCmd m, fromHuman m -> do
-        case cmd of
-          Animate script -> do
-            putStrLn $ "Running script: " ++ T.unpack script
-            _ <- forkIO $ void $ restCall dis (R.CreateReaction (messageChannel m, messageId m) "eyes")
-            ret <- cachedRender ghci script
-            case ret of
-              Right vid -> do
-                putStrLn "Video rendered!"
-                void $ restCall dis (R.CreateMessageUploadFile (messageChannel m) "video.mp4" vid)
-                void $ restCall dis (R.DeleteOwnReaction (messageChannel m, messageId m) "eyes")
-                return ()
-              Left err -> do
-                putStrLn "Video failed!"
-                Right dm <- restCall dis (R.CreateDM (userId $ messageAuthor m))
-                void $ restCall dis (R.CreateMessage (channelId dm) err)
-                void $ restCall dis (R.CreateReaction (messageChannel m, messageId m) "poop")
-                void $ restCall dis (R.DeleteOwnReaction (messageChannel m, messageId m) "eyes")
-          Version ->
-            void $ restCall dis (R.CreateMessage (messageChannel m) botVersion)
-          Doc _ -> return () -- not implemented
-      _ -> pure ()
+eventHandler :: Ghci -> Ghci -> DiscordHandle -> Event -> IO ()
+eventHandler fastGhci slowGhci dis event = case event of
+  MessageCreate m | Just cmd <- parseCmd m, fromHuman m -> do
+    case cmd of
+      Animate script -> do
+        putStrLn $ "Running script: " ++ T.unpack script
+        _ <- forkIO $ void $ restCall dis (R.CreateReaction (messageChannel m, messageId m) "eyes")
+        ret <- cachedRender fastGhci script
+        case ret of
+          Right vid -> do
+            putStrLn "Video rendered!"
+            void $ restCall dis (R.CreateMessageUploadFile (messageChannel m) "video.mp4" vid)
+            void $ restCall dis (R.DeleteOwnReaction (messageChannel m, messageId m) "eyes")
+            return ()
+          Left err -> do
+            putStrLn "Video failed!"
+            Right dm <- restCall dis (R.CreateDM (userId $ messageAuthor m))
+            void $ restCall dis (R.CreateMessage (channelId dm) err)
+            void $ restCall dis (R.CreateReaction (messageChannel m, messageId m) "poop")
+            void $ restCall dis (R.DeleteOwnReaction (messageChannel m, messageId m) "eyes")
+      Version ->
+        void $ restCall dis (R.CreateMessage (messageChannel m) botVersion)
+      Doc expr -> do
+        doc <- askDoc slowGhci expr
+        void $ restCall dis (R.CreateMessage (messageChannel m) doc)
+      Type expr -> do
+        ty <- askDoc slowGhci expr
+        void $ restCall dis (R.CreateMessage (messageChannel m) ty)
+      Restart -> do
+        void $ restCall dis (R.CreateMessage (messageChannel m) "Restarting...")
+        stopDiscord dis
+  _ -> pure ()
 
 fromHuman :: Message -> Bool
 fromHuman = not . fromBot
@@ -124,12 +139,16 @@ data Command
   = Animate Text
   | Version
   | Doc Text
+  | Type Text
+  | Restart
 
 parseCmd :: Message -> Maybe Command
 parseCmd m =
     Animate <$> T.stripPrefix ">> " t <|>
     (guard (T.map toLower t==":version") >> pure Version) <|>
-    Doc <$> T.stripPrefix ":doc" t
+    Doc <$> T.stripPrefix ":doc " t <|>
+    Type <$> T.stripPrefix ":t " t <|>
+    (guard (T.map toLower t==":restart") >> pure Restart)
   where
     t = messageText m
 
@@ -158,6 +177,14 @@ renderVideo ghci cmd = do
         then return Nothing
         else return $ Just $ T.strip $ T.take charLimit $ T.unlines $ reverse err
 
+askType :: Ghci -> Text -> IO Text
+askType ghci expr =
+  T.strip . T.unlines . map T.pack <$> exec ghci (":type " ++ T.unpack expr)
+
+askDoc :: Ghci -> Text -> IO Text
+askDoc ghci expr =
+  T.strip . T.unlines . map T.pack <$> exec ghci (":doc " ++ T.unpack expr)
+
 cachedRender :: Ghci -> Text -> IO (Either Text ByteString)
 cachedRender ghci cmd = do
   root <- getXdgDirectory XdgCache "reanimate-bot"
@@ -180,6 +207,7 @@ cachedRender ghci cmd = do
           removeFile "video.mp4"
           vid <- BS.readFile path
           return $ Right vid
+
 
 encodeInt :: Int -> String
 encodeInt i = worker (fromIntegral i) 60
