@@ -5,6 +5,7 @@ module Reanimate.LaTeX
   , latexWithHeaders
   , latexChunks
   , xelatex
+  , xelatexWithHeaders
   , latexAlign
   )
 where
@@ -35,23 +36,17 @@ import           System.IO.Unsafe                         ( unsafePerformIO )
 --
 --   <<docs/gifs/doc_latex.gif>>
 latex :: T.Text -> Tree
-latex tex | pNoExternals = mkText tex
-latex tex =
-  (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG "dvi" exec args))
-    script
- where
-  exec   = "latex"
-  args   = []
-  script = mkTexScript exec args [] tex
+latex = latexWithHeaders []
 
 latexWithHeaders :: [T.Text] -> T.Text -> Tree
-latexWithHeaders _headers tex | pNoExternals = mkText tex
-latexWithHeaders headers tex =
-  (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG "dvi" exec args))
+latexWithHeaders = someTexWithHeaders "latex" "dvi" []
+
+someTexWithHeaders :: String -> String -> [String] -> [T.Text] -> T.Text -> Tree
+someTexWithHeaders _exec _dvi _args _headers tex | pNoExternals = mkText tex
+someTexWithHeaders exec dvi args headers tex =
+  (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG dvi exec args))
     script
  where
-  exec   = "latex"
-  args   = []
   script = mkTexScript exec args headers tex
 
 latexChunks :: [T.Text] -> [Tree]
@@ -74,15 +69,11 @@ latexChunks chunks                = worker (svgGlyphs $ latex $ T.concat chunks)
 --
 --   <<docs/gifs/doc_xelatex.gif>>
 xelatex :: Text -> Tree
-xelatex tex | pNoExternals = mkText tex
-xelatex tex =
-  (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG "xdv" exec args))
-    script
- where
-  exec    = "xelatex"
-  args    = ["-no-pdf"]
-  headers = ["\\usepackage[UTF8]{ctex}"]
-  script  = mkTexScript exec args headers tex
+xelatex = xelatexWithHeaders []
+
+xelatexWithHeaders :: [T.Text] -> T.Text -> Tree
+xelatexWithHeaders headers = someTexWithHeaders "xelatex" "xdv" ["-no-pdf"]
+  ("\\usepackage[UTF8]{ctex}" : headers)
 
 -- | Invoke latex and import the result as an SVG object. SVG objects are
 --   cached to improve performance. This wraps the TeX code in an 'align*'
