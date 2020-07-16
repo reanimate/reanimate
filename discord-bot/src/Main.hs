@@ -42,7 +42,7 @@ botVersion = T.pack $
   formatTime defaultTimeLocale "%F" botCommitDate
 
 computeLimit :: Int
-computeLimit = 5 * 10^(6::Int) -- 5 seconds
+computeLimit = 15 * 10^(6::Int) -- 15 seconds
 
 -- Maximum size of error messages
 charLimit :: Int
