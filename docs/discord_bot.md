@@ -32,7 +32,8 @@ Reanimate is a rapidly moving target and the bot would quickly get out-of-date
 if it wasn't automatically updated. Keeping the bot up-to-date happens in 6 steps:
 
 1. Source management: Github<br/>
-Code changes to start out as pull-requests on [GitHub](https://github.com/reanimate/reanimate/pulls). Here the changes will be reviewed and tested before they can be merged into the main branch.
+Code changes to start out as pull-requests on [GitHub](https://github.com/reanimate/reanimate/pulls). Here the changes will be reviewed and tested before they can be merged into the main branch.<br/>
+The [bot source code](https://github.com/reanimate/reanimate/tree/master/discord-bot) lives in the same repository as the reanimate library and follows the same procedures.
 
 2. Regression testing: Azure Pipelines<br/>
 Reanimate is a multi-platform library and has to work on Linux, Mac OS, and Windows. To make sure there are no regressions, [Azure Pipelines](https://dev.azure.com/lemmih0612/reanimate/_build?definitionId=2&_a=summary) is used run the test suite cross all platforms and with several different configurations.
