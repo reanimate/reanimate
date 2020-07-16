@@ -22,7 +22,7 @@ will print out the documentation associated with the identifier:
   <source src="https://i.imgur.com/poeC7S4.mp4">
 </video>
 
-
+<br/>
 
 The discord server is open to everyone so feel free to join and have a chat with the bot: <https://discord.gg/Qs28Dv6>
 
@@ -31,22 +31,22 @@ The discord server is open to everyone so feel free to join and have a chat with
 Reanimate is a rapidly moving target and the bot would quickly get out-of-date
 if it wasn't automatically updated. Keeping the bot up-to-date happens in 6 steps:
 
-1. Source management: Github
+1. Source management: Github<br/>
 Code changes to start out as pull-requests on [GitHub](https://github.com/reanimate/reanimate/pulls). Here the changes will be reviewed and tested before they can be merged into the main branch.
 
-2. Regression testing: Azure Pipelines
+2. Regression testing: Azure Pipelines<br/>
 Reanimate is a multi-platform library and has to work on Linux, Mac OS, and Windows. To make sure there are no regressions, [Azure Pipelines](https://dev.azure.com/lemmih0612/reanimate/_build?definitionId=2&_a=summary) is used run the test suite cross all platforms and with several different configurations.
 
-3. Image building: Docker Cloud
+3. Image building: Docker Cloud<br/>
 Once a pull-request has been merged into the main branch, an image build is triggered on [Docker Hub](https://hub.docker.com/repository/docker/reanimate/discord-bot). This image will contain the latest version of reanimate as well as the fully configured discord bot, ready to be deployed.
 
-4. Static tests
+4. Static tests<br/>
 Before the image is uploaded to Docker Hub, several consistency checks are performed to ensure that animations can be rendered, the documentation has been built, and external dependencies are available. If any of the consistency checks fail then the image will be discarded.
 
-5. Watchtower
+5. Watchtower<br/>
 When a new image becomes available, watchtower will automatically stop the old container and start the new bot. Watchtower does not receive push notifications from Docker Hub but instead looks for updates every 5 minutes, adding a bit of latency to the pipeline.
 
-6. Prune
+6. Prune<br/>
 The last step is the periodically prune old images and containers from docker. Without this step, old date would slowly accumulate until the disk drive is full.
 
 These 6 steps together make up a pipeline that ensures the reanimate discord bot is always running with the latest code and documentation. The time from a patch landing in the main branch until a new bot is deployed is roughly 30 minutes and requires no human intervention.
