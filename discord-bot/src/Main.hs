@@ -70,10 +70,6 @@ main = forever $ handle (\SomeException{} -> return ()) $ do
   let fastProc = proc "stack" ["exec", "ghci", "--rts-options="++memoryLimit]
   (fastGhci, _loads) <- startGhciProcess fastProc (\_stream msg -> putStrLn msg)
 
-  -- Load library as bytecode. Haddock documentation will be available.
-  let slowProc = proc "stack" ["ghci", "--ghci-options=-haddock"]
-  (slowGhci, _loads) <- startGhciProcess slowProc (\_stream msg -> putStrLn msg)
-
   void $ exec fastGhci ":m + System.Environment"
   void $ exec fastGhci ":m + Reanimate Reanimate.Builtin.Documentation"
   void $ exec fastGhci ":m + Reanimate.Builtin.Images"
@@ -81,7 +77,11 @@ main = forever $ handle (\SomeException{} -> return ()) $ do
   void $ exec fastGhci ":m + Reanimate.Builtin.TernaryPlot"
   void $ exec fastGhci ":m + Codec.Picture.Types"
   void $ exec fastGhci ":set -XOverloadedStrings"
-  
+
+  -- Load library as bytecode. Haddock documentation will be available.
+  let slowProc = proc "stack" ["ghci", "--ghci-options=-haddock"]
+  (slowGhci, _loads) <- startGhciProcess slowProc (\_stream msg -> putStrLn msg)
+
   void $ exec slowGhci ":set -XOverloadedStrings"
 
   T.putStrLn =<< runDiscord def

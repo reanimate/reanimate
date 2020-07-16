@@ -31,6 +31,6 @@ ADD . .
 
 # Build discord-bot and reanimate
 RUN cd discord-bot && stack install --no-install-ghc --system-ghc
-RUN stack build --no-install-ghc --system-ghc --haddock
+RUN stack build --no-install-ghc --system-ghc
 
 ENTRYPOINT discord-bot
