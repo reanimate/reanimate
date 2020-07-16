@@ -27,6 +27,8 @@ import           System.Environment
 import           System.FilePath
 import           System.Process
 import           System.Timeout
+import           System.Exit
+import           System.IO
 
 gi :: GitInfo
 gi = $$tGitInfoCwd
@@ -39,7 +41,8 @@ Just botCommitDate = parseTimeM
 
 botVersion :: Text
 botVersion = T.pack $
-  formatTime defaultTimeLocale "%F" botCommitDate
+  formatTime defaultTimeLocale "%F" botCommitDate ++
+  " (" ++ take 5 (giHash gi) ++ ")"
 
 computeLimit :: Int
 computeLimit = 15 * 10^(6::Int) -- 15 seconds
@@ -63,9 +66,7 @@ memoryLimit = "-M1G"
 -}
 
 main :: IO ()
-main = forever $ handle (\SomeException{} -> return ()) $ do
-  tok <- getEnv "DISCORD_TOKEN"
-
+main = forever $ do
   -- Load library as compiled code. Documentation will not be available.
   let fastProc = proc "stack" ["exec", "ghci", "--rts-options="++memoryLimit]
   (fastGhci, _loads) <- startGhciProcess fastProc (\_stream msg -> putStrLn msg)
@@ -84,13 +85,41 @@ main = forever $ handle (\SomeException{} -> return ()) $ do
 
   void $ exec slowGhci ":set -XOverloadedStrings"
 
-  T.putStrLn =<< runDiscord def
-    { discordToken = T.pack tok
-    , discordOnStart = startHandler
-    , discordOnEvent = eventHandler fastGhci slowGhci
-    , discordOnLog = \s -> T.putStrLn s >> T.putStrLn ""
-    , discordForkThreadForEvents = False
-    }
+  args <- getArgs
+  case args of
+    ["test"] -> do
+      let assertIO action checker msg = do
+            val <- action
+            unless (checker val) $ do
+              hPutStrLn stderr msg
+              exitWith (ExitFailure 1)
+      assertIO (pure botVersion) (not . T.null)
+        "Missing git version"
+      assertIO (exec fastGhci "1+2::Int") (==["3"])
+        "Eval failed: 1+2"
+      assertIO (exec fastGhci ":t reanimate") (==["reanimate :: Animation -> IO ()"])
+        "Can't access reanimate, fast"
+      assertIO (exec slowGhci ":t reanimate") (==["reanimate :: Animation -> IO ()"])
+        "Can't access reanimate, docs"
+      assertIO (exec slowGhci ":doc reanimate") (/=["<has no documentation>"])
+        "Can't access docs"
+      assertIO (findExecutable "latex") (/=Nothing)
+        "latex is missing"
+      assertIO (findExecutable "xelatex") (/=Nothing)
+        "xelatex is missing"
+      exitWith ExitSuccess
+    [] -> do
+      tok <- getEnv "DISCORD_TOKEN"
+      T.putStrLn =<< runDiscord def
+        { discordToken = T.pack tok
+        , discordOnStart = startHandler
+        , discordOnEvent = eventHandler fastGhci slowGhci
+        , discordOnLog = \s -> T.putStrLn s >> T.putStrLn ""
+        , discordForkThreadForEvents = False
+        }
+    _ -> do
+      hPutStrLn stderr "Invalid arguments"
+      exitWith (ExitFailure 1)
 
 startHandler :: DiscordHandle -> IO ()
 startHandler _dis = putStrLn "Ready!"

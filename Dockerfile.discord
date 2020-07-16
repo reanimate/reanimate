@@ -24,13 +24,24 @@ RUN stack build --only-dependencies --no-install-ghc --system-ghc --haddock
 
 # Install discord-bot dependencies and cache the layer
 ADD discord-bot/discord-bot.cabal discord-bot/stack.yaml ./discord-bot/
-RUN cd discord-bot && stack build --only-dependencies --no-install-ghc --system-ghc
+RUN cd discord-bot && \
+    stack build --only-dependencies --no-install-ghc --system-ghc
 
 # Add source after dependencies have been installed as to not invalidate the caches
-ADD . .
+ADD data data
+ADD src src
+ADD .git .git
+ADD viewer-elm viewer-elm
+ADD Setup.hs ./
 
-# Build discord-bot and reanimate
-RUN cd discord-bot && stack install --no-install-ghc --system-ghc
+# Build reanimate
 RUN stack build --no-install-ghc --system-ghc
+
+# Add bot sources and build it
+ADD discord-bot discord-bot
+RUN (cd discord-bot && \
+    stack install --no-install-ghc --system-ghc) && \
+    discord-bot test
+
 
 ENTRYPOINT discord-bot
