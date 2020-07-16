@@ -12,7 +12,7 @@ type `Animation`:
   <source src="https://i.imgur.com/o45cT8r.mp4">
 </video>
 
-The length of the animation is capped at 10 seconds. Furthermore, each expression
+Animations are capped at 10 seconds, and each expression
 is only allocated 15 seconds of CPU time and 1GB of memory.
 
 The bot also has access to the latest haddock documentation. Typing `:doc identifier`
