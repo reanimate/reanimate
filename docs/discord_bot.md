@@ -1,4 +1,4 @@
-# Discord bot features
+# Discord bot overview
 
 The **reanimate** discord bot has two functions:
 
@@ -22,8 +22,9 @@ will print out the documentation associated with the identifier:
   <source src="https://i.imgur.com/poeC7S4.mp4">
 </video>
 
-This permanent invitation link will take you to the reanimate discord server:
-<https://discord.gg/Qs28Dv6>
+
+
+The discord server is open to everyone so feel free to join and have a chat with the bot: <https://discord.gg/Qs28Dv6>
 
 # Continuous deployment
 
