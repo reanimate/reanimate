@@ -21,61 +21,53 @@ import           Reanimate.Morph.Common
 import           Reanimate.Svg
 import           Reanimate.Morph.Linear
 
+import Debug.Trace
+
 leastDifference :: PointCorrespondence
 leastDifference = undefined
 
-pCuts :: Polygon -> [(Polygon,Polygon)]
-pCuts p =
-  [ pCutAt p i
-  | i <- [2 .. pSize p-2 ]
-  , pParent p 0 i == 0 ]
+pCutsTop edges p =
+  [ (l, r, topL, topR, edge)
+  | (l, r) <- pCuts p
+  , let edge = (pAccess l 0, pAccess r 1)
+        topL = pTopology (edge : edges) l
+        topR = pTopology (edge : edges) r
+  ]
 
-pCutAt :: Polygon -> Int -> (Polygon, Polygon)
-pCutAt p i = (mkPolygon $ V.fromList left, mkPolygon $ V.fromList right)
-  where
-    n     = pSize p
-    left  = map (pAccess p) [0 .. i]
-    right = map (pAccess p) (0:[i..n-1])
-
-pCut :: Polygon -> (Polygon, Polygon)
-pCut p
-  -- pSize p == 3 = (mkPolygon $ V.fromList left, mkPolygon $ V.fromList right)
-  | otherwise = safeHead . sortOn sizeDifference . concatMap pCuts . pCycles $ p
-  where
-    safeHead [] = error "pCut head"
-    safeHead (x:_) = x
-  -- where
-  --   inbetween = lerp 0.5 (pAccess p 1) (pAccess p 2)
-  --   left  = [pAccess p 0, pAccess p 1, inbetween]
-  --   right = [pAccess p 0, inbetween, pAccess p 2]
-
-pCompatibleCut :: [(Edge,Edge)] -> Polygon -> Polygon -> Maybe ((Polygon, Polygon),(Polygon, Polygon), [(Edge,Edge)])
+{-# INLINE pCompatibleCut #-}
+pCompatibleCut :: (Real a, Fractional a) => [(Edge a,Edge a)] -> APolygon a -> APolygon a -> Maybe ((APolygon a, APolygon a),(APolygon a, APolygon a), [(Edge a,Edge a)])
 pCompatibleCut edges p1 p2 = listToMaybe $ sortOn pairSizeDifference $ do
-  (p1l, p1r) <- concatMap pCuts $ pCycles p1
-  (p2l, p2r) <- concatMap pCuts $ pCycles p2
-  let newEdges =
-        (aEdge,bEdge) : edges
-      aEdge = (pAccess p1l 0, pAccess p1r 1)
-      bEdge = (pAccess p2r 0, pAccess p2r 1)
-  guard $ pTopology (map fst newEdges) p1l == pTopology (map snd newEdges) p2l
-  guard $ pTopology (map fst newEdges) p1r == pTopology (map snd newEdges) p2r
-  return ((p1l, p1r), (p2l, p2r), (aEdge,bEdge) : edges)
+  (p1l, p1r, aTopL, aTopR, aEdge) <- pCutsTop (map fst edges) p1
+  -- let aEdge = (pAccess p1l 0, pAccess p1r 1)
+  --     aTopL = pTopology (aEdge : map fst edges) p1l
+  --     aTopR = pTopology (aEdge : map fst edges) p1r
+  (p2l, p2r, bTopL, bTopR, bEdge) <- pCutsTop (map snd edges) p2
+  -- let bEdge = (pAccess p2r 0, pAccess p2r 1)
+  --     bTopL = pTopology (bEdge : map snd edges) p2l
+  --     bTopR = pTopology (bEdge : map snd edges) p2r
+  let newEdges = (aEdge,bEdge) : edges
+  -- guard $ pTopology (map fst newEdges) p1l == pTopology (map snd newEdges) p2l
+  -- guard $ pTopology (map fst newEdges) p1r == pTopology (map snd newEdges) p2r
+  guard $ aTopL == bTopL
+  guard $ aTopR == bTopR
+  return ((p1l, p1r), (p2l, p2r), newEdges)
 
-sizeDifference :: (Polygon, Polygon) -> Rational
+sizeDifference :: (Fractional a) => (APolygon a, APolygon a) -> a
 sizeDifference (a,b) = abs (pArea a - pArea b)
 
-pairSizeDifference :: ((Polygon, Polygon),(Polygon, Polygon),a) -> Rational
+pairSizeDifference :: (Fractional a, Ord a) => ((APolygon a, APolygon a),(APolygon a, APolygon a),b) -> a
 pairSizeDifference (a,b,_) = max (sizeDifference a) (sizeDifference b)
 
-pEdges :: Polygon -> [Edge]
+pEdges :: APolygon a -> [Edge a]
 pEdges p = [ (pAccess p i, pAccess p $ i+1) | i <- [0 .. pSize p-1]]
 
-type Edge = (V2 Rational, V2 Rational)
+type Edge a = (V2 a, V2 a)
 
 data Topology = MutableSegment | ImmutableSegment Int
   deriving (Eq, Show)
 
-pTopology :: [Edge] -> Polygon -> [Topology]
+{- INLINE pTopology -}
+pTopology :: Eq a => [Edge a] -> APolygon a -> [Topology]
 pTopology immutableEdges p = worker
   [ maybe MutableSegment ImmutableSegment isImmutable
   | i <- [0 .. pSize p-1]
@@ -89,7 +81,13 @@ pTopology immutableEdges p = worker
     worker []                                 = []
 
 triangulate :: Polygon -> Polygon -> [(Polygon,Polygon)]
-triangulate a b
+triangulate a b =
+  [ (castPolygon l, castPolygon r)
+  | (l,r) <- triangulate_ (castPolygon a) (castPolygon b)
+  ]
+
+triangulate_ :: FPolygon -> FPolygon -> [(FPolygon,FPolygon)]
+triangulate_ a b
   | distSquared (pCentroid al) (pCentroid bl) +
     distSquared (pCentroid ar) (pCentroid br) <
     distSquared (pCentroid al) (pCentroid br) +
@@ -103,12 +101,14 @@ triangulate a b
     edges = [(aEdge,bEdge)]
     aEdge = (pAccess ar 0, pAccess ar 1)
     bEdge = (pAccess br 0, pAccess br 1)
-    (al, ar) = pCut a
-    (bl, br) = pCut b
+    (al, ar) = pCutEqual a
+    (bl, br) = pCutEqual b
 
-triangulate' :: [(Edge,Edge)] -> Polygon -> Polygon -> [(Polygon,Polygon)]
+{-# SPECIALIZE triangulate' :: [(Edge Double,Edge Double)] -> FPolygon -> FPolygon -> [(FPolygon,FPolygon)] #-}
+triangulate' :: (Real a, Fractional a) => [(Edge a,Edge a)] -> APolygon a -> APolygon a -> [(APolygon a,APolygon a)]
 triangulate' edges a b
   | pSize a == 3 || pSize b == 3 = giveUp
+  | trace (show (pSize a, pSize b)) False = undefined
   | Just ((al,ar),(bl,br), newEdges) <- pCompatibleCut edges a b
     = -- traceSVG (helper "topology") $
       triangulate' newEdges al bl ++ triangulate' newEdges ar br
@@ -143,6 +143,6 @@ triangulate' edges a b
           bNewEdges = max 0 (pSize a - pSize b)
           a' = pAddPointsRestricted (map fst edges) aNewEdges a
           b' = pAddPointsRestricted (map snd edges) bNewEdges b
-          (a'', b'') = closestLinearCorrespondence a' b'
-      in -- [closestLinearCorrespondence a' b']
-        Compat.compatiblyTriangulateP a'' b''
+          (a'', b'') = closestLinearCorrespondenceA a' b'
+      in [(a'', b'')]
+        --Compat.compatiblyTriangulateP a'' b''

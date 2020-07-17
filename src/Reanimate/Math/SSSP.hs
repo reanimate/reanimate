@@ -276,7 +276,7 @@ dualTree t (a,b) e = -- simplifyDual $
 -- dualRoot (Dual (a,_,_) _ _) = a
 
 -- O(n*ln n), could be O(n) if I could figure out how to use fingertrees...
-sssp :: (Fractional a, Ord a) => Ring a -> Dual -> SSSP
+sssp :: (Num a, Ord a) => Ring a -> Dual -> SSSP
 sssp p d = toSSSP $
     case d of
       Dual (a,b,c) l r ->

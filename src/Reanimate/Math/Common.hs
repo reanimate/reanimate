@@ -13,11 +13,11 @@ module Reanimate.Math.Common
   , area2X              -- :: Fractional a => V2 a -> V2 a -> V2 a -> a
   , epsilon             -- :: Fractional a => a
   , epsEq               -- :: (Ord a, Fractional a) => a -> a -> Bool
-  , isLeftTurn          -- :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
-  , isLeftTurnOrLinear  -- :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
-  , isRightTurn         -- :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
-  , isRightTurnOrLinear -- :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
-  , direction           -- :: Fractional a => V2 a -> V2 a -> V2 a -> a
+  , isLeftTurn          -- :: (Num a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+  , isLeftTurnOrLinear  -- :: (Num a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+  , isRightTurn         -- :: (Num a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+  , isRightTurnOrLinear -- :: (Num a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+  , direction           -- :: Num a => V2 a -> V2 a -> V2 a -> a
   , isInside            -- :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> V2 a -> Bool
   , isInsideStrict      -- :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> V2 a -> Bool
   , barycentricCoords   -- :: Fractional a => V2 a -> V2 a -> V2 a -> V2 a -> (a, a, a)
@@ -80,7 +80,7 @@ epsEq a b = abs (a-b) < epsilon
 
 {-# INLINE isLeftTurn #-}
 -- Left turn.
-isLeftTurn :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+isLeftTurn :: (Num a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
 isLeftTurn p1 p2 p3 =
   case compare (direction p1 p2 p3) 0 of
     LT -> True
@@ -88,7 +88,7 @@ isLeftTurn p1 p2 p3 =
     GT -> False
 
 {-# INLINE isLeftTurnOrLinear #-}
-isLeftTurnOrLinear :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+isLeftTurnOrLinear :: (Num a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
 isLeftTurnOrLinear p1 p2 p3 =
   case compare (direction p1 p2 p3) 0 of
     LT -> True
@@ -96,15 +96,15 @@ isLeftTurnOrLinear p1 p2 p3 =
     GT -> False
 
 {-# INLINE isRightTurn #-}
-isRightTurn :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+isRightTurn :: (Num a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
 isRightTurn a b c = not (isLeftTurnOrLinear a b c)
 
 {-# INLINE isRightTurnOrLinear #-}
-isRightTurnOrLinear :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+isRightTurnOrLinear :: (Num a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
 isRightTurnOrLinear a b c = not (isLeftTurn a b c)
 
 {-# INLINE direction #-}
-direction :: Fractional a => V2 a -> V2 a -> V2 a -> a
+direction :: Num a => V2 a -> V2 a -> V2 a -> a
 direction p1 p2 p3 = crossZ (p3-p1) (p2-p1)
 
 {-# INLINE isInside #-}
@@ -161,7 +161,7 @@ lineIntersect a b =
 
 -- circleIntersect :: (Ord a, Fractional a) => (V2 a, V2 a) -> (V2 a, V2 a) -> [V2 a]
 
-distSquared :: (Fractional a) => V2 a -> V2 a -> a
+distSquared :: (Num a) => V2 a -> V2 a -> a
 distSquared a b = quadrance (a ^-^ b)
 
 approxDist :: (Real a, Fractional a) => V2 a -> V2 a -> a

@@ -99,8 +99,8 @@ main = reanimate $ sceneAnimation $ do
         fork $ play $ animate $ \t ->
           translate (3) offset $ showP r
         wait 1
-        let (ll, lr) = pCut l
-            (rl, rr) = pCut r
+        let (ll, lr) = pCutEqual l
+            (rl, rr) = pCutEqual r
         fork $ play $ animate $ \t ->
           translate (-3) (offset+t*len) $ showP ll
         fork $ play $ animate $ \t ->

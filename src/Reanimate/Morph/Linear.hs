@@ -2,6 +2,7 @@ module Reanimate.Morph.Linear
   ( linear, rawLinear
   , linearCorrespondence
   , closestLinearCorrespondence
+  , closestLinearCorrespondenceA
   , linearTrajectory
   ) where
 
@@ -32,7 +33,10 @@ linearCorrespondence :: PointCorrespondence
 linearCorrespondence = normalizePolygons
 
 closestLinearCorrespondence :: PointCorrespondence
-closestLinearCorrespondence src' dst' =
+closestLinearCorrespondence = closestLinearCorrespondenceA
+
+closestLinearCorrespondenceA :: (Real a, Fractional a) => APolygon a -> APolygon a -> (APolygon a, APolygon a)
+closestLinearCorrespondenceA src' dst' =
     (src, worker dst (score dst) options)
   where
     (src, dst) = normalizePolygons src' dst'
