@@ -212,7 +212,16 @@ askType ghci expr =
 
 askDoc :: Ghci -> Text -> IO Text
 askDoc ghci expr =
-  T.strip . T.unlines . map T.pack <$> exec ghci (":doc " ++ T.unpack expr)
+  cleanDocs . map T.pack <$> exec ghci (":doc " ++ T.unpack expr)
+
+cleanDocs :: [Text] -> Text
+cleanDocs = T.strip . T.unlines . worker . map T.strip
+  where
+    worker (x:xs) | T.null x = worker xs
+    worker (x:y:xs)
+      | T.null y = x : worker xs
+      | otherwise = worker (x <> " " <> y : xs)
+    worker [] = []
 
 cachedRender :: Ghci -> Text -> IO (Either Text ByteString)
 cachedRender ghci cmd = do
