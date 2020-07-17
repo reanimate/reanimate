@@ -3,32 +3,35 @@
 module Main (main) where
 
 import           Control.Applicative
-import           Control.Concurrent     (forkIO)
+import           Control.Concurrent           (forkIO)
 import           Control.Exception
 import           Control.Monad
 import           Data.Bits
-import           Data.ByteString        (ByteString)
-import qualified Data.ByteString        as BS
-import           Data.Char              (toLower)
+import           Data.ByteString              (ByteString)
+import qualified Data.ByteString              as BS
+import           Data.Char                    (toLower)
 import           Data.Hashable
 import           Data.IORef
 import           Data.Maybe
-import           Data.Text              (Text)
-import qualified Data.Text              as T
-import qualified Data.Text.IO           as T
+import           Data.Text                    (Text)
+import qualified Data.Text                    as T
+import qualified Data.Text.IO                 as T
 import           Data.Time.Format
 import           Discord
-import qualified Discord.Requests       as R
+import qualified Discord.Requests             as R
 import           Discord.Types
 import           GitHash
+import           Language.Haskell.Exts.Parser
+import           Language.Haskell.Exts.Syntax (Exp)
+import           Language.Haskell.Exts.SrcLoc (SrcSpanInfo)
 import           Language.Haskell.Ghcid
 import           System.Directory
 import           System.Environment
+import           System.Exit
 import           System.FilePath
+import           System.IO
 import           System.Process
 import           System.Timeout
-import           System.Exit
-import           System.IO
 
 gi :: GitInfo
 gi = $$tGitInfoCwd
@@ -129,6 +132,12 @@ eventHandler :: Ghci -> Ghci -> DiscordHandle -> Event -> IO ()
 eventHandler fastGhci slowGhci dis event = case event of
   MessageCreate m | Just cmd <- parseCmd m, fromHuman m -> do
     case cmd of
+      Animate script | not (isValidHaskell script) -> do
+        putStrLn "Video failed!"
+        void $ restCall dis (R.CreateReaction (messageChannel m, messageId m) "poop")
+        void $ restCall dis (R.DeleteOwnReaction (messageChannel m, messageId m) "eyes")
+        Right dm <- restCall dis (R.CreateDM (userId $ messageAuthor m))
+        void $ restCall dis (R.CreateMessage (channelId dm) "Invalid Haskell expression")
       Animate script -> do
         putStrLn $ "Running script: " ++ T.unpack script
         _ <- forkIO $ void $ restCall dis (R.CreateReaction (messageChannel m, messageId m) "eyes")
@@ -175,11 +184,12 @@ parseCmd :: Message -> Maybe Command
 parseCmd m =
     Animate <$> T.stripPrefix ">> " t <|>
     (guard (T.map toLower t==":version") >> pure Version) <|>
-    Doc <$> T.stripPrefix ":doc " t <|>
-    Type <$> T.stripPrefix ":t " t <|>
+    Doc . oneLine <$> T.stripPrefix ":doc " t <|>
+    Type . oneLine <$> T.stripPrefix ":t " t <|>
     (guard (T.map toLower t==":restart") >> pure Restart)
   where
     t = messageText m
+    oneLine = T.unwords . T.lines
 
 renderVideo :: Ghci -> T.Text -> IO (Maybe Text)
 renderVideo ghci cmd = do
@@ -188,7 +198,7 @@ renderVideo ghci cmd = do
         \{-# LINE 1 \"discord\" #-}\n\
         \reanimate $ docEnv $ \
         \adjustDuration (min 10) \
-        \(" ++ T.unpack cmd ++ ")\n\
+        \(" ++ T.unpack cmd ++ "\n)\n\
         \:}"
   stderr <- newIORef []
   _ <- exec ghci ":set prog discord"
@@ -257,3 +267,9 @@ encodeInt i = worker (fromIntegral i) 60
         case (key `shiftR` sh) `mod` 64 of
           idx -> alphabet !! fromIntegral idx : worker key (sh-6)
     alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+$"
+
+isValidHaskell :: Text -> Bool
+isValidHaskell txt =
+  case parse (T.unpack txt) :: ParseResult (Exp SrcSpanInfo) of
+    ParseOk{}     -> True
+    ParseFailed{} -> False
