@@ -229,7 +229,7 @@ cleanDocs = T.strip . T.unlines . worker . map T.strip
   where
     worker (x:xs) | T.null x = worker xs
     worker (x:y:xs)
-      | T.null y = x : worker xs
+      | T.null y || ">" `T.isPrefixOf` y = x : worker xs
       | otherwise = worker (x <> " " <> y : xs)
     worker (x:xs) = x : worker xs
     worker [] = []
