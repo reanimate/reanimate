@@ -1,8 +1,8 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
+{-# LANGUAGE ApplicativeDo     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
-{-# LANGUAGE ApplicativeDo     #-}
 module Main (main) where
 
 import           Codec.Picture
@@ -11,17 +11,18 @@ import           Control.Monad
 import           Data.Fixed
 import           Data.Maybe
 import           Data.Monoid
-import           Data.String.Here
 import           Data.Text                (Text)
+import qualified Data.Text                as T
 import           Graphics.SvgTree         (Number (..), strokeWidth, toUserUnit)
+import           NeatInterpolation
 import           Reanimate
 import           Reanimate.Animation
 import           Reanimate.Builtin.Images
+import           Reanimate.Ease
 import           Reanimate.Effect
 import           Reanimate.Povray
 import           Reanimate.Raster
 import           Reanimate.Scene
-import           Reanimate.Ease
 import           Reanimate.Svg
 
 {- SCRIPT
@@ -347,7 +348,7 @@ texture :: SVG
 texture = checker 10 10
 
 script :: FilePath -> Double -> Text
-script png s = [iTrim|
+script png s = [text|
 //EXAMPLE OF SPHERE
 
 //Files with predefined colors and textures
@@ -387,7 +388,7 @@ sphere {
   texture {
     //pigment{ color rgbt <0,0,1,0.1> }
     uv_mapping pigment{
-      image_map{ png ${png} }
+      image_map{ png ${png_} }
       //color rgbt <0,0,1,0.1>
     }
   }
@@ -396,8 +397,9 @@ sphere {
 }
              |]
   where
+    png_ = T.pack png
     precision = 0.1
-    s' = fromIntegral (round (s / precision)) * precision
+    s' = T.pack $ show $ fromIntegral (round (s / precision)) * precision
 
 checker :: Int -> Int -> SVG
 checker w h =

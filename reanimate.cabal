@@ -36,8 +36,15 @@ Source-Repository head
     Type:      git
     Location:  git://github.com/lemmih/reanimate.git
 
-Flag hmatrix
+-- If both 'enable-hmatrix' and 'disable-hmatrix' are false, then use
+-- hmatrix on Macos and Linux but not Windows.
+Flag enable-hmatrix
   Description: Enable hmatrix dependency on Windows (requires openblas)
+  Default:     False
+  Manual:      True
+
+Flag disable-hmatrix
+  Description: Force disable hmatrix dependency
   Default:     False
   Manual:      True
 
@@ -116,11 +123,12 @@ library
                        JuicyPixels >= 3.3.3, attoparsec, parallel,
                        cubicbezier, websockets >= 0.12.7.0,
                        hashable, fsnotify, open-browser, random, random-shuffle, base64-bytestring,
-                       vector >= 0.12.0.0, colour, cassava, ansi-terminal, th-printf >= 0.6, temporary,
+                       vector >= 0.12.0.0, colour, cassava, ansi-terminal, temporary,
                        optparse-applicative, chiphunk >= 0.1.2.1,
                        geojson, aeson >= 1.3.0.0, earcut >= 0.1.0.4,
-                       split, fingertree, array, cereal, vector-space
-  if flag(hmatrix) || !os(windows) {
+                       split, array, cereal, vector-space,
+                       neat-interpolation >= 0.3
+  if (flag(enable-hmatrix) || !os(windows)) && !flag(disable-hmatrix) {
     build-depends: hmatrix >= 0.20.0.0
     exposed-modules:  Reanimate.Morph.Rigid
                       Reanimate.Math.Smooth
@@ -149,6 +157,4 @@ test-suite spec
     reanimate, vector, linear,
     QuickCheck >= 2.1.0, text,
     tasty, tasty-golden, tasty-hunit,
-    tasty-quickcheck,
-    ansi-wl-pprint,
-    here
+    tasty-quickcheck, tasty-rerun >= 1.1.17

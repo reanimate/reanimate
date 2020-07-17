@@ -1,16 +1,17 @@
 #!/usr/bin/env stack
--- stack runghc --package reanimate --package here
+-- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 module Main (main) where
 
 import           Reanimate
-import           Reanimate.Povray (povraySlow')
+import           Reanimate.Povray  (povraySlow')
 
 import           Codec.Picture
 import           Control.Monad
-import           Data.String.Here
-import           Data.Text             (Text)
+import           Data.Text         (Text)
+import qualified Data.Text         as T
+import           NeatInterpolation
 
 main :: IO ()
 main = reanimate $ parA bg $ sceneAnimation $ do
@@ -50,7 +51,11 @@ texture :: SVG
 texture = checker 10 10
 
 script :: FilePath -> Double -> Double -> Text
-script png rotX rotY = [iTrim|
+script png rotX rotY =
+  let png_ = T.pack png
+      rotX_ = T.pack $ show rotX
+      rotY_ = T.pack $ show rotY
+  in [text|
 #include "colors.inc"
 
 //Place the camera
@@ -73,11 +78,11 @@ sphere {
   <0,0,0>, 3
   texture {
     uv_mapping pigment{
-      image_map{ png ${png} }
+      image_map{ png ${png_} }
     }
   }
-  rotate <0,${rotY},0>
-  rotate <${rotX},0,0>
+  rotate <0,${rotY_},0>
+  rotate <${rotX_},0,0>
 }
 |]
 

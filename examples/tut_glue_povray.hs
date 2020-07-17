@@ -1,5 +1,5 @@
 #!/usr/bin/env stack
--- stack runghc --package reanimate --package here
+-- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE ApplicativeDo     #-}
@@ -12,10 +12,11 @@ import           Codec.Picture
 import           Codec.Picture.Types
 import           Control.Lens          ((^.))
 import           Control.Monad
+import qualified Data.Text             as T
 import           Data.Monoid
-import           Data.String.Here
+import           NeatInterpolation
 import           Data.Text             (Text)
-import           Graphics.SvgTree      hiding (Text)
+import           Graphics.SvgTree      hiding (Text,text)
 import           System.Random
 import           System.Random.Shuffle
 
@@ -46,7 +47,12 @@ texture :: Double -> SVG
 texture t = frameAt (t*duration latexExample) latexExample
 
 script :: FilePath -> Double -> Double -> Double -> Text
-script png transZ rotX rotZ = [iTrim|
+script png transZ rotX rotZ =
+  let png_ = T.pack png
+      rotX_ = T.pack $ show rotX
+      transZ_ = T.pack $ show transZ
+      rotZ_ = T.pack $ show rotZ
+  in [text|
 #include "colors.inc"
 
 //Place the camera
@@ -69,13 +75,13 @@ polygon {
   <0, 0>, <0, 1>, <1, 1>, <1, 0>
   texture {
     pigment{
-      image_map{ png ${png} }
+      image_map{ png ${png_} }
     }
   }
   translate <-1/2,-1/2>
   scale <16,9>
-  rotate <0,${rotX},${rotZ}>
-  translate <0,0,${transZ}>
+  rotate <0,${rotX_},${rotZ_}>
+  translate <0,0,${transZ_}>
 }
 |]
 

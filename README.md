@@ -5,6 +5,8 @@
 [![Documentation Status](https://readthedocs.org/projects/reanimate/badge/?version=latest)](https://reanimate.readthedocs.io/en/latest/?badge=latest)
 ![Platforms](https://img.shields.io/badge/platform-linux%20%7C%20osx%20%7C%20windows-informational)
 ![GitHub repo size](https://img.shields.io/github/repo-size/reanimate/reanimate)
+[![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/reanimate/discord-bot?label=discord-bot)](https://hub.docker.com/repository/docker/reanimate/discord-bot)
+[![Discord](https://img.shields.io/discord/731822102935502908)](https://discord.gg/Qs28Dv6)
 
 # Reanimate
 

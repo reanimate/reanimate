@@ -1,20 +1,21 @@
 #!/usr/bin/env stack
--- stack runghc --package reanimate --package here
+-- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE QuasiQuotes       #-}
 module Main (main) where
 
+import qualified Data.Text         as T
+import           NeatInterpolation
 import           Reanimate
-import           Data.String.Here
 
 main :: IO ()
 main = reanimate $ mkAnimation 5 $ \t ->
     let s = fromToS 0 360 t in
     mkGroup
     [ mkBackground "black"
-    , povray [] (script s) ]
+    , povray [] (script $ T.pack $ show s) ]
   where
-    script s = [iTrim|
+    script s = [text|
 //EXAMPLE OF SPHERE
 
 //Files with predefined colors and textures
