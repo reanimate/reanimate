@@ -231,6 +231,7 @@ cleanDocs = T.strip . T.unlines . worker . map T.strip
     worker (x:y:xs)
       | T.null y = x : worker xs
       | otherwise = worker (x <> " " <> y : xs)
+    worker (x:xs) = x : worker xs
     worker [] = []
 
 cachedRender :: Ghci -> Text -> IO (Either Text ByteString)
