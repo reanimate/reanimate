@@ -28,6 +28,8 @@ main = reanimate $ docEnv $ playThenReverseA drawCircle
 
 [![Draw Circle](https://i.imgur.com/C02hPw8.gif)](examples/doc_playThenReverseA.hs)
 
+If you like what you see, boost reanimate's visibility with a star ⭐ or consider becoming a [sponsor ❤](https://github.com/sponsors/Lemmih).
+
 # What is reanimate good at?
 
 ## Vector graphics and math
