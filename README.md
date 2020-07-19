@@ -84,11 +84,12 @@ animation source code, the browser window will automatically reload and show the
  * Core concepts: https://reanimate.readthedocs.io/en/latest/introduction/
  * Design overview: https://reanimate.readthedocs.io/en/latest/glue_tut/
  * N-Queens tutorial (somewhat dated, uses reanimate from October 2019): https://williamyaoh.com/posts/2020-05-31-reanimate-nqueens-tutorial.html
+ * You can also ask questions in the discord channel: <https://discord.gg/Qs28Dv6>
 
 # Features
 
 - [x] Cross-platform. Official support for Linux, MacOS, and Windows.
-- [x] Well-documented. API [reference documentation](https://hackage.haskell.org/package/reanimate/docs/Reanimate.html) include GIFs to illustrate behavior and in-depth tutorial/explanation articles are hosted on [readthedocs.io](https://reanimate.readthedocs.io/en/latest/).
+- [x] Well-documented. API [reference documentation](https://hackage.haskell.org/package/reanimate/docs/Reanimate.html) include GIFs to illustrate behavior, and in-depth tutorial/explanation articles are hosted on [readthedocs.io](https://reanimate.readthedocs.io/en/latest/).
 - [x] Advanced type-setting via LaTeX.
 - [x] Voice control: Align animation timings with a transcript.
 - [x] 3D graphics: Built-in support for integrating povray and blender.
