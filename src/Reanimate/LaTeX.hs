@@ -76,9 +76,9 @@ xelatexWithHeaders = someTexWithHeaders "xelatex" "xdv" ["-no-pdf"]
 --
 --   Example:
 --
---   > xelatex "中文"
+--   > ctex "中文"
 --
---   <<docs/gifs/doc_xelatex.gif>>
+--   <<docs/gifs/doc_ctex.gif>>
 ctex :: T.Text -> Tree
 ctex = ctexWithHeaders []
 
