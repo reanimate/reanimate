@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 ROOT=`stack path --project-root`
 
-RENDER_OPTIONS='--compile --fps 60 --width 1920'
+RENDER_OPTIONS='--compile --fps 60 --width 640'
 ANIMATIONS='tut_glue_svg
   tut_glue_latex
   tut_glue_animate
