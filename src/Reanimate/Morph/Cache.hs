@@ -7,6 +7,7 @@ import qualified Data.ByteString        as B
 import           Data.Hashable
 import           Data.Serialize
 import           Reanimate.Cache        (encodeInt)
+import           Reanimate.Misc         (renameOrCopyFile)
 import           Reanimate.Morph.Common
 import           System.Directory
 import           System.FilePath
@@ -36,7 +37,7 @@ cachePointCorrespondence ident fn src dst = unsafePerformIO $ do
       withSystemTempFile template $ \tmp h -> do
         hClose h
         B.writeFile tmp (encode correspondence)
-        renameFile tmp path
+        renameOrCopyFile tmp path
       return correspondence
     template = encodeInt key <.> "morph"
     key = hashWithSalt ident (src,dst)
