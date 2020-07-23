@@ -80,11 +80,14 @@ module Reanimate.Scene
   , oModify
   , oRead
   , oTween
+  , oTweenS
   , oTweenV
+  , oTweenVS
   , withEasing
 
   -- ** Graphics object methods
   , oFadeIn
+  , oFadeOut
   , oGrow
   , oShrink
   , oTransform
@@ -112,7 +115,7 @@ import           Control.Lens
 import           Control.Monad              (void)
 import           Control.Monad.Fix
 import           Control.Monad.ST
-import           Control.Monad.State ()
+import           Control.Monad.State (execState, State)
 import           Data.List
 import           Data.STRef
 import           Graphics.SvgTree           (Tree (None))
@@ -313,7 +316,10 @@ modifyVar (Var ref) fn = do
 tweenVar :: Var s a -> Duration -> (a -> Time -> a) -> Scene s ()
 tweenVar (Var ref) dur fn = do
   now <- queryNow
-  liftST $ modifySTRef ref $ \prev t -> fn (prev t) (max 0 (min dur $ t - now) / dur)
+  liftST $ modifySTRef ref $ \prev t ->
+    if t < now
+      then prev t
+      else fn (prev t) (max 0 (min dur $ t - now) / dur)
   wait dur
 
 -- | Modify a variable between @now@ and @now+duration@.
@@ -694,9 +700,17 @@ oTween o@(Object ref) d fn = do
   -- This allows different easing functions even at the same timestamp.
   ease <- oRead o oEasing
   tweenVar ref d (\v t -> fn (ease t) v)
+  -- tweenVar ref d (\v t -> fn t v)
+
+-- oTweenS :: Object s a -> Duration -> (Double -> ObjectData a -> ObjectData a) -> Scene s ()
+oTweenS :: Object s a -> Duration -> (Double -> State (ObjectData a) b) -> Scene s ()
+oTweenS o d fn = oTween o d (\t -> execState (fn t))
 
 oTweenV :: Renderable a => Object s a -> Duration -> (Double -> a -> a) -> Scene s ()
 oTweenV o d fn = oTween o d (\t -> oValue %~ fn t)
+
+oTweenVS :: Renderable a => Object s a -> Duration -> (Double -> State a b) -> Scene s ()
+oTweenVS o d fn = oTween o d (\t -> oValue %~ execState (fn t))
 
 newObject :: Renderable a => a -> Scene s (Object s a)
 newObject val = do
@@ -753,20 +767,27 @@ oFadeIn :: Object s a -> Duration -> Scene s ()
 oFadeIn o d = do
   oModify o $ 
     oShown   .~ True
-  oTween o d $ \t ->
-    oOpacity .~ t
+  oTweenS o d $ \t ->
+    oOpacity *= t
+
+oFadeOut :: Object s a -> Duration -> Scene s ()
+oFadeOut o d = do
+  oModify o $ 
+    oShown   .~ True
+  oTweenS o d $ \t ->
+    oOpacity *= 1-t
 
 oGrow :: Object s a -> Duration -> Scene s ()
 oGrow o d = do
   oModify o $ 
-    oShown   .~ True
-  oTween o d $ \t ->
-    oScale .~ t
+    oShown .~ True
+  oTweenS o d $ \t ->
+    oScale *= t
 
 oShrink :: Object s a -> Duration -> Scene s ()
 oShrink o d =
-  oTween o d $ \t ->
-    oScale .~ 1-t
+  oTweenS o d $ \t ->
+    oScale *= 1-t
 
 -- FIXME: Also transform attributes: 'translate' and 'opacity'
 oTransform :: Object s a -> Object s b -> Duration -> Scene s ()
@@ -846,27 +867,4 @@ oGetTopY o = do
 oTopY :: Prop s Double
 oTopY = Prop oSetTopY oGetTopY
 
-oTween :: Object s -> Duration -> [TweenAction s] -> Scene s ()
-oTween = undefined
-
-data TweenAction s
-  = forall a. Setter s a :~> a
-
-test = do
-  obj <- newObject
-  oSet obj oTopY 1
-  t <- oGet obj oTopY
-  oTween obj 1
-    [ oSetTopY :~> 5 ]
-
-  return t
-
-{-
-prog = do
-  circle <- newObject $ mkCircle 3
-  box <- newObject $ mkRect 5 5
-
-  oTween circle 1
-    [ oSetFade :~> 1]
--}
 -}
