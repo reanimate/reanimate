@@ -1,5 +1,8 @@
-{-# LANGUAGE ApplicativeDo #-}
-{-# LANGUAGE RankNTypes    #-}
+{-# LANGUAGE ApplicativeDo             #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE RankNTypes                #-}
+{-# LANGUAGE TemplateHaskell           #-}
+{-# LANGUAGE RecordWildCards           #-}
 {-|
 Module      : Reanimate.Scene
 Description : Imperative animation API
@@ -57,6 +60,46 @@ module Reanimate.Scene
   , spriteZ           -- :: Sprite s -> ZIndex -> Scene s ()
   , spriteScope       -- :: Scene s a -> Scene s a
 
+  -- * Object API
+  , Renderable(..)
+  , Object
+  , ObjectData
+  , oTranslate
+  , oSVG
+  , oContext
+  , oMargin
+  , oBB
+  , oOpacity
+  , oShown
+  , oZIndex
+  , oEasing
+  , oScale
+  , oScaleOrigin
+  , newObject
+  , oValue
+  , oModify
+  , oRead
+  , oTween
+  , oTweenV
+  , withEasing
+
+  -- ** Graphics object methods
+  , oFadeIn
+  , oGrow
+  , oShrink
+  , oTransform
+
+  -- ** Pre-defined objects
+  , Circle(..)
+  , circleRadius
+  , Rectangle(..)
+  , rectWidth
+  , rectHeight
+  , Morph(..)
+  , morphDelta
+  , morphSrc
+  , morphDst
+
   -- * ST internals
   , liftST
   , asAnimation       -- :: (forall s. Scene s a) -> Scene s Animation
@@ -64,16 +107,22 @@ module Reanimate.Scene
   )
 where
 
-import           Control.Monad                            ( void )
+import           Control.Lens
+import           Control.Monad              (void)
 import           Control.Monad.Fix
 import           Control.Monad.ST
+import           Control.Monad.State
 import           Data.List
 import           Data.STRef
-import           Graphics.SvgTree                         ( Tree(None) )
+import           Graphics.SvgTree           (Tree (None))
 import           Reanimate.Animation
+import           Reanimate.Ease             (Signal, curveS)
 import           Reanimate.Effect
-import           Reanimate.Transition
 import           Reanimate.Svg.Constructors
+import           Reanimate.Svg.BoundingBox
+import           Reanimate.Transition
+import           Reanimate.Morph.Common (morph)
+import           Reanimate.Morph.Linear (linear)
 
 -- | The ZIndex property specifies the stack order of sprites and animations. Elements
 --   with a higher ZIndex will be drawn on top of elements with a lower index.
@@ -110,6 +159,11 @@ instance MonadFix (Scene s) where
 
 liftST :: ST s a -> Scene s a
 liftST action = M $ \_ -> action >>= \a -> return (a, 0, 0, [])
+
+evalScene :: (forall s . Scene s a) -> a
+evalScene action = runST $ do
+  (val, _, _ , _) <- unM action 0
+  return val
 
 sceneAnimation :: (forall s . Scene s a) -> Animation
 sceneAnimation action = runST
@@ -586,3 +640,231 @@ transitionO t o a b = do
     asAnimation b
   play $ overlapT o t aA bA
 
+
+
+
+-------------------------------------------------------
+-- Objects
+
+class Renderable a where
+  toSVG :: a -> SVG
+
+instance Renderable Tree where
+  toSVG = id
+
+newtype Object s a = Object (Var s (ObjectData a))
+data ObjectData a = ObjectData
+  { _oTranslate   :: (Double, Double)
+  , _oValueRef    :: a
+  , _oSVG         :: SVG
+  , _oContext     :: SVG -> SVG
+  , _oMargin      :: (Double, Double, Double, Double)
+      -- ^ Top, right, bottom, left
+  , _oBB          :: (Double,Double,Double,Double)
+  , _oOpacity     :: Double
+  , _oShown       :: Bool
+  , _oZIndex      :: Int
+  , _oEasing      :: Signal
+  , _oScale       :: Double
+  , _oScaleOrigin :: (Double, Double)
+  }
+
+makeLenses ''ObjectData
+
+oValue :: Renderable a => Lens' (ObjectData a) a
+oValue = lens _oValueRef $ \obj newVal ->
+    let svg = toSVG newVal
+    in obj
+    { _oValueRef = newVal
+    , _oSVG   = svg
+    , _oBB    = boundingBox svg }
+
+oModify :: Object s a -> (ObjectData a -> ObjectData a) -> Scene s ()
+oModify (Object ref) fn = modifyVar ref fn
+
+oRead :: Object s a -> Lens' (ObjectData a) b -> Scene s b
+oRead (Object ref) l = do
+  v <- readVar ref
+  return $ view l v
+
+oTween :: Object s a -> Duration -> (Double -> ObjectData a -> ObjectData a) -> Scene s ()
+oTween o@(Object ref) d fn = do
+  -- Read 'easing' var here instead of taking it from 'v'.
+  -- This allows different easing functions even at the same timestamp.
+  ease <- oRead o oEasing
+  tweenVar ref d (\v t -> fn (ease t) v)
+
+oTweenV :: Renderable a => Object s a -> Duration -> (Double -> a -> a) -> Scene s ()
+oTweenV o d fn = oTween o d (\t -> oValue %~ fn t)
+
+newObject :: Renderable a => a -> Scene s (Object s a)
+newObject val = do
+  ref <- newVar ObjectData
+    { _oTranslate = (0,0)
+    , _oValueRef = val
+    , _oSVG = svg
+    , _oContext = id
+    , _oMargin = (0.5,0.5,0.5,0.5)
+    , _oBB = boundingBox svg
+    , _oOpacity = 1
+    , _oShown = False
+    , _oEasing = curveS 2
+    , _oScale = 1
+    , _oScaleOrigin = (0,0)
+    }
+  newSprite_ $ do
+    ~ObjectData{..} <- unVar ref
+    pure $
+      if _oShown
+        then
+          uncurry translate _oTranslate $
+          uncurry translate (_oScaleOrigin & both %~ negate) $
+          scale _oScale $
+          uncurry translate _oScaleOrigin $
+          withGroupOpacity _oOpacity $
+          _oContext _oSVG
+        else None
+  return $ Object ref
+  where
+    svg = toSVG val
+
+newtype Circle = Circle {_circleRadius :: Double}
+instance Renderable Circle where
+  toSVG (Circle r) = mkCircle r
+
+data Rectangle = Rectangle { _rectWidth :: Double, _rectHeight :: Double }
+instance Renderable Rectangle where
+  toSVG (Rectangle w h) = mkRect w h
+
+data Morph = Morph { _morphDelta :: Double, _morphSrc :: SVG, _morphDst :: SVG }
+instance Renderable Morph where
+  toSVG (Morph t src dst) = morph linear src dst t
+
+makeLenses ''Circle
+makeLenses ''Rectangle
+makeLenses ''Morph
+
+withEasing :: Signal -> (Double -> c) -> (Double -> c)
+withEasing signal fn = fn . signal
+
+oFadeIn :: Object s a -> Duration -> Scene s ()
+oFadeIn o d = do
+  oModify o $ 
+    oShown   .~ True
+  oTween o d $ \t ->
+    oOpacity .~ t
+
+oGrow :: Object s a -> Duration -> Scene s ()
+oGrow o d = do
+  oModify o $ 
+    oShown   .~ True
+  oTween o d $ \t ->
+    oScale .~ t
+
+oShrink :: Object s a -> Duration -> Scene s ()
+oShrink o d =
+  oTween o d $ \t ->
+    oScale .~ 1-t
+
+-- FIXME: Also transform attributes: 'translate' and 'opacity'
+oTransform :: Object s a -> Object s b -> Duration -> Scene s ()
+oTransform src dst d = do
+  srcSvg <- oRead src oSVG
+  srcCtx <- oRead src oContext
+  srcEase <- oRead src oEasing
+  oModify src $ oShown .~ False
+  dstSvg <- oRead dst oSVG
+  dstCtx <- oRead dst oContext
+
+  m <- newObject $ Morph 0 (srcCtx srcSvg) (dstCtx dstSvg)
+  oModify m $ oShown .~ True
+  oModify m $ oEasing .~ srcEase
+  oTweenV m d $ \t -> morphDelta .~ t
+  oModify m $ oShown .~ False
+  oModify dst $ oShown .~ True
+
+{-
+type Setter s a = forall o. Object s o -> a -> Scene s ()
+type Getter s a = forall o. Object s o -> Scene s a
+
+data Prop s a = Prop (Setter s a) (Getter s a)
+
+oSet :: Object s o -> Prop s a -> a -> Scene s ()
+oSet o (Prop setter _) val = setter o val
+
+oGet :: Object s o -> Prop s a -> Scene s a
+oGet o (Prop _ getter) = getter o
+
+oModify :: Object s o -> Prop s a -> (a -> a) -> Scene s ()
+oModify o (Prop setter getter) fn = do
+  v <- getter o
+  setter o (fn v)
+
+oSetTranslate :: Setter s (Double, Double)
+oSetTranslate (Object ref) val = modifyVar ref $ \obj -> obj{ objectTranslate = val }
+
+oGetTranslate :: Getter s (Double, Double)
+oGetTranslate (Object ref) = objectTranslate <$> readVar ref
+
+oTranslate :: Prop s (Double, Double)
+oTranslate = Prop oSetTranslate oGetTranslate
+
+oSetCenter :: Setter s (Double, Double)
+oSetCenter o (dx, dy) = do
+  (x,y,w,h) <- oGetBB o
+  oSetTranslate o (-x-w/2+dx, -y-h/2+dy)
+
+oGetCenter :: Getter s (Double, Double)
+oGetCenter o = do
+  (x,y,w,h) <- oGetBB o
+  (dx, dy) <- oGetTranslate o
+  return (dx-(-x-w/2), dy-(-y-h/2))
+
+oGetMargin :: Getter s (Double, Double, Double, Double)
+oGetMargin (Object ref) = objectMargin <$> readVar ref
+
+oGetBB :: Getter s (Double, Double, Double, Double)
+oGetBB (Object ref) = objectBB <$> readVar ref
+
+oSetTopY :: Setter s Double
+oSetTopY o val = do
+  (top, _right, _bot, _left) <- oGetMargin o
+  (_minx, miny, _w, h) <- oGetBB o
+  let dy = val-miny-h-top
+  (dx, _dy) <- oGetTranslate o
+  oSetTranslate o (dx, dy)
+
+oGetTopY :: Getter s Double
+oGetTopY o = do
+  (top, _right, _bot, _left) <- oGetMargin o
+  (_minx, miny, _w, h) <- oGetBB o
+  (dx, dy) <- oGetTranslate o
+  return $ dy+miny+h+top
+
+oTopY :: Prop s Double
+oTopY = Prop oSetTopY oGetTopY
+
+oTween :: Object s -> Duration -> [TweenAction s] -> Scene s ()
+oTween = undefined
+
+data TweenAction s
+  = forall a. Setter s a :~> a
+
+test = do
+  obj <- newObject
+  oSet obj oTopY 1
+  t <- oGet obj oTopY
+  oTween obj 1
+    [ oSetTopY :~> 5 ]
+
+  return t
+
+{-
+prog = do
+  circle <- newObject $ mkCircle 3
+  box <- newObject $ mkRect 5 5
+
+  oTween circle 1
+    [ oSetFade :~> 1]
+-}
+-}
