@@ -68,16 +68,27 @@ module Reanimate.Scene
   , oSVG
   , oContext
   , oMargin
+  , oMarginTop
+  , oMarginRight
+  , oMarginBottom
+  , oMarginLeft
   , oBB
+  , oBBMinX
+  , oBBMinY
+  , oBBWidth
+  , oBBHeight
   , oOpacity
   , oShown
   , oZIndex
   , oEasing
   , oScale
   , oScaleOrigin
+  , oTopY
+  , oBottomY
   , newObject
   , oValue
   , oModify
+  , oModifyS
   , oRead
   , oTween
   , oTweenS
@@ -120,7 +131,7 @@ import           Data.List
 import           Data.STRef
 import           Graphics.SvgTree           (Tree (None))
 import           Reanimate.Animation
-import           Reanimate.Ease             (Signal, curveS)
+import           Reanimate.Ease             (Signal, curveS, fromToS)
 import           Reanimate.Effect
 import           Reanimate.Svg.Constructors
 import           Reanimate.Svg.BoundingBox
@@ -686,8 +697,65 @@ oValue = lens _oValueRef $ \obj newVal ->
     & oSVG      .~ svg
     & oBB       .~ boundingBox svg
 
+oTopY :: Lens' (ObjectData a) Double
+oTopY = lens getter setter
+  where
+    getter obj = 
+      let top  = obj ^. oMarginTop
+          miny = obj ^. oBBMinY
+          h    = obj ^. oBBHeight
+          dy   = obj ^. oTranslate . _2
+      in dy+miny+h+top
+    setter obj val = 
+      let top  = obj ^. oMarginTop
+          miny = obj ^. oBBMinY
+          h    = obj ^. oBBHeight
+          dy   = val-miny-h-top
+      in obj & (oTranslate . _2) .~ dy
+
+oBottomY :: Lens' (ObjectData a) Double
+oBottomY = lens getter setter
+  where
+    getter obj = 
+      let bot  = obj ^. oMarginBottom
+          miny = obj ^. oBBMinY
+          dy   = obj ^. oTranslate . _2
+      in dy+miny-bot
+    setter obj val = 
+      let bot  = obj ^. oMarginBottom
+          miny = obj ^. oBBMinY
+          dy   = val-miny+bot
+      in obj & (oTranslate . _2) .~ dy
+
+oMarginTop :: Lens' (ObjectData a) Double
+oMarginTop = oMargin . _1
+
+oMarginRight :: Lens' (ObjectData a) Double
+oMarginRight = oMargin . _2
+
+oMarginBottom :: Lens' (ObjectData a) Double
+oMarginBottom = oMargin . _3
+
+oMarginLeft :: Lens' (ObjectData a) Double
+oMarginLeft = oMargin . _4
+
+oBBMinX :: Lens' (ObjectData a) Double
+oBBMinX = oBB . _1
+
+oBBMinY :: Lens' (ObjectData a) Double
+oBBMinY = oBB . _2
+
+oBBWidth :: Lens' (ObjectData a) Double
+oBBWidth = oBB . _3
+
+oBBHeight :: Lens' (ObjectData a) Double
+oBBHeight = oBB . _4
+
 oModify :: Object s a -> (ObjectData a -> ObjectData a) -> Scene s ()
 oModify (Object ref) fn = modifyVar ref fn
+
+oModifyS :: Object s a -> (State (ObjectData a) b) -> Scene s ()
+oModifyS o fn = oModify o (execState fn)
 
 oRead :: Object s a -> Lens' (ObjectData a) b -> Scene s b
 oRead (Object ref) l = do
@@ -789,82 +857,28 @@ oShrink o d =
   oTweenS o d $ \t ->
     oScale *= 1-t
 
--- FIXME: Also transform attributes: 'translate' and 'opacity'
+-- FIXME: Also transform attributes: 'opacity', 'scale', 'scaleOrigin'.
 oTransform :: Object s a -> Object s b -> Duration -> Scene s ()
 oTransform src dst d = do
-  srcSvg <- oRead src oSVG
-  srcCtx <- oRead src oContext
-  srcEase <- oRead src oEasing
-  oModify src $ oShown .~ False
-  dstSvg <- oRead dst oSVG
-  dstCtx <- oRead dst oContext
+    srcSvg <- oRead src oSVG
+    srcCtx <- oRead src oContext
+    srcEase <- oRead src oEasing
+    srcLoc <- oRead src oTranslate
+    oModify src $ oShown .~ False
+    
+    dstSvg <- oRead dst oSVG
+    dstCtx <- oRead dst oContext
+    dstLoc <- oRead dst oTranslate
 
-  m <- newObject $ Morph 0 (srcCtx srcSvg) (dstCtx dstSvg)
-  oModify m $ oShown .~ True
-  oModify m $ oEasing .~ srcEase
-  oTweenV m d $ \t -> morphDelta .~ t
-  oModify m $ oShown .~ False
-  oModify dst $ oShown .~ True
-
-{-
-type Setter s a = forall o. Object s o -> a -> Scene s ()
-type Getter s a = forall o. Object s o -> Scene s a
-
-data Prop s a = Prop (Setter s a) (Getter s a)
-
-oSet :: Object s o -> Prop s a -> a -> Scene s ()
-oSet o (Prop setter _) val = setter o val
-
-oGet :: Object s o -> Prop s a -> Scene s a
-oGet o (Prop _ getter) = getter o
-
-oModify :: Object s o -> Prop s a -> (a -> a) -> Scene s ()
-oModify o (Prop setter getter) fn = do
-  v <- getter o
-  setter o (fn v)
-
-oSetTranslate :: Setter s (Double, Double)
-oSetTranslate (Object ref) val = modifyVar ref $ \obj -> obj{ objectTranslate = val }
-
-oGetTranslate :: Getter s (Double, Double)
-oGetTranslate (Object ref) = objectTranslate <$> readVar ref
-
-oTranslate :: Prop s (Double, Double)
-oTranslate = Prop oSetTranslate oGetTranslate
-
-oSetCenter :: Setter s (Double, Double)
-oSetCenter o (dx, dy) = do
-  (x,y,w,h) <- oGetBB o
-  oSetTranslate o (-x-w/2+dx, -y-h/2+dy)
-
-oGetCenter :: Getter s (Double, Double)
-oGetCenter o = do
-  (x,y,w,h) <- oGetBB o
-  (dx, dy) <- oGetTranslate o
-  return (dx-(-x-w/2), dy-(-y-h/2))
-
-oGetMargin :: Getter s (Double, Double, Double, Double)
-oGetMargin (Object ref) = objectMargin <$> readVar ref
-
-oGetBB :: Getter s (Double, Double, Double, Double)
-oGetBB (Object ref) = objectBB <$> readVar ref
-
-oSetTopY :: Setter s Double
-oSetTopY o val = do
-  (top, _right, _bot, _left) <- oGetMargin o
-  (_minx, miny, _w, h) <- oGetBB o
-  let dy = val-miny-h-top
-  (dx, _dy) <- oGetTranslate o
-  oSetTranslate o (dx, dy)
-
-oGetTopY :: Getter s Double
-oGetTopY o = do
-  (top, _right, _bot, _left) <- oGetMargin o
-  (_minx, miny, _w, h) <- oGetBB o
-  (dx, dy) <- oGetTranslate o
-  return $ dy+miny+h+top
-
-oTopY :: Prop s Double
-oTopY = Prop oSetTopY oGetTopY
-
--}
+    m <- newObject $ Morph 0 (srcCtx srcSvg) (dstCtx dstSvg)
+    oModifyS m $ do
+      oShown     .= True
+      oEasing    .= srcEase
+      oTranslate .= srcLoc
+    fork $ oTween m d $ \t -> oTranslate %~ moveTo t dstLoc
+    oTweenV m d $ \t -> morphDelta .~ t
+    oModify m $ oShown .~ False
+    oModify dst $ oShown .~ True
+  where
+    moveTo t (dstX, dstY) (srcX, srcY) =
+      (fromToS srcX dstX t, fromToS srcY dstY t)
