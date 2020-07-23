@@ -104,6 +104,7 @@ module Reanimate.Scene
   , liftST
   , asAnimation       -- :: (forall s. Scene s a) -> Scene s Animation
   , transitionO
+  , evalScene
   )
 where
 
@@ -111,7 +112,7 @@ import           Control.Lens
 import           Control.Monad              (void)
 import           Control.Monad.Fix
 import           Control.Monad.ST
-import           Control.Monad.State
+import           Control.Monad.State ()
 import           Data.List
 import           Data.STRef
 import           Graphics.SvgTree           (Tree (None))
@@ -675,9 +676,9 @@ oValue :: Renderable a => Lens' (ObjectData a) a
 oValue = lens _oValueRef $ \obj newVal ->
     let svg = toSVG newVal
     in obj
-    { _oValueRef = newVal
-    , _oSVG   = svg
-    , _oBB    = boundingBox svg }
+    & oValueRef .~ newVal
+    & oSVG      .~ svg
+    & oBB       .~ boundingBox svg
 
 oModify :: Object s a -> (ObjectData a -> ObjectData a) -> Scene s ()
 oModify (Object ref) fn = modifyVar ref fn
@@ -708,6 +709,7 @@ newObject val = do
     , _oBB = boundingBox svg
     , _oOpacity = 1
     , _oShown = False
+    , _oZIndex = 1
     , _oEasing = curveS 2
     , _oScale = 1
     , _oScaleOrigin = (0,0)
