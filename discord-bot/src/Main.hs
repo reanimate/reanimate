@@ -82,6 +82,7 @@ main = forever $ do
   void $ exec fastGhci ":m + Reanimate.Morph.Common"
   void $ exec fastGhci ":m + Reanimate.Morph.Linear"
   void $ exec fastGhci ":m + Reanimate.Scene"
+  void $ exec fastGhci ":m + Control.Lens"
   void $ exec fastGhci ":m + Codec.Picture.Types"
   void $ exec fastGhci ":set -XOverloadedStrings"
 
