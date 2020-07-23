@@ -97,6 +97,8 @@ module Reanimate.Scene
   , withEasing
 
   -- ** Graphics object methods
+  , oShow
+  , oHide
   , oFadeIn
   , oFadeOut
   , oGrow
@@ -830,6 +832,12 @@ makeLenses ''Morph
 
 withEasing :: Signal -> (Double -> c) -> (Double -> c)
 withEasing signal fn = fn . signal
+
+oShow :: Object s a -> Scene s ()
+oShow o = oModify o $ oShown .~ True
+
+oHide :: Object s a -> Scene s ()
+oHide o = oModify o $ oShown .~ False
 
 oFadeIn :: Object s a -> Duration -> Scene s ()
 oFadeIn o d = do
