@@ -118,6 +118,13 @@ module Reanimate.Scene
   , morphDelta
   , morphSrc
   , morphDst
+  , Camera(..)
+  , cameraAttach
+  , cameraFocus
+  , cameraSetZoom
+  , cameraZoom
+  , cameraSetPan
+  , cameraPan
 
   -- * ST internals
   , liftST
@@ -675,7 +682,10 @@ class Renderable a where
 instance Renderable Tree where
   toSVG = id
 
-newtype Object s a = Object (Var s (ObjectData a))
+data Object s a = Object
+  { objectSprite :: Sprite s
+  , objectData   :: Var s (ObjectData a)
+  }
 data ObjectData a = ObjectData
   { _oTranslate   :: (Double, Double)
   , _oValueRef    :: a
@@ -823,22 +833,22 @@ oBBHeight :: Getter (ObjectData a) Double
 oBBHeight = oBB . _4
 
 oModify :: Object s a -> (ObjectData a -> ObjectData a) -> Scene s ()
-oModify (Object ref) fn = modifyVar ref fn
+oModify o fn = modifyVar (objectData o) fn
 
 oModifyS :: Object s a -> (State (ObjectData a) b) -> Scene s ()
 oModifyS o fn = oModify o (execState fn)
 
 oRead :: Object s a -> Getting b (ObjectData a) b -> Scene s b
-oRead (Object ref) l = do
-  v <- readVar ref
+oRead o l = do
+  v <- readVar (objectData o)
   return $ view l v
 
 oTween :: Object s a -> Duration -> (Double -> ObjectData a -> ObjectData a) -> Scene s ()
-oTween o@(Object ref) d fn = do
+oTween o d fn = do
   -- Read 'easing' var here instead of taking it from 'v'.
   -- This allows different easing functions even at the same timestamp.
   ease <- oRead o oEasing
-  tweenVar ref d (\v t -> fn (ease t) v)
+  tweenVar (objectData o) d (\v t -> fn (ease t) v)
   -- tweenVar ref d (\v t -> fn t v)
 
 -- oTweenS :: Object s a -> Duration -> (Double -> ObjectData a -> ObjectData a) -> Scene s ()
@@ -867,7 +877,7 @@ newObject val = do
     , _oScale = 1
     , _oScaleOrigin = (0,0)
     }
-  newSprite_ $ do
+  sprite <- newSprite $ do
     ~ObjectData{..} <- unVar ref
     pure $
       if _oShown
@@ -879,7 +889,9 @@ newObject val = do
           withGroupOpacity _oOpacity $
           _oContext _oSVG
         else None
-  return $ Object ref
+  return Object
+    { objectSprite = sprite
+    , objectData   = ref }
   where
     svg = toSVG val
 
@@ -894,6 +906,54 @@ instance Renderable Rectangle where
 data Morph = Morph { _morphDelta :: Double, _morphSrc :: SVG, _morphDst :: SVG }
 instance Renderable Morph where
   toSVG (Morph t src dst) = morph linear src dst t
+
+data Camera = Camera
+instance Renderable Camera where
+  toSVG Camera = None
+
+cameraAttach :: Object s Camera -> Object s a -> Scene s ()
+cameraAttach cam obj =
+  spriteModify (objectSprite obj) $ do
+    camData <- unVar (objectData cam)
+    return $ \(svg,zindex) ->
+      let (x,y) = camData^.oTranslate
+          ctx =
+            translate (-x) (-y) .
+            uncurry translate (camData^.oScaleOrigin) .
+            scale (camData^.oScale) .
+            uncurry translate (camData^.oScaleOrigin & both %~ negate)
+      in (ctx svg, zindex)
+
+cameraFocus :: Object s Camera -> (Double, Double) -> Scene s ()
+cameraFocus cam (x,y) = do
+  (ox, oy) <- oRead cam oScaleOrigin
+  (tx, ty) <- oRead cam oTranslate
+  s <- oRead cam oScale
+  let newLocation = (x-((x-ox)*s+ox-tx), y-((y-oy)*s+oy-ty))
+  oModifyS cam $ do
+    oTranslate .= newLocation
+    oScaleOrigin .= (x,y)
+
+cameraSetZoom :: Object s Camera -> Double -> Scene s ()
+cameraSetZoom cam s =
+  oModifyS cam $
+    oScale .= s
+
+cameraZoom :: Object s Camera -> Duration -> Double -> Scene s ()
+cameraZoom cam d s =
+  oTweenS cam d $ \t ->
+    oScale %= \v -> fromToS v s t
+
+cameraSetPan :: Object s Camera -> (Double, Double) -> Scene s ()
+cameraSetPan cam location =
+  oModifyS cam $ do
+    oTranslate .= location
+
+cameraPan :: Object s Camera -> Duration -> (Double, Double) -> Scene s ()
+cameraPan cam d (x,y) =
+  oTweenS cam d $ \t -> do
+    oTranslate._1 %= \v -> fromToS v x t
+    oTranslate._2 %= \v -> fromToS v y t
 
 makeLenses ''Circle
 makeLenses ''Rectangle
