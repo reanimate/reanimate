@@ -85,6 +85,9 @@ module Reanimate.Scene
   , oScaleOrigin
   , oTopY
   , oBottomY
+  , oLeftX
+  , oRightX
+  , oCenterXY
   , newObject
   , oValue
   , oModify
@@ -689,15 +692,50 @@ data ObjectData a = ObjectData
   , _oScaleOrigin :: (Double, Double)
   }
 
-makeLenses ''ObjectData
+-- Basic lenses
+
+oTranslate :: Lens' (ObjectData a) (Double, Double)
+oTranslate = lens _oTranslate $ \obj val -> obj { _oTranslate = val }
+
+oSVG :: Getter (ObjectData a) SVG
+oSVG = to _oSVG
+
+oContext :: Lens' (ObjectData a) (SVG -> SVG)
+oContext = lens _oContext $ \obj val -> obj { _oContext = _oContext obj . val  }
+
+oMargin :: Lens' (ObjectData a) (Double, Double, Double, Double)
+oMargin = lens _oMargin $ \obj val -> obj { _oMargin = val }
+
+oBB :: Getter (ObjectData a) (Double, Double, Double, Double)
+oBB = to _oBB
+
+oOpacity :: Lens' (ObjectData a) Double
+oOpacity = lens _oOpacity $ \obj val -> obj { _oOpacity = val }
+
+oShown :: Lens' (ObjectData a) Bool
+oShown = lens _oShown $ \obj val -> obj { _oShown = val }
+
+oZIndex :: Lens' (ObjectData a) Int
+oZIndex = lens _oZIndex $ \obj val -> obj { _oZIndex = val }
+
+oEasing :: Lens' (ObjectData a) Signal
+oEasing = lens _oEasing $ \obj val -> obj { _oEasing = val }
+
+oScale :: Lens' (ObjectData a) Double
+oScale = lens _oScale $ \obj val -> obj { _oScale = val }
+
+oScaleOrigin :: Lens' (ObjectData a) (Double, Double)
+oScaleOrigin = lens _oScaleOrigin $ \obj val -> obj { _oScaleOrigin = val }
+
+-- Smart lenses
 
 oValue :: Renderable a => Lens' (ObjectData a) a
 oValue = lens _oValueRef $ \obj newVal ->
     let svg = toSVG newVal
     in obj
-    & oValueRef .~ newVal
-    & oSVG      .~ svg
-    & oBB       .~ boundingBox svg
+    { _oValueRef = newVal
+    , _oSVG      = svg
+    , _oBB       = boundingBox svg }
 
 oTopY :: Lens' (ObjectData a) Double
 oTopY = lens getter setter
@@ -708,12 +746,8 @@ oTopY = lens getter setter
           h    = obj ^. oBBHeight
           dy   = obj ^. oTranslate . _2
       in dy+miny+h+top
-    setter obj val = 
-      let top  = obj ^. oMarginTop
-          miny = obj ^. oBBMinY
-          h    = obj ^. oBBHeight
-          dy   = val-miny-h-top
-      in obj & (oTranslate . _2) .~ dy
+    setter obj val =
+      obj & (oTranslate . _2) +~ val-getter obj
 
 oBottomY :: Lens' (ObjectData a) Double
 oBottomY = lens getter setter
@@ -724,10 +758,45 @@ oBottomY = lens getter setter
           dy   = obj ^. oTranslate . _2
       in dy+miny-bot
     setter obj val = 
-      let bot  = obj ^. oMarginBottom
-          miny = obj ^. oBBMinY
-          dy   = val-miny+bot
-      in obj & (oTranslate . _2) .~ dy
+      obj & (oTranslate . _2) +~ val-getter obj
+
+oLeftX :: Lens' (ObjectData a) Double
+oLeftX = lens getter setter
+  where
+    getter obj =
+      let left = obj ^. oMarginLeft
+          minx = obj ^. oBBMinX
+          dx   = obj ^. oTranslate . _1
+      in dx+minx-left
+    setter obj val =
+      obj & (oTranslate . _1) +~ val-getter obj
+
+oRightX :: Lens' (ObjectData a) Double
+oRightX = lens getter setter
+  where
+    getter obj =
+      let right = obj ^. oMarginRight
+          minx  = obj ^. oBBMinX
+          w     = obj ^. oBBWidth
+          dx    = obj ^. oTranslate . _1
+      in dx+minx+w+right
+    setter obj val =
+      obj & (oTranslate . _1) +~ val-getter obj
+
+oCenterXY :: Lens' (ObjectData a) (Double, Double)
+oCenterXY = lens getter setter
+  where
+    getter obj =
+      let minx    = obj ^. oBBMinX
+          miny    = obj ^. oBBMinY
+          w       = obj ^. oBBWidth
+          h       = obj ^. oBBHeight
+          (dx,dy) = obj ^. oTranslate
+      in (dx+minx+w/2, dy+miny+h/2)
+    setter obj (dx, dy) =
+      let (x,y) = getter obj in
+      obj & (oTranslate . _1) +~ dx-x
+          & (oTranslate . _2) +~ dy-y
 
 oMarginTop :: Lens' (ObjectData a) Double
 oMarginTop = oMargin . _1
@@ -741,16 +810,16 @@ oMarginBottom = oMargin . _3
 oMarginLeft :: Lens' (ObjectData a) Double
 oMarginLeft = oMargin . _4
 
-oBBMinX :: Lens' (ObjectData a) Double
+oBBMinX :: Getter (ObjectData a) Double
 oBBMinX = oBB . _1
 
-oBBMinY :: Lens' (ObjectData a) Double
+oBBMinY :: Getter (ObjectData a) Double
 oBBMinY = oBB . _2
 
-oBBWidth :: Lens' (ObjectData a) Double
+oBBWidth :: Getter (ObjectData a) Double
 oBBWidth = oBB . _3
 
-oBBHeight :: Lens' (ObjectData a) Double
+oBBHeight :: Getter (ObjectData a) Double
 oBBHeight = oBB . _4
 
 oModify :: Object s a -> (ObjectData a -> ObjectData a) -> Scene s ()
@@ -759,7 +828,7 @@ oModify (Object ref) fn = modifyVar ref fn
 oModifyS :: Object s a -> (State (ObjectData a) b) -> Scene s ()
 oModifyS o fn = oModify o (execState fn)
 
-oRead :: Object s a -> Lens' (ObjectData a) b -> Scene s b
+oRead :: Object s a -> Getting b (ObjectData a) b -> Scene s b
 oRead (Object ref) l = do
   v <- readVar ref
   return $ view l v
