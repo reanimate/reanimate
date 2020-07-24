@@ -97,7 +97,6 @@ module Reanimate.Scene
   , oTweenS
   , oTweenV
   , oTweenVS
-  , withEasing
 
   -- ** Graphics object methods
   , oShow
@@ -958,9 +957,6 @@ cameraPan cam d (x,y) =
 makeLenses ''Circle
 makeLenses ''Rectangle
 makeLenses ''Morph
-
-withEasing :: Signal -> (Double -> c) -> (Double -> c)
-withEasing signal fn = fn . signal
 
 oShow :: Object s a -> Scene s ()
 oShow o = oModify o $ oShown .~ True
