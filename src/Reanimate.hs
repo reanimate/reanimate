@@ -179,6 +179,10 @@ module Reanimate
     -- * Constants
     screenWidth,
     screenHeight,
+    screenTop,
+    screenBottom,
+    screenLeft,
+    screenRight,
     defaultDPI,
     defaultStrokeWidth,
     -- * Parameters

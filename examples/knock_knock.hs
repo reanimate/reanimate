@@ -49,9 +49,6 @@ main = reanimate $ docEnv $ mapA (withFillOpacity 1) $ sceneAnimation $ do
 
   wait 1
 
-screenTop :: Double
-screenTop = screenHeight/2
-
 oModifyMany :: [Object s a] -> (ObjectData a -> ObjectData a) -> Scene s ()
 oModifyMany os m = forM_ os $ \o -> oModify o m
 
