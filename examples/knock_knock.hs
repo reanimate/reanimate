@@ -7,7 +7,6 @@ import           Control.Lens
 import           Control.Monad
 import           Data.Text                       (Text)
 import           Reanimate
-import           Reanimate.Animation             (Duration)
 import           Reanimate.Builtin.Documentation
 import           Reanimate.LaTeX
 import           Reanimate.Scene
