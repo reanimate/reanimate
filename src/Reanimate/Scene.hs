@@ -710,7 +710,7 @@ oSVG :: Getter (ObjectData a) SVG
 oSVG = to _oSVG
 
 oContext :: Lens' (ObjectData a) (SVG -> SVG)
-oContext = lens _oContext $ \obj val -> obj { _oContext = _oContext obj . val  }
+oContext = lens _oContext $ \obj val -> obj { _oContext = val  }
 
 oMargin :: Lens' (ObjectData a) (Double, Double, Double, Double)
 oMargin = lens _oMargin $ \obj val -> obj { _oMargin = val }

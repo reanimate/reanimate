@@ -38,6 +38,7 @@ module Reanimate
     -- * Animations
     SVG,
     Time,
+    Duration,
     Animation(..),
     mkAnimation,
     animate,
