@@ -38,7 +38,6 @@ import           Data.AdditiveGroup
 import           Data.List              (minimumBy, nub, partition, sortOn)
 import           Data.Ord
 import qualified Data.Vector            as V
-import           Debug.Trace
 import           Geom2D                 (rotate90L, rotate90R, ($*), (^*))
 import           Geom2D.CubicBezier     (ClosedPath (..), CubicBezier (..),
                                          DPoint, FillRule (..), PathJoin (..),
@@ -356,7 +355,7 @@ plGroupShapes = worker
               { polyShapeParent = s
               , polyShapeHoles  = holes }
         in prime : worker nonHoles
-      | otherwise = trace "Found hole, putting back" $ worker (rest ++ [s])
+      | otherwise = worker (rest ++ [s])
     worker [] = []
 
     parents :: PolyShape -> [PolyShape] -> [PolyShape]
