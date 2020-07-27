@@ -42,12 +42,13 @@ import           Debug.Trace
 import           Geom2D                 (rotate90L, rotate90R, ($*), (^*))
 import           Geom2D.CubicBezier     (ClosedPath (..), CubicBezier (..),
                                          DPoint, FillRule (..), PathJoin (..),
-                                         Point (..), arcLength, arcLengthParam,
-                                         bezierIntersection, bezierSubsegment,
-                                         closedPathCurves, closest, colinear,
-                                         curvesToClosed, evalBezier,
-                                         interpolateVector, reorient,
-                                         splitBezier, union, vectorDistance)
+                                         Point (..), QuadBezier (..), arcLength,
+                                         arcLengthParam, bezierIntersection,
+                                         bezierSubsegment, closedPathCurves,
+                                         closest, colinear, curvesToClosed,
+                                         evalBezier, interpolateVector,
+                                         quadToCubic, reorient, splitBezier,
+                                         union, vectorDistance)
 import           Graphics.SvgTree       (PathCommand (..), RPoint, Tree (..),
                                          defaultSvg, pathDefinition)
 import           Linear.V2
@@ -291,12 +292,18 @@ cmdsToPolyShapes cmds =
       finalize acc []
     worker from acc (LineBezier [x]:xs) =
       worker x ((toGPoint from, JoinLine) : acc) xs
+    worker from acc (LineBezier [a,b]:xs) =
+      let quad = QuadBezier (toGPoint from) (toGPoint a) (toGPoint b)
+          CubicBezier _ a' b' c' = quadToCubic quad
+      in worker from acc (LineBezier (map fromGPoint [a',b',c']):xs)
     worker from acc (LineBezier [a,b,c]:xs) =
       worker c ((toGPoint from, JoinCurve (toGPoint a) (toGPoint b)) : acc) xs
     worker _ _ _ = bad
 
     toGPoint :: RPoint -> Point Double
     toGPoint (V2 x y) = Point x y
+    fromGPoint :: Point Double -> RPoint
+    fromGPoint (Point x y) = V2 x y
 
 unionPolyShapes :: [PolyShape] -> [PolyShape]
 unionPolyShapes shapes =
