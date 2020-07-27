@@ -40,6 +40,7 @@ import           Reanimate.Morph.Linear
 import           Reanimate.Morph.LeastDifference
 import           Reanimate.PolyShape           (svgToPolygons)
 import           Reanimate.Debug
+import qualified Reanimate.Math.Compatible as Compat
 
 extraPoints = 0
 
@@ -49,8 +50,21 @@ extraPoints = 0
 -- p1 = centerPolygon shape2
 -- p2 = pScale 2 $ pAtCenter $ pAddPoints extraPoints (pSetOffset shape14 0 )
 
-p1 = pAddPoints extraPoints $ (pAtCenter $ unsafeSVGToPolygon 0.01 $ scale 6 $ latex "S")
-p2 = pAddPoints extraPoints $ (pAtCenter $ unsafeSVGToPolygon 0.01 $ scale 6 $ latex "C")
+-- p1 = pAddPoints extraPoints $ (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "S")
+-- p2 = pAddPoints extraPoints $ (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "C")
+p1 = pAddPoints extraPoints $ (pAtCenter $ unsafeSVGToPolygon 0.01 $ scale 6 $ latex "I")
+p2 = pAddPoints extraPoints $ (pAtCenter $ unsafeSVGToPolygon 0.01 $ scale 6 $ latex "L")
+
+p1_ = castPolygon p1
+p2_ = castPolygon p2
+polys = triangulate_ p1_ p2_
+p1_circ = circumference (map fst polys') p1_
+p2_circ = circumference (map snd polys') p2_
+
+polys' = alignPolygons polys p1_ p2_
+polys'' = compatTriagPairs polys'
+
+-- (p1_circ, p2_circ) = closestLinearCorrespondence p1_circ' p2_circ'
 
 -- (p1s, p2s) = unzip $ triangulate p1 p2
 
@@ -60,89 +74,51 @@ main = reanimate $ sceneAnimation $ do
   bg <- newSpriteSVG $ mkBackground "black"
   spriteZ bg (-1)
 
-  let leastDiffTrig = triangulate p1 p2
-  forM_ (zip [0..] leastDiffTrig) $ \(n,(l, r)) -> do
-    let c = promotePixel $ turbo (n/fromIntegral (length leastDiffTrig-1))
+  -- let leastDiffTrig = triangulate p1 p2
+  let lst = polys'
+  -- let lst = take 10 $ uncurry Compat.compatiblyTriangulateP (polys'!!3) -- polys''
+  -- let lst = polys''
+  forM_ (zip [0..] lst {-([polys''!!2]++p_snd)-}) $ \(n,(l, r)) -> do
+    let c = promotePixel $ turbo (n/fromIntegral (length lst-1))
     newSpriteSVG_ $ 
-      -- translate (-3) 0 $ withFillColor "grey" $ polygonShape l
-      translate (-5) 0 $ withFillColorPixel c $ mkGroup
-      [ polygonShape l
-      --, polygonNumDots l
-      ]
-    newSpriteSVG_ $ 
-      -- translate (3) 0 $ withFillColor "grey" $ polygonShape r
       translate (-2) 0 $ withFillColorPixel c $ mkGroup
-      [ polygonShape r
-      --, polygonNumDots r
+      [ polygonShape (castPolygon l)
+      -- , polygonNumDots (castPolygon l)
+      ]
+    newSpriteSVG_ $ 
+      translate (2) 0 $ withFillColorPixel c $ mkGroup
+      [ polygonShape (castPolygon r)
+      -- , polygonNumDots (castPolygon r)
+      ]
+    nums <- newSpriteSVG $ mkGroup
+      [ translate (-2) 0 $ polygonNumDots (castPolygon l)
+      , translate (2) 0 $ polygonNumDots (castPolygon r)
       ]
     wait (1/60)
-  let (p1l, p2l) = closestLinearCorrespondence p1 p2
-      compatTrig = [] -- compatiblyTriangulateP (pCopy p1l) (pCopy p2l)
-  forM_ (zip [0..] compatTrig) $ \(n,(l, r)) -> do
-    let c = promotePixel $ turbo (n/fromIntegral (length compatTrig-1))
-    newSpriteSVG_ $ 
-      -- translate (-3) 0 $ withFillColor "grey" $ polygonShape l
-      translate (2) 0 $ withFillColorPixel c $ mkGroup
-      [ polygonShape l
-      , polygonNumDots l ]
-    newSpriteSVG_ $ 
-      -- translate (3) 0 $ withFillColor "grey" $ polygonShape r
-      translate (5) 0 $ withFillColorPixel c $ mkGroup
-      [ polygonShape r
-      , polygonNumDots r ]
-    wait (1/60)
-  -- wait 1
-  let worker l r offset len | pSize l == 3 || pSize r == 3 = return ()
-      worker l r offset len = do
-        fork $ play $ animate $ \t ->
-          translate (-3) offset $ showP l
-        fork $ play $ animate $ \t ->
-          translate (3) offset $ showP r
-        wait 1
-        let (ll, lr) = pCutEqual l
-            (rl, rr) = pCutEqual r
-        fork $ play $ animate $ \t ->
-          translate (-3) (offset+t*len) $ showP ll
-        fork $ play $ animate $ \t ->
-          translate (-3) (offset-t*len) $ showP lr
-        fork $ play $ animate $ \t ->
-          translate (3) (offset+t*len) $ showP rl
-        fork $ play $ animate $ \t ->
-          translate (3) (offset-t*len) $ showP rr
-
-        wait 1
-
-        fork $ worker ll rl (offset+len) (len/3)
-        fork $ worker lr rr (offset-len) (len/3)
-
-  -- fork $ worker p1 p2 0 1
-
-  -- fork $ play $ staticFrame 1 $ 
-  --   translate (-6) 0 $ mkGroup
-  --   [ withFillColor "grey" $ polygonShape p1
-  --   , polygonNumDots p1 ]
-  -- fork $ play $ staticFrame 1 $ 
-  --   translate (6) 0 $ mkGroup
-  --   [ withFillColor "grey" $ polygonShape p2
-  --   , polygonNumDots p2 ]
+    destroySprite nums
   
-  -- fork $ play $ staticFrame 1 $ 
-  --   translate (2) 1 $ mkGroup
-  --   [ withFillColor "grey" $ polygonShape p2l
-  --   , polygonNumDots p2l ]
-  -- fork $ play $ staticFrame 1 $ 
-  --   translate (2) 0 $ mkGroup
-  --   [ withFillColor "grey" $ polygonShape p2r
-  --   , polygonNumDots p2r ]
+  -- fork $ play $ staticFrame (1/60) $ mkGroup
+  --   [ translate (2) 0 $ mkGroup
+  --     [ withFillColor "grey" $ polygonShape p2_circ
+  --     , polygonNumDots p2_circ
+  --     ]
+  --   , translate (6) 0 $ mkGroup
+  --     [ withFillColor "grey" $ polygonShape p2
+  --     , polygonNumDots p2
+  --     ]
+  --   ]
+  -- play $ staticFrame (1/60) $ mkGroup
+  --   [ translate (-2) 0 $ mkGroup
+  --     [ withFillColor "grey" $ polygonShape p1_circ
+  --     , polygonNumDots p1_circ
+  --     ]
+  --   , translate (-6) 0 $ mkGroup
+  --     [ withFillColor "grey" $ polygonShape p1
+  --     , polygonNumDots p1
+  --     ]
+  --   ]
+
   
-  -- fork $ play $ staticFrame 1 $ 
-  --   translate (-2) 1 $ mkGroup
-  --   [ withFillColor "grey" $ polygonShape p1l
-  --   , polygonNumDots p1l ]
-  -- fork $ play $ staticFrame 1 $ 
-  --   translate (-2) 0 $ mkGroup
-  --   [ withFillColor "grey" $ polygonShape p1r
-  --   , polygonNumDots p1r ]
   return ()
 
 

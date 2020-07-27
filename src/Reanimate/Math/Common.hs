@@ -78,29 +78,34 @@ epsilon = 1e-13
 epsEq :: (Ord a, Fractional a) => a -> a -> Bool
 epsEq a b = abs (a-b) < epsilon
 
+compareEpsZero :: (Ord a, Fractional a) => a -> Ordering
+compareEpsZero val
+  | abs val < epsilon = EQ
+  | otherwise         = compare val 0
+
 {-# INLINE isLeftTurn #-}
 -- Left turn.
-isLeftTurn :: (Num a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+isLeftTurn :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
 isLeftTurn p1 p2 p3 =
-  case compare (direction p1 p2 p3) 0 of
+  case compareEpsZero (direction p1 p2 p3) of
     LT -> True
-    EQ -> False -- colnear
+    EQ -> False -- colinear
     GT -> False
 
 {-# INLINE isLeftTurnOrLinear #-}
-isLeftTurnOrLinear :: (Num a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+isLeftTurnOrLinear :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
 isLeftTurnOrLinear p1 p2 p3 =
-  case compare (direction p1 p2 p3) 0 of
+  case compareEpsZero (direction p1 p2 p3) of
     LT -> True
-    EQ -> True -- colnear
+    EQ -> True -- colinear
     GT -> False
 
 {-# INLINE isRightTurn #-}
-isRightTurn :: (Num a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+isRightTurn :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
 isRightTurn a b c = not (isLeftTurnOrLinear a b c)
 
 {-# INLINE isRightTurnOrLinear #-}
-isRightTurnOrLinear :: (Num a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+isRightTurnOrLinear :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
 isRightTurnOrLinear a b c = not (isLeftTurn a b c)
 
 {-# INLINE direction #-}

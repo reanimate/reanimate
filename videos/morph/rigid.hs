@@ -4,53 +4,47 @@
 module Main where
 
 import           Codec.Picture.Types
-import           Control.Lens                             ( )
-import           Control.Monad
 import           Control.Exception
+import           Control.Lens                    ()
+import           Control.Monad
 import           Data.Function
 import           Data.List
-import           Text.Printf
-import           Data.List.NonEmpty                       ( NonEmpty )
-import qualified Data.List.NonEmpty            as NE
+import           Data.List.NonEmpty              (NonEmpty)
+import qualified Data.List.NonEmpty              as NE
 import           Data.Maybe
 import           Data.Ratio
-import qualified Data.Text                     as T
+import qualified Data.Text                       as T
 import           Data.Tuple
-import qualified Data.Vector                   as V
+import qualified Data.Vector                     as V
 import           Debug.Trace
-import           Linear.Matrix                     hiding ( trace )
+import           Linear.Matrix                   hiding (trace)
 import           Linear.Metric
 import           Linear.V2
 import           Linear.V3
 import           Linear.Vector
-import           Numeric.LinearAlgebra             hiding ( polar
-                                                          , scale
-                                                          , (<>)
-                                                          )
-import qualified Numeric.LinearAlgebra         as Matrix
-import           Numeric.LinearAlgebra.HMatrix     hiding ( polar
-                                                          , scale
-                                                          , (<>)
-                                                          )
+import           Numeric.LinearAlgebra           hiding (polar, scale, (<>))
+import qualified Numeric.LinearAlgebra           as Matrix
+import           Numeric.LinearAlgebra.HMatrix   hiding (polar, scale, (<>))
 import           Reanimate
 import           Reanimate.Builtin.Documentation
+import           Reanimate.Debug
 import           Reanimate.Math.Balloon
 import           Reanimate.Math.Common
-import           Reanimate.Math.Polygon
+import           Reanimate.Math.Compatible       (compatiblyTriangulateP)
+import qualified Reanimate.Math.DCEL             as DCEL
 import           Reanimate.Math.EarClip
+import           Reanimate.Math.Polygon
+import           Reanimate.Math.Render
+import           Reanimate.Math.Smooth
 import           Reanimate.Math.SSSP
 import           Reanimate.Math.Visibility
-import           Reanimate.Math.Smooth
-import           Reanimate.Math.Render
-import           Reanimate.Math.Compatible                ( compatiblyTriangulateP
-                                                          )
 import           Reanimate.Morph.Common
+import           Reanimate.Morph.LeastDifference
+import           Reanimate.Morph.LeastWork
 import           Reanimate.Morph.Linear
 import           Reanimate.Morph.Rigid
-import           Reanimate.Debug
-import           Reanimate.Morph.LeastWork
-import           Reanimate.PolyShape                      ( svgToPolygons )
-import qualified Reanimate.Math.DCEL as DCEL
+import           Reanimate.PolyShape             (svgToPolygons)
+import           Text.Printf
 
 -- p1 = centerPolygon $ shape2
 --p1 = pScale 3.5 $ pAtCenter $ pAddPoints (0+2) (pSetOffset shape13 0)
@@ -63,35 +57,45 @@ p1 = pCopy $ pSetOffset (pCopy p1') 0
 p2 = pCopy $ pSetOffset (pCopy p2') 0
 (p1', p2') =
   -- normalizePolygons
-  closestLinearCorrespondence
+  -- closestLinearCorrespondence
+  (,)
   -- leastWork zeroStretchCosts defaultBendCosts
   -- leastWork defaultStretchCosts defaultBendCosts
-  (pAtCenter $ unsafeSVGToPolygon 0.01 $ scale 6 $ latex "X")
-  (pAtCenter $ unsafeSVGToPolygon 0.01 $ scale 6 $ latex "$\\aleph$")
   -- (pAtCenter $ unsafeSVGToPolygon 0.01 $ scale 6 $ latex "S")
   -- (pAtCenter $ unsafeSVGToPolygon 0.01 $ scale 6 $ latex "C")
+  (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "I")
+  (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "L")
 
-(p1s,p2s) = unzip (compatiblyTriangulateP p1 p2)
+p1_ = castPolygon p1
+p2_ = castPolygon p2
+polys = triangulate_ p1_ p2_
+p1_circ = castPolygon (circumference (map fst polys') p1_)
+p2_circ = castPolygon (circumference (map snd polys') p2_)
 
-m2 = DCEL.buildMesh $ DCEL.polygonsMesh 
-        (map (fmap realToFrac) $ V.toList $ polygonPoints p2)
+polys' = alignPolygons polys p1_ p2_
+(p1s, p2s) = unzip $ compatTriagPairs [ (castPolygon a, castPolygon b) | (a,b) <- polys' ]
+
+-- (p1s,p2s) = unzip (compatiblyTriangulateP p1 p2)
+
+m2 = DCEL.buildMesh $ DCEL.polygonsMesh
+        (map (fmap realToFrac) $ V.toList $ polygonPoints p2_circ)
         (map (map (fmap realToFrac) . V.toList . polygonPoints) p2s)
 
-m1 = DCEL.buildMesh $ DCEL.polygonsMesh 
-        (map (fmap realToFrac) $ V.toList $ polygonPoints p1)
+m1 = DCEL.buildMesh $ DCEL.polygonsMesh
+        (map (fmap realToFrac) $ V.toList $ polygonPoints p1_circ)
         (map (map (fmap realToFrac) . V.toList . polygonPoints) p1s)
 
-pipeline1 = last . take 20 . iterate 
+pipeline1 = last . take 20 . iterate
   ( uncurry DCEL.delaunayFlip .
-    uncurry DCEL.splitInternalEdges . 
+    uncurry DCEL.splitInternalEdges .
    (\(a,b) -> (DCEL.meshSmoothPosition a, DCEL.meshSmoothPosition b)))
-(m1final, m2final) = last $ take 30 $ iterate 
+(m1final, m2final) = last $ take 30 $ iterate
   (pipeline1 .
     uncurry DCEL.splitLongestEdge .
     pipeline1
     ) (m1,m2)
 
--- (m1good, m2good) = last $ take 9 $ iterate 
+-- (m1good, m2good) = last $ take 9 $ iterate
 --   (pipeline1 .
 --     -- uncurry DCEL.splitLongestEdge .
 --     pipeline1
@@ -115,11 +119,11 @@ main = reanimate $ sceneAnimation $ do
   --   $ 20
   -- play $ playTraces $ last $ take 35 $ compatiblyTriangulateP p1 p2
   -- fork $ newSpriteA $ drawCompatible p1 p2
-  -- newSpriteSVG_ $ translate (5) 0 $ lowerTransformations $ scale 2 $ 
+  -- newSpriteSVG_ $ translate (5) 0 $ lowerTransformations $ scale 2 $
   --   -- DCEL.renderMesh 0.02 m1final
   --   DCEL.renderMeshColored m1final
     -- renderMeshPair optMesh
-  -- newSpriteSVG_ $ translate (-5) 0 $ lowerTransformations $ scale 2 $ 
+  -- newSpriteSVG_ $ translate (-5) 0 $ lowerTransformations $ scale 2 $
   --   DCEL.renderMesh 0.02 m1good
 
   -- newSpriteSVG_ $
@@ -154,13 +158,13 @@ main = reanimate $ sceneAnimation $ do
   --   wait (1/60)
   --   -- wait 1
 
-  fork $ play $ mkAnimation 3 $ \t ->
-    let points = interpolate prep t
-    in  translate (-3) 0 $ scale 1 $ mkGroup
-    [ mkGroup []
-    , drawTrigs points (meshTriangles myMesh)
-    -- , DCEL.renderMeshColored m1
-    ]
+  -- fork $ play $ mkAnimation 3 $ \t ->
+  --   let points = interpolate prep t
+  --   in  translate (-3) 0 $ scale 1 $ mkGroup
+  --   [ mkGroup []
+  --   , drawTrigs points (meshTriangles myMesh)
+  --   -- , DCEL.renderMeshColored m1
+  --   ]
   fork $ play $ mkAnimation 3 $ \t ->
     let points = interpolate optPrep t
     in  translate (3) 0 $ lowerTransformations $ scale 1 $ mkGroup

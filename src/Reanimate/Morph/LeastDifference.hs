@@ -4,21 +4,14 @@ module Reanimate.Morph.LeastDifference where
 import           Control.Applicative
 import           Control.Monad
 import           Data.List
-import           Data.Maybe
 import           Data.Ord
-import qualified Data.Text                 as T
-import           Data.Tuple
-import qualified Data.Vector               as V
+import           Data.Maybe
 import           Linear.V2
-import           Linear.Vector
-import           Reanimate.Debug
-import           Reanimate.LaTeX
+import qualified Data.Vector as V
 import           Reanimate.Math.Common
 import qualified Reanimate.Math.Compatible as Compat
 import           Reanimate.Math.Polygon
-import           Reanimate.Math.Render
 import           Reanimate.Morph.Common
-import           Reanimate.Svg
 import           Reanimate.Morph.Linear
 
 import Debug.Trace
@@ -26,6 +19,7 @@ import Debug.Trace
 leastDifference :: PointCorrespondence
 leastDifference = undefined
 
+pCutsTop :: (Real a, Fractional a) => [(V2 a, V2 a)] -> APolygon a -> [(APolygon a, APolygon a, [Topology], [Topology], (V2 a, V2 a))]
 pCutsTop edges p =
   [ (l, r, topL, topR, edge)
   | (l, r) <- pCuts p
@@ -108,41 +102,95 @@ triangulate_ a b
 triangulate' :: (Real a, Fractional a) => [(Edge a,Edge a)] -> APolygon a -> APolygon a -> [(APolygon a,APolygon a)]
 triangulate' edges a b
   | pSize a == 3 || pSize b == 3 = giveUp
-  | trace (show (pSize a, pSize b)) False = undefined
+  -- | trace (show (pSize a, pSize b)) False = undefined
   | Just ((al,ar),(bl,br), newEdges) <- pCompatibleCut edges a b
     = -- traceSVG (helper "topology") $
       triangulate' newEdges al bl ++ triangulate' newEdges ar br
     -- = [(al,bl), (ar,br)]
   | otherwise = giveUp
   where
-    -- helper msg = mkGroup
-    --   [ translate (-3) 2 $ withFillColor "grey" $ polygonShape a
-    --   , translate (-4) (-2) $ withFillColor "grey" $ polygonShape al
-    --   , translate (-4) (-2) $ polygonNumDots al
-    --   , translate (-2) (-2) $ withFillColor "grey" $ polygonShape ar
-    --   , translate (-2) (-2) $ polygonNumDots ar
-    --   , translate (3) 2 $ withFillColor "grey" $ polygonShape b
-    --   , translate 0 4 $ center $ latex msg
-    --   , translate 0 (-2) $ center $ scale 0.5 $ latex $ T.pack $ show (pTopology (map fst newEdges) al)
-    --   , translate 0 (-3) $ center $ scale 0.5 $ latex $ T.pack $ show (pTopology (map fst newEdges) ar)
-    --   , translate (-3) 2 $ mkGroup
-    --     [ withStrokeColor "green" $ mkLine (x1,y1) (x2,y2)
-    --     | (e1, e2) <- map fst newEdges
-    --     , let V2 x1 y1 = realToFrac <$> e1
-    --           V2 x2 y2 = realToFrac <$> e2
-    --     ]
-    --   , translate (3) 2 $ mkGroup
-    --     [ withStrokeColor "green" $ mkLine (x1,y1) (x2,y2)
-    --     | (e1, e2) <- map snd newEdges
-    --     , let V2 x1 y1 = realToFrac <$> e1
-    --           V2 x2 y2 = realToFrac <$> e2
-    --     ]
-    --   ]
     giveUp =
       let aNewEdges = max 0 (pSize b - pSize a)
           bNewEdges = max 0 (pSize a - pSize b)
           a' = pAddPointsRestricted (map fst edges) aNewEdges a
           b' = pAddPointsRestricted (map snd edges) bNewEdges b
-          (a'', b'') = closestLinearCorrespondenceA a' b'
-      in [(a'', b'')]
+          -- (a'', b'') = closestLinearCorrespondenceA a' b'
+      in [(a, b)]
         --Compat.compatiblyTriangulateP a'' b''
+
+polygonLengths :: Eq a => [APolygon a] -> APolygon a -> [(Int, Int, Int)]
+polygonLengths polys origin' = worker 0
+  where
+    Just firstIdx = V.elemIndex (pAccess (head polys) 0) (polygonPoints origin')
+    origin = pSetOffset origin' firstIdx
+    polyLength a b
+      | V.elem (pAccess a 1) (polygonPoints b)
+        = 1 + polyLength (pAdjustOffset a 1) b
+      | otherwise
+        = 0
+    findPoly idx a b = fromMaybe (error $ "Missing: " ++ show idx) $ listToMaybe
+      [ (n, p, (i+polygonOffset p) `mod` pSize p)
+      | (n, p) <- zip [0..] polys
+      , let pts = polygonPoints p
+      , Just i <- [V.elemIndex a pts]
+      , V.elem b pts
+      ]
+    worker n | n == pSize origin = []
+    worker n =
+      let (polyIdx, poly, polyKey) = findPoly n (pAccess origin n) (pAccess origin $ n+1)
+          originHere = pAdjustOffset origin n
+          len = polyLength originHere poly
+      in (polyIdx, polyKey, len) : worker (n+len)
+
+
+alignPolygons :: (Fractional a, Real a, Eq a) =>
+  [(APolygon a, APolygon a)] -> APolygon a -> APolygon a -> [(APolygon a, APolygon a)]
+alignPolygons polys originL originR =
+    zip
+      (worker 0 (map fst polys) diffsL)
+      (worker 0 (map snd polys) diffsR)
+  where
+    lensL = polygonLengths (map fst polys) originL
+    lensR = polygonLengths (map snd polys) originR
+    diffsL = sortOn sortKey $ zipWith mkDiff lensL lensR
+    diffsR = sortOn sortKey $ zipWith mkDiff lensR lensL
+    worker n (y:ys) ((i,k,l,d):xs) | n < i
+      = y : worker (n+1) ys ((i,k,l,d):xs)
+    worker n (y:ys) ((i,k,l,0):xs)
+      = worker n (y:ys) xs
+    worker n (y:ys) ((i,k,l,d):xs)
+      = let y' = pAddPointsBetween (k,l) d y
+        in worker n (y':ys) xs
+    worker _ ys [] = ys
+    worker _ _ _ = error "bad worker input"
+    mkDiff (li, lk, ll) (_ri, _rk, rl) =
+      (li, lk, ll, max 0 (rl-ll))
+    sortKey (i, k, _l, _d) = (i,Down k)
+
+compatTriagPairs :: (Real a, Fractional a) => [(APolygon a, APolygon a)] -> [(APolygon a, APolygon a)]
+compatTriagPairs = concatMap (uncurry Compat.compatiblyTriangulateP)
+
+circumference :: (Real a, Fractional a) => [APolygon a] -> APolygon a -> APolygon a
+circumference polys origin' = mkPolygon $ V.fromList $ worker 0
+  where
+    Just firstIdx = V.elemIndex (pAccess (head polys) 0) (polygonPoints origin')
+    origin = pSetOffset origin' firstIdx
+    fromTo i j p
+      | i < j     = [i .. j-1]
+      | otherwise = [i .. pSize p-1] ++ [0..j-1]
+    check [] = error "no results"
+    check [x] = x
+    check _ = error "multiple results"
+    findPoints n a b = check -- fromMaybe (error $ "Missing: " ++ show n) $ listToMaybe
+      [ map (pAccess p) (fromTo i j p)
+      | p <- map (flip pSetOffset 0) polys
+      , let pts = polygonPoints p
+      , Just i <- [V.elemIndex a pts]
+      , Just j <- [V.elemIndex b pts]
+      , if n == 2 then trace ("Found: " ++ show (i,j)) True else True
+      ]
+    worker n | n == pSize origin = []
+    worker n =
+      let a = pAccess origin n
+          b = pAccess origin (n+1)
+      in findPoints n a b ++ worker (n+1)

@@ -36,6 +36,7 @@ module Reanimate.Math.Polygon
   , pCircumference'  -- :: (Real a, Fractional a) => APolygon a -> Double
   , pAddPoints       -- :: Int -> Polygon -> Polygon
   , pAddPointsRestricted -- :: [Int] -> Int -> Polygon -> Polygon
+  , pAddPointsBetween -- :: (Fractional a, Ord a, Real a) => (Int, Int) -> Int -> APolygon a -> APolygon a
   , pRayIntersect    -- :: Polygon -> (Int, Int) -> (Int,Int) -> Maybe (V2 Rational)
   , pOverlap         -- :: Polygon -> Polygon -> Polygon
   , pCuts         -- :: Polygon -> [(Polygon,Polygon)]
@@ -123,14 +124,14 @@ instance Show a => Show (APolygon a) where
 instance Hashable a => Hashable (APolygon a) where
   hashWithSalt s p = V.foldl' hashWithSalt s (polygonPoints p)
 
-instance (Real a, Serialize a) => Serialize (APolygon a) where
+instance (Real a, Fractional a, Serialize a) => Serialize (APolygon a) where
   put = put . V.toList . polygonPoints
   get = mkPolygon . V.fromList <$> get
 
 pRing :: APolygon a -> Ring a
 pRing = ringPack . polygonPoints
 
-mkPolygon :: Real a => V.Vector (V2 a) -> APolygon a
+mkPolygon :: (Real a, Fractional a) => V.Vector (V2 a) -> APolygon a
 mkPolygon points = Polygon
     { polygonPoints = points
     , polygonOffset = 0
@@ -146,7 +147,7 @@ mkPolygon points = Polygon
 castPolygon :: (Real a, Real b, Fractional b) => APolygon a -> APolygon b
 castPolygon = mkPolygon . V.map (fmap realToFrac) . polygonPoints
 
-mkPolygonFromRing :: (Real a, Ord a) => Ring a -> APolygon a
+mkPolygonFromRing :: (Real a, Fractional a, Ord a) => Ring a -> APolygon a
 mkPolygonFromRing = mkPolygon . ringUnpack
 
 pUnsafeMap :: (Ring a -> Ring a) -> APolygon a -> APolygon a
@@ -619,6 +620,23 @@ pAddPointsRestricted immutableEdges n p = pAddPointsRestricted immutableEdges (n
       distSquared (pAccess p a) (pAccess p $ a+1) `compare`
       distSquared (pAccess p b) (pAccess p $ b+1)
 
+pAddPointsBetween :: (Fractional a, Ord a, Real a) => (Int, Int) -> Int -> APolygon a -> APolygon a
+pAddPointsBetween _ n p | n <= 0 = p
+pAddPointsBetween (i,l) n p = pAddPointsBetween (i,l+1) (n-1) $
+    mkPolygon $ V.fromList $ concatMap worker [0 .. pSize p-1]
+  where
+    worker idx
+      | idx == longestEdge =
+        let start = pAccess p idx
+            end = pAccess p $ idx+1
+            middle = lerp 0.5 end start
+        in [start, middle]
+      | otherwise = [pAccess p idx]
+    longestEdge = maximumBy cmpLength [i .. i+l-1]
+    cmpLength a b =
+      distSquared (pAccess p a) (pAccess p $ a+1) `compare`
+      distSquared (pAccess p b) (pAccess p $ b+1)
+
 -- addPoints :: Int -> Polygon -> Polygon
 -- addPoints n p = mkPolygon $ V.fromList $ worker n 0 (map (pAccess p) [0..s])
 --   where
@@ -650,11 +668,11 @@ pIsCCW p = V.sum (pMapEdges fn p) < 0
     fn (V2 x1 y1) (V2 x2 y2) = (x2-x1)*(y2+y1)
 
 {-# INLINE pRayIntersect #-}
-pRayIntersect :: Polygon -> (Int, Int) -> (Int,Int) -> Maybe (V2 Rational)
+pRayIntersect :: (Fractional a, Ord a) => APolygon a -> (Int, Int) -> (Int,Int) -> Maybe (V2 a)
 pRayIntersect p (a,b) (c,d) =
   rayIntersect (pAccess p a, pAccess p b) (pAccess p c, pAccess p d)
 
-pCuts :: Real a => APolygon a -> [(APolygon a,APolygon a)]
+pCuts :: (Real a, Fractional a) => APolygon a -> [(APolygon a,APolygon a)]
 pCuts p =
   [ pCutAt (pAdjustOffset p i) (j-i)
   | i <- [0 .. pSize p-1 ]
@@ -669,14 +687,14 @@ pCutEqual p =
     f (a,b) = abs (pArea a - pArea b)
 
 -- FIXME: This should be more efficient
-pCutAt :: Real a => APolygon a -> Int -> (APolygon a, APolygon a)
+pCutAt :: (Real a, Fractional a) => APolygon a -> Int -> (APolygon a, APolygon a)
 pCutAt p i = (mkPolygon $ V.fromList left, mkPolygon $ V.fromList right)
   where
     n     = pSize p
     left  = map (pAccess p) [0 .. i]
     right = map (pAccess p) (0:[i..n-1])
 
-pOverlap :: Polygon -> Polygon -> Polygon
+pOverlap :: (Fractional a, Ord a, Real a) => APolygon a -> APolygon a -> APolygon a
 pOverlap a b = mkPolygon $ V.fromList $ clearDups $ concatMap edgeIntersect [0 .. pSize a-1]
   where
     clearDups (x:y:xs)
@@ -696,7 +714,7 @@ pOverlap a b = mkPolygon $ V.fromList $ clearDups $ concatMap edgeIntersect [0 .
 ---------------------------------------------------------
 -- SSSP visibility and SSSP windows
 
-ssspVisibility :: Polygon -> Polygon
+ssspVisibility :: (Real a, Fractional a) => APolygon a -> APolygon a
 ssspVisibility p = mkPolygon $
     V.fromList $ clearDups $ go [0 .. pSize p-1] -- ([root..pSize p-1]  ++ [0 .. root-1])
   where
