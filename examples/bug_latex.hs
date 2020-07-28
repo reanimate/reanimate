@@ -5,8 +5,6 @@ module Main(main) where
 
 import Reanimate
 import Reanimate.Builtin.Documentation
-import Reanimate.Morph.Common
-import Reanimate.Morph.Linear
 
 main :: IO ()
 main = reanimate $ docEnv $
