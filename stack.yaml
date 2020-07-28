@@ -7,3 +7,4 @@ packages:
 
 extra-deps:
 - earcut-0.1.0.4
+- reanimate-svg-0.10.0.0
