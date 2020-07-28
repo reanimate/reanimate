@@ -88,7 +88,7 @@ sphere {
   <0,0,0>, 4
   texture {
     uv_mapping pigment{
-      image_map{ png ${png_} }
+      image_map{ png "${png_}" }
     }
   }
   rotate <0,${rotY_},${rotZ_}>

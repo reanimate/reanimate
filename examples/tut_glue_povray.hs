@@ -75,7 +75,7 @@ polygon {
   <0, 0>, <0, 1>, <1, 1>, <1, 0>
   texture {
     pigment{
-      image_map{ png ${png_} }
+      image_map{ png "${png_}" }
     }
   }
   translate <-1/2,-1/2>
