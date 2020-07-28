@@ -23,13 +23,10 @@ import           Graphics.SvgTree
 import           Linear.V2
 import           Linear.Vector
 import           Reanimate
-import           Reanimate.Builtin.CirclePlot
-import           Reanimate.Builtin.Documentation
 import           Reanimate.Builtin.Images
-import           Reanimate.Morph.Common
-import           Reanimate.Morph.Linear
 import           System.Random
 
+seed1,seed2,seed3,seed4,seed5,seed6,seed7 :: StdGen
 (seed1:seed2:seed3:seed4:seed5:seed6:seed7:_) = map mkStdGen (randoms (mkStdGen 23958))
 
 spokes :: [(PixelRGB8, Double, Double, Double)]
@@ -51,11 +48,13 @@ balls = take 20
   | len <- randomRs (1,3) seed7
   ]
 
+ctx :: SVG -> SVG
 ctx = scale 0.7
 
 -- = CoordUserSpace   -- ^ `userSpaceOnUse` value
 --     | CoordBoundingBox -- ^ `objectBoundingBox` value
 
+whiteGithub :: SVG
 whiteGithub = withFillOpacity 1 $ withFillColor "white" $
   mkPath $
   extractPath $
@@ -163,15 +162,15 @@ slice =
   & strokeDashArray .~ pure
   [ Percent 0.10, Percent 1.90 ]
 
-colorWheel :: Int -> Int -> (Double -> PixelRGB8) -> SVG
-colorWheel buckets repeats colorMap =
-  scale 1.1 $ circlePlot 1000
-  (\ang r ->
-    let idx = round (((ang+pi)/(2*pi)) * buckets' * repeats') `mod` buckets
-    in promotePixel $ colorMap (fromIntegral idx * recip buckets'))
-  where
-    buckets' = fromIntegral buckets
-    repeats' = fromIntegral repeats
+-- colorWheel :: Int -> Int -> (Double -> PixelRGB8) -> SVG
+-- colorWheel buckets repeats cm =
+--   scale 1.1 $ circlePlot 1000
+--   (\ang _r ->
+--     let idx = round (((ang+pi)/(2*pi)) * buckets' * repeats') `mod` buckets
+--     in promotePixel $ cm (fromIntegral idx * recip buckets'))
+--   where
+--     buckets' = fromIntegral buckets
+--     repeats' = fromIntegral repeats
 
 unpackImage :: SVG -> SVG
 unpackImage (SvgTree doc) = unbox doc
