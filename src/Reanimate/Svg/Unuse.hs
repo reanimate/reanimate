@@ -21,7 +21,7 @@ replaceUses doc = doc & elements %~ map (mapTree replace)
     replace (UseTree use Nothing) =
       case Map.lookup (use^.useName) idMap of
         Nothing -> error $ "Unknown id: " ++ (use^.useName)
-        Just tree ->
+        Just tree -> mapTree replace $
           GroupTree $
           defaultSvg & groupChildren .~ [tree]
                      & transform ?~ [baseToTransformation (use^.useBase)]
