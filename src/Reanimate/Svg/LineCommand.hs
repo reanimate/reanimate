@@ -1,16 +1,15 @@
 module Reanimate.Svg.LineCommand where
 
-import           Control.Lens                 ((%~), (&), (.~))
+import           Control.Lens        ((%~), (&), (.~))
 import           Control.Monad.Fix
 import           Control.Monad.State
-import Data.Functor
-import           Graphics.SvgTree             hiding (height, line, path, use,
-                                               width)
-import           Linear.Metric
-import           Linear.V2                    hiding (angle)
-import           Linear.Vector
+import           Data.Functor
 import qualified Data.Vector.Unboxed as V
-import qualified Geom2D.CubicBezier           as Bezier
+import qualified Geom2D.CubicBezier  as Bezier
+import           Graphics.SvgTree    hiding (height, line, path, use, width)
+import           Linear.Metric
+import           Linear.V2           hiding (angle)
+import           Linear.Vector
 
 type CmdM a = State RPoint a
 
@@ -67,9 +66,27 @@ lineLength :: LineCommand -> CmdM Double
 lineLength cmd =
   case cmd of
     LineMove to       -> 0 <$ put to
-    -- LineDraw to       -> gets (distance to) <* put to
-    LineBezier points -> gets (distance (last points)) <* put (last points)
+    -- Straight line:
+    LineBezier [dst] -> gets (distance dst) <* put dst
+    -- Some kind of curve:
+    LineBezier lst -> do
+      from <- get
+      let bezier = rpointsToBezier (from:lst)
+          tol = 0.0001
+      put (last lst)
+      pure $ Bezier.arcLength bezier 1 tol
     LineEnd to        -> gets (distance to) <* put to
+
+rpointsToBezier :: [RPoint] -> Bezier.CubicBezier Double
+rpointsToBezier lst =
+  case map toBezierPoint lst of
+    [a,b] -> Bezier.CubicBezier a a b b
+    [a,b,c] -> Bezier.quadToCubic (Bezier.QuadBezier a b c)
+    [a,b,c,d] -> Bezier.CubicBezier a b c d
+    _ -> error $ "rpointsToBezier: Invalid list of points: " ++ show lst
+
+toBezierPoint :: RPoint -> Bezier.Point Double
+toBezierPoint (V2 a b) = Bezier.Point a b
 
 toLineCommands :: [PathCommand] -> [LineCommand]
 toLineCommands ps = evalState (worker zero Nothing ps) zero
