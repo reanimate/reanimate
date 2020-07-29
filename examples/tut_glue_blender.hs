@@ -67,8 +67,8 @@ script img bend transZ rotX rotY =
       rotX_ = T.pack $ show rotX
       rotY_ = T.pack $ show rotY
       yScale_ = T.pack $ show (fromToS (9/2) 4 bend)
-      pWidthT = T.pack $ show pWidth
-      pHeightT = T.pack $ show pHeight
+      pWidthT = T.pack $ show (max 800 pWidth)
+      pHeightT = T.pack $ show (max 450 pHeight)
   in [text|
 import os
 import math
