@@ -82,7 +82,7 @@ main = forever $ do
   void $ exec fastGhci ":m + Reanimate.Morph.Common"
   void $ exec fastGhci ":m + Reanimate.Morph.Linear"
   void $ exec fastGhci ":m + Reanimate.Scene"
-  void $ exec fastGhci ":m + Control.Lens"
+  void $ exec fastGhci "import Control.Lens hiding ((#), magma)"
   void $ exec fastGhci ":m + Codec.Picture.Types"
   void $ exec fastGhci ":set -XOverloadedStrings"
 
@@ -91,6 +91,7 @@ main = forever $ do
   (slowGhci, _loads) <- startGhciProcess slowProc (\_stream msg -> putStrLn msg)
 
   void $ exec slowGhci ":set -XOverloadedStrings"
+  void $ exec slowGhci ":import Graphics.SvgTree as SVG"
 
   args <- getArgs
   case args of
