@@ -37,7 +37,7 @@ opts = defaultConnectionOptions
 serve :: Bool -> Maybe FilePath -> [String] -> Maybe FilePath -> IO ()
 serve verbose mbGHCPath extraGHCOpts mbSelfPath = withManager $ \watch -> do
   hSetBuffering stdin NoBuffering
-  self <- maybe findOwnSource pure mbSelfPath
+  self <- maybe requireOwnSource pure mbSelfPath
   when verbose $
     putStrLn $ "Found own source code at: " ++ self
   hasConnectionVar <- newMVar False
@@ -176,20 +176,32 @@ ghcOptions tmpDir =
     ["-odir", tmpDir, "-hidir", tmpDir]
 
 -- FIXME: Move to a different module
--- FIXME: Gracefully disable code reloading if source is missing.
-findOwnSource :: IO FilePath
+requireOwnSource :: IO FilePath
+requireOwnSource = do
+  mbSelf <- findOwnSource
+  case mbSelf of
+    Nothing -> do
+      hPutStrLn stderr
+        "Rendering in browser window is only available when interpreting.\n\
+        \To render a video file, use the 'render' command or run again with --help\n\
+        \to see all available options."
+      exitFailure
+    Just self -> pure self
+
+findOwnSource :: IO (Maybe FilePath)
 findOwnSource = do
   fullArgs <- getFullArgs
   stackSource <- makeAbsolute (last fullArgs)
   exist <- doesFileExist stackSource
-  if exist
-    then return stackSource
+  if exist && isHaskellFile stackSource
+    then return (Just stackSource)
     else do
       prog <- getProgName
+      let hsProg
+            | isHaskellFile prog = prog
+            | otherwise = replaceExtension prog "hs"
       lst <- listDirectory "."
-      mbSelf <- findFile ("." : lst) prog
-      case mbSelf of
-        Nothing -> do
-          hPutStrLn stderr "Failed to find own source code."
-          exitFailure
-        Just self -> pure self
+      findFile ("." : lst) hsProg
+
+isHaskellFile :: FilePath -> Bool
+isHaskellFile path = takeExtension path `elem` [".hs", ".lhs"]
