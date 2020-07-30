@@ -246,7 +246,7 @@ generateFrames raster ani width_ height_ rate partial action = withTempDir $ \tm
         writeFile (frameName n) $ renderSvg width height $ nthFrame n
         modifyMVar_ done $ \nDone -> return (nDone + 1)
 
-  when (raster /= RasterNone)
+  when (isValidRaster raster)
     $ progressPrinter "rastered" frameCount
     $ \done -> handle h $ concurrentForM_ frames $ \n -> do
         applyRaster raster (frameName n)
@@ -254,6 +254,9 @@ generateFrames raster ani width_ height_ rate partial action = withTempDir $ \tm
 
   action (tmp </> rasterTemplate raster)
  where
+  isValidRaster RasterNone = False
+  isValidRaster RasterAuto = False
+  isValidRaster _ = True
 
   width  = Just $ Px $ fromIntegral width_
   height = Just $ Px $ fromIntegral height_
@@ -284,6 +287,7 @@ ppDiff diff | hours == 0 && mins == 0 = show secs ++ "s"
 
 rasterTemplate :: Raster -> String
 rasterTemplate RasterNone = "render-%05d.svg"
+rasterTemplate RasterAuto = "render-%05d.svg"
 rasterTemplate _          = "render-%05d.png"
 
 requireRaster :: Raster -> IO Raster
