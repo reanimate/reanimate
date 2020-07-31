@@ -109,6 +109,7 @@ library
                       Reanimate.Builtin.Images
                       Reanimate.Debug
                       Reanimate.Voice
+                      Reanimate.Internal.CubicBezier
   other-modules:      Reanimate.Cache
                       Reanimate.Driver
                       Reanimate.Driver.Check
