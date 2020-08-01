@@ -14,6 +14,7 @@ module Reanimate.Internal.CubicBezier
   , MetaNodeType(..)
   , C.GenericBezier(..)
   , C.FillRule(..)
+  , C.Tension(..)
   , quadToCubic
   , arcLength
   , arcLengthParam
@@ -21,9 +22,12 @@ module Reanimate.Internal.CubicBezier
   , colinear
   , evalBezier
   , evalBezierDeriv
+  , bezierHoriz
+  , bezierVert
   , C.bezierSubsegment
   , C.reorient
   , closedPathCurves
+  , openPathCurves
   , curvesToClosed
   , closest
   , unmetaOpen
@@ -32,6 +36,8 @@ module Reanimate.Internal.CubicBezier
   , bezierIntersection
   , interpolateVector
   , vectorDistance
+  , findBezierInflection
+  , findBezierCusp
   ) where
 
 import qualified Data.Vector.Unboxed as V
@@ -105,8 +111,14 @@ colinear bezier tol = C.colinear (downCast bezier) tol
 evalBezier :: (C.GenericBezier b, V.Unbox a, Fractional a) => b a -> a -> V2 a
 evalBezier c p = upCast $ C.evalBezier c p
 
-evalBezierDeriv :: (V.Unbox a, Fractional a) => C.GenericBezier b => b a -> a -> (V2 a, V2 a)
+evalBezierDeriv :: (V.Unbox a, Fractional a,C.GenericBezier b) => b a -> a -> (V2 a, V2 a)
 evalBezierDeriv c p = upCast $ C.evalBezierDeriv c p
+
+bezierHoriz :: CubicBezier Double -> [Double]
+bezierHoriz = C.bezierHoriz . downCast
+
+bezierVert :: CubicBezier Double -> [Double]
+bezierVert = C.bezierVert . downCast
 
 unmetaOpen :: OpenMetaPath Double -> OpenPath Double
 unmetaOpen = upCast . C.unmetaOpen . downCast
@@ -126,6 +138,9 @@ closest c p t = C.closest (downCast c) (downCast p) t
 closedPathCurves :: Fractional a => ClosedPath a -> [CubicBezier a]
 closedPathCurves = upCast . C.closedPathCurves . downCast
 
+openPathCurves :: Fractional a => OpenPath a -> [CubicBezier a]
+openPathCurves = upCast . C.openPathCurves . downCast
+
 curvesToClosed :: [CubicBezier a] -> ClosedPath a
 curvesToClosed = upCast . C.curvesToClosed . downCast
 
@@ -134,6 +149,12 @@ interpolateVector a b p = upCast $ C.interpolateVector (downCast a) (downCast b)
 
 vectorDistance :: Floating a => V2 a -> V2 a -> a
 vectorDistance a b = C.vectorDistance (downCast a) (downCast b)
+
+findBezierInflection :: CubicBezier Double -> [Double]
+findBezierInflection = C.findBezierInflection . downCast
+
+findBezierCusp :: CubicBezier Double -> [Double]
+findBezierCusp = C.findBezierCusp . downCast
 
 ------------------------------------------------------------
 -- Instances
