@@ -3,10 +3,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import           Control.Lens        ()
+import           Control.Lens                   ()
 import           Data.List
-import qualified Geom2D.CubicBezier  as G
+import           Linear.V2
 import           Reanimate
+import           Reanimate.Internal.CubicBezier
 import           Reanimate.PolyShape
 
 
@@ -55,17 +56,17 @@ polygonTest = animate $ \_ ->
 
 
 boxPolyShape :: PolyShape
-boxPolyShape = PolyShape $ G.ClosedPath
-  [(G.Point 0 0, G.JoinLine)
-  ,(G.Point 0 3, G.JoinLine)
-  ,(G.Point 1 3, G.JoinLine)
-  ,(G.Point 1 1, G.JoinLine)
-  ,(G.Point 2 1, G.JoinLine)
-  ,(G.Point 2 2, G.JoinLine)
-  ,(G.Point 0 2, G.JoinLine)
-  ,(G.Point 0 3, G.JoinLine)
-  ,(G.Point 3 3, G.JoinLine)
-  ,(G.Point 3 0, G.JoinLine)
+boxPolyShape = PolyShape $ ClosedPath
+  [(V2 0 0, JoinLine)
+  ,(V2 0 3, JoinLine)
+  ,(V2 1 3, JoinLine)
+  ,(V2 1 1, JoinLine)
+  ,(V2 2 1, JoinLine)
+  ,(V2 2 2, JoinLine)
+  ,(V2 0 2, JoinLine)
+  ,(V2 0 3, JoinLine)
+  ,(V2 3 3, JoinLine)
+  ,(V2 3 0, JoinLine)
   ]
 
 {-
@@ -78,12 +79,12 @@ squarePolyShape = PolyShape $ G.ClosedPath
 -}
 
 starPolyShape :: PolyShape
-starPolyShape = PolyShape $ G.ClosedPath
-  [(G.Point 0 0, G.JoinLine)
-  ,(G.Point 1 2, G.JoinLine)
-  ,(G.Point 2 0, G.JoinLine)
-  ,(G.Point 0 1, G.JoinLine)
-  ,(G.Point 2 1, G.JoinLine)
+starPolyShape = PolyShape $ ClosedPath
+  [(V2 0 0, JoinLine)
+  ,(V2 1 2, JoinLine)
+  ,(V2 2 0, JoinLine)
+  ,(V2 0 1, JoinLine)
+  ,(V2 2 1, JoinLine)
   ]
 
 main :: IO ()

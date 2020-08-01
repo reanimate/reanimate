@@ -8,7 +8,7 @@ where
 
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
-import           Graphics.SvgTree                hiding (V2, Text, height)
+import           Graphics.SvgTree                hiding (Text, height)
 import           Linear.Metric
 import           Linear.V2
 import           Linear.Vector
