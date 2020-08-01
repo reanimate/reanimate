@@ -6,22 +6,16 @@ module Main
   )
 where
 
-import           Reanimate
-import           Reanimate.Builtin.Documentation
+import           Data.Text                       (Text)
+import qualified Data.Text                       as T
+import           Graphics.SvgTree                hiding (Text, height)
+import           Linear.Metric
 import           Linear.V2
 import           Linear.Vector
-import           Linear.Metric
-import           Graphics.SvgTree                  hiding ( Text
-                                                          , Point
-                                                          , height
-                                                          )
-import           Data.Text                                ( Text )
-import qualified Data.Text                     as T
+import           Reanimate
+import           Reanimate.Builtin.Documentation
+import           Reanimate.Internal.CubicBezier
 import           Text.Printf
-import           Geom2D.CubicBezier                       ( QuadBezier(..)
-                                                          , evalBezier
-                                                          , Point(..)
-                                                          )
 
 newWidth, newHeight :: Double
 newWidth = 8
@@ -31,7 +25,7 @@ main :: IO ()
 main = reanimate $ mapA squareViewBox $ sceneAnimation $ do
   newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
   newSpriteSVG_ static
-  dotPath  <- newVar (QuadBezier (Point 0 0) (Point 0 0) (Point 0 0))
+  dotPath  <- newVar (QuadBezier (V2 0 0) (V2 0 0) (V2 0 0))
   dotParam <- newVar 0
   newSprite_ $ redDot <$> (evalBezier <$> unVar dotPath <*> unVar dotParam)
   let moveDot a b = do
@@ -40,18 +34,18 @@ main = reanimate $ mapA squareViewBox $ sceneAnimation $ do
         writeVar dotParam 0
         tweenVar dotParam 5 $ \v -> fromToS v 1 . curveS 2
         wait 1
-  moveDot (Point 0 1)     (Point 2 1)
-  moveDot (Point (-1) 0)  (Point (-1) 1.5)
-  moveDot (Point (0) 0)   (Point (-2) (-3))
-  moveDot (Point (0) 0)   (Point (2.5) (-1))
-  moveDot (Point (3) 1.5) (Point 1.5 1)
-  moveDot (Point (0) 0)   (Point 0 0)
+  moveDot (V2 0 1)     (V2 2 1)
+  moveDot (V2 (-1) 0)  (V2 (-1) 1.5)
+  moveDot (V2 (0) 0)   (V2 (-2) (-3))
+  moveDot (V2 (0) 0)   (V2 (2.5) (-1))
+  moveDot (V2 (3) 1.5) (V2 1.5 1)
+  moveDot (V2 (0) 0)   (V2 0 0)
 
 squareViewBox :: SVG -> SVG
 squareViewBox = withViewBox (-4, -4, 8, 8)
 
-redDot :: Point Double -> SVG
-redDot (Point x y) = translate x y $ mkGroup
+redDot :: V2 Double -> SVG
+redDot (V2 x y) = translate x y $ mkGroup
   [ translate 0 (-0.5) $ scale 0.5 $ outlinedText $ T.pack $ printf "%.1f,%.1f" x y
   , withFillColor "red" $ mkCircle 0.1
   ]

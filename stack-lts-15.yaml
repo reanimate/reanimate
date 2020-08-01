@@ -8,3 +8,4 @@ packages:
 extra-deps:
 - chiphunk-0.1.2.1
 - earcut-0.1.0.4@sha256:d5118b3eecf24d130263d81fb30f1ff56b1db43036582bfd1d8cc9ba3adae8be,1010
+- reanimate-svg-0.10.0.0

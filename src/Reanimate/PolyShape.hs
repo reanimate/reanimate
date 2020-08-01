@@ -32,30 +32,35 @@ module Reanimate.PolyShape
   , plGroupTouching
   ) where
 
-import           Chiphunk.Low
-import           Control.Lens           ((&), (.~))
-import           Data.AdditiveGroup
-import           Data.List              (minimumBy, nub, partition, sortOn)
+import           Control.Lens                   ((&), (.~))
+import           Data.List                      (minimumBy, nub, partition,
+                                                 sortOn)
 import           Data.Ord
-import qualified Data.Vector            as V
-import           Debug.Trace
-import           Geom2D                 (rotate90L, rotate90R, ($*), (^*))
-import           Geom2D.CubicBezier     (ClosedPath (..), CubicBezier (..),
-                                         DPoint, FillRule (..), PathJoin (..),
-                                         Point (..), arcLength, arcLengthParam,
-                                         bezierIntersection, bezierSubsegment,
-                                         closedPathCurves, closest, colinear,
-                                         curvesToClosed, evalBezier,
-                                         interpolateVector, reorient,
-                                         splitBezier, union, vectorDistance)
-import           Graphics.SvgTree       (PathCommand (..), RPoint, Tree (..),
-                                         defaultSvg, pathDefinition)
+import qualified Data.Vector                    as V
+import           Geometry.Earcut
+import           Graphics.SvgTree               (PathCommand (..), RPoint,
+                                                 Tree (..), defaultSvg,
+                                                 pathDefinition)
 import           Linear.V2
 import           Reanimate.Animation
 import           Reanimate.Constants
+import           Reanimate.Internal.CubicBezier (ClosedPath (..),
+                                                 CubicBezier (..),
+                                                 FillRule (..), PathJoin (..),
+                                                 QuadBezier (..), arcLength,
+                                                 arcLengthParam,
+                                                 bezierIntersection,
+                                                 bezierSubsegment,
+                                                 closedPathCurves, closest,
+                                                 colinear, curvesToClosed,
+                                                 evalBezier, interpolateVector,
+                                                 quadToCubic, reorient,
+                                                 splitBezier, union,
+                                                 vectorDistance)
 import           Reanimate.Math.EarClip
-import           Reanimate.Math.Polygon (Polygon, mkPolygon, pIsCCW, pRing,
-                                         pdualPolygons, polygonPoints)
+import           Reanimate.Math.Polygon         (Polygon, mkPolygon, pArea,
+                                                 pIsCCW, pRing, pdualPolygons,
+                                                 polygonPoints)
 import           Reanimate.Math.SSSP
 import           Reanimate.Svg
 
@@ -80,7 +85,7 @@ renderPolyShape pl =
 renderPolyShapePoints :: PolyShape -> Tree
 renderPolyShapePoints = mkGroup . map renderPoint . plCurves
   where
-    renderPoint (CubicBezier (Point x y) _ _ _) =
+    renderPoint (CubicBezier (V2 x y) _ _ _) =
       translate x y $ mkCircle 0.02
 
 plLength :: PolyShape -> Double
@@ -89,9 +94,7 @@ plLength = sum . map cubicLength . plCurves
     cubicLength c = arcLength c 1 polyShapeTolerance
 
 plArea :: PolyShape -> Double
-plArea pl = areaForPoly (map toVect $ plPolygonify polyShapeTolerance pl) 0
-  where
-    toVect (Point x y) = Vect x y
+plArea pl = realToFrac $ pArea $ plToPolygon polyShapeTolerance pl
 
 -- 1/10th of a pixel if rendered at 2560x1440
 polyShapeTolerance :: Double
@@ -100,11 +103,11 @@ polyShapeTolerance = screenWidth/25600
 plFromPolygon :: [RPoint] -> PolyShape
 plFromPolygon = PolyShape . ClosedPath . map worker
   where
-    worker (V2 x y) = (Point x y, JoinLine)
+    worker val = (val, JoinLine)
 
 plToPolygon :: Double -> PolyShape -> Polygon
 plToPolygon tol pl =
-  let p = V.init . V.fromList . map (\(Point x y) -> realToFrac <$> V2 x y) .
+  let p = V.init . V.fromList . map (fmap realToFrac) .
           plPolygonify tol $ pl
   in if pIsCCW (mkPolygon p) then mkPolygon p else mkPolygon (V.reverse p)
 
@@ -143,8 +146,8 @@ splitPolyShape tol n poly =
         polygons = pdualPolygons polygon reduced
     in map toPolyShape polygons
   where
-    toPolygon :: [Point Double] -> Polygon
-    toPolygon = mkPolygon . V.fromList . nub . map (\(Point x y) -> V2 (realToFrac x) (realToFrac y))
+    toPolygon :: [RPoint] -> Polygon
+    toPolygon = mkPolygon . V.fromList . nub . map (fmap realToFrac)
     toPolyShape :: Polygon -> PolyShape
     toPolyShape = plFromPolygon . map (fmap realToFrac) . V.toList . polygonPoints
 
@@ -155,7 +158,7 @@ plPartialGroup delta pls =
   where
     maxLen = maximum $ map plLength pls
 
-plPartial' :: Double -> ([DPoint], PolyShape) -> PolyShape
+plPartial' :: Double -> ([RPoint], PolyShape) -> PolyShape
 plPartial' delta (seen', PolyShape (ClosedPath lst)) =
   case lst of
     []                         -> PolyShape (ClosedPath [])
@@ -173,7 +176,7 @@ plPartial' delta (seen', PolyShape (ClosedPath lst)) =
     plPoints =
       [ p | (p,_) <- lst ]
 
-plGroupTouching :: [PolyShape] -> [[([DPoint],PolyShape)]]
+plGroupTouching :: [PolyShape] -> [[([RPoint],PolyShape)]]
 plGroupTouching [] = []
 plGroupTouching pls = worker [polyShapeOrigin (head pls)] pls
   where
@@ -191,7 +194,7 @@ plGroupTouching pls = worker [polyShapeOrigin (head pls)] pls
         helper acc lst@((startP,startJ):rest)
           | startP `elem` seen = lst ++ reverse acc
           | otherwise = helper ((startP, startJ):acc) rest
-    plPoints :: PolyShape -> [Point Double]
+    plPoints :: PolyShape -> [RPoint]
     plPoints (PolyShape (ClosedPath lst)) =
       [ p | (p,_) <- lst ]
 
@@ -206,17 +209,13 @@ plDecompose' tol =
   plGroupShapes .
   unionPolyShapes
 
-decomposePolygon :: [Point Double] -> [[RPoint]]
+decomposePolygon :: [RPoint] -> [[RPoint]]
 decomposePolygon poly =
-  map (map fromVect . adjust) $ convexDecomposition (map toVect poly) tol
+  map toPoly $ V.toList $ earcut [ (a,b) | V2 a b <- poly ]
   where
-    tol = polyShapeTolerance
-    toVect (Point x y) = Vect x y
-    fromVect (Vect x y) = V2 x y
-    adjust [] = []
-    adjust x  = if head x == last x then adjust (init x) else x
+    toPoly (a,b,c) = [poly!!a, poly!!b, poly!!c]
 
-plPolygonify :: Double -> PolyShape -> [Point Double]
+plPolygonify :: Double -> PolyShape -> [RPoint]
 plPolygonify tol shape =
     startPoint (head curves) : concatMap worker curves
   where
@@ -241,19 +240,17 @@ plLineCommands pl =
   case curves of
     []                  -> []
     (CubicBezier start _ _ _:_) ->
-      LineMove (toRPoint start) :
+      LineMove start :
       zipWith worker (drop 1 dstList ++ [start]) joinList ++
-      [LineEnd (toRPoint start)]
+      [LineEnd start]
   where
     ClosedPath closedPath = unPolyShape pl
     (dstList, joinList) = unzip closedPath
     curves = plCurves pl
     worker dst JoinLine =
-      LineBezier [toRPoint dst]
+      LineBezier [dst]
     worker dst (JoinCurve a b) =
-      LineBezier $ map toRPoint [a,b,dst]
-    toRPoint :: Point Double -> RPoint
-    toRPoint (Point x y) = V2 x y
+      LineBezier [a,b,dst]
 
 svgToPolyShapes :: Tree -> [PolyShape]
 svgToPolyShapes = cmdsToPolyShapes . toLineCommands . extractPath
@@ -261,9 +258,9 @@ svgToPolyShapes = cmdsToPolyShapes . toLineCommands . extractPath
 svgToPolygons :: Double -> SVG -> [Polygon]
 svgToPolygons tol = map (toPolygon . plPolygonify tol) . svgToPolyShapes
   where
-    toPolygon :: [Point Double] -> Polygon
+    toPolygon :: [RPoint] -> Polygon
     toPolygon = mkPolygon .
-      V.fromList . nub . map (\(Point x y) -> V2 (realToFrac x) (realToFrac y))
+      V.fromList . nub . map (fmap realToFrac)
 
 cmdsToPolyShapes :: [LineCommand] -> [PolyShape]
 cmdsToPolyShapes [] = []
@@ -280,23 +277,24 @@ cmdsToPolyShapes cmds =
       finalize acc $
       worker newStart [] xs
     worker from acc (LineEnd orig:LineMove dst:xs) | from /= orig =
-      finalize ((toGPoint from, JoinLine):acc) $
+      finalize ((from, JoinLine):acc) $
       worker dst [] xs
     worker _from acc (LineEnd{}:LineMove dst:xs) =
       finalize acc $
       worker dst [] xs
     worker from acc [LineEnd orig] | from /= orig =
-      finalize ((toGPoint from, JoinLine):acc) []
+      finalize ((from, JoinLine):acc) []
     worker _from acc [LineEnd{}] =
       finalize acc []
     worker from acc (LineBezier [x]:xs) =
-      worker x ((toGPoint from, JoinLine) : acc) xs
+      worker x ((from, JoinLine) : acc) xs
+    worker from acc (LineBezier [a,b]:xs) =
+      let quad = QuadBezier from a b
+          CubicBezier _ a' b' c' = quadToCubic quad
+      in worker from acc (LineBezier [a',b',c']:xs)
     worker from acc (LineBezier [a,b,c]:xs) =
-      worker c ((toGPoint from, JoinCurve (toGPoint a) (toGPoint b)) : acc) xs
+      worker c ((from, JoinCurve a b) : acc) xs
     worker _ _ _ = bad
-
-    toGPoint :: RPoint -> Point Double
-    toGPoint (V2 x y) = Point x y
 
 unionPolyShapes :: [PolyShape] -> [PolyShape]
 unionPolyShapes shapes =
@@ -319,7 +317,7 @@ lhs `isInsideOf` rhs =
     (upHits, downHits) = polyIntersections origin rhs
     origin = polyShapeOrigin lhs
 
-polyIntersections :: DPoint -> PolyShape -> ([DPoint],[DPoint])
+polyIntersections :: RPoint -> PolyShape -> ([RPoint],[RPoint])
 polyIntersections origin rhs =
     (nub $ concatMap (intersections rayUp) curves
     ,nub $ concatMap (intersections rayDown) curves)
@@ -329,13 +327,13 @@ polyIntersections origin rhs =
     intersections line bs =
       map (evalBezier bs . fst) (bezierIntersection bs line polyShapeTolerance)
     limit = 1000
-    rayUp = CubicBezier origin origin origin (Point limit limit)
-    rayDown = CubicBezier origin origin origin (Point (-limit) (-limit))
+    rayUp = CubicBezier origin origin origin (V2 limit limit)
+    rayDown = CubicBezier origin origin origin (V2 (-limit) (-limit))
 
-polyShapeOrigin :: PolyShape -> Point Double
+polyShapeOrigin :: PolyShape -> V2 Double
 polyShapeOrigin (PolyShape closedPath) =
   case closedPath of
-    ClosedPath []            -> Point 0 0
+    ClosedPath []            -> V2 0 0
     ClosedPath ((start,_):_) -> start
 
 plGroupShapes :: [PolyShape] -> [PolyShapeWithHoles]
@@ -349,7 +347,7 @@ plGroupShapes = worker
               { polyShapeParent = s
               , polyShapeHoles  = holes }
         in prime : worker nonHoles
-      | otherwise = trace "Found hole, putting back" $ worker (rest ++ [s])
+      | otherwise = worker (rest ++ [s])
     worker [] = []
 
     parents :: PolyShape -> [PolyShape] -> [PolyShape]
@@ -407,12 +405,12 @@ cutSingleHole parent child =
       [x2p]
     )
   where
-    vect = (childOrigin ^-^ p) ^* 0 -- 0.0001
-    vectL = rotate90L $* vect
-    vectR = rotate90R $* vect
+    -- vect = (childOrigin - p) * 0 -- 0.0001
+    vectL = 0 -- rotate90L $* vect
+    vectR = 0 -- rotate90R $* vect
     score = vectorDistance childOrigin p
     childOrigin = polyShapeOrigin child
-    childOrigin' = childOrigin ^-^ vectL
+    childOrigin' = childOrigin - vectL
     (pHead:pTail) = plCurves parent
     childCurves = plCurves child
 
@@ -420,11 +418,11 @@ cutSingleHole parent child =
 
     (a2p, p2b') = splitBezier pHead pParam
     p2b = case p2b' of
-      CubicBezier a b c d -> CubicBezier (a ^-^ vectL) b c d
+      CubicBezier a b c d -> CubicBezier (a - vectL) b c d
 
     p = evalBezier pHead pParam
     -- straight line to child origin
-    p2x = lineBetween (p ^-^ vectR) childOrigin
+    p2x = lineBetween (p - vectR) childOrigin
     -- straight line from child origin
     x2p = lineBetween childOrigin' p
 

@@ -15,7 +15,7 @@ where
 import qualified Data.ByteString               as B
 import           Data.Text                                ( Text )
 import qualified Data.Text                     as T
-import qualified Data.Text.IO                  as T
+import qualified Data.Text.Encoding            as T
 import           Graphics.SvgTree                         ( Tree(..)
                                                           , parseSvgFile
                                                           )
@@ -76,9 +76,9 @@ xelatexWithHeaders = someTexWithHeaders "xelatex" "xdv" ["-no-pdf"]
 --
 --   Example:
 --
---   > xelatex "中文"
+--   > ctex "中文"
 --
---   <<docs/gifs/doc_xelatex.gif>>
+--   <<docs/gifs/doc_ctex.gif>>
 ctex :: T.Text -> Tree
 ctex = ctexWithHeaders []
 
@@ -109,7 +109,7 @@ latexToSVG dviExt latexExec latexArgs tex = do
     withTempFile "svg" $ \svg_file -> do
       let dvi_file =
             tmp_dir </> replaceExtension (takeFileName tex_file) dviExt
-      T.writeFile tex_file tex
+      B.writeFile tex_file (T.encodeUtf8 tex)
       runCmd
         latexBin
         (  latexArgs

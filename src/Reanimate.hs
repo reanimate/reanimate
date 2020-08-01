@@ -38,6 +38,7 @@ module Reanimate
     -- * Animations
     SVG,
     Time,
+    Duration,
     Animation(..),
     mkAnimation,
     animate,
@@ -179,6 +180,10 @@ module Reanimate
     -- * Constants
     screenWidth,
     screenHeight,
+    screenTop,
+    screenBottom,
+    screenLeft,
+    screenRight,
     defaultDPI,
     defaultStrokeWidth,
     -- * Parameters

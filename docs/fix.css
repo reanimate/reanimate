@@ -1,3 +1,6 @@
 pre code {
   white-space: pre !important;
 }
+body {
+  text-align: justify;
+}

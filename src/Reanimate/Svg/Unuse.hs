@@ -6,6 +6,7 @@ module Reanimate.Svg.Unuse
 
 import           Control.Lens               ((%~), (&), (.~), (?~), (^.))
 import qualified Data.Map                   as Map
+import           Data.Maybe
 import           Graphics.SvgTree           hiding (line, path, use)
 import           Reanimate.Constants
 import           Reanimate.Svg.Constructors
@@ -21,10 +22,12 @@ replaceUses doc = doc & elements %~ map (mapTree replace)
     replace (UseTree use Nothing) =
       case Map.lookup (use^.useName) idMap of
         Nothing -> error $ "Unknown id: " ++ (use^.useName)
-        Just tree ->
+        Just tree -> mapTree replace $
           GroupTree $
           defaultSvg & groupChildren .~ [tree]
-                     & transform ?~ [baseToTransformation (use^.useBase)]
+                     & transform ?~
+                        fromMaybe [] (use^.transform) ++
+                        [baseToTransformation (use^.useBase)]
     replace x = x
     baseToTransformation (x,y) =
       case (toUserUnit defaultDPI x, toUserUnit defaultDPI y) of

@@ -65,6 +65,11 @@ formatHeight RenderMp4  = 1440
 formatHeight RenderGif  = 180
 formatHeight RenderWebm = 1440
 
+formatExtension :: Format -> String
+formatExtension RenderMp4  = "mp4"
+formatExtension RenderGif  = "gif"
+formatExtension RenderWebm = "webm"
+
 {-|
 Main entry-point for accessing an animation. Creates a program that takes the
 following command-line arguments:
@@ -126,11 +131,10 @@ reanimate animation = do
 
       target <- case renderTarget of
         Nothing -> do
-          self <- findOwnSource
-          pure $ case fmt of
-            RenderMp4  -> replaceExtension self "mp4"
-            RenderGif  -> replaceExtension self "gif"
-            RenderWebm -> replaceExtension self "webm"
+          mbSelf <- findOwnSource
+          let ext = formatExtension fmt
+              self = fromMaybe "output" mbSelf
+          pure $ replaceExtension self ext
         Just target -> makeAbsolute target
 
       let

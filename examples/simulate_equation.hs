@@ -129,20 +129,8 @@ chunkPolyshapes t =
     -- mkGroup $ map renderPolyShape [pl12,pl13]
   ]
 
--- plArea :: PolyShape -> Double
--- plArea pl = areaForPoly (map toVect $ plPolygonify polyShapeTolerance pl) 0
---   where
---     toVect (Point x y) = Vect x y
-
 reorient :: Tree -> Tree
 reorient = scale 6 . translate 0 (-0.9)
-
--- traceUnion t =
---   let out = unionPolyShapes t
---   in trace (unlines $
---             ("Trace: " ++ show (sum $ map plArea t)) :
---             ("Check: " ++ show (sum $ map plArea out)) :
---             map show t ++ ["Out:"] ++ map show out) out
 
 -- pl1 = PolyShape {unPolyShape = ClosedPath [(Point 9.076152025049407e-2 0.8793158714390639,JoinLine),(Point 0.48865783997158957 0.5875446050720555,JoinLine),(Point 0.6291445682322502 0.560956966929786,JoinLine),(Point 0.684414274089106 0.6254399758525935,JoinLine),(Point 8.549729225029659e-2 0.9226054512958702,JoinLine)]}
 -- pl2 = PolyShape {unPolyShape = ClosedPath [(Point 0.3174796674934045 (-0.17830385091116296),JoinLine),(Point 0.3930521201476444 (-0.22384314349780887),JoinLine),(Point 0.42400439387727545 (-0.17026635397131717),JoinLine),(Point 0.367180526197663 (-0.13743818486413273),JoinLine)]}

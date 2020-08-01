@@ -117,11 +117,6 @@ chunkPolyshapes t =
   withStrokeWidth 0.01 $
   withFillColor "white" $ t
 
--- plArea :: PolyShape -> Double
--- plArea pl = areaForPoly (map toVect $ plPolygonify polyShapeTolerance pl) 0
---   where
---     toVect (Point x y) = Vect x y
-
 reorient :: Tree -> Tree
 reorient = id -- scale 4 . translate 0 (-0.9)
 

@@ -9,6 +9,11 @@
 * Improved Windows build support.
 * Improved error reporting in web-viewer.
 * Improved error messages when ffmpeg doesn't support SVGs.
+* Improved filter-effect support.
+* Generalized LaTeX support.
+* New experimental object system.
+* Discord bot capable of rendering animations in chat.
+* Lots of assorted bug fixes and minor improvements.
 
 ## 0.3.3.0 -- 2020-05-22
 
