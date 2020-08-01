@@ -5,7 +5,7 @@ import           Control.Monad.Fix
 import           Control.Monad.State
 import           Data.Functor
 import qualified Data.Vector.Unboxed as V
-import qualified Geom2D.CubicBezier  as Bezier
+import qualified Reanimate.Internal.CubicBezier as Bezier
 import           Graphics.SvgTree    hiding (height, line, path, use, width)
 import           Linear.Metric
 import           Linear.V2           hiding (angle)
@@ -79,14 +79,11 @@ lineLength cmd =
 
 rpointsToBezier :: [RPoint] -> Bezier.CubicBezier Double
 rpointsToBezier lst =
-  case map toBezierPoint lst of
+  case lst of
     [a,b] -> Bezier.CubicBezier a a b b
     [a,b,c] -> Bezier.quadToCubic (Bezier.QuadBezier a b c)
     [a,b,c,d] -> Bezier.CubicBezier a b c d
     _ -> error $ "rpointsToBezier: Invalid list of points: " ++ show lst
-
-toBezierPoint :: RPoint -> Bezier.Point Double
-toBezierPoint (V2 a b) = Bezier.Point a b
 
 toLineCommands :: [PathCommand] -> [LineCommand]
 toLineCommands ps = evalState (worker zero Nothing ps) zero
@@ -238,12 +235,9 @@ convertSvgArc (V2 x0 y0) radiusX radiusY angle largeArcFlag sweepFlag (V2 x y)
 
 partialBezierPoints :: [RPoint] -> Double -> Double -> [RPoint]
 partialBezierPoints ps a b =
-  let fromP (V2 i j) = (i, j)
-      toP (i, j) = V2 i j
-      c1 :: Bezier.AnyBezier Double
-      c1 = Bezier.unsafeFromVector (V.fromList $ map fromP ps)
-      os = V.toList $ Bezier.toVector $ Bezier.bezierSubsegment c1 a b
-  in map toP os
+  let c1 = Bezier.AnyBezier (V.fromList ps)
+      Bezier.AnyBezier os = Bezier.bezierSubsegment c1 a b
+  in V.toList os
 
 interpolatePathCommands :: Double -> [PathCommand] -> [PathCommand]
 interpolatePathCommands alpha = lineToPath . partialLine alpha . toLineCommands
