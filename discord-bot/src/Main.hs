@@ -40,7 +40,7 @@ botCommitDate :: UTCTime
 Just botCommitDate = parseTimeM
   True
   defaultTimeLocale
-  "%a %b %d %X %Y %z" (giCommitDate gi)
+  "%a %b %e %X %Y %z" (giCommitDate gi)
 
 botVersion :: Text
 botVersion = T.pack $
