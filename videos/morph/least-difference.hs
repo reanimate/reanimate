@@ -52,8 +52,8 @@ extraPoints = 0
 
 -- p1 = pAddPoints extraPoints $ (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "S")
 -- p2 = pAddPoints extraPoints $ (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "C")
-p1 = pAddPoints extraPoints $ (pAtCenter $ unsafeSVGToPolygon 0.01 $ scale 6 $ latex "I")
-p2 = pAddPoints extraPoints $ (pAtCenter $ unsafeSVGToPolygon 0.01 $ scale 6 $ latex "L")
+p1 = pAddPoints extraPoints $ (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "X")
+p2 = pAddPoints extraPoints $ (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "I")
 
 p1_ = castPolygon p1
 p2_ = castPolygon p2

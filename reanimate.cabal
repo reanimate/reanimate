@@ -103,7 +103,6 @@ library
                       Reanimate.Builtin.Slide
                       Reanimate.Constants
                       Reanimate.Parameters
-                      Reanimate.Chiphunk
                       Reanimate.PolyShape
                       Reanimate.GeoProjection
                       Reanimate.Builtin.Documentation

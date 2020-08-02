@@ -8,21 +8,21 @@ import           Control.Lens
 import           Control.Monad.State
 import           Control.Monad.Writer
 import           Data.List
-import qualified Data.List              as L
-import           Data.Map               (Map)
-import qualified Data.Map               as M
+import qualified Data.List             as L
+import           Data.Map              (Map)
+import qualified Data.Map              as M
 import           Data.Maybe
-import qualified Data.Set               as S
-import qualified Data.Text              as T
-import qualified Data.Vector            as V
-import           Debug.Trace
+import qualified Data.Set              as S
+import qualified Data.Text             as T
+import qualified Data.Vector           as V
 import           Linear.Metric
 import           Linear.V2
-import           Linear.Vector (lerp, (^/))
+import           Linear.Vector         (lerp, (^/))
 import           Reanimate
-import           Reanimate.Math.Common  (isInside, isInsideStrict, lineIntersect, triangleAngles)
-import           Reanimate.Math.Polygon
+import           Reanimate.Math.Common (isInsideStrict, lineIntersect,
+                                        triangleAngles)
 import           Text.Printf
+-- import           Debug.Trace
 
 type VertexId = Int
 type EdgeId = Int
@@ -579,8 +579,8 @@ smoothVertex steiner = do
         then modifyVertex (vertexPosition .~ laplacian) steiner
         else return ()
   where
-    sortEdges :: V2 Double -> [V2 Double] -> [V2 Double]
-    sortEdges = sortOn . dir
+    -- sortEdges :: V2 Double -> [V2 Double] -> [V2 Double]
+    -- sortEdges = sortOn . dir
     sortVertices :: V2 Double -> [Vertex (V2 Double)] -> [Vertex (V2 Double)]
     sortVertices self = sortOn (dirV self)
     -- Direction from south of 'a', to 'a', to 'b'.
@@ -633,6 +633,7 @@ isValidLocation origin edges newLoc =
   dir :: V2 Double -> V2 Double -> Double
   dir a b = (atan2 (crossZ (V2 0 1) (b - a)) (dot (V2 0 1) (b - a)))
 
+isCCW :: (Ord a, Num a) => V2 a -> V2 a -> V2 a -> Bool
 isCCW a b c = sum [fn a b, fn b c, fn c a] < 0
   where
     fn (V2 x1 y1) (V2 x2 y2) = (x2-x1)*(y2+y1)

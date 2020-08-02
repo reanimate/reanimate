@@ -63,8 +63,8 @@ p2 = pCopy $ pSetOffset (pCopy p2') 0
   -- leastWork defaultStretchCosts defaultBendCosts
   -- (pAtCenter $ unsafeSVGToPolygon 0.01 $ scale 6 $ latex "S")
   -- (pAtCenter $ unsafeSVGToPolygon 0.01 $ scale 6 $ latex "C")
+  (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "X")
   (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "I")
-  (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "L")
 
 p1_ = castPolygon p1
 p2_ = castPolygon p2

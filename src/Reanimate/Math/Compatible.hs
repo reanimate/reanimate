@@ -6,20 +6,17 @@ import           Data.Hashable
 import           Data.List
 import           Data.Maybe
 import           Data.Ord
-import qualified Data.Text              as T
 import qualified Data.Vector            as V
 import           Linear.V2
 import           Linear.Vector
 import           Reanimate.Animation
 import           Reanimate.Debug
-import           Reanimate.LaTeX
 import           Reanimate.Math.Common
 import           Reanimate.Math.Polygon
-import           Reanimate.Math.Render
 import           Reanimate.Svg
 
-import           Debug.Trace
-import           GHC.Stack
+-- import           Debug.Trace
+-- import           GHC.Stack
 
 truncateP :: forall a. (Fractional a, Real a) => V2 a -> V2 a
 truncateP = fmap (fromDouble . toDouble)
@@ -78,7 +75,7 @@ steiner2Link p i j
   -- | otherwise
   -- = truncateP $ lerp 0.5 windowCommon (intersects !! 0)
  where
-  trigger = True -- i == 4 && j == 8
+  -- trigger = True -- i == 4 && j == 8
   -- info = mkGroup
   --   [ scale 2 $ mkGroup
   --     [ mkGroup [withFillColor "grey" $ polygonShape p, polygonNumDots p]
@@ -113,8 +110,8 @@ steiner2Link p i j
   --       | not isStraightLine
   --       , ray <- [(pAccess p i, jWindow), (pAccess p j, iWindow)]
   --       , u <- maybeToList $ rayIntersect windowDirection ray ]
-  iP = pAdjustOffset p i
-  jP = pAdjustOffset p j
+  -- iP = pAdjustOffset p i
+  -- jP = pAdjustOffset p j
   -- windowDirection = (windowCommon, windowOpposite)
   -- (windowCommon, iWindow, jWindow, windowOpposite)
   --   | isStraightLine
@@ -273,7 +270,7 @@ compatiblyTriangulateP a b
     (pSetOffset b 0)
 
 showStep :: APolygon a -> APolygon a -> SVG
-showStep a b = mkGroup []
+showStep _a _b = mkGroup []
   -- [ translate (-3) 0 $ scale 2
   --   $ mkGroup [withFillColor "grey" $ polygonShape a, polygonNumDots a]
   -- , translate 3    0 $ scale 2
@@ -281,7 +278,7 @@ showStep a b = mkGroup []
   -- ]
 
 showSolution :: APolygon a -> APolygon a -> (Int, Int) -> SVG
-showSolution a b (nodeL, nodeR) = mkGroup []
+showSolution _a _b (_nodeL, _nodeR) = mkGroup []
   -- [ showStep a b
   -- -- , translate (-3) 0 $ scale 2 $
   -- --   translate xA yA $ withFillColor "red" $

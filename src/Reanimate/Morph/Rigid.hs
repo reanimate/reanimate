@@ -82,7 +82,7 @@ import           Numeric.LinearAlgebra.HMatrix (GMatrix, Matrix, toLists, (!),
 import           Reanimate.Animation
 import           Reanimate.Math.Compatible     (compatiblyTriangulateP)
 import qualified Reanimate.Math.DCEL           as DCEL
-import           Reanimate.Math.Polygon        (mkPolygon, pCopy, pIsSimple,
+import           Reanimate.Math.Polygon        (mkPolygon, pCopy,
                                                 polygonPoints)
 import           Reanimate.Morph.Common
 import           Reanimate.Svg
@@ -310,7 +310,7 @@ toRigidMesh meshA meshB = Mesh
             vs = map (`DCEL.meshGetVertex` meshA) $ map DCEL._edgeVertex edges
             ps = map DCEL._vertexPosition vs
             [aIdx, bIdx, cIdx] = map (fromJust . (`V.elemIndex` pointsA)) ps
-            p = mkPolygon (V.fromList $ map (fmap realToFrac) ps)
+            -- p = mkPolygon (V.fromList $ map (fmap realToFrac) ps)
       -- , pIsSimple p || error "invalid polygon"
       ]
 

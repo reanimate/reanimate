@@ -12,7 +12,6 @@ import           Reanimate.Math.Common
 import qualified Reanimate.Math.Compatible as Compat
 import           Reanimate.Math.Polygon
 import           Reanimate.Morph.Common
-import           Reanimate.Morph.Linear
 
 import Debug.Trace
 
@@ -109,13 +108,13 @@ triangulate' edges a b
     -- = [(al,bl), (ar,br)]
   | otherwise = giveUp
   where
-    giveUp =
-      let aNewEdges = max 0 (pSize b - pSize a)
-          bNewEdges = max 0 (pSize a - pSize b)
-          a' = pAddPointsRestricted (map fst edges) aNewEdges a
-          b' = pAddPointsRestricted (map snd edges) bNewEdges b
-          -- (a'', b'') = closestLinearCorrespondenceA a' b'
-      in [(a, b)]
+    giveUp = [(a,b)]
+      -- let aNewEdges = max 0 (pSize b - pSize a)
+      --     bNewEdges = max 0 (pSize a - pSize b)
+      --     a' = pAddPointsRestricted (map fst edges) aNewEdges a
+      --     b' = pAddPointsRestricted (map snd edges) bNewEdges b
+      --     -- (a'', b'') = closestLinearCorrespondenceA a' b'
+      -- in [(a, b)]
         --Compat.compatiblyTriangulateP a'' b''
 
 polygonLengths :: Eq a => [APolygon a] -> APolygon a -> [(Int, Int, Int)]
@@ -156,9 +155,9 @@ alignPolygons polys originL originR =
     diffsR = sortOn sortKey $ zipWith mkDiff lensR lensL
     worker n (y:ys) ((i,k,l,d):xs) | n < i
       = y : worker (n+1) ys ((i,k,l,d):xs)
-    worker n (y:ys) ((i,k,l,0):xs)
+    worker n (y:ys) ((_i,_k,_l,0):xs)
       = worker n (y:ys) xs
-    worker n (y:ys) ((i,k,l,d):xs)
+    worker n (y:ys) ((_i,k,l,d):xs)
       = let y' = pAddPointsBetween (k,l) d y
         in worker n (y':ys) xs
     worker _ ys [] = ys
