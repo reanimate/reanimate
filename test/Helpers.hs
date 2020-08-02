@@ -13,13 +13,12 @@ import           Test.QuickCheck
 import           Test.Tasty
 import           Test.Tasty.QuickCheck
 
-import           Reanimate.Math.Common
-import           Reanimate.Math.Polygon
-import           Reanimate.Math.EarClip
-import           Reanimate.Math.SSSP
+-- import           Reanimate.Math.Common
+-- import           Reanimate.Math.Polygon
+-- import           Reanimate.Math.EarClip
+-- import           Reanimate.Math.SSSP
 
--- [(0.8,1),(0.04,0.1),(0.05,1)]
-
+{-
 newtype PolyParam = PolyParam { unParam :: (Double, Double) }
   deriving (Show)
 instance Arbitrary PolyParam where
@@ -95,3 +94,4 @@ instance (RealFrac a, Arbitrary a) => Arbitrary (V2 a) where
 
 percent :: (Testable prop) => (Rational -> prop) -> Property
 percent gen = forAll (choose (0,1::Double)) $ gen . realToFrac
+-}
