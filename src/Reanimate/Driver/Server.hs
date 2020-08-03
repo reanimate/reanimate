@@ -8,7 +8,6 @@ module Reanimate.Driver.Server
 import           Control.Concurrent
 import           Control.Exception      (SomeException, catch, finally)
 import           Control.Monad
-import           Control.Monad.Fix      (fix)
 import           Data.IORef
 import           Data.Text              (Text)
 import qualified Data.Text              as T
