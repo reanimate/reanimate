@@ -4,21 +4,19 @@ module Reanimate.Blender
   , blender'
   ) where
 
-import           Codec.Picture.Png
-import qualified Data.ByteString            as B
+import           Data.Hashable
 import           Data.Text                  (Text)
--- import qualified Data.Text                  as T
 import qualified Data.Text.IO               as T
 import           Graphics.SvgTree           (Tree (..))
-import           Reanimate.Cache
-import           Reanimate.Misc
-import           Reanimate.Raster
-import           Reanimate.Parameters
 import           Reanimate.Animation
+import           Reanimate.Cache
+import           Reanimate.Constants
+import           Reanimate.Misc
+import           Reanimate.Parameters
+import           Reanimate.Raster
 import           Reanimate.Svg.Constructors
 import           System.FilePath            (replaceExtension, (<.>))
 import           System.IO.Unsafe           (unsafePerformIO)
-import           Data.Hashable
 
 blender :: Text -> SVG
 blender script =
@@ -30,11 +28,8 @@ blender' script =
 
 mkBlenderImage :: Text -> IO Tree
 mkBlenderImage script | pNoExternals = pure $ mkText script
-mkBlenderImage script = do
-    png <- B.readFile =<< mkBlenderImage' script
-    case decodePng png of
-      Left{}    -> error "bad image"
-      Right img -> return $ center $ scaleToSize 16 9 $ embedDynamicImage img
+mkBlenderImage script =
+  mkImage screenWidth screenHeight <$> mkBlenderImage' script
 
 mkBlenderImage' :: Text -> IO FilePath
 mkBlenderImage' _ | pNoExternals = pure "/blender/has/been/disabled"
@@ -46,4 +41,4 @@ mkBlenderImage' script = cacheFile template $ \target -> do
                 , "--python-exit-code", "1"
                 , "--render-output", target, "--python", py_file]
   where
-    template = show (hash script) <.> "png"
+    template = encodeInt (hash script) <.> "png"

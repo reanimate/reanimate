@@ -242,7 +242,7 @@ vectorize_ _ path | pNoExternals = mkText $ T.pack path
 vectorize_ args path             = unsafePerformIO $ do
   root <- getXdgDirectory XdgCache "reanimate"
   createDirectoryIfMissing True root
-  let svgPath = root </> show key <.> "svg"
+  let svgPath = root </> encodeInt key <.> "svg"
   hit <- doesFileExist svgPath
   unless hit $ withSystemTempFile "file.svg" $ \tmpSvgPath svgH ->
     withSystemTempFile "file.bmp" $ \tmpBmpPath bmpH -> do
@@ -289,7 +289,7 @@ svgAsPngFile' width height svg =
     engine <- requireRaster pRaster
     applyRaster engine svgPath
  where
-  template = show (hash rendered) <.> "png"
+  template = encodeInt (hash rendered) <.> "png"
   rendered = renderSvg (Just $ Px $ fromIntegral width)
                        (Just $ Px $ fromIntegral height)
                        svg
