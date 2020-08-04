@@ -6,6 +6,7 @@
 ![Platforms](https://img.shields.io/badge/platform-linux%20%7C%20osx%20%7C%20windows-informational)
 ![GitHub repo size](https://img.shields.io/github/repo-size/reanimate/reanimate)
 [![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/reanimate/discord-bot?label=discord-bot)](https://hub.docker.com/repository/docker/reanimate/discord-bot)
+[![Website](https://img.shields.io/website?url=https%3A%2F%2Freanimate.github.io)](https://reanimate.github.io/)
 [![Discord](https://img.shields.io/discord/731822102935502908)](https://discord.gg/Qs28Dv6)
 
 # Reanimate
