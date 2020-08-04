@@ -37,6 +37,18 @@ Source-Repository head
     Type:      git
     Location:  git://github.com/lemmih/reanimate.git
 
+-- If both 'enable-hmatrix' and 'disable-hmatrix' are false, then use
+-- hmatrix on Macos and Linux but not Windows.
+Flag enable-hmatrix
+  Description: Enable hmatrix dependency on Windows (requires openblas)
+  Default:     False
+  Manual:      True
+
+Flag disable-hmatrix
+  Description: Force disable hmatrix dependency
+  Default:     False
+  Manual:      True
+
 Flag test
   Description: Enable testing (requires stack)
   Default:     False
@@ -59,22 +71,22 @@ library
                       -- Reanimate.Diagrams
                       Reanimate.Transform
                       Reanimate.Misc
-                      -- Reanimate.Math.Common
-                      -- Reanimate.Math.Polygon
-                      -- Reanimate.Math.Triangulate
-                      -- Reanimate.Math.EarClip
-                      -- Reanimate.Math.Visibility
-                      -- Reanimate.Math.SSSP
-                      -- Reanimate.Math.Balloon
-                      -- Reanimate.Math.Compatible
-                      -- Reanimate.Math.Render
-                      -- Reanimate.Morph.Common
-                      -- Reanimate.Morph.Linear
-                      -- Reanimate.Morph.Rotational
-                      -- Reanimate.Morph.LeastWork
-                      -- Reanimate.Morph.LineBend
-                      -- Reanimate.Morph.LeastDifference
-                      -- Reanimate.Morph.Cache
+                      Reanimate.Math.Common
+                      Reanimate.Math.Polygon
+                      Reanimate.Math.Triangulate
+                      Reanimate.Math.EarClip
+                      Reanimate.Math.Visibility
+                      Reanimate.Math.SSSP
+                      Reanimate.Math.Balloon
+                      Reanimate.Math.Compatible
+                      Reanimate.Math.Render
+                      Reanimate.Morph.Common
+                      Reanimate.Morph.Linear
+                      Reanimate.Morph.Rotational
+                      Reanimate.Morph.LeastWork
+                      Reanimate.Morph.LineBend
+                      Reanimate.Morph.LeastDifference
+                      Reanimate.Morph.Cache
                       Reanimate.Raster
                       Reanimate.ColorComponents
                       Reanimate.ColorMap
@@ -91,6 +103,7 @@ library
                       Reanimate.Builtin.Slide
                       Reanimate.Constants
                       Reanimate.Parameters
+                      Reanimate.PolyShape
                       Reanimate.GeoProjection
                       Reanimate.Builtin.Documentation
                       Reanimate.Builtin.Images
@@ -112,7 +125,7 @@ library
                       JuicyPixels >= 3.3.3, attoparsec, parallel,
                       cubicbezier, websockets >= 0.12.7.0,
                       hashable, fsnotify, open-browser, random, random-shuffle,
-                      base64-bytestring,
+                      base64-bytestring, earcut >= 0.1.0.4,
                       vector >= 0.12.0.0, colour, cassava, ansi-terminal,
                       temporary,
                       optparse-applicative,

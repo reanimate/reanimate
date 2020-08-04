@@ -105,7 +105,7 @@ module Reanimate.Scene
   , oFadeOut
   , oGrow
   , oShrink
-  -- , oTransform
+  , oTransform
 
   -- ** Pre-defined objects
   , Circle(..)
@@ -113,10 +113,10 @@ module Reanimate.Scene
   , Rectangle(..)
   , rectWidth
   , rectHeight
-  -- , Morph(..)
-  -- , morphDelta
-  -- , morphSrc
-  -- , morphDst
+  , Morph(..)
+  , morphDelta
+  , morphSrc
+  , morphDst
   , Camera(..)
   , cameraAttach
   , cameraFocus
@@ -147,6 +147,8 @@ import           Reanimate.Effect
 import           Reanimate.Svg.Constructors
 import           Reanimate.Svg.BoundingBox
 import           Reanimate.Transition
+import           Reanimate.Morph.Common (morph)
+import           Reanimate.Morph.Linear (linear)
 
 -- | The ZIndex property specifies the stack order of sprites and animations. Elements
 --   with a higher ZIndex will be drawn on top of elements with a lower index.
@@ -900,9 +902,9 @@ data Rectangle = Rectangle { _rectWidth :: Double, _rectHeight :: Double }
 instance Renderable Rectangle where
   toSVG (Rectangle w h) = mkRect w h
 
--- data Morph = Morph { _morphDelta :: Double, _morphSrc :: SVG, _morphDst :: SVG }
--- instance Renderable Morph where
---   toSVG (Morph t src dst) = morph linear src dst t
+data Morph = Morph { _morphDelta :: Double, _morphSrc :: SVG, _morphDst :: SVG }
+instance Renderable Morph where
+  toSVG (Morph t src dst) = morph linear src dst t
 
 data Camera = Camera
 instance Renderable Camera where
@@ -954,7 +956,7 @@ cameraPan cam d (x,y) =
 
 makeLenses ''Circle
 makeLenses ''Rectangle
--- makeLenses ''Morph
+makeLenses ''Morph
 
 oShow :: Object s a -> Scene s ()
 oShow o = oModify o $ oShown .~ True
@@ -989,27 +991,27 @@ oShrink o d =
     oScale *= 1-t
 
 -- FIXME: Also transform attributes: 'opacity', 'scale', 'scaleOrigin'.
--- oTransform :: Object s a -> Object s b -> Duration -> Scene s ()
--- oTransform src dst d = do
---     srcSvg <- oRead src oSVG
---     srcCtx <- oRead src oContext
---     srcEase <- oRead src oEasing
---     srcLoc <- oRead src oTranslate
---     oModify src $ oShown .~ False
+oTransform :: Object s a -> Object s b -> Duration -> Scene s ()
+oTransform src dst d = do
+    srcSvg <- oRead src oSVG
+    srcCtx <- oRead src oContext
+    srcEase <- oRead src oEasing
+    srcLoc <- oRead src oTranslate
+    oModify src $ oShown .~ False
     
---     dstSvg <- oRead dst oSVG
---     dstCtx <- oRead dst oContext
---     dstLoc <- oRead dst oTranslate
+    dstSvg <- oRead dst oSVG
+    dstCtx <- oRead dst oContext
+    dstLoc <- oRead dst oTranslate
 
---     m <- newObject $ Morph 0 (srcCtx srcSvg) (dstCtx dstSvg)
---     oModifyS m $ do
---       oShown     .= True
---       oEasing    .= srcEase
---       oTranslate .= srcLoc
---     fork $ oTween m d $ \t -> oTranslate %~ moveTo t dstLoc
---     oTweenV m d $ \t -> morphDelta .~ t
---     oModify m $ oShown .~ False
---     oModify dst $ oShown .~ True
---   where
---     moveTo t (dstX, dstY) (srcX, srcY) =
---       (fromToS srcX dstX t, fromToS srcY dstY t)
+    m <- newObject $ Morph 0 (srcCtx srcSvg) (dstCtx dstSvg)
+    oModifyS m $ do
+      oShown     .= True
+      oEasing    .= srcEase
+      oTranslate .= srcLoc
+    fork $ oTween m d $ \t -> oTranslate %~ moveTo t dstLoc
+    oTweenV m d $ \t -> morphDelta .~ t
+    oModify m $ oShown .~ False
+    oModify dst $ oShown .~ True
+  where
+    moveTo t (dstX, dstY) (srcX, srcY) =
+      (fromToS srcX dstX t, fromToS srcY dstY t)

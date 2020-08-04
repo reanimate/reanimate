@@ -11,15 +11,14 @@ import           Test.QuickCheck
 import           Test.Tasty
 import           Test.Tasty.QuickCheck
 
--- import           Reanimate.Math.Common
--- import           Reanimate.Math.Polygon
--- import           Reanimate.Math.EarClip
--- import           Reanimate.Math.SSSP
+import           Reanimate.Math.Common
+import           Reanimate.Math.Polygon
+import           Reanimate.Math.EarClip
+import           Reanimate.Math.SSSP
 import           Helpers
 
 import Debug.Trace
 
-{-
 prop_pGenerate (PolyParam a) (PolyParam b) (PolyParam c) (PolyParam d) =
   pIsSimple $ pGenerate [a,b,c,d]
 
@@ -79,7 +78,5 @@ prop_dualCycle p = forAll (choose (0,pSize p-1)) $ \n ->
   in and [ pParent p1 0 i == pParent p2 0 i | i <- [0.. pSize p-1] ]
 
 return []
--}
-
 all_props :: TestTree
-all_props = testProperties "properties" [] -- $allProperties
+all_props = testProperties "properties" $allProperties
