@@ -22,6 +22,10 @@ newtype Options = Options
 
 data Command
   = Raw
+    { rawOutputFolder :: FilePath
+    , rawFrameOffset  :: Int
+    , rawPrettyPrint  :: Bool
+    }
   | Test
   | Check
   | View
@@ -99,14 +103,15 @@ options :: Parser Options
 options = Options <$> commandP
 
 commandP :: Parser Command
-commandP = subparser(command "raw" rawCommand
-  <> command "test" testCommand
+commandP = subparser(
+     command "test" testCommand
   <> commandGroup "Internal commands"
   <> internal )
   <|> hsubparser
     ( command "check" checkCommand
     <> command "view" viewCommand
     <> command "render" renderCommand
+    <> command "raw" rawCommand
     )
   <|> infoParser viewCommand
 
@@ -114,7 +119,22 @@ rawCommand :: ParserInfo Command
 rawCommand = info parse
     (progDesc "Output raw SVGs for animation at 60 fps. Used internally by viewer.")
   where
-    parse = pure Raw
+    parse = Raw
+      <$> strOption
+        ( long "output" <>
+          short 'o' <>
+          metavar "PATH" <>
+          help "Output folder" <>
+          value ".")
+      <*> option auto
+        ( long "offset" <>
+          metavar "NUMBER" <>
+          help "Frame offset" <>
+          value 0)
+      <*> switch
+        ( long "pretty-print" <>
+          short 'p' <>
+          help "Pretty print svg")
 
 testCommand :: ParserInfo Command
 testCommand = info (parse <**> helper)
