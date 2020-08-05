@@ -39,6 +39,7 @@ jobs:
     - name: Generate HPC files
       run: |
         cabal exec -- ghc -package reanimate ./examples/doc_seqA.hs --make
+        ./examples/doc_seqA test > /dev/null
     
     - name: Merge HPC files
       run: hpc sum *.tix --output=total.tix
