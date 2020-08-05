@@ -40,7 +40,7 @@ jobs:
     - name: Generate HPC files
       run: |
         for gold in examples/*.golden; do
-          cabal v2-exec -- ghc "${gold%.golden}.hs" --make
+          cabal v2-exec -- ghc -package reanimate "${gold%.golden}.hs" --make
           ${gold%.golden} test > /dev/null
         done;
     
