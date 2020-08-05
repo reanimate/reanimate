@@ -1,0 +1,57 @@
+name: HPC/Haddock
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-haskell@v1
+      with:
+        ghc-version: '8.8.2'
+        cabal-version: '3.0'
+
+    - name: Cache
+      uses: actions/cache@v1
+      env:
+        cache-name: cache-cabal
+      with:
+        path: ~/.cabal
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/cabal.project') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
+    - name: Install dependencies
+      run: |
+        cabal update
+        cabal build --only-dependencies --disable-tests --disable-benchmarks
+    - name: Build
+      run: cabal build --enable-coverage
+
+    - name: Generate HPC files
+      run: |
+        cabal exec -- ghc -package reanimate ./examples/doc_seqA.hs --make
+    
+    - name: Merge HPC files
+      run: hpc sum *.tix --output=total.tix
+
+    - name: Report
+      run: hpc report --hpcdir $(find dist-newstyle -name 'hpc')/vanilla/mix/*/ total.tix
+
+    - name: Markup
+      run: hpc markup --destdir=hpc --hpcdir $(find dist-newstyle -name 'hpc')/vanilla/mix/*/ total.tix
+
+    - name: Deploy 🚀
+      uses: JamesIves/github-pages-deploy-action@3.5.9
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        BRANCH: gh-pages # The branch the action should deploy to.
+        FOLDER: hpc # The folder the action should deploy.
