@@ -1,0 +1,321 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>{-# LANGUAGE OverloadedStrings   #-}
+<span class="lineno">    2 </span>{-# LANGUAGE ScopedTypeVariables #-}
+<span class="lineno">    3 </span>module Reanimate.Driver.Server
+<span class="lineno">    4 </span>  ( serve
+<span class="lineno">    5 </span>  , findOwnSource
+<span class="lineno">    6 </span>  ) where
+<span class="lineno">    7 </span>
+<span class="lineno">    8 </span>import           Control.Concurrent
+<span class="lineno">    9 </span>import           Control.Exception      (SomeException, catch, finally)
+<span class="lineno">   10 </span>import           Control.Monad
+<span class="lineno">   11 </span>import           Data.IORef
+<span class="lineno">   12 </span>import           Data.Text              (Text)
+<span class="lineno">   13 </span>import qualified Data.Text              as T
+<span class="lineno">   14 </span>import qualified Data.Text.Read         as T
+<span class="lineno">   15 </span>import           Data.Time
+<span class="lineno">   16 </span>import           GHC.Environment        (getFullArgs)
+<span class="lineno">   17 </span>import           Language.Haskell.Ghcid
+<span class="lineno">   18 </span>import           Network.WebSockets
+<span class="lineno">   19 </span>import           Paths_reanimate
+<span class="lineno">   20 </span>import           Reanimate.Misc         (runCmdLazy, runCmd_)
+<span class="lineno">   21 </span>import           System.Directory       (createDirectoryIfMissing,
+<span class="lineno">   22 </span>                                         doesFileExist, findFile, listDirectory,
+<span class="lineno">   23 </span>                                         makeAbsolute,
+<span class="lineno">   24 </span>                                         withCurrentDirectory)
+<span class="lineno">   25 </span>import           System.Environment     (getProgName)
+<span class="lineno">   26 </span>import           System.Exit
+<span class="lineno">   27 </span>import           System.FilePath
+<span class="lineno">   28 </span>import           System.FSNotify
+<span class="lineno">   29 </span>import           System.IO
+<span class="lineno">   30 </span>import           System.IO.Temp
+<span class="lineno">   31 </span>import           System.Process
+<span class="lineno">   32 </span>import           Web.Browser            (openBrowser)
+<span class="lineno">   33 </span>
+<span class="lineno">   34 </span>opts :: ConnectionOptions
+<span class="lineno">   35 </span><span class="decl"><span class="nottickedoff">opts = defaultConnectionOptions</span>
+<span class="lineno">   36 </span><span class="spaces">  </span><span class="nottickedoff">{ connectionCompressionOptions = PermessageDeflateCompression defaultPermessageDeflate }</span></span>
+<span class="lineno">   37 </span>
+<span class="lineno">   38 </span>serve :: Bool -&gt; Maybe FilePath -&gt; [String] -&gt; Maybe FilePath -&gt; IO ()
+<span class="lineno">   39 </span><span class="decl"><span class="nottickedoff">serve verbose mbGHCPath extraGHCOpts mbSelfPath = withManager $ \watch -&gt; do</span>
+<span class="lineno">   40 </span><span class="spaces">  </span><span class="nottickedoff">hSetBuffering stdin NoBuffering</span>
+<span class="lineno">   41 </span><span class="spaces">  </span><span class="nottickedoff">self &lt;- maybe requireOwnSource pure mbSelfPath</span>
+<span class="lineno">   42 </span><span class="spaces">  </span><span class="nottickedoff">when verbose $</span>
+<span class="lineno">   43 </span><span class="spaces">    </span><span class="nottickedoff">logMsg $ &quot;Found own source code at: &quot; ++ self</span>
+<span class="lineno">   44 </span><span class="spaces">  </span><span class="nottickedoff">hasConnectionVar &lt;- newMVar False</span>
+<span class="lineno">   45 </span><span class="spaces"></span><span class="nottickedoff"></span>
+<span class="lineno">   46 </span><span class="spaces">  </span><span class="nottickedoff">ghci &lt;- ghciBackend mbGHCPath self</span>
+<span class="lineno">   47 </span><span class="spaces"></span><span class="nottickedoff"></span>
+<span class="lineno">   48 </span><span class="spaces">  </span><span class="nottickedoff">-- There might already browser window open. Wait 2s to see if that window</span>
+<span class="lineno">   49 </span><span class="spaces">  </span><span class="nottickedoff">-- connects to us. If not, open a new window.</span>
+<span class="lineno">   50 </span><span class="spaces">  </span><span class="nottickedoff">_ &lt;- forkIO $ do</span>
+<span class="lineno">   51 </span><span class="spaces">    </span><span class="nottickedoff">threadDelay (2*10^(6::Int))</span>
+<span class="lineno">   52 </span><span class="spaces">    </span><span class="nottickedoff">hasConn &lt;- readMVar hasConnectionVar</span>
+<span class="lineno">   53 </span><span class="spaces">    </span><span class="nottickedoff">unless hasConn openViewer</span>
+<span class="lineno">   54 </span><span class="spaces">  </span><span class="nottickedoff">logMsg &quot;Listening...&quot;</span>
+<span class="lineno">   55 </span><span class="spaces">  </span><span class="nottickedoff">let options = ServerOptions</span>
+<span class="lineno">   56 </span><span class="spaces">        </span><span class="nottickedoff">{ serverHost = &quot;127.0.0.1&quot;</span>
+<span class="lineno">   57 </span><span class="spaces">        </span><span class="nottickedoff">, serverPort = 9161</span>
+<span class="lineno">   58 </span><span class="spaces">        </span><span class="nottickedoff">, serverConnectionOptions = opts</span>
+<span class="lineno">   59 </span><span class="spaces">        </span><span class="nottickedoff">, serverRequirePong = Nothing }</span>
+<span class="lineno">   60 </span><span class="spaces">  </span><span class="nottickedoff">withSystemTempDirectory &quot;reanimate-svgs&quot; $ \tmpDir -&gt;</span>
+<span class="lineno">   61 </span><span class="spaces">    </span><span class="nottickedoff">runServerWithOptions options $ \pending -&gt; do</span>
+<span class="lineno">   62 </span><span class="spaces">      </span><span class="nottickedoff">logMsg &quot;New connection received.&quot;</span>
+<span class="lineno">   63 </span><span class="spaces">      </span><span class="nottickedoff">hasConn &lt;- swapMVar hasConnectionVar True</span>
+<span class="lineno">   64 </span><span class="spaces">      </span><span class="nottickedoff">if hasConn</span>
+<span class="lineno">   65 </span><span class="spaces">        </span><span class="nottickedoff">then do</span>
+<span class="lineno">   66 </span><span class="spaces">          </span><span class="nottickedoff">logMsg &quot;Already connected to browser. Rejecting.&quot;</span>
+<span class="lineno">   67 </span><span class="spaces">          </span><span class="nottickedoff">rejectRequestWith pending defaultRejectRequest</span>
+<span class="lineno">   68 </span><span class="spaces">        </span><span class="nottickedoff">else do</span>
+<span class="lineno">   69 </span><span class="spaces">          </span><span class="nottickedoff">createDirectoryIfMissing True tmpDir</span>
+<span class="lineno">   70 </span><span class="spaces">          </span><span class="nottickedoff">conn &lt;- acceptRequest pending</span>
+<span class="lineno">   71 </span><span class="spaces">          </span><span class="nottickedoff">slave &lt;- newEmptyMVar</span>
+<span class="lineno">   72 </span><span class="spaces">          </span><span class="nottickedoff">let handler = modifyMVar_ slave $ \tid -&gt; do</span>
+<span class="lineno">   73 </span><span class="spaces">                </span><span class="nottickedoff">logMsg &quot;Reloading code...&quot;</span>
+<span class="lineno">   74 </span><span class="spaces">                </span><span class="nottickedoff">killThread tid</span>
+<span class="lineno">   75 </span><span class="spaces">                </span><span class="nottickedoff">forkIO $ ignoreErrors $ slaveHandler verbose mbGHCPath extraGHCOpts conn ghci self tmpDir</span>
+<span class="lineno">   76 </span><span class="spaces">              </span><span class="nottickedoff">killSlave = do</span>
+<span class="lineno">   77 </span><span class="spaces">                </span><span class="nottickedoff">tid &lt;- takeMVar slave</span>
+<span class="lineno">   78 </span><span class="spaces">                </span><span class="nottickedoff">killThread tid</span>
+<span class="lineno">   79 </span><span class="spaces">          </span><span class="nottickedoff">stop &lt;- watchFile watch self handler</span>
+<span class="lineno">   80 </span><span class="spaces">          </span><span class="nottickedoff">putMVar slave =&lt;&lt; forkIO (return ())</span>
+<span class="lineno">   81 </span><span class="spaces">          </span><span class="nottickedoff">handler</span>
+<span class="lineno">   82 </span><span class="spaces">          </span><span class="nottickedoff">let loop = do</span>
+<span class="lineno">   83 </span><span class="spaces">                </span><span class="nottickedoff">-- FIXME: We don't use msg here.</span>
+<span class="lineno">   84 </span><span class="spaces">                </span><span class="nottickedoff">_msg &lt;- receiveData conn :: IO T.Text</span>
+<span class="lineno">   85 </span><span class="spaces">                </span><span class="nottickedoff">handler</span>
+<span class="lineno">   86 </span><span class="spaces">                </span><span class="nottickedoff">loop</span>
+<span class="lineno">   87 </span><span class="spaces">              </span><span class="nottickedoff">cleanup = do</span>
+<span class="lineno">   88 </span><span class="spaces">                </span><span class="nottickedoff">stop</span>
+<span class="lineno">   89 </span><span class="spaces">                </span><span class="nottickedoff">killSlave</span>
+<span class="lineno">   90 </span><span class="spaces">                </span><span class="nottickedoff">_ &lt;- swapMVar hasConnectionVar False</span>
+<span class="lineno">   91 </span><span class="spaces">                </span><span class="nottickedoff">return ()</span>
+<span class="lineno">   92 </span><span class="spaces">          </span><span class="nottickedoff">loop `finally` cleanup</span></span>
+<span class="lineno">   93 </span>
+<span class="lineno">   94 </span>ignoreErrors :: IO () -&gt; IO ()
+<span class="lineno">   95 </span><span class="decl"><span class="nottickedoff">ignoreErrors action = action `catch` \(_::SomeException) -&gt; return ()</span></span>
+<span class="lineno">   96 </span>
+<span class="lineno">   97 </span>openViewer :: IO ()
+<span class="lineno">   98 </span><span class="decl"><span class="nottickedoff">openViewer = do</span>
+<span class="lineno">   99 </span><span class="spaces">  </span><span class="nottickedoff">url &lt;- getDataFileName &quot;viewer-elm/dist/index.html&quot;</span>
+<span class="lineno">  100 </span><span class="spaces">  </span><span class="nottickedoff">logMsg &quot;Opening browser...&quot;</span>
+<span class="lineno">  101 </span><span class="spaces">  </span><span class="nottickedoff">bSucc &lt;- openBrowser url</span>
+<span class="lineno">  102 </span><span class="spaces">  </span><span class="nottickedoff">if bSucc</span>
+<span class="lineno">  103 </span><span class="spaces">      </span><span class="nottickedoff">then logMsg &quot;Browser opened.&quot;</span>
+<span class="lineno">  104 </span><span class="spaces">      </span><span class="nottickedoff">else hPutStrLn stderr $ &quot;Failed to open browser. Manually visit: &quot; ++ url</span></span>
+<span class="lineno">  105 </span>
+<span class="lineno">  106 </span>slaveHandler :: Bool -&gt; Maybe FilePath -&gt; [String] -&gt; Connection -&gt; GhciBackend
+<span class="lineno">  107 </span>             -&gt; FilePath -&gt; FilePath -&gt; IO ()
+<span class="lineno">  108 </span><span class="decl"><span class="nottickedoff">slaveHandler verbose mbGHCPath extraGHCOpts conn ghci self svgDir =</span>
+<span class="lineno">  109 </span><span class="spaces">  </span><span class="nottickedoff">withCurrentDirectory (takeDirectory self) $</span>
+<span class="lineno">  110 </span><span class="spaces">  </span><span class="nottickedoff">withSystemTempDirectory &quot;reanimate&quot; $ \tmpDir -&gt;</span>
+<span class="lineno">  111 </span><span class="spaces">  </span><span class="nottickedoff">withTempFile tmpDir &quot;reanimate.exe&quot; $ \tmpExecutable handle -&gt; do</span>
+<span class="lineno">  112 </span><span class="spaces">    </span><span class="nottickedoff">outputFolder &lt;- createTempDirectory svgDir &quot;svgs&quot;</span>
+<span class="lineno">  113 </span><span class="spaces">    </span><span class="nottickedoff">let frameFileName frameIdx =</span>
+<span class="lineno">  114 </span><span class="spaces">          </span><span class="nottickedoff">outputFolder &lt;/&gt; show frameIdx &lt;.&gt; &quot;svg&quot;</span>
+<span class="lineno">  115 </span><span class="spaces"></span><span class="nottickedoff"></span>
+<span class="lineno">  116 </span><span class="spaces">    </span><span class="nottickedoff">sentFrameCount &lt;- newMVar False</span>
+<span class="lineno">  117 </span><span class="spaces">    </span><span class="nottickedoff">hClose handle</span>
+<span class="lineno">  118 </span><span class="spaces">    </span><span class="nottickedoff">lock &lt;- newMVar ()</span>
+<span class="lineno">  119 </span><span class="spaces">    </span><span class="nottickedoff">sendWebMessage conn $ WebStatus &quot;Compiling&quot;</span>
+<span class="lineno">  120 </span><span class="spaces">    </span><span class="nottickedoff">ghciThread &lt;- forkIO $ do</span>
+<span class="lineno">  121 </span><span class="spaces">      </span><span class="nottickedoff">firstFrame &lt;- newIORef True</span>
+<span class="lineno">  122 </span><span class="spaces">      </span><span class="nottickedoff">ghciReload ghci</span>
+<span class="lineno">  123 </span><span class="spaces">      </span><span class="nottickedoff">logMsg &quot;GHCi reload done.&quot;</span>
+<span class="lineno">  124 </span><span class="spaces">      </span><span class="nottickedoff">ghciGenerate ghci outputFolder $ \frameIdx -&gt; do</span>
+<span class="lineno">  125 </span><span class="spaces">        </span><span class="nottickedoff">first &lt;- readIORef firstFrame</span>
+<span class="lineno">  126 </span><span class="spaces">        </span><span class="nottickedoff">writeIORef firstFrame False</span>
+<span class="lineno">  127 </span><span class="spaces">        </span><span class="nottickedoff">if first</span>
+<span class="lineno">  128 </span><span class="spaces">          </span><span class="nottickedoff">then do</span>
+<span class="lineno">  129 </span><span class="spaces">            </span><span class="nottickedoff">modifyMVar_ sentFrameCount $ \sent -&gt; do</span>
+<span class="lineno">  130 </span><span class="spaces">              </span><span class="nottickedoff">unless sent $</span>
+<span class="lineno">  131 </span><span class="spaces">                </span><span class="nottickedoff">sendWebMessage conn $ WebFrameCount frameIdx</span>
+<span class="lineno">  132 </span><span class="spaces">              </span><span class="nottickedoff">logMsg &quot;Framecount sent.&quot;</span>
+<span class="lineno">  133 </span><span class="spaces">              </span><span class="nottickedoff">return True</span>
+<span class="lineno">  134 </span><span class="spaces">          </span><span class="nottickedoff">else</span>
+<span class="lineno">  135 </span><span class="spaces">            </span><span class="nottickedoff">withMVar lock $ \_ -&gt;</span>
+<span class="lineno">  136 </span><span class="spaces">              </span><span class="nottickedoff">sendWebMessage conn $ WebFrame frameIdx (frameFileName frameIdx)</span>
+<span class="lineno">  137 </span><span class="spaces">      </span><span class="nottickedoff">logMsg &quot;GHCi render done.&quot;</span>
+<span class="lineno">  138 </span><span class="spaces">    </span><span class="nottickedoff">ret &lt;- case mbGHCPath of</span>
+<span class="lineno">  139 </span><span class="spaces">      </span><span class="nottickedoff">Nothing -&gt; do</span>
+<span class="lineno">  140 </span><span class="spaces">        </span><span class="nottickedoff">let args = [&quot;ghc&quot;, &quot;--&quot;] ++ ghcOptions tmpDir ++ extraGHCOpts ++ [takeFileName self, &quot;-o&quot;, tmpExecutable]</span>
+<span class="lineno">  141 </span><span class="spaces">        </span><span class="nottickedoff">when verbose $</span>
+<span class="lineno">  142 </span><span class="spaces">          </span><span class="nottickedoff">logMsg $ &quot;Running: &quot; ++ showCommandForUser &quot;stack&quot; args</span>
+<span class="lineno">  143 </span><span class="spaces">        </span><span class="nottickedoff">runCmd_ &quot;stack&quot; args</span>
+<span class="lineno">  144 </span><span class="spaces">      </span><span class="nottickedoff">Just ghc -&gt; do</span>
+<span class="lineno">  145 </span><span class="spaces">        </span><span class="nottickedoff">let args = ghcOptions tmpDir ++ extraGHCOpts ++ [takeFileName self, &quot;-o&quot;, tmpExecutable]</span>
+<span class="lineno">  146 </span><span class="spaces">        </span><span class="nottickedoff">when verbose $</span>
+<span class="lineno">  147 </span><span class="spaces">          </span><span class="nottickedoff">logMsg $ &quot;Running: &quot; ++ showCommandForUser ghc args</span>
+<span class="lineno">  148 </span><span class="spaces">        </span><span class="nottickedoff">runCmd_ ghc args</span>
+<span class="lineno">  149 </span><span class="spaces">    </span><span class="nottickedoff">logMsg &quot;Compile done.&quot;</span>
+<span class="lineno">  150 </span><span class="spaces">    </span><span class="nottickedoff">case ret of</span>
+<span class="lineno">  151 </span><span class="spaces">      </span><span class="nottickedoff">Left err -&gt;</span>
+<span class="lineno">  152 </span><span class="spaces">        </span><span class="nottickedoff">sendWebMessage conn $ WebError $ unlines (lines err)</span>
+<span class="lineno">  153 </span><span class="spaces">      </span><span class="nottickedoff">Right{} -&gt; runCmdLazy tmpExecutable (execOpts outputFolder) $ \getFrame -&gt; do</span>
+<span class="lineno">  154 </span><span class="spaces">        </span><span class="nottickedoff">frameCount &lt;- expectFrame =&lt;&lt; getFrame</span>
+<span class="lineno">  155 </span><span class="spaces">        </span><span class="nottickedoff">modifyMVar_ sentFrameCount $ \sent -&gt; do</span>
+<span class="lineno">  156 </span><span class="spaces">          </span><span class="nottickedoff">unless sent $</span>
+<span class="lineno">  157 </span><span class="spaces">            </span><span class="nottickedoff">sendWebMessage conn $ WebFrameCount frameCount</span>
+<span class="lineno">  158 </span><span class="spaces">          </span><span class="nottickedoff">return True</span>
+<span class="lineno">  159 </span><span class="spaces">        </span><span class="nottickedoff">replicateM_ frameCount $ do</span>
+<span class="lineno">  160 </span><span class="spaces">          </span><span class="nottickedoff">frameIdx &lt;- expectFrame =&lt;&lt; getFrame</span>
+<span class="lineno">  161 </span><span class="spaces">          </span><span class="nottickedoff">withMVar lock $ \_ -&gt;</span>
+<span class="lineno">  162 </span><span class="spaces">            </span><span class="nottickedoff">sendWebMessage conn $ WebFrame frameIdx (frameFileName frameIdx)</span>
+<span class="lineno">  163 </span><span class="spaces">        </span><span class="nottickedoff">logMsg &quot;Optimized render done.&quot;</span>
+<span class="lineno">  164 </span><span class="spaces">        </span><span class="nottickedoff">killThread ghciThread</span>
+<span class="lineno">  165 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  166 </span><span class="spaces">    </span><span class="nottickedoff">execOpts output =</span>
+<span class="lineno">  167 </span><span class="spaces">      </span><span class="nottickedoff">[ &quot;raw&quot;, &quot;--output&quot;, output, &quot;--offset&quot;, &quot;1&quot;</span>
+<span class="lineno">  168 </span><span class="spaces">      </span><span class="nottickedoff">, &quot;+RTS&quot;, &quot;-N&quot;, &quot;-M2G&quot;, &quot;-RTS&quot;]</span>
+<span class="lineno">  169 </span><span class="spaces">    </span><span class="nottickedoff">expectFrame :: Either String Text -&gt; IO Int</span>
+<span class="lineno">  170 </span><span class="spaces">    </span><span class="nottickedoff">expectFrame (Left &quot;&quot;) = do</span>
+<span class="lineno">  171 </span><span class="spaces">      </span><span class="nottickedoff">sendWebMessage conn $ WebStatus &quot;Done&quot;</span>
+<span class="lineno">  172 </span><span class="spaces">      </span><span class="nottickedoff">exitSuccess</span>
+<span class="lineno">  173 </span><span class="spaces">    </span><span class="nottickedoff">expectFrame (Left err) = do</span>
+<span class="lineno">  174 </span><span class="spaces">      </span><span class="nottickedoff">sendWebMessage conn $ WebError err</span>
+<span class="lineno">  175 </span><span class="spaces">      </span><span class="nottickedoff">exitWith (ExitFailure 1)</span>
+<span class="lineno">  176 </span><span class="spaces">    </span><span class="nottickedoff">expectFrame (Right frame) =</span>
+<span class="lineno">  177 </span><span class="spaces">      </span><span class="nottickedoff">case T.decimal frame of</span>
+<span class="lineno">  178 </span><span class="spaces">        </span><span class="nottickedoff">Left err -&gt; do</span>
+<span class="lineno">  179 </span><span class="spaces">          </span><span class="nottickedoff">hPutStrLn stderr (T.unpack frame)</span>
+<span class="lineno">  180 </span><span class="spaces">          </span><span class="nottickedoff">hPutStrLn stderr $ &quot;expectFrame: &quot; ++ err</span>
+<span class="lineno">  181 </span><span class="spaces">          </span><span class="nottickedoff">sendWebMessage conn $ WebError err</span>
+<span class="lineno">  182 </span><span class="spaces">          </span><span class="nottickedoff">exitWith (ExitFailure 1)</span>
+<span class="lineno">  183 </span><span class="spaces">        </span><span class="nottickedoff">Right (frameNumber, &quot;&quot;) -&gt;</span>
+<span class="lineno">  184 </span><span class="spaces">          </span><span class="nottickedoff">pure frameNumber</span>
+<span class="lineno">  185 </span><span class="spaces">        </span><span class="nottickedoff">Right {} -&gt; do</span>
+<span class="lineno">  186 </span><span class="spaces">          </span><span class="nottickedoff">let err = &quot;Unexpected output&quot;</span>
+<span class="lineno">  187 </span><span class="spaces">          </span><span class="nottickedoff">hPutStrLn stderr (T.unpack frame)</span>
+<span class="lineno">  188 </span><span class="spaces">          </span><span class="nottickedoff">hPutStrLn stderr $ &quot;expectFrame: &quot; ++ err</span>
+<span class="lineno">  189 </span><span class="spaces">          </span><span class="nottickedoff">sendWebMessage conn $ WebError err</span>
+<span class="lineno">  190 </span><span class="spaces">          </span><span class="nottickedoff">exitWith (ExitFailure 1)</span></span>
+<span class="lineno">  191 </span>
+<span class="lineno">  192 </span>watchFile :: WatchManager -&gt; FilePath -&gt; IO () -&gt; IO StopListening
+<span class="lineno">  193 </span><span class="decl"><span class="nottickedoff">watchFile watch file action = watchTree watch (takeDirectory file) check (const action)</span>
+<span class="lineno">  194 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  195 </span><span class="spaces">    </span><span class="nottickedoff">check event =</span>
+<span class="lineno">  196 </span><span class="spaces">      </span><span class="nottickedoff">takeFileName (eventPath event) == takeFileName file ||</span>
+<span class="lineno">  197 </span><span class="spaces">      </span><span class="nottickedoff">takeExtension (eventPath event) `elem` sourceExtensions ||</span>
+<span class="lineno">  198 </span><span class="spaces">      </span><span class="nottickedoff">takeExtension (eventPath event) `elem` dataExtensions</span>
+<span class="lineno">  199 </span><span class="spaces">    </span><span class="nottickedoff">sourceExtensions = [&quot;.hs&quot;, &quot;.lhs&quot;]</span>
+<span class="lineno">  200 </span><span class="spaces">    </span><span class="nottickedoff">dataExtensions = [&quot;.jpg&quot;, &quot;.png&quot;, &quot;.bmp&quot;, &quot;.pov&quot;, &quot;.tex&quot;, &quot;.csv&quot;]</span></span>
+<span class="lineno">  201 </span>
+<span class="lineno">  202 </span>ghcOptions :: FilePath -&gt; [String]
+<span class="lineno">  203 </span><span class="decl"><span class="nottickedoff">ghcOptions tmpDir =</span>
+<span class="lineno">  204 </span><span class="spaces">    </span><span class="nottickedoff">[&quot;-rtsopts&quot;, &quot;--make&quot;, &quot;-threaded&quot;, &quot;-O2&quot;] ++</span>
+<span class="lineno">  205 </span><span class="spaces">    </span><span class="nottickedoff">[&quot;-odir&quot;, tmpDir, &quot;-hidir&quot;, tmpDir]</span></span>
+<span class="lineno">  206 </span>
+<span class="lineno">  207 </span>-- FIXME: Move to a different module
+<span class="lineno">  208 </span>requireOwnSource :: IO FilePath
+<span class="lineno">  209 </span><span class="decl"><span class="nottickedoff">requireOwnSource = do</span>
+<span class="lineno">  210 </span><span class="spaces">  </span><span class="nottickedoff">mbSelf &lt;- findOwnSource</span>
+<span class="lineno">  211 </span><span class="spaces">  </span><span class="nottickedoff">case mbSelf of</span>
+<span class="lineno">  212 </span><span class="spaces">    </span><span class="nottickedoff">Nothing -&gt; do</span>
+<span class="lineno">  213 </span><span class="spaces">      </span><span class="nottickedoff">hPutStrLn stderr</span>
+<span class="lineno">  214 </span><span class="spaces">        </span><span class="nottickedoff">&quot;Rendering in browser window is only available when interpreting.\n\</span>
+<span class="lineno">  215 </span><span class="spaces">        </span><span class="nottickedoff">\To render a video file, use the 'render' command or run again with --help\n\</span>
+<span class="lineno">  216 </span><span class="spaces">        </span><span class="nottickedoff">\to see all available options.&quot;</span>
+<span class="lineno">  217 </span><span class="spaces">      </span><span class="nottickedoff">exitFailure</span>
+<span class="lineno">  218 </span><span class="spaces">    </span><span class="nottickedoff">Just self -&gt; pure self</span></span>
+<span class="lineno">  219 </span>
+<span class="lineno">  220 </span>findOwnSource :: IO (Maybe FilePath)
+<span class="lineno">  221 </span><span class="decl"><span class="nottickedoff">findOwnSource = do</span>
+<span class="lineno">  222 </span><span class="spaces">  </span><span class="nottickedoff">fullArgs &lt;- getFullArgs</span>
+<span class="lineno">  223 </span><span class="spaces">  </span><span class="nottickedoff">stackSource &lt;- makeAbsolute (last fullArgs)</span>
+<span class="lineno">  224 </span><span class="spaces">  </span><span class="nottickedoff">exist &lt;- doesFileExist stackSource</span>
+<span class="lineno">  225 </span><span class="spaces">  </span><span class="nottickedoff">if exist &amp;&amp; isHaskellFile stackSource</span>
+<span class="lineno">  226 </span><span class="spaces">    </span><span class="nottickedoff">then return (Just stackSource)</span>
+<span class="lineno">  227 </span><span class="spaces">    </span><span class="nottickedoff">else do</span>
+<span class="lineno">  228 </span><span class="spaces">      </span><span class="nottickedoff">prog &lt;- getProgName</span>
+<span class="lineno">  229 </span><span class="spaces">      </span><span class="nottickedoff">let hsProg</span>
+<span class="lineno">  230 </span><span class="spaces">            </span><span class="nottickedoff">| isHaskellFile prog = prog</span>
+<span class="lineno">  231 </span><span class="spaces">            </span><span class="nottickedoff">| otherwise = replaceExtension prog &quot;hs&quot;</span>
+<span class="lineno">  232 </span><span class="spaces">      </span><span class="nottickedoff">lst &lt;- listDirectory &quot;.&quot;</span>
+<span class="lineno">  233 </span><span class="spaces">      </span><span class="nottickedoff">findFile (&quot;.&quot; : lst) hsProg</span></span>
+<span class="lineno">  234 </span>
+<span class="lineno">  235 </span>isHaskellFile :: FilePath -&gt; Bool
+<span class="lineno">  236 </span><span class="decl"><span class="nottickedoff">isHaskellFile path = takeExtension path `elem` [&quot;.hs&quot;, &quot;.lhs&quot;]</span></span>
+<span class="lineno">  237 </span>
+<span class="lineno">  238 </span>logMsg :: String -&gt; IO ()
+<span class="lineno">  239 </span><span class="decl"><span class="nottickedoff">logMsg msg = do</span>
+<span class="lineno">  240 </span><span class="spaces">    </span><span class="nottickedoff">now &lt;- getCurrentTime</span>
+<span class="lineno">  241 </span><span class="spaces">    </span><span class="nottickedoff">putStrLn $ formatTime defaultTimeLocale fmt now ++ &quot;: &quot; ++ msg</span>
+<span class="lineno">  242 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  243 </span><span class="spaces">    </span><span class="nottickedoff">fmt = &quot;%F %T%2Q&quot;</span></span>
+<span class="lineno">  244 </span>
+<span class="lineno">  245 </span>-------------------------------------------------------------------------------
+<span class="lineno">  246 </span>-- Ghci interface
+<span class="lineno">  247 </span>
+<span class="lineno">  248 </span>-- stack
+<span class="lineno">  249 </span>-- cabal
+<span class="lineno">  250 </span>-- raw
+<span class="lineno">  251 </span>-- none?
+<span class="lineno">  252 </span>data GhciBackend = GhciBackend (MVar Ghci)
+<span class="lineno">  253 </span>
+<span class="lineno">  254 </span>ghciBackend :: Maybe FilePath -&gt; FilePath -&gt; IO GhciBackend
+<span class="lineno">  255 </span><span class="decl"><span class="nottickedoff">ghciBackend mbGHCPath self = do</span>
+<span class="lineno">  256 </span><span class="spaces">  </span><span class="nottickedoff">let ghciProc =</span>
+<span class="lineno">  257 </span><span class="spaces">        </span><span class="nottickedoff">case mbGHCPath of</span>
+<span class="lineno">  258 </span><span class="spaces">          </span><span class="nottickedoff">Just ghcPath -&gt;</span>
+<span class="lineno">  259 </span><span class="spaces">            </span><span class="nottickedoff">proc ghcPath $ [&quot;--interactive&quot;, &quot;+RTS&quot;] ++ words memoryLimit ++ [&quot;-RTS&quot;]</span>
+<span class="lineno">  260 </span><span class="spaces">          </span><span class="nottickedoff">Nothing -&gt;</span>
+<span class="lineno">  261 </span><span class="spaces">            </span><span class="nottickedoff">proc &quot;stack&quot; [&quot;exec&quot;, &quot;ghci&quot;, &quot;--rts-options=&quot;++memoryLimit]</span>
+<span class="lineno">  262 </span><span class="spaces">  </span><span class="nottickedoff">(ghci, _loads) &lt;- startGhciProcess ghciProc $ \_stream _msg -&gt; return ()</span>
+<span class="lineno">  263 </span><span class="spaces">  </span><span class="nottickedoff">void $ exec ghci $ &quot;:load &quot; ++ self</span>
+<span class="lineno">  264 </span><span class="spaces">  </span><span class="nottickedoff">ref &lt;- newMVar ghci</span>
+<span class="lineno">  265 </span><span class="spaces">  </span><span class="nottickedoff">return $ GhciBackend ref</span></span>
+<span class="lineno">  266 </span>
+<span class="lineno">  267 </span>ghciReload :: GhciBackend -&gt; IO ()
+<span class="lineno">  268 </span><span class="decl"><span class="nottickedoff">ghciReload (GhciBackend ref) =</span>
+<span class="lineno">  269 </span><span class="spaces">  </span><span class="nottickedoff">withMVar ref $ \ghci -&gt;</span>
+<span class="lineno">  270 </span><span class="spaces">    </span><span class="nottickedoff">void $ reload ghci</span></span>
+<span class="lineno">  271 </span>
+<span class="lineno">  272 </span>ghciGenerate :: GhciBackend -&gt; FilePath -&gt; (Int -&gt; IO ()) -&gt; IO ()
+<span class="lineno">  273 </span><span class="decl"><span class="nottickedoff">ghciGenerate (GhciBackend ref) target cb = withMVar ref $ \ghci -&gt; do</span>
+<span class="lineno">  274 </span><span class="spaces">  </span><span class="nottickedoff">execStream ghci (&quot;:main raw --output=&quot; ++ target ++ &quot; --offset=1&quot;)</span>
+<span class="lineno">  275 </span><span class="spaces">    </span><span class="nottickedoff">$ \_ msg -&gt;</span>
+<span class="lineno">  276 </span><span class="spaces">      </span><span class="nottickedoff">case reads msg of</span>
+<span class="lineno">  277 </span><span class="spaces">        </span><span class="nottickedoff">[(frameIdx,&quot;&quot;)] -&gt; cb frameIdx</span>
+<span class="lineno">  278 </span><span class="spaces">        </span><span class="nottickedoff">_               -&gt; return ()</span></span>
+<span class="lineno">  279 </span>
+<span class="lineno">  280 </span>memoryLimit :: String
+<span class="lineno">  281 </span><span class="decl"><span class="nottickedoff">memoryLimit = &quot;-M1G&quot;</span></span>
+<span class="lineno">  282 </span>
+<span class="lineno">  283 </span>-------------------------------------------------------------------------------
+<span class="lineno">  284 </span>-- Websocket API
+<span class="lineno">  285 </span>
+<span class="lineno">  286 </span>data WebMessage
+<span class="lineno">  287 </span>  = WebStatus String
+<span class="lineno">  288 </span>  | WebError String
+<span class="lineno">  289 </span>  | WebFrameCount Int
+<span class="lineno">  290 </span>  | WebFrame Int FilePath
+<span class="lineno">  291 </span>
+<span class="lineno">  292 </span>sendWebMessage :: Connection -&gt; WebMessage -&gt; IO ()
+<span class="lineno">  293 </span><span class="decl"><span class="nottickedoff">sendWebMessage conn msg = sendTextData conn $</span>
+<span class="lineno">  294 </span><span class="spaces">  </span><span class="nottickedoff">case msg of</span>
+<span class="lineno">  295 </span><span class="spaces">    </span><span class="nottickedoff">WebStatus txt   -&gt; T.pack &quot;status\n&quot; &lt;&gt; T.pack txt</span>
+<span class="lineno">  296 </span><span class="spaces">    </span><span class="nottickedoff">WebError txt    -&gt; T.pack &quot;error\n&quot; &lt;&gt; T.pack txt</span>
+<span class="lineno">  297 </span><span class="spaces">    </span><span class="nottickedoff">WebFrameCount n -&gt; T.pack $ &quot;frame_count\n&quot; ++ show n</span>
+<span class="lineno">  298 </span><span class="spaces">    </span><span class="nottickedoff">WebFrame n path -&gt; T.pack $ &quot;frame\n&quot; ++ show n ++ &quot;\n&quot; ++ path</span></span>
+
+</pre>
+</body>
+</html>
