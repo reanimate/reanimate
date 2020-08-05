@@ -31,17 +31,16 @@ jobs:
 
     - name: Install dependencies
       run: |
-        cabal update
-        cabal build --enable-coverage --only-dependencies --disable-tests --disable-benchmarks
+        cabal v2-update
+        cabal v2-build --enable-coverage --only-dependencies --disable-tests --disable-benchmarks
     - name: Build
       run: |
-        cabal build --enable-coverage --disable-tests --disable-benchmarks
-        cabal v1-install
+        cabal v2-build --enable-coverage --disable-tests --disable-benchmarks
 
     - name: Generate HPC files
       run: |
         for gold in examples/*.golden; do
-          cabal exec -- ghc -package reanimate "${gold%.golden}.hs" --make
+          cabal v2-exec -- ghc "${gold%.golden}.hs" --make
           ${gold%.golden} test > /dev/null
         done;
     
