@@ -37,18 +37,6 @@ Source-Repository head
     Type:      git
     Location:  git://github.com/lemmih/reanimate.git
 
--- If both 'enable-hmatrix' and 'disable-hmatrix' are false, then use
--- hmatrix on Macos and Linux but not Windows.
-Flag enable-hmatrix
-  Description: Enable hmatrix dependency on Windows (requires openblas)
-  Default:     False
-  Manual:      True
-
-Flag disable-hmatrix
-  Description: Force disable hmatrix dependency
-  Default:     False
-  Manual:      True
-
 Flag test
   Description: Enable testing (requires stack)
   Default:     False
