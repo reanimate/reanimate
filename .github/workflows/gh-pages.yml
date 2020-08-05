@@ -1,4 +1,4 @@
-name: HPC/Haddock
+name: HPC
 
 on:
   push:
@@ -32,9 +32,11 @@ jobs:
     - name: Install dependencies
       run: |
         cabal update
-        cabal build --only-dependencies --disable-tests --disable-benchmarks
+        cabal build --enable-coverage --only-dependencies --disable-tests --disable-benchmarks
     - name: Build
-      run: cabal build --enable-coverage
+      run: |
+        cabal build --enable-coverage --disable-tests --disable-benchmarks
+        cabal v1-install
 
     - name: Generate HPC files
       run: |
