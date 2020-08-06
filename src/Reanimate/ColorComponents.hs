@@ -1,5 +1,26 @@
 {-# LANGUAGE RecordWildCards #-}
-module Reanimate.ColorComponents where
+{- |
+  Colors are three dimensional and can be projected into many color spaces
+  with different properties.
+
+  Interpolating directly in the RGB color space is unintuitive and rarely useful.
+  If you want to transition through color, you most likely want either the XYZ space
+  (for physically accurate color transitions) or the LAB space (for esthetically
+  pleasing colors).
+-}
+module Reanimate.ColorComponents
+  ( ColorComponents(..)
+  , rgbComponents
+  , hsvComponents
+  , labComponents
+  , xyzComponents
+  , lchComponents
+  , interpolate
+  , interpolateRGB8
+  , interpolateRGBA8
+  , toRGB8
+  , fromRGB8
+  ) where
 
 import           Codec.Picture
 import           Codec.Picture.Types
@@ -12,9 +33,13 @@ import           Data.Colour.SRGB
 import           Data.Fixed
 import           Reanimate.Ease
 
+-- | Constructor and destructor for color's three components.
 data ColorComponents = ColorComponents
   { colorUnpack :: Colour Double -> (Double, Double, Double)
-  , colorPack   :: Double -> Double -> Double -> Colour Double }
+    -- ^ Unpack a color into its three components.
+  , colorPack   :: Double -> Double -> Double -> Colour Double
+    -- ^ Restore a color from three coordinates.
+  }
 
 -- | > interpolate rgbComponents yellow blue
 --
@@ -71,6 +96,7 @@ lchComponents = ColorComponents unpack pack
     pack l c h =
       cieLAB d65 l (cos (toRad h) * c) (sin (toRad h) * c)
 
+-- | Smoothly interpolate between two colors using the given color components.
 interpolate :: ColorComponents -> Colour Double -> Colour Double -> (Double -> Colour Double)
 interpolate ColorComponents{..} from to = \d ->
     colorPack (a1 + (a2-a1)*d) (b1 + (b2-b1)*d) (c1 + (c2-c1)*d)
@@ -78,9 +104,11 @@ interpolate ColorComponents{..} from to = \d ->
     (a1,b1,c1) = colorUnpack from
     (a2,b2,c2) = colorUnpack to
 
+-- | Convenience interpolation function for RGB8 values.
 interpolateRGB8 :: ColorComponents -> PixelRGB8 -> PixelRGB8 -> (Double -> PixelRGB8)
 interpolateRGB8 comps from to = toRGB8 . interpolate comps (fromRGB8 from) (fromRGB8 to)
 
+-- | Convenience interpolation function for RGBA8 values.
 interpolateRGBA8 :: ColorComponents -> PixelRGBA8 -> PixelRGBA8 -> (Double -> PixelRGBA8)
 interpolateRGBA8 comps from to = \t ->
   case interp t of
@@ -90,10 +118,12 @@ interpolateRGBA8 comps from to = \t ->
   where
     interp = interpolateRGB8 comps (dropTransparency from) (dropTransparency to)
 
+-- | Convenience function for expressing a color as an RGB8 value.
 toRGB8 :: Colour Double -> PixelRGB8
 toRGB8 c = PixelRGB8 r g b
   where
     RGB r g b = toSRGBBounded c
 
+-- | Convenience function for expressing an RGB8 value as a color.
 fromRGB8 :: PixelRGB8 -> Colour Double
 fromRGB8 (PixelRGB8 r g b) = sRGB24 r g b
