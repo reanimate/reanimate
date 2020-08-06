@@ -36,16 +36,14 @@ jobs:
     - name: Build
       run: |
         # cabal v1-build --enable-coverage
-        cabal v1-install happy
-        cabal v1-install alex
-        cabal v1-install c2hs
-        cabal v1-install --enable-coverage
+        cabal v2-build --enable-coverage
 
     - name: Generate HPC files
       run: |
+        set -o xtrace
         for gold in examples/*.golden; do
           ghc "${gold%.golden}.hs" --make
-          ${gold%.golden} test > /dev/null
+          reanimate_datadir=$(pwd) ${gold%.golden} test > /dev/null
         done;
     
     - name: Merge HPC files
@@ -53,13 +51,13 @@ jobs:
 
     - name: Report
       run: |
-        # hpc report --hpcdir $(find dist-newstyle -name 'hpc')/vanilla/mix/*/ total.tix
-        hpc report --hpcdir dist/hpc/vanilla/mix/*/ total.tix
+        hpc report --hpcdir $(find dist-newstyle -name 'hpc')/vanilla/mix/*/ total.tix
+        # hpc report --hpcdir dist/hpc/vanilla/mix/*/ total.tix
 
     - name: Markup
       run: |
-        # hpc markup --destdir=hpc --hpcdir $(find dist-newstyle -name 'hpc')/vanilla/mix/*/ total.tix
-        hpc markup --destdir=hpc --hpcdir dist/hpc/vanilla/mix/*/ total.tix
+        hpc markup --destdir=hpc --hpcdir $(find dist-newstyle -name 'hpc')/vanilla/mix/*/ total.tix
+        # hpc markup --destdir=hpc --hpcdir dist/hpc/vanilla/mix/*/ total.tix
 
     - name: Deploy 🚀
       uses: JamesIves/github-pages-deploy-action@3.5.9
