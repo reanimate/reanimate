@@ -29,14 +29,14 @@ jobs:
           ${{ runner.os }}-build-
           ${{ runner.os }}-
 
-    - name: Install dependencies
-      run: |
-        cabal v1-update
-        cabal v1-build --enable-coverage --only-dependencies --disable-tests --disable-benchmarks
+    #- name: Install dependencies
+    #  run: |
+    #    cabal v1-update
+    #    cabal v1-build --enable-coverage --only-dependencies --disable-tests --disable-benchmarks
     - name: Build
       run: |
-        cabal v1-build --enable-coverage --disable-tests --disable-benchmarks
-        cabal v1-install --enable-coverage --disable-tests --disable-benchmarks
+        cabal v1-build --enable-coverage
+        cabal v1-install --enable-coverage
 
     - name: Generate HPC files
       run: |
