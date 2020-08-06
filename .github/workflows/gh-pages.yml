@@ -60,13 +60,12 @@ jobs:
     - name: Badge
       run: |
         COVERAGE=$(cat hpc/hpc_index.html | tr '\n' ' ' | sed "s/.*Program Coverage Total.*>\([0-9]\{1,3\}\)%.*>\([0-9]\{1,3\}\)%.*>\([0-9]\{1,3\}\)%.*/\1/")
-        echo <<HERE > hpc/hpc_badge.json
-          { "schemaVersion": 1,
-            "label": "hpc",
-            "message": "$COVERAGE%",
-            "color": "green"
-          }
-        HERE
+        echo "\
+          { \"schemaVersion\": 1, \
+            \"label\": \"hpc\", \
+            \"message\": \"$COVERAGE%\", \
+            \"color\": \"green\" \
+          }" > hpc/hpc_badge.json
 
     - name: Deploy 🚀
       uses: JamesIves/github-pages-deploy-action@3.5.9
