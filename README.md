@@ -8,7 +8,6 @@
 [![API test coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Freanimate.github.io%2Freanimate%2Fhpc_badge.json)](https://reanimate.github.io/reanimate/hpc_index.html)
 [![API docs coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Freanimate.github.io%2Freanimate%2Fhaddock_badge.json)](https://reanimate.github.io/reanimate/haddock.txt)
 [![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/reanimate/discord-bot?label=discord-bot)](https://hub.docker.com/repository/docker/reanimate/discord-bot)
-[![Website](https://img.shields.io/website?url=https%3A%2F%2Freanimate.github.io)](https://reanimate.github.io/)
 [![Discord](https://img.shields.io/discord/731822102935502908)](https://discord.gg/Qs28Dv6)
 
 # Reanimate
