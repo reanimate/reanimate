@@ -42,7 +42,7 @@ jobs:
       run: |
         set -o xtrace
         for gold in examples/*.golden; do
-          cabal v2-exec -- ghc "${gold%.golden}.hs" --make
+          cabal v2-exec -- ghc -package reanimate "${gold%.golden}.hs" --make
           reanimate_datadir=$(pwd) ${gold%.golden} test > /dev/null
         done;
     
