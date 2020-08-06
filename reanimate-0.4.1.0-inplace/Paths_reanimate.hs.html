@@ -42,7 +42,7 @@ span.spaces    { background: white }
 <span class="lineno">   23 </span>#else
 <span class="lineno">   24 </span>catchIO :: IO a -&gt; (Exception.IOException -&gt; IO a) -&gt; IO a
 <span class="lineno">   25 </span>#endif
-<span class="lineno">   26 </span><span class="decl"><span class="nottickedoff">catchIO = Exception.catch</span></span>
+<span class="lineno">   26 </span><span class="decl"><span class="istickedoff">catchIO = Exception.catch</span></span>
 <span class="lineno">   27 </span>
 <span class="lineno">   28 </span>version :: Version
 <span class="lineno">   29 </span><span class="decl"><span class="nottickedoff">version = Version [0,4,1,0] []</span></span>
@@ -59,14 +59,14 @@ span.spaces    { background: white }
 <span class="lineno">   40 </span><span class="decl"><span class="nottickedoff">getBinDir = catchIO (getEnv &quot;reanimate_bindir&quot;) (\_ -&gt; return bindir)</span></span>
 <span class="lineno">   41 </span><span class="decl"><span class="nottickedoff">getLibDir = catchIO (getEnv &quot;reanimate_libdir&quot;) (\_ -&gt; return libdir)</span></span>
 <span class="lineno">   42 </span><span class="decl"><span class="nottickedoff">getDynLibDir = catchIO (getEnv &quot;reanimate_dynlibdir&quot;) (\_ -&gt; return dynlibdir)</span></span>
-<span class="lineno">   43 </span><span class="decl"><span class="nottickedoff">getDataDir = catchIO (getEnv &quot;reanimate_datadir&quot;) (\_ -&gt; return datadir)</span></span>
+<span class="lineno">   43 </span><span class="decl"><span class="istickedoff">getDataDir = catchIO (getEnv &quot;reanimate_datadir&quot;) <span class="nottickedoff">(\_ -&gt; return datadir)</span></span></span>
 <span class="lineno">   44 </span><span class="decl"><span class="nottickedoff">getLibexecDir = catchIO (getEnv &quot;reanimate_libexecdir&quot;) (\_ -&gt; return libexecdir)</span></span>
 <span class="lineno">   45 </span><span class="decl"><span class="nottickedoff">getSysconfDir = catchIO (getEnv &quot;reanimate_sysconfdir&quot;) (\_ -&gt; return sysconfdir)</span></span>
 <span class="lineno">   46 </span>
 <span class="lineno">   47 </span>getDataFileName :: FilePath -&gt; IO FilePath
-<span class="lineno">   48 </span><span class="decl"><span class="nottickedoff">getDataFileName name = do</span>
-<span class="lineno">   49 </span><span class="spaces">  </span><span class="nottickedoff">dir &lt;- getDataDir</span>
-<span class="lineno">   50 </span><span class="spaces">  </span><span class="nottickedoff">return (dir ++ &quot;/&quot; ++ name)</span></span>
+<span class="lineno">   48 </span><span class="decl"><span class="istickedoff">getDataFileName name = do</span>
+<span class="lineno">   49 </span><span class="spaces">  </span><span class="istickedoff">dir &lt;- getDataDir</span>
+<span class="lineno">   50 </span><span class="spaces">  </span><span class="istickedoff">return (dir ++ &quot;/&quot; ++ name)</span></span>
 
 </pre>
 </body>

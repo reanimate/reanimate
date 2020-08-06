@@ -102,7 +102,7 @@ span.spaces    { background: white }
 <span class="lineno">   83 </span>
 <span class="lineno">   84 </span>{-# NOINLINE pNoExternals #-}
 <span class="lineno">   85 </span>pNoExternals :: Bool
-<span class="lineno">   86 </span><span class="decl"><span class="nottickedoff">pNoExternals = unsafePerformIO (readIORef pNoExternalsRef)</span></span>
+<span class="lineno">   86 </span><span class="decl"><span class="istickedoff">pNoExternals = unsafePerformIO (readIORef pNoExternalsRef)</span></span>
 <span class="lineno">   87 </span>
 <span class="lineno">   88 </span>setNoExternals :: Bool -&gt; IO ()
 <span class="lineno">   89 </span><span class="decl"><span class="istickedoff">setNoExternals = writeIORef pNoExternalsRef</span></span>

@@ -116,7 +116,7 @@ span.spaces    { background: white }
 <span class="lineno">   97 </span>-- Methods
 <span class="lineno">   98 </span>
 <span class="lineno">   99 </span>quadToCubic :: Fractional a =&gt; QuadBezier a -&gt; CubicBezier a
-<span class="lineno">  100 </span><span class="decl"><span class="nottickedoff">quadToCubic = upCast . C.quadToCubic . downCast</span></span>
+<span class="lineno">  100 </span><span class="decl"><span class="istickedoff">quadToCubic = upCast . C.quadToCubic . downCast</span></span>
 <span class="lineno">  101 </span>
 <span class="lineno">  102 </span>arcLength :: CubicBezier Double -&gt; Double -&gt; Double -&gt; Double
 <span class="lineno">  103 </span><span class="decl"><span class="istickedoff">arcLength bezier t tol = C.arcLength (downCast bezier) t tol</span></span>
@@ -125,10 +125,10 @@ span.spaces    { background: white }
 <span class="lineno">  106 </span><span class="decl"><span class="nottickedoff">arcLengthParam bezier t tol = C.arcLengthParam (downCast bezier) t tol</span></span>
 <span class="lineno">  107 </span>
 <span class="lineno">  108 </span>colinear :: CubicBezier Double -&gt; Double -&gt; Bool
-<span class="lineno">  109 </span><span class="decl"><span class="nottickedoff">colinear bezier tol = C.colinear (downCast bezier) tol</span></span>
+<span class="lineno">  109 </span><span class="decl"><span class="istickedoff">colinear bezier tol = C.colinear (downCast bezier) tol</span></span>
 <span class="lineno">  110 </span>
 <span class="lineno">  111 </span>evalBezier :: (C.GenericBezier b, V.Unbox a, Fractional a) =&gt; b a -&gt; a -&gt; V2 a
-<span class="lineno">  112 </span><span class="decl"><span class="nottickedoff">evalBezier c p = upCast $ C.evalBezier c p</span></span>
+<span class="lineno">  112 </span><span class="decl"><span class="istickedoff">evalBezier c p = upCast $ C.evalBezier c p</span></span>
 <span class="lineno">  113 </span>
 <span class="lineno">  114 </span>evalBezierDeriv :: (V.Unbox a, Fractional a,C.GenericBezier b) =&gt; b a -&gt; a -&gt; (V2 a, V2 a)
 <span class="lineno">  115 </span><span class="decl"><span class="nottickedoff">evalBezierDeriv c p = upCast $ C.evalBezierDeriv c p</span></span>
@@ -155,7 +155,7 @@ span.spaces    { background: white }
 <span class="lineno">  136 </span><span class="decl"><span class="nottickedoff">closest c p t = C.closest (downCast c) (downCast p) t</span></span>
 <span class="lineno">  137 </span>
 <span class="lineno">  138 </span>closedPathCurves :: Fractional a =&gt; ClosedPath a -&gt; [CubicBezier a]
-<span class="lineno">  139 </span><span class="decl"><span class="nottickedoff">closedPathCurves = upCast . C.closedPathCurves . downCast</span></span>
+<span class="lineno">  139 </span><span class="decl"><span class="istickedoff">closedPathCurves = upCast . C.closedPathCurves . downCast</span></span>
 <span class="lineno">  140 </span>
 <span class="lineno">  141 </span>openPathCurves :: Fractional a =&gt; OpenPath a -&gt; [CubicBezier a]
 <span class="lineno">  142 </span><span class="decl"><span class="nottickedoff">openPathCurves = upCast . C.openPathCurves . downCast</span></span>
@@ -180,13 +180,13 @@ span.spaces    { background: white }
 <span class="lineno">  161 </span>
 <span class="lineno">  162 </span>instance C.GenericBezier QuadBezier where
 <span class="lineno">  163 </span>  <span class="decl"><span class="nottickedoff">degree = C.degree . downCast</span></span>
-<span class="lineno">  164 </span>  <span class="decl"><span class="nottickedoff">toVector = C.toVector . downCast</span></span>
+<span class="lineno">  164 </span>  <span class="decl"><span class="istickedoff">toVector = C.toVector . downCast</span></span>
 <span class="lineno">  165 </span>  <span class="decl"><span class="nottickedoff">unsafeFromVector = upCast . C.unsafeFromVector</span></span>
 <span class="lineno">  166 </span>
 <span class="lineno">  167 </span>instance C.GenericBezier CubicBezier where
 <span class="lineno">  168 </span>  <span class="decl"><span class="nottickedoff">degree = C.degree . downCast</span></span>
-<span class="lineno">  169 </span>  <span class="decl"><span class="nottickedoff">toVector = C.toVector . downCast</span></span>
-<span class="lineno">  170 </span>  <span class="decl"><span class="nottickedoff">unsafeFromVector = upCast . C.unsafeFromVector</span></span>
+<span class="lineno">  169 </span>  <span class="decl"><span class="istickedoff">toVector = C.toVector . downCast</span></span>
+<span class="lineno">  170 </span>  <span class="decl"><span class="istickedoff">unsafeFromVector = upCast . C.unsafeFromVector</span></span>
 <span class="lineno">  171 </span>
 <span class="lineno">  172 </span>instance C.GenericBezier AnyBezier where
 <span class="lineno">  173 </span>  <span class="decl"><span class="nottickedoff">degree = C.degree . downCast</span></span>
@@ -202,7 +202,7 @@ span.spaces    { background: white }
 <span class="lineno">  183 </span>
 <span class="lineno">  184 </span>instance Cast a b =&gt; Cast [a] [b] where
 <span class="lineno">  185 </span>  <span class="decl"><span class="nottickedoff">downCast = map downCast</span></span>
-<span class="lineno">  186 </span>  <span class="decl"><span class="nottickedoff">upCast = map upCast</span></span>
+<span class="lineno">  186 </span>  <span class="decl"><span class="istickedoff">upCast = map upCast</span></span>
 <span class="lineno">  187 </span>
 <span class="lineno">  188 </span>instance (Cast a a', Cast b b') =&gt; Cast (a,b) (a',b') where
 <span class="lineno">  189 </span>  <span class="decl"><span class="nottickedoff">downCast (a, b) = (downCast a, downCast b)</span></span>
@@ -210,17 +210,17 @@ span.spaces    { background: white }
 <span class="lineno">  191 </span>
 <span class="lineno">  192 </span>instance Cast (V2 a) (C.Point a) where
 <span class="lineno">  193 </span>  <span class="decl"><span class="istickedoff">downCast (V2 a b) = C.Point a b</span></span>
-<span class="lineno">  194 </span>  <span class="decl"><span class="nottickedoff">upCast (C.Point a b) = V2 a b</span></span>
+<span class="lineno">  194 </span>  <span class="decl"><span class="istickedoff">upCast (C.Point a b) = V2 a b</span></span>
 <span class="lineno">  195 </span>
 <span class="lineno">  196 </span>instance Cast (CubicBezier a) (C.CubicBezier a) where
 <span class="lineno">  197 </span>  <span class="decl"><span class="istickedoff">downCast (CubicBezier a b c d) = C.CubicBezier</span>
 <span class="lineno">  198 </span><span class="spaces">    </span><span class="istickedoff">(downCast a) (downCast b) (downCast c) (downCast d)</span></span>
-<span class="lineno">  199 </span>  <span class="decl"><span class="nottickedoff">upCast (C.CubicBezier a b c d) = CubicBezier</span>
-<span class="lineno">  200 </span><span class="spaces">    </span><span class="nottickedoff">(upCast a) (upCast b) (upCast c) (upCast d)</span></span>
+<span class="lineno">  199 </span>  <span class="decl"><span class="istickedoff">upCast (C.CubicBezier a b c d) = CubicBezier</span>
+<span class="lineno">  200 </span><span class="spaces">    </span><span class="istickedoff">(upCast a) (upCast b) (upCast c) (upCast d)</span></span>
 <span class="lineno">  201 </span>
 <span class="lineno">  202 </span>instance Cast (QuadBezier a) (C.QuadBezier a) where
-<span class="lineno">  203 </span>  <span class="decl"><span class="nottickedoff">downCast (QuadBezier a b c) = C.QuadBezier</span>
-<span class="lineno">  204 </span><span class="spaces">    </span><span class="nottickedoff">(downCast a) (downCast b) (downCast c)</span></span>
+<span class="lineno">  203 </span>  <span class="decl"><span class="istickedoff">downCast (QuadBezier a b c) = C.QuadBezier</span>
+<span class="lineno">  204 </span><span class="spaces">    </span><span class="istickedoff">(downCast a) (downCast b) (downCast c)</span></span>
 <span class="lineno">  205 </span>  <span class="decl"><span class="nottickedoff">upCast (C.QuadBezier a b c)= QuadBezier</span>
 <span class="lineno">  206 </span><span class="spaces">    </span><span class="nottickedoff">(upCast a) (upCast b) (upCast c)</span></span>
 <span class="lineno">  207 </span>
@@ -245,8 +245,8 @@ span.spaces    { background: white }
 <span class="lineno">  226 </span><span class="spaces">  </span><span class="nottickedoff">upCast (C.Controls p1 p2)         = Controls (upCast p1) (upCast p2)</span></span>
 <span class="lineno">  227 </span>
 <span class="lineno">  228 </span>instance Cast (PathJoin a) (C.PathJoin a) where
-<span class="lineno">  229 </span>  <span class="decl"><span class="nottickedoff">downCast JoinLine        = C.JoinLine</span>
-<span class="lineno">  230 </span><span class="spaces">  </span><span class="nottickedoff">downCast (JoinCurve a b) = C.JoinCurve (downCast a) (downCast b)</span></span>
+<span class="lineno">  229 </span>  <span class="decl"><span class="istickedoff">downCast JoinLine        = C.JoinLine</span>
+<span class="lineno">  230 </span><span class="spaces">  </span><span class="istickedoff">downCast (JoinCurve a b) = C.JoinCurve (downCast a) (downCast b)</span></span>
 <span class="lineno">  231 </span>  <span class="decl"><span class="nottickedoff">upCast C.JoinLine        = JoinLine</span>
 <span class="lineno">  232 </span><span class="spaces">  </span><span class="nottickedoff">upCast (C.JoinCurve a b) = JoinCurve (upCast a) (upCast b)</span></span>
 <span class="lineno">  233 </span>
@@ -275,9 +275,9 @@ span.spaces    { background: white }
 <span class="lineno">  256 </span><span class="spaces">    </span><span class="nottickedoff">| (p, j) &lt;- lst ] (upCast end)</span></span>
 <span class="lineno">  257 </span>
 <span class="lineno">  258 </span>instance Cast (ClosedPath a) (C.ClosedPath a) where
-<span class="lineno">  259 </span>  <span class="decl"><span class="nottickedoff">downCast (ClosedPath lst) = C.ClosedPath</span>
-<span class="lineno">  260 </span><span class="spaces">    </span><span class="nottickedoff">[ (downCast p, downCast j)</span>
-<span class="lineno">  261 </span><span class="spaces">    </span><span class="nottickedoff">| (p, j) &lt;- lst ]</span></span>
+<span class="lineno">  259 </span>  <span class="decl"><span class="istickedoff">downCast (ClosedPath lst) = C.ClosedPath</span>
+<span class="lineno">  260 </span><span class="spaces">    </span><span class="istickedoff">[ (downCast p, downCast j)</span>
+<span class="lineno">  261 </span><span class="spaces">    </span><span class="istickedoff">| (p, j) &lt;- lst ]</span></span>
 <span class="lineno">  262 </span>  <span class="decl"><span class="nottickedoff">upCast (C.ClosedPath lst) = ClosedPath</span>
 <span class="lineno">  263 </span><span class="spaces">    </span><span class="nottickedoff">[ (upCast p, upCast j)</span>
 <span class="lineno">  264 </span><span class="spaces">    </span><span class="nottickedoff">| (p, j) &lt;- lst ]</span></span>

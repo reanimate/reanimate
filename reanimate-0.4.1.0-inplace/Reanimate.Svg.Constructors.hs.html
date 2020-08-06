@@ -101,7 +101,7 @@ span.spaces    { background: white }
 <span class="lineno">   82 </span>-- | @rotate angle image@ rotates the @image@ around origin @(0,0)@ counterclockwise by @angle@
 <span class="lineno">   83 </span>--   given in degrees.
 <span class="lineno">   84 </span>rotate :: Double -&gt; Tree -&gt; Tree
-<span class="lineno">   85 </span><span class="decl"><span class="nottickedoff">rotate a = withTransformations [Rotate a Nothing]</span></span>
+<span class="lineno">   85 </span><span class="decl"><span class="istickedoff">rotate a = withTransformations [Rotate a Nothing]</span></span>
 <span class="lineno">   86 </span>
 <span class="lineno">   87 </span>-- | @rotate angle point image@ rotates the @image@ around given @point@ counterclockwise by
 <span class="lineno">   88 </span>--   @angle@ given in degrees.
@@ -146,23 +146,23 @@ span.spaces    { background: white }
 <span class="lineno">  127 </span>-- half the original size. Negative values are also allowed, and lead to flipping the image along
 <span class="lineno">  128 </span>-- both X and Y axes.
 <span class="lineno">  129 </span>scale :: Double -&gt; Tree -&gt; Tree
-<span class="lineno">  130 </span><span class="decl"><span class="nottickedoff">scale a = withTransformations [Scale a Nothing]</span></span>
+<span class="lineno">  130 </span><span class="decl"><span class="istickedoff">scale a = withTransformations [Scale a Nothing]</span></span>
 <span class="lineno">  131 </span>
 <span class="lineno">  132 </span>-- | @scaleToSize width height@ resizes the image so that its bounding box has corresponding @width@
 <span class="lineno">  133 </span>--   and @height@.
 <span class="lineno">  134 </span>scaleToSize :: Double -&gt; Double -&gt; Tree -&gt; Tree
-<span class="lineno">  135 </span><span class="decl"><span class="nottickedoff">scaleToSize w h t =</span>
-<span class="lineno">  136 </span><span class="spaces">    </span><span class="nottickedoff">scaleXY (w/w') (h/h') t</span>
-<span class="lineno">  137 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  138 </span><span class="spaces">    </span><span class="nottickedoff">(_x, _y, w', h') = boundingBox t</span></span>
+<span class="lineno">  135 </span><span class="decl"><span class="istickedoff">scaleToSize w h t =</span>
+<span class="lineno">  136 </span><span class="spaces">    </span><span class="istickedoff">scaleXY (w/w') (h/h') t</span>
+<span class="lineno">  137 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  138 </span><span class="spaces">    </span><span class="istickedoff">(_x, _y, w', h') = boundingBox t</span></span>
 <span class="lineno">  139 </span>
 <span class="lineno">  140 </span>-- | @scaleToWidth width@ scales the image so that the width of its bounding box ends up having
 <span class="lineno">  141 </span>--   given @width@.
 <span class="lineno">  142 </span>scaleToWidth :: Double -&gt; Tree -&gt; Tree
-<span class="lineno">  143 </span><span class="decl"><span class="nottickedoff">scaleToWidth w t =</span>
-<span class="lineno">  144 </span><span class="spaces">    </span><span class="nottickedoff">scale (w/w') t</span>
-<span class="lineno">  145 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  146 </span><span class="spaces">    </span><span class="nottickedoff">(_x, _y, w', _h') = boundingBox t</span></span>
+<span class="lineno">  143 </span><span class="decl"><span class="istickedoff">scaleToWidth w t =</span>
+<span class="lineno">  144 </span><span class="spaces">    </span><span class="istickedoff">scale (w/w') t</span>
+<span class="lineno">  145 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  146 </span><span class="spaces">    </span><span class="istickedoff">(_x, _y, w', _h') = boundingBox t</span></span>
 <span class="lineno">  147 </span>
 <span class="lineno">  148 </span>-- | @scaleToHeight height@ scales the image so that the height of its bounding box ends up having
 <span class="lineno">  149 </span>--   given @height@.
@@ -180,17 +180,17 @@ span.spaces    { background: white }
 <span class="lineno">  161 </span>-- | Flip the image along vertical axis so that what was on the right will end up on left and vice
 <span class="lineno">  162 </span>--   versa.
 <span class="lineno">  163 </span>flipXAxis :: Tree -&gt; Tree
-<span class="lineno">  164 </span><span class="decl"><span class="nottickedoff">flipXAxis = scaleXY (-1) 1</span></span>
+<span class="lineno">  164 </span><span class="decl"><span class="istickedoff">flipXAxis = scaleXY (-1) 1</span></span>
 <span class="lineno">  165 </span>
 <span class="lineno">  166 </span>-- | Flip the image along horizontal so that what was on the top will end up in the bottom and vice
 <span class="lineno">  167 </span>--   versa.
 <span class="lineno">  168 </span>flipYAxis :: Tree -&gt; Tree
-<span class="lineno">  169 </span><span class="decl"><span class="nottickedoff">flipYAxis = scaleXY 1 (-1)</span></span>
+<span class="lineno">  169 </span><span class="decl"><span class="istickedoff">flipYAxis = scaleXY 1 (-1)</span></span>
 <span class="lineno">  170 </span>
 <span class="lineno">  171 </span>-- | Translate given image so that the center of its bouding box coincides with coordinates
 <span class="lineno">  172 </span>--   @(0, 0)@.
 <span class="lineno">  173 </span>center :: Tree -&gt; Tree
-<span class="lineno">  174 </span><span class="decl"><span class="nottickedoff">center t = centerUsing t t</span></span>
+<span class="lineno">  174 </span><span class="decl"><span class="istickedoff">center t = centerUsing t t</span></span>
 <span class="lineno">  175 </span>
 <span class="lineno">  176 </span>-- | Translate given image so that the X-coordinate of the center of its bouding box is 0.
 <span class="lineno">  177 </span>centerX :: Tree -&gt; Tree
@@ -205,9 +205,9 @@ span.spaces    { background: white }
 <span class="lineno">  186 </span><span class="spaces">    </span><span class="nottickedoff">(_x, y, _w, h) = boundingBox t</span></span>
 <span class="lineno">  187 </span>
 <span class="lineno">  188 </span>centerUsing :: Tree -&gt; Tree -&gt; Tree
-<span class="lineno">  189 </span><span class="decl"><span class="nottickedoff">centerUsing a = translate (-x-w/2) (-y-h/2)</span>
-<span class="lineno">  190 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  191 </span><span class="spaces">    </span><span class="nottickedoff">(x, y, w, h) = boundingBox a</span></span>
+<span class="lineno">  189 </span><span class="decl"><span class="istickedoff">centerUsing a = translate (-x-w/2) (-y-h/2)</span>
+<span class="lineno">  190 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  191 </span><span class="spaces">    </span><span class="istickedoff">(x, y, w, h) = boundingBox a</span></span>
 <span class="lineno">  192 </span>
 <span class="lineno">  193 </span>-- | Create 'Texture' based on SVG color name.
 <span class="lineno">  194 </span>--   See &lt;https://en.wikipedia.org/wiki/Web_colors#X11_color_names&gt; for the list of available names.
@@ -223,7 +223,7 @@ span.spaces    { background: white }
 <span class="lineno">  204 </span><span class="decl"><span class="istickedoff">withStrokeColor color = strokeColor .~ pure (mkColor color)</span></span>
 <span class="lineno">  205 </span>
 <span class="lineno">  206 </span>withStrokeColorPixel :: PixelRGBA8 -&gt; Tree -&gt; Tree
-<span class="lineno">  207 </span><span class="decl"><span class="nottickedoff">withStrokeColorPixel color = strokeColor .~ pure (ColorRef color)</span></span>
+<span class="lineno">  207 </span><span class="decl"><span class="istickedoff">withStrokeColorPixel color = strokeColor .~ pure (ColorRef color)</span></span>
 <span class="lineno">  208 </span>
 <span class="lineno">  209 </span>withStrokeDashArray :: [Double] -&gt; Tree -&gt; Tree
 <span class="lineno">  210 </span><span class="decl"><span class="nottickedoff">withStrokeDashArray arr = strokeDashArray .~ pure (map Num arr)</span></span>
@@ -237,14 +237,14 @@ span.spaces    { background: white }
 <span class="lineno">  218 </span><span class="decl"><span class="istickedoff">withFillColor color = fillColor .~ pure (mkColor color)</span></span>
 <span class="lineno">  219 </span>
 <span class="lineno">  220 </span>withFillColorPixel :: PixelRGBA8 -&gt; Tree -&gt; Tree
-<span class="lineno">  221 </span><span class="decl"><span class="nottickedoff">withFillColorPixel color = fillColor .~ pure (ColorRef color)</span></span>
+<span class="lineno">  221 </span><span class="decl"><span class="istickedoff">withFillColorPixel color = fillColor .~ pure (ColorRef color)</span></span>
 <span class="lineno">  222 </span>
 <span class="lineno">  223 </span>-- | See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/fill-opacity&gt;
 <span class="lineno">  224 </span>withFillOpacity :: Double -&gt; Tree -&gt; Tree
 <span class="lineno">  225 </span><span class="decl"><span class="istickedoff">withFillOpacity opacity = fillOpacity ?~ realToFrac opacity</span></span>
 <span class="lineno">  226 </span>
 <span class="lineno">  227 </span>withGroupOpacity :: Double -&gt; Tree -&gt; Tree
-<span class="lineno">  228 </span><span class="decl"><span class="nottickedoff">withGroupOpacity opacity = groupOpacity ?~ realToFrac opacity</span></span>
+<span class="lineno">  228 </span><span class="decl"><span class="istickedoff">withGroupOpacity opacity = groupOpacity ?~ realToFrac opacity</span></span>
 <span class="lineno">  229 </span>
 <span class="lineno">  230 </span>-- | See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke-width&gt;
 <span class="lineno">  231 </span>withStrokeWidth :: Double -&gt; Tree -&gt; Tree
@@ -278,17 +278,17 @@ span.spaces    { background: white }
 <span class="lineno">  259 </span>-- | Create an ellipse given X-axis radius, and Y-axis radius, with center at @(0, 0)@.
 <span class="lineno">  260 </span>-- See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Element/ellipse&gt;
 <span class="lineno">  261 </span>mkEllipse :: Double -&gt; Double -&gt; Tree
-<span class="lineno">  262 </span><span class="decl"><span class="nottickedoff">mkEllipse rx ry = EllipseTree $ defaultSvg</span>
-<span class="lineno">  263 </span><span class="spaces">  </span><span class="nottickedoff">&amp; ellipseCenter .~ (Num 0, Num 0)</span>
-<span class="lineno">  264 </span><span class="spaces">  </span><span class="nottickedoff">&amp; ellipseXRadius .~ Num rx</span>
-<span class="lineno">  265 </span><span class="spaces">  </span><span class="nottickedoff">&amp; ellipseYRadius .~ Num ry</span></span>
+<span class="lineno">  262 </span><span class="decl"><span class="istickedoff">mkEllipse rx ry = EllipseTree $ defaultSvg</span>
+<span class="lineno">  263 </span><span class="spaces">  </span><span class="istickedoff">&amp; ellipseCenter .~ (Num 0, Num 0)</span>
+<span class="lineno">  264 </span><span class="spaces">  </span><span class="istickedoff">&amp; ellipseXRadius .~ Num rx</span>
+<span class="lineno">  265 </span><span class="spaces">  </span><span class="istickedoff">&amp; ellipseYRadius .~ Num ry</span></span>
 <span class="lineno">  266 </span>
 <span class="lineno">  267 </span>-- | Create a line segment between two points given by their @(x, y)@ coordinates.
 <span class="lineno">  268 </span>-- See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Element/line&gt;
 <span class="lineno">  269 </span>mkLine :: (Double,Double) -&gt; (Double, Double) -&gt; Tree
-<span class="lineno">  270 </span><span class="decl"><span class="nottickedoff">mkLine (x1,y1) (x2,y2) = LineTree $ defaultSvg</span>
-<span class="lineno">  271 </span><span class="spaces">  </span><span class="nottickedoff">&amp; linePoint1 .~ (Num x1, Num y1)</span>
-<span class="lineno">  272 </span><span class="spaces">  </span><span class="nottickedoff">&amp; linePoint2 .~ (Num x2, Num y2)</span></span>
+<span class="lineno">  270 </span><span class="decl"><span class="istickedoff">mkLine (x1,y1) (x2,y2) = LineTree $ defaultSvg</span>
+<span class="lineno">  271 </span><span class="spaces">  </span><span class="istickedoff">&amp; linePoint1 .~ (Num x1, Num y1)</span>
+<span class="lineno">  272 </span><span class="spaces">  </span><span class="istickedoff">&amp; linePoint2 .~ (Num x2, Num y2)</span></span>
 <span class="lineno">  273 </span>
 <span class="lineno">  274 </span>-- | Merges multiple images into one.
 <span class="lineno">  275 </span>-- See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Element/g&gt;
@@ -321,20 +321,20 @@ span.spaces    { background: white }
 <span class="lineno">  302 </span>-- | Create a path from the list of path commands.
 <span class="lineno">  303 </span>--   See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/d#Path_commands&gt;
 <span class="lineno">  304 </span>mkPath :: [PathCommand] -&gt; Tree
-<span class="lineno">  305 </span><span class="decl"><span class="nottickedoff">mkPath cmds = PathTree $ defaultSvg &amp; pathDefinition .~ cmds</span></span>
+<span class="lineno">  305 </span><span class="decl"><span class="istickedoff">mkPath cmds = PathTree $ defaultSvg &amp; pathDefinition .~ cmds</span></span>
 <span class="lineno">  306 </span>
 <span class="lineno">  307 </span>-- | Similar to 'mkPathText', but taking SVG path command as a String.
 <span class="lineno">  308 </span>mkPathString :: String -&gt; Tree
-<span class="lineno">  309 </span><span class="decl"><span class="nottickedoff">mkPathString = mkPathText . T.pack</span></span>
+<span class="lineno">  309 </span><span class="decl"><span class="istickedoff">mkPathString = mkPathText . T.pack</span></span>
 <span class="lineno">  310 </span>
 <span class="lineno">  311 </span>-- | Create path from textual representation of SVG path command.
 <span class="lineno">  312 </span>--   If the text doesn't represent valid path command, this function fails with 'Prelude.error'.
 <span class="lineno">  313 </span>--   Use 'mkPath' for type safe way of creating paths.
 <span class="lineno">  314 </span>mkPathText :: T.Text -&gt; Tree
-<span class="lineno">  315 </span><span class="decl"><span class="nottickedoff">mkPathText str =</span>
-<span class="lineno">  316 </span><span class="spaces">  </span><span class="nottickedoff">case parseOnly pathParser str of</span>
-<span class="lineno">  317 </span><span class="spaces">    </span><span class="nottickedoff">Left err   -&gt; error err</span>
-<span class="lineno">  318 </span><span class="spaces">    </span><span class="nottickedoff">Right cmds -&gt; mkPath cmds</span></span>
+<span class="lineno">  315 </span><span class="decl"><span class="istickedoff">mkPathText str =</span>
+<span class="lineno">  316 </span><span class="spaces">  </span><span class="istickedoff">case parseOnly pathParser str of</span>
+<span class="lineno">  317 </span><span class="spaces">    </span><span class="istickedoff">Left err   -&gt; <span class="nottickedoff">error err</span></span>
+<span class="lineno">  318 </span><span class="spaces">    </span><span class="istickedoff">Right cmds -&gt; mkPath cmds</span></span>
 <span class="lineno">  319 </span>
 <span class="lineno">  320 </span>-- | Create a path from a list of @(x, y)@ coordinates of points along the path.
 <span class="lineno">  321 </span>mkLinePath :: [(Double, Double)] -&gt; Tree
@@ -347,13 +347,13 @@ span.spaces    { background: white }
 <span class="lineno">  328 </span>
 <span class="lineno">  329 </span>-- | Create a path from a list of @(x, y)@ coordinates of points along the path.
 <span class="lineno">  330 </span>mkLinePathClosed :: [(Double, Double)] -&gt; Tree
-<span class="lineno">  331 </span><span class="decl"><span class="nottickedoff">mkLinePathClosed [] = mkGroup []</span>
-<span class="lineno">  332 </span><span class="spaces"></span><span class="nottickedoff">mkLinePathClosed ((startX, startY):rest) =</span>
-<span class="lineno">  333 </span><span class="spaces">    </span><span class="nottickedoff">PathTree $ defaultSvg &amp; pathDefinition .~ cmds</span>
-<span class="lineno">  334 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  335 </span><span class="spaces">    </span><span class="nottickedoff">cmds = [ MoveTo OriginAbsolute [V2 startX startY]</span>
-<span class="lineno">  336 </span><span class="spaces">           </span><span class="nottickedoff">, LineTo OriginAbsolute [ V2 x y | (x, y) &lt;- rest ]</span>
-<span class="lineno">  337 </span><span class="spaces">           </span><span class="nottickedoff">, EndPath ]</span></span>
+<span class="lineno">  331 </span><span class="decl"><span class="istickedoff">mkLinePathClosed [] = <span class="nottickedoff">mkGroup []</span></span>
+<span class="lineno">  332 </span><span class="spaces"></span><span class="istickedoff">mkLinePathClosed ((startX, startY):rest) =</span>
+<span class="lineno">  333 </span><span class="spaces">    </span><span class="istickedoff">PathTree $ defaultSvg &amp; pathDefinition .~ cmds</span>
+<span class="lineno">  334 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  335 </span><span class="spaces">    </span><span class="istickedoff">cmds = [ MoveTo OriginAbsolute [V2 startX startY]</span>
+<span class="lineno">  336 </span><span class="spaces">           </span><span class="istickedoff">, LineTo OriginAbsolute [ V2 x y | (x, y) &lt;- rest ]</span>
+<span class="lineno">  337 </span><span class="spaces">           </span><span class="istickedoff">, EndPath ]</span></span>
 <span class="lineno">  338 </span>
 <span class="lineno">  339 </span>-- | Rectangle with a uniform color and the same size as the screen.
 <span class="lineno">  340 </span>--
@@ -367,9 +367,9 @@ span.spaces    { background: white }
 <span class="lineno">  348 </span><span class="spaces">  </span><span class="istickedoff">withFillColor color $ mkRect screenWidth screenHeight</span></span>
 <span class="lineno">  349 </span>
 <span class="lineno">  350 </span>mkBackgroundPixel :: PixelRGBA8 -&gt; Tree
-<span class="lineno">  351 </span><span class="decl"><span class="nottickedoff">mkBackgroundPixel pixel =</span>
-<span class="lineno">  352 </span><span class="spaces">    </span><span class="nottickedoff">withFillOpacity 1 $ withStrokeWidth 0 $</span>
-<span class="lineno">  353 </span><span class="spaces">    </span><span class="nottickedoff">withFillColorPixel pixel $ mkRect screenWidth screenHeight</span></span>
+<span class="lineno">  351 </span><span class="decl"><span class="istickedoff">mkBackgroundPixel pixel =</span>
+<span class="lineno">  352 </span><span class="spaces">    </span><span class="istickedoff">withFillOpacity 1 $ withStrokeWidth 0 $</span>
+<span class="lineno">  353 </span><span class="spaces">    </span><span class="istickedoff">withFillColorPixel pixel $ mkRect screenWidth screenHeight</span></span>
 <span class="lineno">  354 </span>
 <span class="lineno">  355 </span>-- | Take list of rows, where each row consists of number of images and display them in regular
 <span class="lineno">  356 </span>--   grid structure.
@@ -377,17 +377,17 @@ span.spaces    { background: white }
 <span class="lineno">  358 </span>--   The images within each row will get equal amount of horizontal space, independent of the other
 <span class="lineno">  359 </span>--   rows. Each row can contain different number of cells.
 <span class="lineno">  360 </span>gridLayout :: [[Tree]] -&gt; Tree
-<span class="lineno">  361 </span><span class="decl"><span class="nottickedoff">gridLayout rows = mkGroup</span>
-<span class="lineno">  362 </span><span class="spaces">    </span><span class="nottickedoff">[ translate (-screenWidth/2+colSep*nCol + colSep*0.5)</span>
-<span class="lineno">  363 </span><span class="spaces">                </span><span class="nottickedoff">(screenHeight/2-rowSep*nRow - rowSep*0.5)</span>
-<span class="lineno">  364 </span><span class="spaces">      </span><span class="nottickedoff">elt</span>
-<span class="lineno">  365 </span><span class="spaces">    </span><span class="nottickedoff">| (nRow, row) &lt;- zip [0..] rows</span>
-<span class="lineno">  366 </span><span class="spaces">    </span><span class="nottickedoff">, let nCols = length row</span>
-<span class="lineno">  367 </span><span class="spaces">          </span><span class="nottickedoff">colSep = screenWidth / fromIntegral nCols</span>
-<span class="lineno">  368 </span><span class="spaces">    </span><span class="nottickedoff">, (nCol, elt) &lt;- zip [0..] row ]</span>
-<span class="lineno">  369 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  370 </span><span class="spaces">    </span><span class="nottickedoff">rowSep = screenHeight / fromIntegral nRows</span>
-<span class="lineno">  371 </span><span class="spaces">    </span><span class="nottickedoff">nRows = length rows</span></span>
+<span class="lineno">  361 </span><span class="decl"><span class="istickedoff">gridLayout rows = mkGroup</span>
+<span class="lineno">  362 </span><span class="spaces">    </span><span class="istickedoff">[ translate (-screenWidth/2+colSep*nCol + colSep*0.5)</span>
+<span class="lineno">  363 </span><span class="spaces">                </span><span class="istickedoff">(screenHeight/2-rowSep*nRow - rowSep*0.5)</span>
+<span class="lineno">  364 </span><span class="spaces">      </span><span class="istickedoff">elt</span>
+<span class="lineno">  365 </span><span class="spaces">    </span><span class="istickedoff">| (nRow, row) &lt;- zip [0..] rows</span>
+<span class="lineno">  366 </span><span class="spaces">    </span><span class="istickedoff">, let nCols = length row</span>
+<span class="lineno">  367 </span><span class="spaces">          </span><span class="istickedoff">colSep = screenWidth / fromIntegral nCols</span>
+<span class="lineno">  368 </span><span class="spaces">    </span><span class="istickedoff">, (nCol, elt) &lt;- zip [0..] row ]</span>
+<span class="lineno">  369 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  370 </span><span class="spaces">    </span><span class="istickedoff">rowSep = screenHeight / fromIntegral nRows</span>
+<span class="lineno">  371 </span><span class="spaces">    </span><span class="istickedoff">nRows = length rows</span></span>
 <span class="lineno">  372 </span>
 <span class="lineno">  373 </span>-- | Insert a native text object anchored at the middle.
 <span class="lineno">  374 </span>--
@@ -397,16 +397,16 @@ span.spaces    { background: white }
 <span class="lineno">  378 </span>--
 <span class="lineno">  379 </span>--   &lt;&lt;docs/gifs/doc_mkText.gif&gt;&gt;
 <span class="lineno">  380 </span>mkText :: T.Text -&gt; Tree
-<span class="lineno">  381 </span><span class="decl"><span class="nottickedoff">mkText str =</span>
-<span class="lineno">  382 </span><span class="spaces">  </span><span class="nottickedoff">flipYAxis</span>
-<span class="lineno">  383 </span><span class="spaces">  </span><span class="nottickedoff">(TextTree Nothing $ defaultSvg</span>
-<span class="lineno">  384 </span><span class="spaces">    </span><span class="nottickedoff">&amp; textRoot .~ span_</span>
-<span class="lineno">  385 </span><span class="spaces">    </span><span class="nottickedoff">&amp; fontSize .~ pure (Num 2))</span>
-<span class="lineno">  386 </span><span class="spaces">    </span><span class="nottickedoff">&amp; textAnchor .~ pure TextAnchorMiddle</span>
-<span class="lineno">  387 </span><span class="spaces">    </span><span class="nottickedoff">-- Note: TextAnchorMiddle is placed on the 'flipYAxis' group such that it can easily</span>
-<span class="lineno">  388 </span><span class="spaces">    </span><span class="nottickedoff">-- be overwritten by the user.</span>
-<span class="lineno">  389 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  390 </span><span class="spaces">    </span><span class="nottickedoff">span_ = defaultSvg &amp; spanContent .~ [SpanText str]</span></span>
+<span class="lineno">  381 </span><span class="decl"><span class="istickedoff">mkText str =</span>
+<span class="lineno">  382 </span><span class="spaces">  </span><span class="istickedoff">flipYAxis</span>
+<span class="lineno">  383 </span><span class="spaces">  </span><span class="istickedoff">(TextTree Nothing $ defaultSvg</span>
+<span class="lineno">  384 </span><span class="spaces">    </span><span class="istickedoff">&amp; textRoot .~ span_</span>
+<span class="lineno">  385 </span><span class="spaces">    </span><span class="istickedoff">&amp; fontSize .~ pure (Num 2))</span>
+<span class="lineno">  386 </span><span class="spaces">    </span><span class="istickedoff">&amp; textAnchor .~ pure TextAnchorMiddle</span>
+<span class="lineno">  387 </span><span class="spaces">    </span><span class="istickedoff">-- Note: TextAnchorMiddle is placed on the 'flipYAxis' group such that it can easily</span>
+<span class="lineno">  388 </span><span class="spaces">    </span><span class="istickedoff">-- be overwritten by the user.</span>
+<span class="lineno">  389 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  390 </span><span class="spaces">    </span><span class="istickedoff">span_ = defaultSvg &amp; spanContent .~ [SpanText str]</span></span>
 <span class="lineno">  391 </span>
 <span class="lineno">  392 </span>-- | Switch from the default viewbox to a custom viewbox. Nesting custom viewboxes is
 <span class="lineno">  393 </span>--   unlikely to give good results. If you need nested custom viewboxes, you will have
@@ -420,16 +420,16 @@ span.spaces    { background: white }
 <span class="lineno">  401 </span>--
 <span class="lineno">  402 </span>--   &lt;&lt;docs/gifs/doc_withViewBox.gif&gt;&gt;
 <span class="lineno">  403 </span>withViewBox :: (Double, Double, Double, Double) -&gt; Tree -&gt; Tree
-<span class="lineno">  404 </span><span class="decl"><span class="nottickedoff">withViewBox vbox child = translate (-screenWidth/2) (-screenHeight/2) $</span>
-<span class="lineno">  405 </span><span class="spaces">  </span><span class="nottickedoff">SvgTree $ Document</span>
-<span class="lineno">  406 </span><span class="spaces">  </span><span class="nottickedoff">{ _viewBox = Just vbox</span>
-<span class="lineno">  407 </span><span class="spaces">  </span><span class="nottickedoff">, _width = Just (Num screenWidth)</span>
-<span class="lineno">  408 </span><span class="spaces">  </span><span class="nottickedoff">, _height = Just (Num screenHeight)</span>
-<span class="lineno">  409 </span><span class="spaces">  </span><span class="nottickedoff">, _elements = [child]</span>
-<span class="lineno">  410 </span><span class="spaces">  </span><span class="nottickedoff">, _description = &quot;&quot;</span>
-<span class="lineno">  411 </span><span class="spaces">  </span><span class="nottickedoff">, _documentLocation = &quot;&quot;</span>
-<span class="lineno">  412 </span><span class="spaces">  </span><span class="nottickedoff">, _documentAspectRatio = PreserveAspectRatio False AlignNone Nothing</span>
-<span class="lineno">  413 </span><span class="spaces">  </span><span class="nottickedoff">}</span></span>
+<span class="lineno">  404 </span><span class="decl"><span class="istickedoff">withViewBox vbox child = translate (-screenWidth/2) (-screenHeight/2) $</span>
+<span class="lineno">  405 </span><span class="spaces">  </span><span class="istickedoff">SvgTree $ Document</span>
+<span class="lineno">  406 </span><span class="spaces">  </span><span class="istickedoff">{ _viewBox = Just vbox</span>
+<span class="lineno">  407 </span><span class="spaces">  </span><span class="istickedoff">, _width = Just (Num screenWidth)</span>
+<span class="lineno">  408 </span><span class="spaces">  </span><span class="istickedoff">, _height = Just (Num screenHeight)</span>
+<span class="lineno">  409 </span><span class="spaces">  </span><span class="istickedoff">, _elements = [child]</span>
+<span class="lineno">  410 </span><span class="spaces">  </span><span class="istickedoff">, _description = &quot;&quot;</span>
+<span class="lineno">  411 </span><span class="spaces">  </span><span class="istickedoff">, _documentLocation = <span class="nottickedoff">&quot;&quot;</span></span>
+<span class="lineno">  412 </span><span class="spaces">  </span><span class="istickedoff">, _documentAspectRatio = PreserveAspectRatio False AlignNone Nothing</span>
+<span class="lineno">  413 </span><span class="spaces">  </span><span class="istickedoff">}</span></span>
 
 </pre>
 </body>
