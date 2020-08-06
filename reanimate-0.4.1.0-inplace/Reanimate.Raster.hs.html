@@ -169,10 +169,10 @@ span.spaces    { background: white }
 <span class="lineno">  150 </span>--   result in an image 100 units wide and 100 units high. Consider
 <span class="lineno">  151 </span>--   using with 'scaleToSize'.
 <span class="lineno">  152 </span>embedImage :: PngSavable a =&gt; Image a -&gt; SVG
-<span class="lineno">  153 </span><span class="decl"><span class="nottickedoff">embedImage img = embedPng width height (encodePng img)</span>
-<span class="lineno">  154 </span><span class="spaces"> </span><span class="nottickedoff">where</span>
-<span class="lineno">  155 </span><span class="spaces">  </span><span class="nottickedoff">width  = fromIntegral $ imageWidth img</span>
-<span class="lineno">  156 </span><span class="spaces">  </span><span class="nottickedoff">height = fromIntegral $ imageHeight img</span></span>
+<span class="lineno">  153 </span><span class="decl"><span class="istickedoff">embedImage img = embedPng width height (encodePng img)</span>
+<span class="lineno">  154 </span><span class="spaces"> </span><span class="istickedoff">where</span>
+<span class="lineno">  155 </span><span class="spaces">  </span><span class="istickedoff">width  = fromIntegral $ imageWidth img</span>
+<span class="lineno">  156 </span><span class="spaces">  </span><span class="istickedoff">height = fromIntegral $ imageHeight img</span></span>
 <span class="lineno">  157 </span>
 <span class="lineno">  158 </span>-- | Embed in-memory PNG bytestring without parsing it.
 <span class="lineno">  159 </span>embedPng
@@ -189,19 +189,19 @@ span.spaces    { background: white }
 <span class="lineno">  170 </span>--       &amp; Svg.imageHref .~ (&quot;file://&quot;++path)
 <span class="lineno">  171 </span>--   where
 <span class="lineno">  172 </span>--     path = &quot;/tmp&quot; &lt;/&gt; show (hash png) &lt;.&gt; &quot;png&quot;
-<span class="lineno">  173 </span><span class="decl"><span class="nottickedoff">embedPng w h png =</span>
-<span class="lineno">  174 </span><span class="spaces">  </span><span class="nottickedoff">flipYAxis</span>
-<span class="lineno">  175 </span><span class="spaces">    </span><span class="nottickedoff">$  ImageTree</span>
-<span class="lineno">  176 </span><span class="spaces">    </span><span class="nottickedoff">$  defaultSvg</span>
-<span class="lineno">  177 </span><span class="spaces">    </span><span class="nottickedoff">&amp;  Svg.imageCornerUpperLeft</span>
-<span class="lineno">  178 </span><span class="spaces">    </span><span class="nottickedoff">.~ (Svg.Num (-w / 2), Svg.Num (-h / 2))</span>
-<span class="lineno">  179 </span><span class="spaces">    </span><span class="nottickedoff">&amp;  Svg.imageWidth</span>
-<span class="lineno">  180 </span><span class="spaces">    </span><span class="nottickedoff">.~ Svg.Num w</span>
-<span class="lineno">  181 </span><span class="spaces">    </span><span class="nottickedoff">&amp;  Svg.imageHeight</span>
-<span class="lineno">  182 </span><span class="spaces">    </span><span class="nottickedoff">.~ Svg.Num h</span>
-<span class="lineno">  183 </span><span class="spaces">    </span><span class="nottickedoff">&amp;  Svg.imageHref</span>
-<span class="lineno">  184 </span><span class="spaces">    </span><span class="nottickedoff">.~ (&quot;data:image/png;base64,&quot; ++ imgData)</span>
-<span class="lineno">  185 </span><span class="spaces">  </span><span class="nottickedoff">where imgData = LBS.unpack $ Base64.encode png</span></span>
+<span class="lineno">  173 </span><span class="decl"><span class="istickedoff">embedPng w h png =</span>
+<span class="lineno">  174 </span><span class="spaces">  </span><span class="istickedoff">flipYAxis</span>
+<span class="lineno">  175 </span><span class="spaces">    </span><span class="istickedoff">$  ImageTree</span>
+<span class="lineno">  176 </span><span class="spaces">    </span><span class="istickedoff">$  defaultSvg</span>
+<span class="lineno">  177 </span><span class="spaces">    </span><span class="istickedoff">&amp;  Svg.imageCornerUpperLeft</span>
+<span class="lineno">  178 </span><span class="spaces">    </span><span class="istickedoff">.~ (Svg.Num (-w / 2), Svg.Num (-h / 2))</span>
+<span class="lineno">  179 </span><span class="spaces">    </span><span class="istickedoff">&amp;  Svg.imageWidth</span>
+<span class="lineno">  180 </span><span class="spaces">    </span><span class="istickedoff">.~ Svg.Num w</span>
+<span class="lineno">  181 </span><span class="spaces">    </span><span class="istickedoff">&amp;  Svg.imageHeight</span>
+<span class="lineno">  182 </span><span class="spaces">    </span><span class="istickedoff">.~ Svg.Num h</span>
+<span class="lineno">  183 </span><span class="spaces">    </span><span class="istickedoff">&amp;  Svg.imageHref</span>
+<span class="lineno">  184 </span><span class="spaces">    </span><span class="istickedoff">.~ (&quot;data:image/png;base64,&quot; ++ imgData)</span>
+<span class="lineno">  185 </span><span class="spaces">  </span><span class="istickedoff">where imgData = LBS.unpack $ Base64.encode png</span></span>
 <span class="lineno">  186 </span>
 <span class="lineno">  187 </span>
 <span class="lineno">  188 </span>{-# INLINE embedDynamicImage #-}

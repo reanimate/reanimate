@@ -70,13 +70,13 @@ span.spaces    { background: white }
 <span class="lineno">   51 </span><span class="spaces">    </span><span class="nottickedoff">&amp; groupChildren .~ doc^.elements</span></span>
 <span class="lineno">   52 </span>
 <span class="lineno">   53 </span>embedDocument :: Document -&gt; Tree
-<span class="lineno">   54 </span><span class="decl"><span class="nottickedoff">embedDocument doc =</span>
-<span class="lineno">   55 </span><span class="spaces">  </span><span class="nottickedoff">translate (-screenWidth/2) (screenHeight/2) $</span>
-<span class="lineno">   56 </span><span class="spaces">  </span><span class="nottickedoff">withFillOpacity 1 $</span>
-<span class="lineno">   57 </span><span class="spaces">  </span><span class="nottickedoff">withStrokeWidth 0 $</span>
-<span class="lineno">   58 </span><span class="spaces">  </span><span class="nottickedoff">flipYAxis $</span>
-<span class="lineno">   59 </span><span class="spaces">  </span><span class="nottickedoff">SvgTree $ doc &amp; width .~ Nothing</span>
-<span class="lineno">   60 </span><span class="spaces">                </span><span class="nottickedoff">&amp; height .~ Nothing</span></span>
+<span class="lineno">   54 </span><span class="decl"><span class="istickedoff">embedDocument doc =</span>
+<span class="lineno">   55 </span><span class="spaces">  </span><span class="istickedoff">translate (-screenWidth/2) (screenHeight/2) $</span>
+<span class="lineno">   56 </span><span class="spaces">  </span><span class="istickedoff">withFillOpacity 1 $</span>
+<span class="lineno">   57 </span><span class="spaces">  </span><span class="istickedoff">withStrokeWidth 0 $</span>
+<span class="lineno">   58 </span><span class="spaces">  </span><span class="istickedoff">flipYAxis $</span>
+<span class="lineno">   59 </span><span class="spaces">  </span><span class="istickedoff">SvgTree $ doc &amp; width .~ Nothing</span>
+<span class="lineno">   60 </span><span class="spaces">                </span><span class="istickedoff">&amp; height .~ Nothing</span></span>
 
 </pre>
 </body>

@@ -40,39 +40,39 @@ span.spaces    { background: white }
 <span class="lineno">   21 </span>import qualified Reanimate.Transform          as Transform
 <span class="lineno">   22 </span>
 <span class="lineno">   23 </span>lowerTransformations :: Tree -&gt; Tree
-<span class="lineno">   24 </span><span class="decl"><span class="nottickedoff">lowerTransformations = worker False Transform.identity</span>
-<span class="lineno">   25 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">   26 </span><span class="spaces">    </span><span class="nottickedoff">updLineCmd m cmd =</span>
-<span class="lineno">   27 </span><span class="spaces">      </span><span class="nottickedoff">case cmd of</span>
-<span class="lineno">   28 </span><span class="spaces">        </span><span class="nottickedoff">LineMove p    -&gt; LineMove $ Transform.transformPoint m p</span>
-<span class="lineno">   29 </span><span class="spaces">        </span><span class="nottickedoff">-- LineDraw p -&gt; LineDraw $ Transform.transformPoint m p</span>
-<span class="lineno">   30 </span><span class="spaces">        </span><span class="nottickedoff">LineBezier ps -&gt; LineBezier $ map (Transform.transformPoint m) ps</span>
-<span class="lineno">   31 </span><span class="spaces">        </span><span class="nottickedoff">LineEnd p     -&gt; LineEnd $ Transform.transformPoint m p</span>
-<span class="lineno">   32 </span><span class="spaces">    </span><span class="nottickedoff">updPath m = lineToPath . map (updLineCmd m) . toLineCommands</span>
-<span class="lineno">   33 </span><span class="spaces">    </span><span class="nottickedoff">updPoint m (Num a,Num b) =</span>
-<span class="lineno">   34 </span><span class="spaces">      </span><span class="nottickedoff">case Transform.transformPoint m (V2 a b) of</span>
-<span class="lineno">   35 </span><span class="spaces">        </span><span class="nottickedoff">V2 x y -&gt; (Num x, Num y)</span>
-<span class="lineno">   36 </span><span class="spaces">    </span><span class="nottickedoff">updPoint _ other = other -- XXX: Can we do better here?</span>
-<span class="lineno">   37 </span><span class="spaces">    </span><span class="nottickedoff">worker hasPathified m t =</span>
-<span class="lineno">   38 </span><span class="spaces">      </span><span class="nottickedoff">let m' = m * Transform.mkMatrix (t^.transform) in</span>
-<span class="lineno">   39 </span><span class="spaces">      </span><span class="nottickedoff">case t of</span>
-<span class="lineno">   40 </span><span class="spaces">        </span><span class="nottickedoff">PathTree path -&gt; PathTree $</span>
-<span class="lineno">   41 </span><span class="spaces">          </span><span class="nottickedoff">path &amp; pathDefinition %~ updPath m'</span>
-<span class="lineno">   42 </span><span class="spaces">               </span><span class="nottickedoff">&amp; transform .~ Nothing</span>
-<span class="lineno">   43 </span><span class="spaces">        </span><span class="nottickedoff">GroupTree g -&gt; GroupTree $</span>
-<span class="lineno">   44 </span><span class="spaces">          </span><span class="nottickedoff">g &amp; groupChildren %~ map (worker hasPathified m')</span>
-<span class="lineno">   45 </span><span class="spaces">            </span><span class="nottickedoff">&amp; transform .~ Nothing</span>
-<span class="lineno">   46 </span><span class="spaces">        </span><span class="nottickedoff">LineTree line -&gt;</span>
-<span class="lineno">   47 </span><span class="spaces">          </span><span class="nottickedoff">LineTree $</span>
-<span class="lineno">   48 </span><span class="spaces">            </span><span class="nottickedoff">line &amp; linePoint1 %~ updPoint m</span>
-<span class="lineno">   49 </span><span class="spaces">                 </span><span class="nottickedoff">&amp; linePoint2 %~ updPoint m</span>
-<span class="lineno">   50 </span><span class="spaces">        </span><span class="nottickedoff">ClipPathTree{} -&gt; t</span>
-<span class="lineno">   51 </span><span class="spaces">        </span><span class="nottickedoff">-- If we encounter an unknown node and we've already tried to convert</span>
-<span class="lineno">   52 </span><span class="spaces">        </span><span class="nottickedoff">-- to paths, give up and insert an explicit transformation.</span>
-<span class="lineno">   53 </span><span class="spaces">        </span><span class="nottickedoff">_ | hasPathified -&gt;</span>
-<span class="lineno">   54 </span><span class="spaces">          </span><span class="nottickedoff">mkGroup [t] &amp; transform ?~ [ Transform.toTransformation m ]</span>
-<span class="lineno">   55 </span><span class="spaces">        </span><span class="nottickedoff">-- If we haven't tried to pathify, run pathify only once.</span>
-<span class="lineno">   56 </span><span class="spaces">        </span><span class="nottickedoff">_ -&gt; worker True m (pathify t)</span></span>
+<span class="lineno">   24 </span><span class="decl"><span class="istickedoff">lowerTransformations = worker <span class="nottickedoff">False</span> Transform.identity</span>
+<span class="lineno">   25 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">   26 </span><span class="spaces">    </span><span class="istickedoff">updLineCmd m cmd =</span>
+<span class="lineno">   27 </span><span class="spaces">      </span><span class="istickedoff">case cmd of</span>
+<span class="lineno">   28 </span><span class="spaces">        </span><span class="istickedoff">LineMove p    -&gt; LineMove $ Transform.transformPoint m p</span>
+<span class="lineno">   29 </span><span class="spaces">        </span><span class="istickedoff">-- LineDraw p -&gt; LineDraw $ Transform.transformPoint m p</span>
+<span class="lineno">   30 </span><span class="spaces">        </span><span class="istickedoff">LineBezier ps -&gt; LineBezier $ map (Transform.transformPoint m) ps</span>
+<span class="lineno">   31 </span><span class="spaces">        </span><span class="istickedoff">LineEnd p     -&gt; LineEnd $ <span class="nottickedoff">Transform.transformPoint m p</span></span>
+<span class="lineno">   32 </span><span class="spaces">    </span><span class="istickedoff">updPath m = lineToPath . map (updLineCmd m) . toLineCommands</span>
+<span class="lineno">   33 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">updPoint m (Num a,Num b) =</span></span>
+<span class="lineno">   34 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">case Transform.transformPoint m (V2 a b) of</span></span>
+<span class="lineno">   35 </span><span class="spaces">        </span><span class="istickedoff"><span class="nottickedoff">V2 x y -&gt; (Num x, Num y)</span></span>
+<span class="lineno">   36 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">updPoint _ other = other</span> -- XXX: Can we do better here?</span>
+<span class="lineno">   37 </span><span class="spaces">    </span><span class="istickedoff">worker hasPathified m t =</span>
+<span class="lineno">   38 </span><span class="spaces">      </span><span class="istickedoff">let m' = m * Transform.mkMatrix (t^.transform) in</span>
+<span class="lineno">   39 </span><span class="spaces">      </span><span class="istickedoff">case t of</span>
+<span class="lineno">   40 </span><span class="spaces">        </span><span class="istickedoff">PathTree path -&gt; PathTree $</span>
+<span class="lineno">   41 </span><span class="spaces">          </span><span class="istickedoff">path &amp; pathDefinition %~ updPath m'</span>
+<span class="lineno">   42 </span><span class="spaces">               </span><span class="istickedoff">&amp; transform .~ Nothing</span>
+<span class="lineno">   43 </span><span class="spaces">        </span><span class="istickedoff">GroupTree g -&gt; <span class="nottickedoff">GroupTree $</span></span>
+<span class="lineno">   44 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">g &amp; groupChildren %~ map (worker hasPathified m')</span></span>
+<span class="lineno">   45 </span><span class="spaces">            </span><span class="istickedoff"><span class="nottickedoff">&amp; transform .~ Nothing</span></span>
+<span class="lineno">   46 </span><span class="spaces">        </span><span class="istickedoff">LineTree line -&gt;</span>
+<span class="lineno">   47 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">LineTree $</span></span>
+<span class="lineno">   48 </span><span class="spaces">            </span><span class="istickedoff"><span class="nottickedoff">line &amp; linePoint1 %~ updPoint m</span></span>
+<span class="lineno">   49 </span><span class="spaces">                 </span><span class="istickedoff"><span class="nottickedoff">&amp; linePoint2 %~ updPoint m</span></span>
+<span class="lineno">   50 </span><span class="spaces">        </span><span class="istickedoff">ClipPathTree{} -&gt; <span class="nottickedoff">t</span></span>
+<span class="lineno">   51 </span><span class="spaces">        </span><span class="istickedoff">-- If we encounter an unknown node and we've already tried to convert</span>
+<span class="lineno">   52 </span><span class="spaces">        </span><span class="istickedoff">-- to paths, give up and insert an explicit transformation.</span>
+<span class="lineno">   53 </span><span class="spaces">        </span><span class="istickedoff">_ | <span class="nottickedoff">hasPathified</span> -&gt;</span>
+<span class="lineno">   54 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">mkGroup [t] &amp; transform ?~ [ Transform.toTransformation m ]</span></span>
+<span class="lineno">   55 </span><span class="spaces">        </span><span class="istickedoff">-- If we haven't tried to pathify, run pathify only once.</span>
+<span class="lineno">   56 </span><span class="spaces">        </span><span class="istickedoff">_ -&gt; <span class="nottickedoff">worker True m (pathify t)</span></span></span>
 <span class="lineno">   57 </span>
 <span class="lineno">   58 </span>lowerIds :: Tree -&gt; Tree
 <span class="lineno">   59 </span><span class="decl"><span class="nottickedoff">lowerIds = mapTree worker</span>
@@ -82,31 +82,31 @@ span.spaces    { background: white }
 <span class="lineno">   63 </span><span class="spaces">    </span><span class="nottickedoff">worker t             = t</span></span>
 <span class="lineno">   64 </span>
 <span class="lineno">   65 </span>simplify :: Tree -&gt; Tree
-<span class="lineno">   66 </span><span class="decl"><span class="nottickedoff">simplify root =</span>
-<span class="lineno">   67 </span><span class="spaces">  </span><span class="nottickedoff">case worker root of</span>
-<span class="lineno">   68 </span><span class="spaces">    </span><span class="nottickedoff">[]  -&gt; None</span>
-<span class="lineno">   69 </span><span class="spaces">    </span><span class="nottickedoff">[x] -&gt; x</span>
-<span class="lineno">   70 </span><span class="spaces">    </span><span class="nottickedoff">xs  -&gt; mkGroup xs</span>
-<span class="lineno">   71 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">   72 </span><span class="spaces">    </span><span class="nottickedoff">worker None = []</span>
-<span class="lineno">   73 </span><span class="spaces">    </span><span class="nottickedoff">worker (DefinitionTree d) =</span>
-<span class="lineno">   74 </span><span class="spaces">      </span><span class="nottickedoff">concatMap dropNulls</span>
-<span class="lineno">   75 </span><span class="spaces">      </span><span class="nottickedoff">[DefinitionTree $ d &amp; groupChildren %~ concatMap worker]</span>
-<span class="lineno">   76 </span><span class="spaces">    </span><span class="nottickedoff">worker (GroupTree g)</span>
-<span class="lineno">   77 </span><span class="spaces">      </span><span class="nottickedoff">| g ^. drawAttributes == defaultSvg =</span>
-<span class="lineno">   78 </span><span class="spaces">        </span><span class="nottickedoff">concatMap dropNulls $</span>
-<span class="lineno">   79 </span><span class="spaces">        </span><span class="nottickedoff">concatMap worker (g^.groupChildren)</span>
-<span class="lineno">   80 </span><span class="spaces">      </span><span class="nottickedoff">| otherwise =</span>
-<span class="lineno">   81 </span><span class="spaces">        </span><span class="nottickedoff">dropNulls $</span>
-<span class="lineno">   82 </span><span class="spaces">        </span><span class="nottickedoff">GroupTree $ g &amp; groupChildren %~ concatMap worker</span>
-<span class="lineno">   83 </span><span class="spaces">    </span><span class="nottickedoff">worker t = dropNulls t</span>
-<span class="lineno">   84 </span><span class="spaces"></span><span class="nottickedoff"></span>
-<span class="lineno">   85 </span><span class="spaces">    </span><span class="nottickedoff">dropNulls None = []</span>
-<span class="lineno">   86 </span><span class="spaces">    </span><span class="nottickedoff">dropNulls (DefinitionTree d)</span>
-<span class="lineno">   87 </span><span class="spaces">      </span><span class="nottickedoff">| null (d^.groupChildren) = []</span>
-<span class="lineno">   88 </span><span class="spaces">    </span><span class="nottickedoff">dropNulls (GroupTree g)</span>
-<span class="lineno">   89 </span><span class="spaces">      </span><span class="nottickedoff">| null (g^.groupChildren) = []</span>
-<span class="lineno">   90 </span><span class="spaces">    </span><span class="nottickedoff">dropNulls t = [t]</span></span>
+<span class="lineno">   66 </span><span class="decl"><span class="istickedoff">simplify root =</span>
+<span class="lineno">   67 </span><span class="spaces">  </span><span class="istickedoff">case worker root of</span>
+<span class="lineno">   68 </span><span class="spaces">    </span><span class="istickedoff">[]  -&gt; <span class="nottickedoff">None</span></span>
+<span class="lineno">   69 </span><span class="spaces">    </span><span class="istickedoff">[x] -&gt; x</span>
+<span class="lineno">   70 </span><span class="spaces">    </span><span class="istickedoff">xs  -&gt; <span class="nottickedoff">mkGroup xs</span></span>
+<span class="lineno">   71 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">   72 </span><span class="spaces">    </span><span class="istickedoff">worker None = <span class="nottickedoff">[]</span></span>
+<span class="lineno">   73 </span><span class="spaces">    </span><span class="istickedoff">worker (DefinitionTree d) =</span>
+<span class="lineno">   74 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">concatMap dropNulls</span></span>
+<span class="lineno">   75 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">[DefinitionTree $ d &amp; groupChildren %~ concatMap worker]</span></span>
+<span class="lineno">   76 </span><span class="spaces">    </span><span class="istickedoff">worker (GroupTree g)</span>
+<span class="lineno">   77 </span><span class="spaces">      </span><span class="istickedoff">| <span class="nottickedoff">g ^. drawAttributes == defaultSvg</span> =</span>
+<span class="lineno">   78 </span><span class="spaces">        </span><span class="istickedoff"><span class="nottickedoff">concatMap dropNulls $</span></span>
+<span class="lineno">   79 </span><span class="spaces">        </span><span class="istickedoff"><span class="nottickedoff">concatMap worker (g^.groupChildren)</span></span>
+<span class="lineno">   80 </span><span class="spaces">      </span><span class="istickedoff">| <span class="nottickedoff">otherwise</span> =</span>
+<span class="lineno">   81 </span><span class="spaces">        </span><span class="istickedoff"><span class="nottickedoff">dropNulls $</span></span>
+<span class="lineno">   82 </span><span class="spaces">        </span><span class="istickedoff"><span class="nottickedoff">GroupTree $ g &amp; groupChildren %~ concatMap worker</span></span>
+<span class="lineno">   83 </span><span class="spaces">    </span><span class="istickedoff">worker t = dropNulls t</span>
+<span class="lineno">   84 </span><span class="spaces"></span><span class="istickedoff"></span>
+<span class="lineno">   85 </span><span class="spaces">    </span><span class="istickedoff">dropNulls None = <span class="nottickedoff">[]</span></span>
+<span class="lineno">   86 </span><span class="spaces">    </span><span class="istickedoff">dropNulls (DefinitionTree d)</span>
+<span class="lineno">   87 </span><span class="spaces">      </span><span class="istickedoff">| <span class="nottickedoff">null (d^.groupChildren)</span> = <span class="nottickedoff">[]</span></span>
+<span class="lineno">   88 </span><span class="spaces">    </span><span class="istickedoff">dropNulls (GroupTree g)</span>
+<span class="lineno">   89 </span><span class="spaces">      </span><span class="istickedoff">| <span class="nottickedoff">null (g^.groupChildren)</span> = <span class="nottickedoff">[]</span></span>
+<span class="lineno">   90 </span><span class="spaces">    </span><span class="istickedoff">dropNulls t = [t]</span></span>
 <span class="lineno">   91 </span>
 <span class="lineno">   92 </span>removeGroups :: Tree -&gt; [Tree]
 <span class="lineno">   93 </span><span class="decl"><span class="nottickedoff">removeGroups = worker defaultSvg</span>
@@ -131,11 +131,11 @@ span.spaces    { background: white }
 <span class="lineno">  112 </span><span class="spaces">    </span><span class="nottickedoff">dropNulls t = [t]</span></span>
 <span class="lineno">  113 </span>
 <span class="lineno">  114 </span>extractPath :: Tree -&gt; [PathCommand]
-<span class="lineno">  115 </span><span class="decl"><span class="nottickedoff">extractPath = worker . simplify . lowerTransformations . pathify</span>
-<span class="lineno">  116 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  117 </span><span class="spaces">    </span><span class="nottickedoff">worker (GroupTree g) = concatMap worker (g^.groupChildren)</span>
-<span class="lineno">  118 </span><span class="spaces">    </span><span class="nottickedoff">worker (PathTree p)  = p^.pathDefinition</span>
-<span class="lineno">  119 </span><span class="spaces">    </span><span class="nottickedoff">worker _             = []</span></span>
+<span class="lineno">  115 </span><span class="decl"><span class="istickedoff">extractPath = worker . simplify . lowerTransformations . pathify</span>
+<span class="lineno">  116 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  117 </span><span class="spaces">    </span><span class="istickedoff">worker (GroupTree g) = <span class="nottickedoff">concatMap worker (g^.groupChildren)</span></span>
+<span class="lineno">  118 </span><span class="spaces">    </span><span class="istickedoff">worker (PathTree p)  = p^.pathDefinition</span>
+<span class="lineno">  119 </span><span class="spaces">    </span><span class="istickedoff">worker _             = <span class="nottickedoff">[]</span></span></span>
 <span class="lineno">  120 </span>
 <span class="lineno">  121 </span>withSubglyphs :: [Int] -&gt; (Tree -&gt; Tree) -&gt; Tree -&gt; Tree
 <span class="lineno">  122 </span><span class="decl"><span class="nottickedoff">withSubglyphs target fn = \t -&gt; evalState (worker t) 0</span>
@@ -202,16 +202,16 @@ span.spaces    { background: white }
 <span class="lineno">  183 </span>, (\svg -&gt; &lt;g transform=&quot;translate(10,10)&quot;&gt;&lt;g transform=&quot;scale(0.5)&quot;&gt;svg&lt;/g&gt;&lt;/g&gt;, &lt;rect/&gt;)]
 <span class="lineno">  184 </span>-}
 <span class="lineno">  185 </span>svgGlyphs :: Tree -&gt; [(Tree -&gt; Tree, DrawAttributes, Tree)]
-<span class="lineno">  186 </span><span class="decl"><span class="nottickedoff">svgGlyphs = worker id defaultSvg</span>
-<span class="lineno">  187 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  188 </span><span class="spaces">    </span><span class="nottickedoff">worker acc attr =</span>
-<span class="lineno">  189 </span><span class="spaces">      </span><span class="nottickedoff">\case</span>
-<span class="lineno">  190 </span><span class="spaces">        </span><span class="nottickedoff">None -&gt; []</span>
-<span class="lineno">  191 </span><span class="spaces">        </span><span class="nottickedoff">GroupTree g -&gt;</span>
-<span class="lineno">  192 </span><span class="spaces">          </span><span class="nottickedoff">let acc' sub = acc (GroupTree $ g &amp; groupChildren .~ [sub])</span>
-<span class="lineno">  193 </span><span class="spaces">              </span><span class="nottickedoff">attr' = (g^.drawAttributes) `mappend` attr</span>
-<span class="lineno">  194 </span><span class="spaces">          </span><span class="nottickedoff">in concatMap (worker acc' attr') (g ^. groupChildren)</span>
-<span class="lineno">  195 </span><span class="spaces">        </span><span class="nottickedoff">t -&gt; [(acc, (t^.drawAttributes) `mappend` attr, t)]</span></span>
+<span class="lineno">  186 </span><span class="decl"><span class="istickedoff">svgGlyphs = worker <span class="nottickedoff">id</span> defaultSvg</span>
+<span class="lineno">  187 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  188 </span><span class="spaces">    </span><span class="istickedoff">worker acc attr =</span>
+<span class="lineno">  189 </span><span class="spaces">      </span><span class="istickedoff">\case</span>
+<span class="lineno">  190 </span><span class="spaces">        </span><span class="istickedoff">None -&gt; <span class="nottickedoff">[]</span></span>
+<span class="lineno">  191 </span><span class="spaces">        </span><span class="istickedoff">GroupTree g -&gt;</span>
+<span class="lineno">  192 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">let acc' sub = acc (GroupTree $ g &amp; groupChildren .~ [sub])</span></span>
+<span class="lineno">  193 </span><span class="spaces">              </span><span class="istickedoff"><span class="nottickedoff">attr' = (g^.drawAttributes) `mappend` attr</span></span>
+<span class="lineno">  194 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">in concatMap (worker acc' attr') (g ^. groupChildren)</span></span>
+<span class="lineno">  195 </span><span class="spaces">        </span><span class="istickedoff">t -&gt; [(<span class="nottickedoff">acc</span>, (t^.drawAttributes) `mappend` attr, t)]</span></span>
 <span class="lineno">  196 </span>
 <span class="lineno">  197 </span>{-| Convert primitive SVG shapes (like those created by 'mkCircle', 'mkRect', 'mkLine' or
 <span class="lineno">  198 </span>    'mkEllipse') into SVG path. This can be useful for creating animations of these shapes being
@@ -246,12 +246,12 @@ span.spaces    { background: white }
 <span class="lineno">  227 </span><span class="spaces">              </span><span class="istickedoff">,VerticalTo OriginRelative [h]</span>
 <span class="lineno">  228 </span><span class="spaces">              </span><span class="istickedoff">,HorizontalTo OriginRelative [-w]</span>
 <span class="lineno">  229 </span><span class="spaces">              </span><span class="istickedoff">,EndPath ]</span>
-<span class="lineno">  230 </span><span class="spaces">        </span><span class="istickedoff">LineTree line | Just (x1,y1, x2, y2) &lt;- <span class="nottickedoff">unpackLine line</span> -&gt;</span>
-<span class="lineno">  231 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">PathTree $ defaultSvg</span></span>
-<span class="lineno">  232 </span><span class="spaces">            </span><span class="istickedoff"><span class="nottickedoff">&amp; drawAttributes .~ line ^. drawAttributes</span></span>
-<span class="lineno">  233 </span><span class="spaces">            </span><span class="istickedoff"><span class="nottickedoff">&amp; pathDefinition .~</span></span>
-<span class="lineno">  234 </span><span class="spaces">              </span><span class="istickedoff"><span class="nottickedoff">[MoveTo OriginAbsolute [V2 x1 y1]</span></span>
-<span class="lineno">  235 </span><span class="spaces">              </span><span class="istickedoff"><span class="nottickedoff">,LineTo OriginAbsolute [V2 x2 y2] ]</span></span>
+<span class="lineno">  230 </span><span class="spaces">        </span><span class="istickedoff">LineTree line | Just (x1,y1, x2, y2) &lt;- unpackLine line -&gt;</span>
+<span class="lineno">  231 </span><span class="spaces">          </span><span class="istickedoff">PathTree $ defaultSvg</span>
+<span class="lineno">  232 </span><span class="spaces">            </span><span class="istickedoff">&amp; drawAttributes .~ line ^. drawAttributes</span>
+<span class="lineno">  233 </span><span class="spaces">            </span><span class="istickedoff">&amp; pathDefinition .~</span>
+<span class="lineno">  234 </span><span class="spaces">              </span><span class="istickedoff">[MoveTo OriginAbsolute [V2 x1 y1]</span>
+<span class="lineno">  235 </span><span class="spaces">              </span><span class="istickedoff">,LineTo OriginAbsolute [V2 x2 y2] ]</span>
 <span class="lineno">  236 </span><span class="spaces">        </span><span class="istickedoff">CircleTree circ | Just (x, y, r) &lt;- unpackCircle circ -&gt;</span>
 <span class="lineno">  237 </span><span class="spaces">          </span><span class="istickedoff">PathTree $ defaultSvg</span>
 <span class="lineno">  238 </span><span class="spaces">            </span><span class="istickedoff">&amp; drawAttributes .~ circ ^. drawAttributes</span>
@@ -271,25 +271,25 @@ span.spaces    { background: white }
 <span class="lineno">  252 </span><span class="spaces">               </span><span class="istickedoff"><span class="nottickedoff">-- Polygon automatically connects the last point to the first. For path we must do</span></span>
 <span class="lineno">  253 </span><span class="spaces">               </span><span class="istickedoff"><span class="nottickedoff">-- it explicitly</span></span>
 <span class="lineno">  254 </span><span class="spaces">               </span><span class="istickedoff"><span class="nottickedoff">&amp; pathDefinition .~ (pointsToPathCommands points ++ [EndPath])</span></span>
-<span class="lineno">  255 </span><span class="spaces">        </span><span class="istickedoff">EllipseTree elip | Just (cx,cy,rx,ry) &lt;- <span class="nottickedoff">unpackEllipse elip</span> -&gt;</span>
-<span class="lineno">  256 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">PathTree $ defaultSvg</span></span>
-<span class="lineno">  257 </span><span class="spaces">             </span><span class="istickedoff"><span class="nottickedoff">&amp; drawAttributes .~ elip ^. drawAttributes</span></span>
-<span class="lineno">  258 </span><span class="spaces">             </span><span class="istickedoff"><span class="nottickedoff">&amp; pathDefinition .~</span></span>
-<span class="lineno">  259 </span><span class="spaces">               </span><span class="istickedoff"><span class="nottickedoff">[ MoveTo OriginAbsolute [V2 (cx-rx) cy]</span></span>
-<span class="lineno">  260 </span><span class="spaces">               </span><span class="istickedoff"><span class="nottickedoff">, EllipticalArc OriginRelative [(rx, ry, 0,True,False,V2 (rx*2) 0)</span></span>
-<span class="lineno">  261 </span><span class="spaces">                                              </span><span class="istickedoff"><span class="nottickedoff">,(rx, ry, 0,True,False,V2 (-rx*2) 0)]]</span></span>
+<span class="lineno">  255 </span><span class="spaces">        </span><span class="istickedoff">EllipseTree elip | Just (cx,cy,rx,ry) &lt;- unpackEllipse elip -&gt;</span>
+<span class="lineno">  256 </span><span class="spaces">          </span><span class="istickedoff">PathTree $ defaultSvg</span>
+<span class="lineno">  257 </span><span class="spaces">             </span><span class="istickedoff">&amp; drawAttributes .~ elip ^. drawAttributes</span>
+<span class="lineno">  258 </span><span class="spaces">             </span><span class="istickedoff">&amp; pathDefinition .~</span>
+<span class="lineno">  259 </span><span class="spaces">               </span><span class="istickedoff">[ MoveTo OriginAbsolute [V2 (cx-rx) cy]</span>
+<span class="lineno">  260 </span><span class="spaces">               </span><span class="istickedoff">, EllipticalArc OriginRelative [(rx, ry, 0,True,False,V2 (rx*2) 0)</span>
+<span class="lineno">  261 </span><span class="spaces">                                              </span><span class="istickedoff">,(rx, ry, 0,True,False,V2 (-rx*2) 0)]]</span>
 <span class="lineno">  262 </span><span class="spaces">        </span><span class="istickedoff">t -&gt; t</span>
 <span class="lineno">  263 </span><span class="spaces">    </span><span class="istickedoff">unpackCircle circ = do</span>
 <span class="lineno">  264 </span><span class="spaces">      </span><span class="istickedoff">let (x,y) = circ ^. circleCenter</span>
 <span class="lineno">  265 </span><span class="spaces">      </span><span class="istickedoff">liftM3 (,,) (unpackNumber x) (unpackNumber y) (unpackNumber $ circ ^. circleRadius)</span>
-<span class="lineno">  266 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">unpackEllipse elip = do</span></span>
-<span class="lineno">  267 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">let (x,y) = elip ^. ellipseCenter</span></span>
-<span class="lineno">  268 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">liftM4 (,,,) (unpackNumber x) (unpackNumber y) (unpackNumber $ elip ^. ellipseXRadius)</span></span>
-<span class="lineno">  269 </span><span class="spaces">                  </span><span class="istickedoff"><span class="nottickedoff">(unpackNumber $ elip ^. ellipseYRadius)</span></span>
-<span class="lineno">  270 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">unpackLine line = do</span></span>
-<span class="lineno">  271 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">let (x1,y1) = line ^. linePoint1</span></span>
-<span class="lineno">  272 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">(x2,y2) = line ^. linePoint2</span></span>
-<span class="lineno">  273 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">liftM4 (,,,) (unpackNumber x1) (unpackNumber y1) (unpackNumber x2) (unpackNumber y2)</span></span>
+<span class="lineno">  266 </span><span class="spaces">    </span><span class="istickedoff">unpackEllipse elip = do</span>
+<span class="lineno">  267 </span><span class="spaces">      </span><span class="istickedoff">let (x,y) = elip ^. ellipseCenter</span>
+<span class="lineno">  268 </span><span class="spaces">      </span><span class="istickedoff">liftM4 (,,,) (unpackNumber x) (unpackNumber y) (unpackNumber $ elip ^. ellipseXRadius)</span>
+<span class="lineno">  269 </span><span class="spaces">                  </span><span class="istickedoff">(unpackNumber $ elip ^. ellipseYRadius)</span>
+<span class="lineno">  270 </span><span class="spaces">    </span><span class="istickedoff">unpackLine line = do</span>
+<span class="lineno">  271 </span><span class="spaces">      </span><span class="istickedoff">let (x1,y1) = line ^. linePoint1</span>
+<span class="lineno">  272 </span><span class="spaces">          </span><span class="istickedoff">(x2,y2) = line ^. linePoint2</span>
+<span class="lineno">  273 </span><span class="spaces">      </span><span class="istickedoff">liftM4 (,,,) (unpackNumber x1) (unpackNumber y1) (unpackNumber x2) (unpackNumber y2)</span>
 <span class="lineno">  274 </span><span class="spaces">    </span><span class="istickedoff">unpackRect rect = do</span>
 <span class="lineno">  275 </span><span class="spaces">      </span><span class="istickedoff">let (x', y') = rect ^. rectUpperLeftCorner</span>
 <span class="lineno">  276 </span><span class="spaces">      </span><span class="istickedoff">x &lt;- unpackNumber x'</span>

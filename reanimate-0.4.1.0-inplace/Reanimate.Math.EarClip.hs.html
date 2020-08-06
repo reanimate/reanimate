@@ -1,0 +1,142 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>module Reanimate.Math.EarClip
+<span class="lineno">    2 </span>  ( earCut
+<span class="lineno">    3 </span>  , earCut'
+<span class="lineno">    4 </span>  , earClip
+<span class="lineno">    5 </span>  , earClip'
+<span class="lineno">    6 </span>  , isEarCorner
+<span class="lineno">    7 </span>  ) where
+<span class="lineno">    8 </span>
+<span class="lineno">    9 </span>import           Data.List
+<span class="lineno">   10 </span>import qualified Data.Set                   as Set
+<span class="lineno">   11 </span>import           Data.Tuple
+<span class="lineno">   12 </span>
+<span class="lineno">   13 </span>import           Reanimate.Math.Common
+<span class="lineno">   14 </span>import           Reanimate.Math.Triangulate
+<span class="lineno">   15 </span>
+<span class="lineno">   16 </span>import qualified Data.Vector                as V
+<span class="lineno">   17 </span>import qualified Geometry.Earcut            as C
+<span class="lineno">   18 </span>import           Linear.V2
+<span class="lineno">   19 </span>
+<span class="lineno">   20 </span>-- import Debug.Trace
+<span class="lineno">   21 </span>
+<span class="lineno">   22 </span>earCut :: (Real a) =&gt; Ring a -&gt; Triangulation
+<span class="lineno">   23 </span><span class="decl"><span class="nottickedoff">earCut = last . earCut'</span></span>
+<span class="lineno">   24 </span>
+<span class="lineno">   25 </span>earCut' :: (Real a) =&gt; Ring a -&gt; [Triangulation]
+<span class="lineno">   26 </span><span class="decl"><span class="nottickedoff">earCut' p =</span>
+<span class="lineno">   27 </span><span class="spaces">  </span><span class="nottickedoff">map (edgesToTriangulation (ringSize p)) $ inits $ nub</span>
+<span class="lineno">   28 </span><span class="spaces">  </span><span class="nottickedoff">[ if fst pair &lt; snd pair then pair else swap pair</span>
+<span class="lineno">   29 </span><span class="spaces">  </span><span class="nottickedoff">| (a,b,c) &lt;- V.toList (C.earcut lst)</span>
+<span class="lineno">   30 </span><span class="spaces">  </span><span class="nottickedoff">, pair &lt;- [(a,b), (a,c), (b,c)]</span>
+<span class="lineno">   31 </span><span class="spaces">  </span><span class="nottickedoff">, fst pair /= (snd pair+1) `mod` ringSize p</span>
+<span class="lineno">   32 </span><span class="spaces">  </span><span class="nottickedoff">, fst pair /= (snd pair-1) `mod` ringSize p</span>
+<span class="lineno">   33 </span><span class="spaces">  </span><span class="nottickedoff">]</span>
+<span class="lineno">   34 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">   35 </span><span class="spaces">    </span><span class="nottickedoff">lst = [ (x,y) | V2 x y &lt;- V.toList $ V.map (fmap realToFrac) $ ringUnpack p ]</span></span>
+<span class="lineno">   36 </span>
+<span class="lineno">   37 </span>-- Triangulation by ear clipping. O(n^2)
+<span class="lineno">   38 </span>earClip :: (Fractional a, Ord a) =&gt; Ring a -&gt; Triangulation
+<span class="lineno">   39 </span><span class="decl"><span class="nottickedoff">earClip = last . earClip'</span></span>
+<span class="lineno">   40 </span>
+<span class="lineno">   41 </span>earClip' :: (Fractional a, Ord a) =&gt; Ring a -&gt; [Triangulation]
+<span class="lineno">   42 </span><span class="decl"><span class="nottickedoff">earClip' p = map (edgesToTriangulation $ ringSize p) $ inits $</span>
+<span class="lineno">   43 </span><span class="spaces">  </span><span class="nottickedoff">let ears = Set.fromList [ i</span>
+<span class="lineno">   44 </span><span class="spaces">             </span><span class="nottickedoff">| i &lt;- elts</span>
+<span class="lineno">   45 </span><span class="spaces">             </span><span class="nottickedoff">, isEarCorner p elts (mod (i-1) n) i (mod (i+1) n) ]</span>
+<span class="lineno">   46 </span><span class="spaces">  </span><span class="nottickedoff">in worker ears (mkQueue elts)</span>
+<span class="lineno">   47 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">   48 </span><span class="spaces">    </span><span class="nottickedoff">n = ringSize p</span>
+<span class="lineno">   49 </span><span class="spaces">    </span><span class="nottickedoff">elts = [0 .. n-1]</span>
+<span class="lineno">   50 </span><span class="spaces">    </span><span class="nottickedoff">-- worker :: Set.Set Int -&gt; PolyQueue Int -&gt; [(P,P)]</span>
+<span class="lineno">   51 </span><span class="spaces">    </span><span class="nottickedoff">worker _ears queue | isSimpleQ queue = []</span>
+<span class="lineno">   52 </span><span class="spaces">    </span><span class="nottickedoff">worker ears queue</span>
+<span class="lineno">   53 </span><span class="spaces">      </span><span class="nottickedoff">| x `Set.member` ears =</span>
+<span class="lineno">   54 </span><span class="spaces">        </span><span class="nottickedoff">let dq = dropQ queue</span>
+<span class="lineno">   55 </span><span class="spaces">            </span><span class="nottickedoff">v0 = prevQ 1 queue</span>
+<span class="lineno">   56 </span><span class="spaces">            </span><span class="nottickedoff">v1 = prevQ 0 queue</span>
+<span class="lineno">   57 </span><span class="spaces">            </span><span class="nottickedoff">v3 = peekQ dq</span>
+<span class="lineno">   58 </span><span class="spaces">            </span><span class="nottickedoff">v4 = peekQ (nextQ dq)</span>
+<span class="lineno">   59 </span><span class="spaces">            </span><span class="nottickedoff">e1 = if isEarCorner p (toList dq) v0 v1 v3</span>
+<span class="lineno">   60 </span><span class="spaces">                  </span><span class="nottickedoff">then Set.insert v1 ears</span>
+<span class="lineno">   61 </span><span class="spaces">                  </span><span class="nottickedoff">else Set.delete v1 ears</span>
+<span class="lineno">   62 </span><span class="spaces">            </span><span class="nottickedoff">e2 = if isEarCorner p (toList dq) v1 v3 v4</span>
+<span class="lineno">   63 </span><span class="spaces">                  </span><span class="nottickedoff">then Set.insert v3 e1</span>
+<span class="lineno">   64 </span><span class="spaces">                  </span><span class="nottickedoff">else Set.delete v3 e1</span>
+<span class="lineno">   65 </span><span class="spaces">        </span><span class="nottickedoff">in (v1,v3) : worker e2 dq</span>
+<span class="lineno">   66 </span><span class="spaces">      </span><span class="nottickedoff">| otherwise = worker ears (nextQ queue)</span>
+<span class="lineno">   67 </span><span class="spaces">      </span><span class="nottickedoff">where</span>
+<span class="lineno">   68 </span><span class="spaces">        </span><span class="nottickedoff">x = peekQ queue</span></span>
+<span class="lineno">   69 </span>
+<span class="lineno">   70 </span>data PolyQueue a = PolyQueue a [a] [a] [a]
+<span class="lineno">   71 </span>
+<span class="lineno">   72 </span>-- sizeQ :: PolyQueue a -&gt; Int
+<span class="lineno">   73 </span>-- sizeQ (PolyQueue _ a b _) = 1 + length a + length b
+<span class="lineno">   74 </span>
+<span class="lineno">   75 </span>mkQueue :: [a] -&gt; PolyQueue a
+<span class="lineno">   76 </span><span class="decl"><span class="nottickedoff">mkQueue (x:xs) = PolyQueue x xs [] (reverse (x:xs))</span>
+<span class="lineno">   77 </span><span class="spaces"></span><span class="nottickedoff">mkQueue []     = error &quot;mkQueue: empty&quot;</span></span>
+<span class="lineno">   78 </span>
+<span class="lineno">   79 </span>toList :: PolyQueue a -&gt; [a]
+<span class="lineno">   80 </span><span class="decl"><span class="nottickedoff">toList (PolyQueue e a b _) = e : a ++ b</span></span>
+<span class="lineno">   81 </span>
+<span class="lineno">   82 </span>isSimpleQ :: PolyQueue a -&gt; Bool
+<span class="lineno">   83 </span><span class="decl"><span class="nottickedoff">isSimpleQ (PolyQueue _ xs ys _) =</span>
+<span class="lineno">   84 </span><span class="spaces">  </span><span class="nottickedoff">case xs ++ ys of</span>
+<span class="lineno">   85 </span><span class="spaces">    </span><span class="nottickedoff">[_,_] -&gt; True</span>
+<span class="lineno">   86 </span><span class="spaces">    </span><span class="nottickedoff">_     -&gt; False</span></span>
+<span class="lineno">   87 </span>
+<span class="lineno">   88 </span>peekQ :: PolyQueue a -&gt; a
+<span class="lineno">   89 </span><span class="decl"><span class="nottickedoff">peekQ (PolyQueue e _ _ _) = e</span></span>
+<span class="lineno">   90 </span>
+<span class="lineno">   91 </span>nextQ :: PolyQueue a -&gt; PolyQueue a
+<span class="lineno">   92 </span><span class="decl"><span class="nottickedoff">nextQ (PolyQueue x [] ys p)     =</span>
+<span class="lineno">   93 </span><span class="spaces">  </span><span class="nottickedoff">let (y:xs) = reverse (x:ys)</span>
+<span class="lineno">   94 </span><span class="spaces">  </span><span class="nottickedoff">in PolyQueue y xs [] (x:p)</span>
+<span class="lineno">   95 </span><span class="spaces"></span><span class="nottickedoff">nextQ (PolyQueue x (y:xs) ys p) = PolyQueue y xs (x:ys) (x:p)</span></span>
+<span class="lineno">   96 </span>
+<span class="lineno">   97 </span>dropQ :: PolyQueue a -&gt; PolyQueue a
+<span class="lineno">   98 </span><span class="decl"><span class="nottickedoff">dropQ (PolyQueue _ [] ys p)    =</span>
+<span class="lineno">   99 </span><span class="spaces">  </span><span class="nottickedoff">let (x:xs) = reverse ys</span>
+<span class="lineno">  100 </span><span class="spaces">  </span><span class="nottickedoff">in PolyQueue x xs [] p</span>
+<span class="lineno">  101 </span><span class="spaces"></span><span class="nottickedoff">dropQ (PolyQueue _ (x:xs) ys p) = PolyQueue x xs ys p</span></span>
+<span class="lineno">  102 </span>
+<span class="lineno">  103 </span>prevQ :: Int -&gt; PolyQueue a -&gt; a
+<span class="lineno">  104 </span><span class="decl"><span class="nottickedoff">prevQ nth (PolyQueue _ _ _ p) = p!!nth</span></span>
+<span class="lineno">  105 </span>
+<span class="lineno">  106 </span>-- O(n)
+<span class="lineno">  107 </span>-- Returns true if ac can be cut from polygon. That is, true if 'b' is an ear.
+<span class="lineno">  108 </span>-- isEarCorner polygon a b c = True iff ac can be cut
+<span class="lineno">  109 </span>isEarCorner :: (Fractional a, Ord a) =&gt; Ring a -&gt; [Int] -&gt; Int -&gt; Int -&gt; Int -&gt; Bool
+<span class="lineno">  110 </span><span class="decl"><span class="nottickedoff">isEarCorner p polygon a b c =</span>
+<span class="lineno">  111 </span><span class="spaces">    </span><span class="nottickedoff">isLeftTurn aP bP cP &amp;&amp;</span>
+<span class="lineno">  112 </span><span class="spaces">    </span><span class="nottickedoff">-- If it is a right turn then the line ac will be outside the polygon</span>
+<span class="lineno">  113 </span><span class="spaces">    </span><span class="nottickedoff">and [ not (isInside aP bP cP (ringAccess p k))</span>
+<span class="lineno">  114 </span><span class="spaces">    </span><span class="nottickedoff">| k &lt;- polygon, k /= a &amp;&amp; k /= b &amp;&amp; k /= c</span>
+<span class="lineno">  115 </span><span class="spaces">    </span><span class="nottickedoff">]</span>
+<span class="lineno">  116 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  117 </span><span class="spaces">    </span><span class="nottickedoff">aP = ringAccess p a</span>
+<span class="lineno">  118 </span><span class="spaces">    </span><span class="nottickedoff">bP = ringAccess p b</span>
+<span class="lineno">  119 </span><span class="spaces">    </span><span class="nottickedoff">cP = ringAccess p c</span></span>
+
+</pre>
+</body>
+</html>
