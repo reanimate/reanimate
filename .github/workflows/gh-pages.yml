@@ -57,15 +57,26 @@ jobs:
       run: |
         hpc markup --destdir=hpc --hpcdir $(find dist-newstyle -name 'hpc')/vanilla/mix/*/ total.tix
 
-    - name: Badge
+    - name: HPC Badge
       run: |
         COVERAGE=$(cat hpc/hpc_index.html | tr '\n' ' ' | sed "s/.*Program Coverage Total.*>\([0-9]\{1,3\}\)%.*>\([0-9]\{1,3\}\)%.*>\([0-9]\{1,3\}\)%.*/\1/")
         echo "\
           { \"schemaVersion\": 1, \
-            \"label\": \"hpc\", \
+            \"label\": \"api tests\", \
             \"message\": \"$COVERAGE%\", \
-            \"color\": \"green\" \
+            \"color\": \"success\" \
           }" > hpc/hpc_badge.json
+
+    - name: Haddock  Badge
+      run: |
+        cabal v2-haddock --enable-coverage | grep " in " > hpc/haddock.txt
+        COVERAGE=$(awk '{good += $3; total += $5} END {printf "%.0f", good/total*100}' hpc/haddock.txt)
+        echo "\
+          { \"schemaVersion\": 1, \
+            \"label\": \"api docs\", \
+            \"message\": \"$COVERAGE%\", \
+            \"color\": \"success\" \
+          }" > hpc/haddock_badge.json
 
     - name: Deploy 🚀
       uses: JamesIves/github-pages-deploy-action@3.5.9
