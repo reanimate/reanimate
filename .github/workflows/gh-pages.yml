@@ -23,19 +23,19 @@ jobs:
         cache-name: cache-cabal
       with:
         path: ~/.cabal
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/cabal.project') }}
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/cabal.project') }}-version2
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
           ${{ runner.os }}-build-
           ${{ runner.os }}-
 
-    #- name: Install dependencies
-    #  run: |
-    #    cabal v1-update
-    #    cabal v1-build --enable-coverage --only-dependencies --disable-tests --disable-benchmarks
+    - name: Install dependencies
+      run: |
+        cabal v2-update
+        cabal v2-build --enable-coverage --only-dependencies
+
     - name: Build
       run: |
-        # cabal v1-build --enable-coverage
         cabal v2-build --enable-coverage
 
     - name: Generate HPC files
@@ -47,17 +47,15 @@ jobs:
         done;
     
     - name: Merge HPC files
-      run: hpc sum *.tix --output=total.tix
+      run: hpc combine *.tix --output=total.tix
 
     - name: Report
       run: |
         hpc report --hpcdir $(find dist-newstyle -name 'hpc')/vanilla/mix/*/ total.tix
-        # hpc report --hpcdir dist/hpc/vanilla/mix/*/ total.tix
 
     - name: Markup
       run: |
         hpc markup --destdir=hpc --hpcdir $(find dist-newstyle -name 'hpc')/vanilla/mix/*/ total.tix
-        # hpc markup --destdir=hpc --hpcdir dist/hpc/vanilla/mix/*/ total.tix
 
     - name: Deploy 🚀
       uses: JamesIves/github-pages-deploy-action@3.5.9
