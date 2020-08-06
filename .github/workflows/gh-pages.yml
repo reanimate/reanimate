@@ -36,12 +36,13 @@ jobs:
     - name: Build
       run: |
         cabal v2-build --enable-coverage --disable-tests --disable-benchmarks
+        cabal v2-install --lib --enable-coverage --disable-tests --disable-benchmarks
 
     - name: Generate HPC files
       run: |
         for gold in examples/*.golden; do
           cabal v2-exec -- ghc -package reanimate "${gold%.golden}.hs" --make
-          ${gold%.golden} test > /dev/null
+          reanimate_datadir=$(pwd) ${gold%.golden} test > /dev/null
         done;
     
     - name: Merge HPC files
