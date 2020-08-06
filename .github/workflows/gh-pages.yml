@@ -36,6 +36,9 @@ jobs:
     - name: Build
       run: |
         # cabal v1-build --enable-coverage
+        cabal v1-install happy
+        cabal v1-install alex
+        cabal v1-install c2hs
         cabal v1-install --enable-coverage
 
     - name: Generate HPC files
