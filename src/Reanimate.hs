@@ -184,6 +184,7 @@ module Reanimate
     screenBottom,
     screenLeft,
     screenRight,
+    defaultDPI,
     defaultStrokeWidth,
     -- * Parameters
     pFPS,
