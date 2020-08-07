@@ -32,164 +32,177 @@ span.spaces    { background: white }
 <span class="lineno">   13 </span>  , area2X              -- :: Fractional a =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; a
 <span class="lineno">   14 </span>  , epsilon             -- :: Fractional a =&gt; a
 <span class="lineno">   15 </span>  , epsEq               -- :: (Ord a, Fractional a) =&gt; a -&gt; a -&gt; Bool
-<span class="lineno">   16 </span>  , isLeftTurn          -- :: (Fractional a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
-<span class="lineno">   17 </span>  , isLeftTurnOrLinear  -- :: (Fractional a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
-<span class="lineno">   18 </span>  , isRightTurn         -- :: (Fractional a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
-<span class="lineno">   19 </span>  , isRightTurnOrLinear -- :: (Fractional a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
-<span class="lineno">   20 </span>  , direction           -- :: Fractional a =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; a
+<span class="lineno">   16 </span>  , isLeftTurn          -- :: (Num a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
+<span class="lineno">   17 </span>  , isLeftTurnOrLinear  -- :: (Num a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
+<span class="lineno">   18 </span>  , isRightTurn         -- :: (Num a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
+<span class="lineno">   19 </span>  , isRightTurnOrLinear -- :: (Num a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
+<span class="lineno">   20 </span>  , direction           -- :: Num a =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; a
 <span class="lineno">   21 </span>  , isInside            -- :: (Fractional a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
-<span class="lineno">   22 </span>  , barycentricCoords   -- :: Fractional a =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; (a, a, a)
-<span class="lineno">   23 </span>  , rayIntersect        -- :: (Fractional a, Ord a) =&gt; (V2 a,V2 a) -&gt; (V2 a,V2 a) -&gt; Maybe (V2 a)
-<span class="lineno">   24 </span>  , isBetween           -- :: (Ord a, Fractional a) =&gt; V2 a -&gt; (V2 a, V2 a) -&gt; Bool
-<span class="lineno">   25 </span>  , lineIntersect       -- :: (Ord a, Fractional a) =&gt; (V2 a, V2 a) -&gt; (V2 a, V2 a) -&gt; Maybe (V2 a)
-<span class="lineno">   26 </span>  , distSquared         -- :: (Fractional a) =&gt; V2 a -&gt; V2 a -&gt; a
-<span class="lineno">   27 </span>  , approxDist          -- :: (Real a, Fractional a) =&gt; V2 a -&gt; V2 a -&gt; a
-<span class="lineno">   28 </span>  , distance'           -- :: (Real a, Fractional a) =&gt; V2 a -&gt; V2 a -&gt; Double
-<span class="lineno">   29 </span>  , triangleAngles      -- :: V2 Double -&gt; V2 Double -&gt; V2 Double -&gt; (Double, Double, Double)
-<span class="lineno">   30 </span>  ) where
-<span class="lineno">   31 </span>
-<span class="lineno">   32 </span>import           Data.Vector    (Vector)
-<span class="lineno">   33 </span>import qualified Data.Vector    as V
-<span class="lineno">   34 </span>import           Linear.Matrix  (det33)
-<span class="lineno">   35 </span>import           Linear.Metric
-<span class="lineno">   36 </span>import           Linear.V2
-<span class="lineno">   37 </span>import           Linear.V3
-<span class="lineno">   38 </span>import           Linear.Vector
-<span class="lineno">   39 </span>
-<span class="lineno">   40 </span>newtype Ring a = Ring (Vector (V2 a))
-<span class="lineno">   41 </span>
-<span class="lineno">   42 </span>ringSize :: Ring a -&gt; Int
-<span class="lineno">   43 </span><span class="decl"><span class="nottickedoff">ringSize (Ring v) = length v</span></span>
-<span class="lineno">   44 </span>
-<span class="lineno">   45 </span>ringAccess :: Ring a -&gt; Int -&gt; V2 a
-<span class="lineno">   46 </span><span class="decl"><span class="nottickedoff">ringAccess (Ring v) i = v V.! mod i (length v)</span></span>
-<span class="lineno">   47 </span>
-<span class="lineno">   48 </span>ringClamp :: Ring a -&gt; Int -&gt; Int
-<span class="lineno">   49 </span><span class="decl"><span class="nottickedoff">ringClamp (Ring v) i = mod i (length v)</span></span>
-<span class="lineno">   50 </span>
-<span class="lineno">   51 </span>ringUnpack :: Ring a -&gt; Vector (V2 a)
-<span class="lineno">   52 </span><span class="decl"><span class="nottickedoff">ringUnpack (Ring v) = v</span></span>
-<span class="lineno">   53 </span>
-<span class="lineno">   54 </span>ringPack :: Vector (V2 a) -&gt; Ring a
-<span class="lineno">   55 </span><span class="decl"><span class="nottickedoff">ringPack = Ring</span></span>
-<span class="lineno">   56 </span>
-<span class="lineno">   57 </span>ringMap :: (V2 a -&gt; V2 b) -&gt; Ring a -&gt; Ring b
-<span class="lineno">   58 </span><span class="decl"><span class="nottickedoff">ringMap fn (Ring v) = Ring (V.map fn v)</span></span>
-<span class="lineno">   59 </span>
-<span class="lineno">   60 </span>ringRayIntersect :: Ring Rational -&gt; (Int, Int) -&gt; (Int,Int) -&gt; Maybe (V2 Rational)
-<span class="lineno">   61 </span><span class="decl"><span class="nottickedoff">ringRayIntersect p (a,b) (c,d) =</span>
-<span class="lineno">   62 </span><span class="spaces">  </span><span class="nottickedoff">rayIntersect (ringAccess p a, ringAccess p b) (ringAccess p c, ringAccess p d)</span></span>
-<span class="lineno">   63 </span>
+<span class="lineno">   22 </span>  , isInsideStrict      -- :: (Fractional a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
+<span class="lineno">   23 </span>  , barycentricCoords   -- :: Fractional a =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; (a, a, a)
+<span class="lineno">   24 </span>  , rayIntersect        -- :: (Fractional a, Ord a) =&gt; (V2 a,V2 a) -&gt; (V2 a,V2 a) -&gt; Maybe (V2 a)
+<span class="lineno">   25 </span>  , isBetween           -- :: (Ord a, Fractional a) =&gt; V2 a -&gt; (V2 a, V2 a) -&gt; Bool
+<span class="lineno">   26 </span>  , lineIntersect       -- :: (Ord a, Fractional a) =&gt; (V2 a, V2 a) -&gt; (V2 a, V2 a) -&gt; Maybe (V2 a)
+<span class="lineno">   27 </span>  , distSquared         -- :: (Fractional a) =&gt; V2 a -&gt; V2 a -&gt; a
+<span class="lineno">   28 </span>  , approxDist          -- :: (Real a, Fractional a) =&gt; V2 a -&gt; V2 a -&gt; a
+<span class="lineno">   29 </span>  , distance'           -- :: (Real a, Fractional a) =&gt; V2 a -&gt; V2 a -&gt; Double
+<span class="lineno">   30 </span>  , triangleAngles      -- :: V2 Double -&gt; V2 Double -&gt; V2 Double -&gt; (Double, Double, Double)
+<span class="lineno">   31 </span>  ) where
+<span class="lineno">   32 </span>
+<span class="lineno">   33 </span>import           Data.Vector    (Vector)
+<span class="lineno">   34 </span>import qualified Data.Vector    as V
+<span class="lineno">   35 </span>import           Linear.Matrix  (det33)
+<span class="lineno">   36 </span>import           Linear.Metric
+<span class="lineno">   37 </span>import           Linear.V2
+<span class="lineno">   38 </span>import           Linear.V3
+<span class="lineno">   39 </span>import           Linear.Vector
+<span class="lineno">   40 </span>
+<span class="lineno">   41 </span>newtype Ring a = Ring (Vector (V2 a))
+<span class="lineno">   42 </span>
+<span class="lineno">   43 </span>ringSize :: Ring a -&gt; Int
+<span class="lineno">   44 </span><span class="decl"><span class="nottickedoff">ringSize (Ring v) = length v</span></span>
+<span class="lineno">   45 </span>
+<span class="lineno">   46 </span>ringAccess :: Ring a -&gt; Int -&gt; V2 a
+<span class="lineno">   47 </span><span class="decl"><span class="nottickedoff">ringAccess (Ring v) i = v V.! mod i (length v)</span></span>
+<span class="lineno">   48 </span>
+<span class="lineno">   49 </span>ringClamp :: Ring a -&gt; Int -&gt; Int
+<span class="lineno">   50 </span><span class="decl"><span class="nottickedoff">ringClamp (Ring v) i = mod i (length v)</span></span>
+<span class="lineno">   51 </span>
+<span class="lineno">   52 </span>ringUnpack :: Ring a -&gt; Vector (V2 a)
+<span class="lineno">   53 </span><span class="decl"><span class="nottickedoff">ringUnpack (Ring v) = v</span></span>
+<span class="lineno">   54 </span>
+<span class="lineno">   55 </span>ringPack :: Vector (V2 a) -&gt; Ring a
+<span class="lineno">   56 </span><span class="decl"><span class="nottickedoff">ringPack = Ring</span></span>
+<span class="lineno">   57 </span>
+<span class="lineno">   58 </span>ringMap :: (V2 a -&gt; V2 b) -&gt; Ring a -&gt; Ring b
+<span class="lineno">   59 </span><span class="decl"><span class="nottickedoff">ringMap fn (Ring v) = Ring (V.map fn v)</span></span>
+<span class="lineno">   60 </span>
+<span class="lineno">   61 </span>ringRayIntersect :: Ring Rational -&gt; (Int, Int) -&gt; (Int,Int) -&gt; Maybe (V2 Rational)
+<span class="lineno">   62 </span><span class="decl"><span class="nottickedoff">ringRayIntersect p (a,b) (c,d) =</span>
+<span class="lineno">   63 </span><span class="spaces">  </span><span class="nottickedoff">rayIntersect (ringAccess p a, ringAccess p b) (ringAccess p c, ringAccess p d)</span></span>
 <span class="lineno">   64 </span>
-<span class="lineno">   65 </span>area :: Fractional a =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; a
-<span class="lineno">   66 </span><span class="decl"><span class="nottickedoff">area a b c = 1/2 * area2X a b c</span></span>
-<span class="lineno">   67 </span>
-<span class="lineno">   68 </span>area2X :: Fractional a =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; a
-<span class="lineno">   69 </span><span class="decl"><span class="nottickedoff">area2X (V2 a1 a2) (V2 b1 b2) (V2 c1 c2) =</span>
-<span class="lineno">   70 </span><span class="spaces">  </span><span class="nottickedoff">det33 (V3 (V3 a1 a2 1)</span>
-<span class="lineno">   71 </span><span class="spaces">            </span><span class="nottickedoff">(V3 b1 b2 1)</span>
-<span class="lineno">   72 </span><span class="spaces">            </span><span class="nottickedoff">(V3 c1 c2 1))</span></span>
-<span class="lineno">   73 </span>
-<span class="lineno">   74 </span>epsilon :: Fractional a =&gt; a
-<span class="lineno">   75 </span><span class="decl"><span class="nottickedoff">epsilon = 1e-13</span></span>
-<span class="lineno">   76 </span>
-<span class="lineno">   77 </span>epsEq :: (Ord a, Fractional a) =&gt; a -&gt; a -&gt; Bool
-<span class="lineno">   78 </span><span class="decl"><span class="nottickedoff">epsEq a b = abs (a-b) &lt; epsilon</span></span>
-<span class="lineno">   79 </span>
-<span class="lineno">   80 </span>{-# INLINE isLeftTurn #-}
-<span class="lineno">   81 </span>-- Left turn.
-<span class="lineno">   82 </span>isLeftTurn :: (Fractional a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
-<span class="lineno">   83 </span><span class="decl"><span class="nottickedoff">isLeftTurn p1 p2 p3 =</span>
-<span class="lineno">   84 </span><span class="spaces">  </span><span class="nottickedoff">case compare (direction p1 p2 p3) 0 of</span>
-<span class="lineno">   85 </span><span class="spaces">    </span><span class="nottickedoff">LT -&gt; True</span>
-<span class="lineno">   86 </span><span class="spaces">    </span><span class="nottickedoff">EQ -&gt; False -- colnear</span>
-<span class="lineno">   87 </span><span class="spaces">    </span><span class="nottickedoff">GT -&gt; False</span></span>
-<span class="lineno">   88 </span>
-<span class="lineno">   89 </span>{-# INLINE isLeftTurnOrLinear #-}
-<span class="lineno">   90 </span>isLeftTurnOrLinear :: (Fractional a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
-<span class="lineno">   91 </span><span class="decl"><span class="nottickedoff">isLeftTurnOrLinear p1 p2 p3 =</span>
-<span class="lineno">   92 </span><span class="spaces">  </span><span class="nottickedoff">case compare (direction p1 p2 p3) 0 of</span>
-<span class="lineno">   93 </span><span class="spaces">    </span><span class="nottickedoff">LT -&gt; True</span>
-<span class="lineno">   94 </span><span class="spaces">    </span><span class="nottickedoff">EQ -&gt; True -- colnear</span>
-<span class="lineno">   95 </span><span class="spaces">    </span><span class="nottickedoff">GT -&gt; False</span></span>
-<span class="lineno">   96 </span>
-<span class="lineno">   97 </span>{-# INLINE isRightTurn #-}
-<span class="lineno">   98 </span>isRightTurn :: (Fractional a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
-<span class="lineno">   99 </span><span class="decl"><span class="nottickedoff">isRightTurn a b c = not (isLeftTurnOrLinear a b c)</span></span>
-<span class="lineno">  100 </span>
-<span class="lineno">  101 </span>{-# INLINE isRightTurnOrLinear #-}
-<span class="lineno">  102 </span>isRightTurnOrLinear :: (Fractional a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
-<span class="lineno">  103 </span><span class="decl"><span class="nottickedoff">isRightTurnOrLinear a b c = not (isLeftTurn a b c)</span></span>
-<span class="lineno">  104 </span>
-<span class="lineno">  105 </span>{-# INLINE direction #-}
-<span class="lineno">  106 </span>direction :: Fractional a =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; a
-<span class="lineno">  107 </span><span class="decl"><span class="nottickedoff">direction p1 p2 p3 = crossZ (p3-p1) (p2-p1)</span></span>
-<span class="lineno">  108 </span>
-<span class="lineno">  109 </span>{-# INLINE isInside #-}
-<span class="lineno">  110 </span>isInside :: (Fractional a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
-<span class="lineno">  111 </span><span class="decl"><span class="nottickedoff">isInside a b c d =</span>
-<span class="lineno">  112 </span><span class="spaces">    </span><span class="nottickedoff">s &gt;= 0 &amp;&amp; s &lt;= 1 &amp;&amp; t &gt;= 0 &amp;&amp; t &lt;= 1</span>
-<span class="lineno">  113 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  114 </span><span class="spaces">    </span><span class="nottickedoff">(s, t, _) = barycentricCoords a b c d</span></span>
-<span class="lineno">  115 </span>
-<span class="lineno">  116 </span>{-# INLINE barycentricCoords #-}
-<span class="lineno">  117 </span>barycentricCoords :: Fractional a =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; (a, a, a)
-<span class="lineno">  118 </span><span class="decl"><span class="nottickedoff">barycentricCoords (V2 x1 y1) (V2 x2 y2) (V2 x3 y3) (V2 x y) =</span>
-<span class="lineno">  119 </span><span class="spaces">    </span><span class="nottickedoff">(lam1, lam2, lam3)</span>
-<span class="lineno">  120 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  121 </span><span class="spaces">    </span><span class="nottickedoff">lam1 = ((y2-y3)*(x-x3) + (x3 - x2)*(y-y3)) /</span>
-<span class="lineno">  122 </span><span class="spaces">           </span><span class="nottickedoff">((y2-y3)*(x1-x3) + (x3-x2)*(y1-y3))</span>
-<span class="lineno">  123 </span><span class="spaces">    </span><span class="nottickedoff">lam2 = ((y3-y1)*(x-x3) + (x1-x3)*(y-y3)) /</span>
-<span class="lineno">  124 </span><span class="spaces">           </span><span class="nottickedoff">((y2-y3)*(x1-x3) + (x3-x2)*(y1-y3))</span>
-<span class="lineno">  125 </span><span class="spaces">    </span><span class="nottickedoff">lam3 = 1 - lam1 - lam2</span></span>
-<span class="lineno">  126 </span>
-<span class="lineno">  127 </span>
-<span class="lineno">  128 </span>{-# INLINE rayIntersect #-}
-<span class="lineno">  129 </span>rayIntersect :: (Fractional a, Ord a) =&gt; (V2 a,V2 a) -&gt; (V2 a,V2 a) -&gt; Maybe (V2 a)
-<span class="lineno">  130 </span><span class="decl"><span class="nottickedoff">rayIntersect (V2 x1 y1,V2 x2 y2) (V2 x3 y3, V2 x4 y4)</span>
-<span class="lineno">  131 </span><span class="spaces">  </span><span class="nottickedoff">| yBot == 0 = Nothing</span>
-<span class="lineno">  132 </span><span class="spaces">  </span><span class="nottickedoff">| otherwise = Just $</span>
-<span class="lineno">  133 </span><span class="spaces">    </span><span class="nottickedoff">V2 (xTop/xBot) (yTop/yBot)</span>
-<span class="lineno">  134 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  135 </span><span class="spaces">    </span><span class="nottickedoff">xTop = (x1*y2 - y1*x2)*(x3-x4) - (x1 - x2)*(x3*y4-y3*x4)</span>
-<span class="lineno">  136 </span><span class="spaces">    </span><span class="nottickedoff">xBot = (x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)</span>
-<span class="lineno">  137 </span><span class="spaces">    </span><span class="nottickedoff">yTop = (x1*y2 - y1*x2)*(y3-y4) - (y1-y2)*(x3*y4-y3*x4)</span>
-<span class="lineno">  138 </span><span class="spaces">    </span><span class="nottickedoff">yBot = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4)</span></span>
+<span class="lineno">   65 </span>
+<span class="lineno">   66 </span>area :: Fractional a =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; a
+<span class="lineno">   67 </span><span class="decl"><span class="nottickedoff">area a b c = 1/2 * area2X a b c</span></span>
+<span class="lineno">   68 </span>
+<span class="lineno">   69 </span>area2X :: Fractional a =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; a
+<span class="lineno">   70 </span><span class="decl"><span class="nottickedoff">area2X (V2 a1 a2) (V2 b1 b2) (V2 c1 c2) =</span>
+<span class="lineno">   71 </span><span class="spaces">  </span><span class="nottickedoff">det33 (V3 (V3 a1 a2 1)</span>
+<span class="lineno">   72 </span><span class="spaces">            </span><span class="nottickedoff">(V3 b1 b2 1)</span>
+<span class="lineno">   73 </span><span class="spaces">            </span><span class="nottickedoff">(V3 c1 c2 1))</span></span>
+<span class="lineno">   74 </span>
+<span class="lineno">   75 </span>epsilon :: Fractional a =&gt; a
+<span class="lineno">   76 </span><span class="decl"><span class="nottickedoff">epsilon = 1e-13</span></span>
+<span class="lineno">   77 </span>
+<span class="lineno">   78 </span>epsEq :: (Ord a, Fractional a) =&gt; a -&gt; a -&gt; Bool
+<span class="lineno">   79 </span><span class="decl"><span class="nottickedoff">epsEq a b = abs (a-b) &lt; epsilon</span></span>
+<span class="lineno">   80 </span>
+<span class="lineno">   81 </span>compareEpsZero :: (Ord a, Fractional a) =&gt; a -&gt; Ordering
+<span class="lineno">   82 </span><span class="decl"><span class="nottickedoff">compareEpsZero val</span>
+<span class="lineno">   83 </span><span class="spaces">  </span><span class="nottickedoff">| abs val &lt; epsilon = EQ</span>
+<span class="lineno">   84 </span><span class="spaces">  </span><span class="nottickedoff">| otherwise         = compare val 0</span></span>
+<span class="lineno">   85 </span>
+<span class="lineno">   86 </span>{-# INLINE isLeftTurn #-}
+<span class="lineno">   87 </span>-- Left turn.
+<span class="lineno">   88 </span>isLeftTurn :: (Fractional a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
+<span class="lineno">   89 </span><span class="decl"><span class="nottickedoff">isLeftTurn p1 p2 p3 =</span>
+<span class="lineno">   90 </span><span class="spaces">  </span><span class="nottickedoff">case compareEpsZero (direction p1 p2 p3) of</span>
+<span class="lineno">   91 </span><span class="spaces">    </span><span class="nottickedoff">LT -&gt; True</span>
+<span class="lineno">   92 </span><span class="spaces">    </span><span class="nottickedoff">EQ -&gt; False -- colinear</span>
+<span class="lineno">   93 </span><span class="spaces">    </span><span class="nottickedoff">GT -&gt; False</span></span>
+<span class="lineno">   94 </span>
+<span class="lineno">   95 </span>{-# INLINE isLeftTurnOrLinear #-}
+<span class="lineno">   96 </span>isLeftTurnOrLinear :: (Fractional a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
+<span class="lineno">   97 </span><span class="decl"><span class="nottickedoff">isLeftTurnOrLinear p1 p2 p3 =</span>
+<span class="lineno">   98 </span><span class="spaces">  </span><span class="nottickedoff">case compareEpsZero (direction p1 p2 p3) of</span>
+<span class="lineno">   99 </span><span class="spaces">    </span><span class="nottickedoff">LT -&gt; True</span>
+<span class="lineno">  100 </span><span class="spaces">    </span><span class="nottickedoff">EQ -&gt; True -- colinear</span>
+<span class="lineno">  101 </span><span class="spaces">    </span><span class="nottickedoff">GT -&gt; False</span></span>
+<span class="lineno">  102 </span>
+<span class="lineno">  103 </span>{-# INLINE isRightTurn #-}
+<span class="lineno">  104 </span>isRightTurn :: (Fractional a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
+<span class="lineno">  105 </span><span class="decl"><span class="nottickedoff">isRightTurn a b c = not (isLeftTurnOrLinear a b c)</span></span>
+<span class="lineno">  106 </span>
+<span class="lineno">  107 </span>{-# INLINE isRightTurnOrLinear #-}
+<span class="lineno">  108 </span>isRightTurnOrLinear :: (Fractional a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
+<span class="lineno">  109 </span><span class="decl"><span class="nottickedoff">isRightTurnOrLinear a b c = not (isLeftTurn a b c)</span></span>
+<span class="lineno">  110 </span>
+<span class="lineno">  111 </span>{-# INLINE direction #-}
+<span class="lineno">  112 </span>direction :: Num a =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; a
+<span class="lineno">  113 </span><span class="decl"><span class="nottickedoff">direction p1 p2 p3 = crossZ (p3-p1) (p2-p1)</span></span>
+<span class="lineno">  114 </span>
+<span class="lineno">  115 </span>{-# INLINE isInside #-}
+<span class="lineno">  116 </span>isInside :: (Fractional a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
+<span class="lineno">  117 </span><span class="decl"><span class="nottickedoff">isInside a b c d =</span>
+<span class="lineno">  118 </span><span class="spaces">    </span><span class="nottickedoff">s &gt;= 0 &amp;&amp; s &lt;= 1 &amp;&amp; t &gt;= 0 &amp;&amp; t &lt;= 1 &amp;&amp; i &gt;= 0 &amp;&amp; i &lt;= 1</span>
+<span class="lineno">  119 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  120 </span><span class="spaces">    </span><span class="nottickedoff">(s, t, i) = barycentricCoords a b c d</span></span>
+<span class="lineno">  121 </span>
+<span class="lineno">  122 </span>{-# INLINE isInsideStrict #-}
+<span class="lineno">  123 </span>isInsideStrict :: (Fractional a, Ord a) =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; Bool
+<span class="lineno">  124 </span><span class="decl"><span class="nottickedoff">isInsideStrict a b c d =</span>
+<span class="lineno">  125 </span><span class="spaces">    </span><span class="nottickedoff">s &gt; 0 &amp;&amp; s &lt; 1 &amp;&amp; t &gt; 0 &amp;&amp; t &lt; 1 &amp;&amp; i &gt; 0 &amp;&amp; i &lt; 1</span>
+<span class="lineno">  126 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  127 </span><span class="spaces">    </span><span class="nottickedoff">(s, t, i) = barycentricCoords a b c d</span></span>
+<span class="lineno">  128 </span>
+<span class="lineno">  129 </span>{-# INLINE barycentricCoords #-}
+<span class="lineno">  130 </span>barycentricCoords :: Fractional a =&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; V2 a -&gt; (a, a, a)
+<span class="lineno">  131 </span><span class="decl"><span class="nottickedoff">barycentricCoords (V2 x1 y1) (V2 x2 y2) (V2 x3 y3) (V2 x y) =</span>
+<span class="lineno">  132 </span><span class="spaces">    </span><span class="nottickedoff">(lam1, lam2, lam3)</span>
+<span class="lineno">  133 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  134 </span><span class="spaces">    </span><span class="nottickedoff">lam1 = ((y2-y3)*(x-x3) + (x3 - x2)*(y-y3)) /</span>
+<span class="lineno">  135 </span><span class="spaces">           </span><span class="nottickedoff">((y2-y3)*(x1-x3) + (x3-x2)*(y1-y3))</span>
+<span class="lineno">  136 </span><span class="spaces">    </span><span class="nottickedoff">lam2 = ((y3-y1)*(x-x3) + (x1-x3)*(y-y3)) /</span>
+<span class="lineno">  137 </span><span class="spaces">           </span><span class="nottickedoff">((y2-y3)*(x1-x3) + (x3-x2)*(y1-y3))</span>
+<span class="lineno">  138 </span><span class="spaces">    </span><span class="nottickedoff">lam3 = 1 - lam1 - lam2</span></span>
 <span class="lineno">  139 </span>
-<span class="lineno">  140 </span>{-# INLINE isBetween #-}
-<span class="lineno">  141 </span>isBetween :: (Ord a, Fractional a) =&gt; V2 a -&gt; (V2 a, V2 a) -&gt; Bool
-<span class="lineno">  142 </span><span class="decl"><span class="nottickedoff">isBetween (V2 x y) (V2 x1 y1, V2 x2 y2) =</span>
-<span class="lineno">  143 </span><span class="spaces">  </span><span class="nottickedoff">((y1 &gt; y) /= (y2 &gt; y) || y == y1 || y == y2) &amp;&amp; -- y is between y1 and y2</span>
-<span class="lineno">  144 </span><span class="spaces">  </span><span class="nottickedoff">((x1 &gt; x) /= (x2 &gt; x) || x == x1 || x == x2)</span></span>
-<span class="lineno">  145 </span>
-<span class="lineno">  146 </span>{-# INLINE lineIntersect #-}
-<span class="lineno">  147 </span>lineIntersect :: (Ord a, Fractional a) =&gt; (V2 a, V2 a) -&gt; (V2 a, V2 a) -&gt; Maybe (V2 a)
-<span class="lineno">  148 </span><span class="decl"><span class="nottickedoff">lineIntersect a b =</span>
-<span class="lineno">  149 </span><span class="spaces">  </span><span class="nottickedoff">case rayIntersect a b of</span>
-<span class="lineno">  150 </span><span class="spaces">    </span><span class="nottickedoff">Just u</span>
-<span class="lineno">  151 </span><span class="spaces">      </span><span class="nottickedoff">| isBetween u a &amp;&amp; isBetween u b -&gt; Just u</span>
-<span class="lineno">  152 </span><span class="spaces">    </span><span class="nottickedoff">_ -&gt; Nothing</span></span>
-<span class="lineno">  153 </span>
-<span class="lineno">  154 </span>-- circleIntersect :: (Ord a, Fractional a) =&gt; (V2 a, V2 a) -&gt; (V2 a, V2 a) -&gt; [V2 a]
-<span class="lineno">  155 </span>
-<span class="lineno">  156 </span>distSquared :: (Fractional a) =&gt; V2 a -&gt; V2 a -&gt; a
-<span class="lineno">  157 </span><span class="decl"><span class="nottickedoff">distSquared a b = quadrance (a ^-^ b)</span></span>
+<span class="lineno">  140 </span>
+<span class="lineno">  141 </span>{-# INLINE rayIntersect #-}
+<span class="lineno">  142 </span>rayIntersect :: (Fractional a, Ord a) =&gt; (V2 a,V2 a) -&gt; (V2 a,V2 a) -&gt; Maybe (V2 a)
+<span class="lineno">  143 </span><span class="decl"><span class="nottickedoff">rayIntersect (V2 x1 y1,V2 x2 y2) (V2 x3 y3, V2 x4 y4)</span>
+<span class="lineno">  144 </span><span class="spaces">  </span><span class="nottickedoff">| yBot == 0 = Nothing</span>
+<span class="lineno">  145 </span><span class="spaces">  </span><span class="nottickedoff">| otherwise = Just $</span>
+<span class="lineno">  146 </span><span class="spaces">    </span><span class="nottickedoff">V2 (xTop/xBot) (yTop/yBot)</span>
+<span class="lineno">  147 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  148 </span><span class="spaces">    </span><span class="nottickedoff">xTop = (x1*y2 - y1*x2)*(x3-x4) - (x1 - x2)*(x3*y4-y3*x4)</span>
+<span class="lineno">  149 </span><span class="spaces">    </span><span class="nottickedoff">xBot = (x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)</span>
+<span class="lineno">  150 </span><span class="spaces">    </span><span class="nottickedoff">yTop = (x1*y2 - y1*x2)*(y3-y4) - (y1-y2)*(x3*y4-y3*x4)</span>
+<span class="lineno">  151 </span><span class="spaces">    </span><span class="nottickedoff">yBot = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4)</span></span>
+<span class="lineno">  152 </span>
+<span class="lineno">  153 </span>{-# INLINE isBetween #-}
+<span class="lineno">  154 </span>isBetween :: (Ord a, Fractional a) =&gt; V2 a -&gt; (V2 a, V2 a) -&gt; Bool
+<span class="lineno">  155 </span><span class="decl"><span class="nottickedoff">isBetween (V2 x y) (V2 x1 y1, V2 x2 y2) =</span>
+<span class="lineno">  156 </span><span class="spaces">  </span><span class="nottickedoff">((y1 &gt; y) /= (y2 &gt; y) || y == y1 || y == y2) &amp;&amp; -- y is between y1 and y2</span>
+<span class="lineno">  157 </span><span class="spaces">  </span><span class="nottickedoff">((x1 &gt; x) /= (x2 &gt; x) || x == x1 || x == x2)</span></span>
 <span class="lineno">  158 </span>
-<span class="lineno">  159 </span>approxDist :: (Real a, Fractional a) =&gt; V2 a -&gt; V2 a -&gt; a
-<span class="lineno">  160 </span><span class="decl"><span class="nottickedoff">approxDist a b = realToFrac (sqrt (realToFrac (distSquared a b) :: Double))</span></span>
-<span class="lineno">  161 </span>
-<span class="lineno">  162 </span>distance' :: (Real a, Fractional a) =&gt; V2 a -&gt; V2 a -&gt; Double
-<span class="lineno">  163 </span><span class="decl"><span class="nottickedoff">distance' a b = sqrt (realToFrac (distSquared a b))</span></span>
-<span class="lineno">  164 </span>
-<span class="lineno">  165 </span>-- sum of angles is always pi.
-<span class="lineno">  166 </span>triangleAngles :: V2 Double -&gt; V2 Double -&gt; V2 Double -&gt; (Double, Double, Double)
-<span class="lineno">  167 </span><span class="decl"><span class="nottickedoff">triangleAngles a b c =</span>
-<span class="lineno">  168 </span><span class="spaces">    </span><span class="nottickedoff">(findAngle (b-a) (c-a)</span>
-<span class="lineno">  169 </span><span class="spaces">    </span><span class="nottickedoff">,findAngle (c-b) (a-b)</span>
-<span class="lineno">  170 </span><span class="spaces">    </span><span class="nottickedoff">,findAngle (a-c) (b-c))</span>
-<span class="lineno">  171 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  172 </span><span class="spaces">    </span><span class="nottickedoff">findAngle v1 v2 = abs (atan2 (crossZ v1 v2) (dot v1 v2))</span></span>
-<span class="lineno">  173 </span>    -- findAngle v1 v2 = acos (dot v1 v2 / (norm v1 * norm v2))
+<span class="lineno">  159 </span>{-# INLINE lineIntersect #-}
+<span class="lineno">  160 </span>lineIntersect :: (Ord a, Fractional a) =&gt; (V2 a, V2 a) -&gt; (V2 a, V2 a) -&gt; Maybe (V2 a)
+<span class="lineno">  161 </span><span class="decl"><span class="nottickedoff">lineIntersect a b =</span>
+<span class="lineno">  162 </span><span class="spaces">  </span><span class="nottickedoff">case rayIntersect a b of</span>
+<span class="lineno">  163 </span><span class="spaces">    </span><span class="nottickedoff">Just u</span>
+<span class="lineno">  164 </span><span class="spaces">      </span><span class="nottickedoff">| isBetween u a &amp;&amp; isBetween u b -&gt; Just u</span>
+<span class="lineno">  165 </span><span class="spaces">    </span><span class="nottickedoff">_ -&gt; Nothing</span></span>
+<span class="lineno">  166 </span>
+<span class="lineno">  167 </span>-- circleIntersect :: (Ord a, Fractional a) =&gt; (V2 a, V2 a) -&gt; (V2 a, V2 a) -&gt; [V2 a]
+<span class="lineno">  168 </span>
+<span class="lineno">  169 </span>distSquared :: (Num a) =&gt; V2 a -&gt; V2 a -&gt; a
+<span class="lineno">  170 </span><span class="decl"><span class="nottickedoff">distSquared a b = quadrance (a ^-^ b)</span></span>
+<span class="lineno">  171 </span>
+<span class="lineno">  172 </span>approxDist :: (Real a, Fractional a) =&gt; V2 a -&gt; V2 a -&gt; a
+<span class="lineno">  173 </span><span class="decl"><span class="nottickedoff">approxDist a b = realToFrac (sqrt (realToFrac (distSquared a b) :: Double))</span></span>
+<span class="lineno">  174 </span>
+<span class="lineno">  175 </span>distance' :: (Real a, Fractional a) =&gt; V2 a -&gt; V2 a -&gt; Double
+<span class="lineno">  176 </span><span class="decl"><span class="nottickedoff">distance' a b = sqrt (realToFrac (distSquared a b))</span></span>
+<span class="lineno">  177 </span>
+<span class="lineno">  178 </span>-- sum of angles is always pi.
+<span class="lineno">  179 </span>triangleAngles :: V2 Double -&gt; V2 Double -&gt; V2 Double -&gt; (Double, Double, Double)
+<span class="lineno">  180 </span><span class="decl"><span class="nottickedoff">triangleAngles a b c =</span>
+<span class="lineno">  181 </span><span class="spaces">    </span><span class="nottickedoff">(findAngle (b-a) (c-a)</span>
+<span class="lineno">  182 </span><span class="spaces">    </span><span class="nottickedoff">,findAngle (c-b) (a-b)</span>
+<span class="lineno">  183 </span><span class="spaces">    </span><span class="nottickedoff">,findAngle (a-c) (b-c))</span>
+<span class="lineno">  184 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  185 </span><span class="spaces">    </span><span class="nottickedoff">findAngle v1 v2 = abs (atan2 (crossZ v1 v2) (dot v1 v2))</span></span>
+<span class="lineno">  186 </span>    -- findAngle v1 v2 = acos (dot v1 v2 / (norm v1 * norm v2))
 
 </pre>
 </body>
