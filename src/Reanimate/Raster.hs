@@ -119,6 +119,8 @@ mkImage width height path = unsafePerformIO $ do
   target   = pRootDirectory </> encodeInt hashPath <.> takeExtension path
   hashPath = hash path
 
+-- | Write in-memory image to cache file if (and only if) such cache file doesn't
+--   already exist.
 cacheImage :: (PngSavable pixel, Hashable a) => a -> Image pixel -> FilePath
 cacheImage key gen = unsafePerformIO $ cacheFile template $ \path ->
   writePng path gen
@@ -126,6 +128,8 @@ cacheImage key gen = unsafePerformIO $ cacheFile template $ \path ->
 
 -- Warning: Caching svg elements with links to external objects does
 --          not work. 2020-06-01
+-- | Same as 'prerenderSvg' but returns the location of the rendered image
+--   as a FilePath.
 prerenderSvgFile :: Hashable a => a -> Width -> Height -> SVG -> FilePath
 prerenderSvgFile key width height svg =
   unsafePerformIO $ cacheFile template $ \path -> do
@@ -139,6 +143,11 @@ prerenderSvgFile key width height svg =
                        (Just $ Px $ fromIntegral height)
                        svg
 
+-- | Render SVG node to a PNG file and return a new node containing
+--   that image. For static SVG nodes, this can hugely improve performance.
+--   The first argument is the key that determines SVG uniqueness. It
+--   is entirely your responsibility to ensure that all keys are unique.
+--   If they are not, you will be served stale results from the cache.
 prerenderSvg :: Hashable a => a -> SVG -> SVG
 prerenderSvg key =
   mkImage screenWidth screenHeight . prerenderSvgFile key pWidth pHeight
@@ -242,7 +251,7 @@ vectorize_ _ path | pNoExternals = mkText $ T.pack path
 vectorize_ args path             = unsafePerformIO $ do
   root <- getXdgDirectory XdgCache "reanimate"
   createDirectoryIfMissing True root
-  let svgPath = root </> show key <.> "svg"
+  let svgPath = root </> encodeInt key <.> "svg"
   hit <- doesFileExist svgPath
   unless hit $ withSystemTempFile "file.svg" $ \tmpSvgPath svgH ->
     withSystemTempFile "file.bmp" $ \tmpBmpPath bmpH -> do
@@ -289,7 +298,7 @@ svgAsPngFile' width height svg =
     engine <- requireRaster pRaster
     applyRaster engine svgPath
  where
-  template = show (hash rendered) <.> "png"
+  template = encodeInt (hash rendered) <.> "png"
   rendered = renderSvg (Just $ Px $ fromIntegral width)
                        (Just $ Px $ fromIntegral height)
                        svg

@@ -5,6 +5,7 @@
 module Main(main) where
 
 import           Codec.Picture
+import           Control.Lens             ((&))
 import           Control.Monad
 import           Data.List                (transpose)
 import qualified Data.Vector              as V
@@ -67,13 +68,13 @@ main = reanimate $
     showPair from to =
       waitOn $ do
         fork $ play $ mkAnimation 4 (morph linear (polygonShape from) (polygonShape to))
-          # mapA (translate (-4) (-0.5))
-          # mapA (withFillColor "lightgreen")
-          # signalA (curveS 4)
+          & mapA (translate (-4) (-0.5))
+          & mapA (withFillColor "lightgreen")
+          & signalA (curveS 4)
         fork $ play $ mkAnimation 4 (morph myMorph (polygonShape from) (polygonShape to))
-          # mapA (translate (4) (-0.5))
-          # mapA (withFillColor "cyan")
-          # signalA (curveS 4)
+          & mapA (translate (4) (-0.5))
+          & mapA (withFillColor "cyan")
+          & signalA (curveS 4)
     myMorph = linear{morphTrajectory = lineBend }
     pairs = zip stages (tail stages ++ [head stages])
     stages =

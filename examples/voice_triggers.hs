@@ -1,15 +1,16 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
+{-# LANGUAGE ApplicativeDo     #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ApplicativeDo #-}
 module Main where
 
+import           Control.Lens
 import           Control.Monad
-import qualified Data.Text                     as T
+import qualified Data.Text                       as T
+import           Graphics.SvgTree                (ElementRef (..))
 import           Reanimate
-import           Reanimate.Voice
 import           Reanimate.Builtin.Documentation
-import           Graphics.SvgTree                         ( ElementRef(..) )
+import           Reanimate.Voice
 
 transcript :: Transcript
 transcript = loadTranscript "voice_triggers.txt"
@@ -53,8 +54,8 @@ main = reanimate $ sceneAnimation $ do
             translate (screenWidth / 4) 0 $ scale t $ scaleToHeight 4 $ center
               img
           )
-      # signalA (bellS 2)
-      # setDuration dur
+      & signalA (bellS 2)
+      & setDuration dur
 
 {-# INLINE masked #-}
 masked :: String -> Double -> SVG -> SVG -> SVG -> SVG

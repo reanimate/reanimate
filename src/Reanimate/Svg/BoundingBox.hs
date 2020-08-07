@@ -1,4 +1,15 @@
-module Reanimate.Svg.BoundingBox where
+{-|
+  Bounding-boxes can be immensely useful for aligning objects
+  but they are not part of the SVG specification and cannot be
+  computed for all SVG nodes. In particular, you'll get bad results
+  when asking for the bounding boxes of Text nodes (because fonts
+  are difficult), clipped nodes, and filtered nodes.
+-}
+module Reanimate.Svg.BoundingBox
+  ( boundingBox
+  , svgHeight
+  , svgWidth
+  ) where
 
 import           Control.Arrow             ((***))
 import           Control.Lens              ((^.))
@@ -30,16 +41,21 @@ boundingBox t =
     worker (minx, miny, maxx, maxy) (V2 x y) =
       (min minx x, min miny y, max maxx x, max maxy y)
 
+-- | Height of SVG node in local units (not pixels). Computed on best-effort basis
+--   and will not give accurate results for all SVG nodes.
 svgHeight :: Tree -> Double
 svgHeight t = h
   where
     (_x, _y, _w, h) = boundingBox t
 
+-- | Width of SVG node in local units (not pixels). Computed on best-effort basis
+--   and will not give accurate results for all SVG nodes.
 svgWidth :: Tree -> Double
 svgWidth t = w
   where
     (_x, _y, w, _h) = boundingBox t
 
+-- | Sampling of points in a line path.
 linePoints :: [LineCommand] -> [RPoint]
 linePoints = worker zero
   where

@@ -6,6 +6,7 @@ import Reanimate.Raster
 import Reanimate.Constants
 import Codec.Picture
 
+-- | Default environment for API documentation GIFs.
 docEnv :: Animation -> Animation
 docEnv = mapA $ \svg -> mkGroup
   [ mkBackground "white"
@@ -41,6 +42,7 @@ drawProgress = mkAnimation 2 $ \t ->
   where
     widthP = 0.8
 
+-- | Render a full-screen view of a color-map.
 showColorMap :: (Double -> PixelRGB8) -> SVG
 showColorMap f = center $ scaleToSize screenWidth screenHeight $ embedImage img
   where
@@ -49,5 +51,6 @@ showColorMap f = center $ scaleToSize screenWidth screenHeight $ embedImage img
     img = generateImage pixelRenderer width height
     pixelRenderer x _y = f (fromIntegral x / fromIntegral (width-1))
 
+-- | Default background color for videos on reanimate.rtfd.io
 rtfdBackgroundColor :: PixelRGBA8
 rtfdBackgroundColor = PixelRGBA8 252 252 252 0xFF

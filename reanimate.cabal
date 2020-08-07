@@ -11,7 +11,7 @@ author:              David Himmelstrup
 maintainer:          lemmih@gmail.com
 category:            Graphics
 synopsis:            Animation library based on SVGs.
-homepage:            https://github.com/reanimate/reanimate#readme
+homepage:            https://reanimate.github.io
 bug-reports:         https://github.com/reanimate/reanimate/issues
 build-type:          Simple
 extra-source-files:  ChangeLog.md, examples/*.hs, examples/*.golden
@@ -106,20 +106,23 @@ library
                       Reanimate.Driver.Server
                       Reanimate.Driver.Compile
                       Paths_reanimate
-  build-depends:      base >=4.10 && <5,
-                      time, text, filepath, process, directory,
-                      containers, reanimate-svg >= 0.10.0.0, xml, bytestring,
-                      lens, linear, mtl, matrix,
-                      JuicyPixels >= 3.3.3, attoparsec, parallel,
-                      cubicbezier, websockets >= 0.12.7.0,
-                      hashable, fsnotify, open-browser, random, random-shuffle,
-                      base64-bytestring, earcut >= 0.1.0.4,
-                      vector >= 0.12.0.0, colour, cassava, ansi-terminal,
-                      temporary,
-                      optparse-applicative,
-                      geojson, aeson >= 1.3.0.0,
-                      split, array, cereal, vector-space,
-                      neat-interpolation >= 0.3
+  build-depends:       base >=4.10 && <5,
+                       time, text, filepath, process, directory,
+                       containers, reanimate-svg >= 0.10.0.0, xml, bytestring, lens, linear, mtl, matrix,
+                       JuicyPixels >= 3.3.3, attoparsec, parallel,
+                       cubicbezier, websockets >= 0.12.7.0,
+                       hashable, fsnotify, open-browser, random, random-shuffle, base64-bytestring,
+                       vector >= 0.12.0.0, colour, cassava, ansi-terminal, temporary,
+                       optparse-applicative,
+                       geojson, aeson >= 1.3.0.0, earcut >= 0.1.0.4,
+                       split, array, cereal, vector-space,
+                       neat-interpolation >= 0.3, ghcid, filelock
+  if (flag(enable-hmatrix) || !os(windows)) && !flag(disable-hmatrix) {
+    build-depends: hmatrix >= 0.20.0.0
+    exposed-modules:  Reanimate.Morph.Rigid
+                      Reanimate.Math.Smooth
+                      Reanimate.Math.DCEL
+  }
   ghc-options: -Wall -fno-ignore-asserts
 
 test-suite spec
