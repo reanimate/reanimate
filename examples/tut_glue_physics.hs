@@ -11,7 +11,6 @@ import           Linear.V2           (V2 (..))
 import           Reanimate
 import           Reanimate.Chiphunk
 import           Reanimate.PolyShape
-import           Reanimate.Ease
 import           System.IO.Unsafe    (unsafePerformIO)
 
 shatter :: Animation
