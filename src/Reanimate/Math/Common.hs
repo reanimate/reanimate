@@ -13,12 +13,13 @@ module Reanimate.Math.Common
   , area2X              -- :: Fractional a => V2 a -> V2 a -> V2 a -> a
   , epsilon             -- :: Fractional a => a
   , epsEq               -- :: (Ord a, Fractional a) => a -> a -> Bool
-  , isLeftTurn          -- :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
-  , isLeftTurnOrLinear  -- :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
-  , isRightTurn         -- :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
-  , isRightTurnOrLinear -- :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
-  , direction           -- :: Fractional a => V2 a -> V2 a -> V2 a -> a
+  , isLeftTurn          -- :: (Num a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+  , isLeftTurnOrLinear  -- :: (Num a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+  , isRightTurn         -- :: (Num a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+  , isRightTurnOrLinear -- :: (Num a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+  , direction           -- :: Num a => V2 a -> V2 a -> V2 a -> a
   , isInside            -- :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> V2 a -> Bool
+  , isInsideStrict      -- :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> V2 a -> Bool
   , barycentricCoords   -- :: Fractional a => V2 a -> V2 a -> V2 a -> V2 a -> (a, a, a)
   , rayIntersect        -- :: (Fractional a, Ord a) => (V2 a,V2 a) -> (V2 a,V2 a) -> Maybe (V2 a)
   , isBetween           -- :: (Ord a, Fractional a) => V2 a -> (V2 a, V2 a) -> Bool
@@ -77,21 +78,26 @@ epsilon = 1e-13
 epsEq :: (Ord a, Fractional a) => a -> a -> Bool
 epsEq a b = abs (a-b) < epsilon
 
+compareEpsZero :: (Ord a, Fractional a) => a -> Ordering
+compareEpsZero val
+  | abs val < epsilon = EQ
+  | otherwise         = compare val 0
+
 {-# INLINE isLeftTurn #-}
 -- Left turn.
 isLeftTurn :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
 isLeftTurn p1 p2 p3 =
-  case compare (direction p1 p2 p3) 0 of
+  case compareEpsZero (direction p1 p2 p3) of
     LT -> True
-    EQ -> False -- colnear
+    EQ -> False -- colinear
     GT -> False
 
 {-# INLINE isLeftTurnOrLinear #-}
 isLeftTurnOrLinear :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
 isLeftTurnOrLinear p1 p2 p3 =
-  case compare (direction p1 p2 p3) 0 of
+  case compareEpsZero (direction p1 p2 p3) of
     LT -> True
-    EQ -> True -- colnear
+    EQ -> True -- colinear
     GT -> False
 
 {-# INLINE isRightTurn #-}
@@ -103,15 +109,22 @@ isRightTurnOrLinear :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
 isRightTurnOrLinear a b c = not (isLeftTurn a b c)
 
 {-# INLINE direction #-}
-direction :: Fractional a => V2 a -> V2 a -> V2 a -> a
+direction :: Num a => V2 a -> V2 a -> V2 a -> a
 direction p1 p2 p3 = crossZ (p3-p1) (p2-p1)
 
 {-# INLINE isInside #-}
 isInside :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> V2 a -> Bool
 isInside a b c d =
-    s >= 0 && s <= 1 && t >= 0 && t <= 1
+    s >= 0 && s <= 1 && t >= 0 && t <= 1 && i >= 0 && i <= 1
   where
-    (s, t, _) = barycentricCoords a b c d
+    (s, t, i) = barycentricCoords a b c d
+
+{-# INLINE isInsideStrict #-}
+isInsideStrict :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> V2 a -> Bool
+isInsideStrict a b c d =
+    s > 0 && s < 1 && t > 0 && t < 1 && i > 0 && i < 1
+  where
+    (s, t, i) = barycentricCoords a b c d
 
 {-# INLINE barycentricCoords #-}
 barycentricCoords :: Fractional a => V2 a -> V2 a -> V2 a -> V2 a -> (a, a, a)
@@ -153,7 +166,7 @@ lineIntersect a b =
 
 -- circleIntersect :: (Ord a, Fractional a) => (V2 a, V2 a) -> (V2 a, V2 a) -> [V2 a]
 
-distSquared :: (Fractional a) => V2 a -> V2 a -> a
+distSquared :: (Num a) => V2 a -> V2 a -> a
 distSquared a b = quadrance (a ^-^ b)
 
 approxDist :: (Real a, Fractional a) => V2 a -> V2 a -> a

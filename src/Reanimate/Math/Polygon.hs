@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 module Reanimate.Math.Polygon
   ( APolygon(..)
   , Polygon
@@ -5,6 +6,7 @@ module Reanimate.Math.Polygon
   , P
   , mkPolygon     -- :: (Fractional a, Ord a) => V.Vector (V2 a) -> APolygon a
   , mkPolygonFromRing -- :: (Fractional a, Ord a) => Ring a -> APolygon a
+  , castPolygon   -- :: (Real a, Fractional b, Ord a) => APolygon a -> APolygon b
   , pParent       -- :: Polygon -> Int -> Int -> Int
   , pSetOffset    -- :: APolygon a -> Int -> APolygon a
   , pAdjustOffset -- :: APolygon a -> Int -> APolygon a
@@ -33,7 +35,10 @@ module Reanimate.Math.Polygon
   , pCircumference   -- :: (Real a, Fractional a) => APolygon a -> a
   , pCircumference'  -- :: (Real a, Fractional a) => APolygon a -> Double
   , pAddPoints       -- :: Int -> Polygon -> Polygon
+  , pAddPointsRestricted -- :: [Int] -> Int -> Polygon -> Polygon
+  , pAddPointsBetween -- :: (Fractional a, Ord a, Real a) => (Int, Int) -> Int -> APolygon a -> APolygon a
   , pRayIntersect    -- :: Polygon -> (Int, Int) -> (Int,Int) -> Maybe (V2 Rational)
+  , pOverlap         -- :: Polygon -> Polygon -> Polygon
   , pCuts         -- :: Polygon -> [(Polygon,Polygon)]
   , pCutEqual     -- :: Polygon -> (Polygon, Polygon)
   -- * Triangulation
@@ -119,14 +124,14 @@ instance Show a => Show (APolygon a) where
 instance Hashable a => Hashable (APolygon a) where
   hashWithSalt s p = V.foldl' hashWithSalt s (polygonPoints p)
 
-instance (Real a, Fractional a, Ord a, Serialize a) => Serialize (APolygon a) where
+instance (Real a, Fractional a, Serialize a) => Serialize (APolygon a) where
   put = put . V.toList . polygonPoints
   get = mkPolygon . V.fromList <$> get
 
 pRing :: APolygon a -> Ring a
 pRing = ringPack . polygonPoints
 
-mkPolygon :: (Real a, Fractional a, Ord a) => V.Vector (V2 a) -> APolygon a
+mkPolygon :: (Real a, Fractional a) => V.Vector (V2 a) -> APolygon a
 mkPolygon points = Polygon
     { polygonPoints = points
     , polygonOffset = 0
@@ -139,6 +144,9 @@ mkPolygon points = Polygon
     trig = earCut ring
       -- earClip ring
 
+castPolygon :: (Real a, Real b, Fractional b) => APolygon a -> APolygon b
+castPolygon = mkPolygon . V.map (fmap realToFrac) . polygonPoints
+
 mkPolygonFromRing :: (Real a, Fractional a, Ord a) => Ring a -> APolygon a
 mkPolygonFromRing = mkPolygon . ringUnpack
 
@@ -146,7 +154,7 @@ pUnsafeMap :: (Ring a -> Ring a) -> APolygon a -> APolygon a
 pUnsafeMap fn p = p{ polygonPoints = ringUnpack (fn (pRing p)) }
 
 -- pParent p i j = shortest-path parent from j to i
-pParent :: Polygon -> Int -> Int -> Int
+pParent :: APolygon a -> Int -> Int -> Int
 pParent p i j =
     (sTree V.! mod (j + polygonOffset p) n - polygonOffset p) `mod` n
   where
@@ -164,6 +172,7 @@ pAdjustOffset :: APolygon a -> Int -> APolygon a
 pAdjustOffset p offset =
   p { polygonOffset = (polygonOffset p + offset) `mod` pSize p }
 
+{-# INLINE pSize #-}
 pSize :: APolygon a -> Int
 pSize = length . polygonPoints
 
@@ -316,9 +325,10 @@ pIsInside p point = or
 --     findSmallest = minimumBy (comparing area2X)
 --     shareEdge p1 p2 =
 
-
+{-# INLINE pAccess #-}
 pAccess :: APolygon a -> Int -> V2 a
-pAccess p i = polygonPoints p V.! ((polygonOffset p + i) `mod` pSize p)
+pAccess p i = -- polygonPoints p V.! ((polygonOffset p + i) `mod` pSize p)
+  polygonPoints p `V.unsafeIndex` ((polygonOffset p + i) `mod` pSize p)
 
 triangle :: Polygon
 triangle = mkPolygon $ V.fromList [V2 1 1, V2 0 0, V2 2 0]
@@ -503,7 +513,7 @@ pDeoverlap p = mkPolygon arr
           in lerp 0.99999 this prev
         else pAccess p n
 
-pCycles :: Polygon -> [Polygon]
+pCycles :: APolygon a -> [APolygon a]
 pCycles p = map (pAdjustOffset p) [0 .. pSize p-1]
 
 pCycle :: (Real a, Fractional a, Ord a) => APolygon a -> Double -> APolygon a
@@ -526,7 +536,7 @@ pCycle p t = mkPolygon $ worker 0 0
     len = pCircumference' p
     limit = t * len
 
-pCentroid :: Polygon -> V2 Rational
+pCentroid :: Fractional a => APolygon a -> V2 a
 pCentroid p = V2 cx cy
   where
     a = pArea p
@@ -535,13 +545,29 @@ pCentroid p = V2 cx cy
     fnX (V2 x y) (V2 x' y') = (x+x')*(x*y' - x'*y)
     fnY (V2 x y) (V2 x' y') = (y+y')*(x*y' - x'*y)
 
-pMapEdges :: (V2 Rational -> V2 Rational -> a) -> Polygon -> V.Vector a
-pMapEdges fn p = V.generate (pSize p) $ \i ->
-  fn (pAccess p i) (pAccess p $ i+1)
+{-# INLINE pMapEdges #-}
+pMapEdges :: (V2 a -> V2 a -> b) -> APolygon a -> V.Vector b
+pMapEdges fn p = V.generate n $ \i ->
+  if i == n-1
+    then fn (arr `V.unsafeIndex` i) (arr `V.unsafeIndex` 0)
+    else fn (arr `V.unsafeIndex` i) (arr `V.unsafeIndex` (i+1))
+  where
+    n = pSize p
+    arr = polygonPoints p
 
-pArea :: Polygon -> Rational
+{-# SPECIALIZE pArea :: APolygon Double -> Double #-}
+{-# SPECIALIZE pArea :: APolygon Rational -> Rational #-}
+pArea :: (Fractional a) => APolygon a -> a
 pArea p =
-  0.5 * V.sum (pMapEdges (\(V2 x y) (V2 x' y') -> x*y' - x'*y) p)
+  -- 0.5 * V.sum (pMapEdges (\(V2 x y) (V2 x' y') -> x*y' - x'*y) p)
+  0.5 * worker 0 0
+  where
+    fn (V2 x y) (V2 x' y') = x*y' - x'*y
+    arr = polygonPoints p
+    worker !acc i
+      | i == pSize p - 1 = acc + fn (arr `V.unsafeIndex` i) (arr `V.unsafeIndex` 0)
+      | otherwise =
+        worker (acc + fn (arr `V.unsafeIndex` i) (arr `V.unsafeIndex` (i+1))) (i+1)
 
 pCircumference :: (Real a, Fractional a) => APolygon a -> a
 pCircumference p = sum
@@ -555,7 +581,7 @@ pCircumference' p = sum
 
 
 -- Add points by splitting the longest lines in half repeatedly.
-pAddPoints :: Int -> Polygon -> Polygon
+pAddPoints :: (Ord a, Real a, Fractional a) => Int -> APolygon a -> APolygon a
 pAddPoints n p | n <= 0 = p
 pAddPoints n p = pAddPoints (n-1) $
     mkPolygon $ V.fromList $ concatMap worker [0 .. pSize p-1]
@@ -568,6 +594,45 @@ pAddPoints n p = pAddPoints (n-1) $
         in [start, middle]
       | otherwise = [pAccess p idx]
     longestEdge = maximumBy cmpLength [0 .. pSize p-1]
+    cmpLength a b =
+      distSquared (pAccess p a) (pAccess p $ a+1) `compare`
+      distSquared (pAccess p b) (pAccess p $ b+1)
+
+pAddPointsRestricted :: (Fractional a, Ord a, Real a) => [(V2 a, V2 a)] -> Int -> APolygon a -> APolygon a
+pAddPointsRestricted _immutableEdges n p | n <= 0 = p
+pAddPointsRestricted immutableEdges n p = pAddPointsRestricted immutableEdges (n-1) $
+    mkPolygon $ V.fromList $ concatMap worker [0 .. pSize p-1]
+  where
+    isImmutable idx =
+      (pAccess p idx, pAccess p $ idx+1) `elem` immutableEdges ||
+      (pAccess p $ idx+1, pAccess p idx) `elem` immutableEdges
+    worker idx
+      | idx == longestEdge && not (isImmutable idx) =
+        let start = pAccess p idx
+            end = pAccess p $ idx+1
+            middle = lerp 0.5 end start
+        in [start, middle]
+      | otherwise = [pAccess p idx]
+    longestEdge = maximumBy cmpLength [0 .. pSize p-1]
+    cmpLength a _ | isImmutable a = LT
+    cmpLength _ b | isImmutable b = GT
+    cmpLength a b =
+      distSquared (pAccess p a) (pAccess p $ a+1) `compare`
+      distSquared (pAccess p b) (pAccess p $ b+1)
+
+pAddPointsBetween :: (Fractional a, Ord a, Real a) => (Int, Int) -> Int -> APolygon a -> APolygon a
+pAddPointsBetween _ n p | n <= 0 = p
+pAddPointsBetween (i,l) n p = pAddPointsBetween (i,l+1) (n-1) $
+    mkPolygon $ V.fromList $ concatMap worker [0 .. pSize p-1]
+  where
+    worker idx
+      | idx == longestEdge =
+        let start = pAccess p idx
+            end = pAccess p $ idx+1
+            middle = lerp 0.5 end start
+        in [start, middle]
+      | otherwise = [pAccess p idx]
+    longestEdge = maximumBy cmpLength [i .. i+l-1]
     cmpLength a b =
       distSquared (pAccess p a) (pAccess p $ a+1) `compare`
       distSquared (pAccess p b) (pAccess p $ b+1)
@@ -603,11 +668,11 @@ pIsCCW p = V.sum (pMapEdges fn p) < 0
     fn (V2 x1 y1) (V2 x2 y2) = (x2-x1)*(y2+y1)
 
 {-# INLINE pRayIntersect #-}
-pRayIntersect :: Polygon -> (Int, Int) -> (Int,Int) -> Maybe (V2 Rational)
+pRayIntersect :: (Fractional a, Ord a) => APolygon a -> (Int, Int) -> (Int,Int) -> Maybe (V2 a)
 pRayIntersect p (a,b) (c,d) =
   rayIntersect (pAccess p a, pAccess p b) (pAccess p c, pAccess p d)
 
-pCuts :: Polygon -> [(Polygon,Polygon)]
+pCuts :: (Real a, Fractional a) => APolygon a -> [(APolygon a,APolygon a)]
 pCuts p =
   [ pCutAt (pAdjustOffset p i) (j-i)
   | i <- [0 .. pSize p-1 ]
@@ -615,26 +680,41 @@ pCuts p =
   , (j+1) `mod` pSize p /= i
   , pParent p i j == i ]
 
-pCutEqual :: Polygon -> (Polygon, Polygon)
+pCutEqual :: (Real a, Fractional a) => APolygon a -> (APolygon a, APolygon a)
 pCutEqual p =
     fromMaybe (p,p) $ listToMaybe $ sortOn f $ pCuts p
   where
     f (a,b) = abs (pArea a - pArea b)
 
 -- FIXME: This should be more efficient
-pCutAt :: Polygon -> Int -> (Polygon, Polygon)
+pCutAt :: (Real a, Fractional a) => APolygon a -> Int -> (APolygon a, APolygon a)
 pCutAt p i = (mkPolygon $ V.fromList left, mkPolygon $ V.fromList right)
   where
     n     = pSize p
     left  = map (pAccess p) [0 .. i]
     right = map (pAccess p) (0:[i..n-1])
 
-
+pOverlap :: (Fractional a, Ord a, Real a) => APolygon a -> APolygon a -> APolygon a
+pOverlap a b = mkPolygon $ V.fromList $ clearDups $ concatMap edgeIntersect [0 .. pSize a-1]
+  where
+    clearDups (x:y:xs)
+      | x == y = clearDups (y:xs)
+      | otherwise = x : clearDups (y:xs)
+    clearDups xs = xs
+    edgeIntersect edge =
+      sortOn (distSquared (pAccess a edge)) $ catMaybes
+      [ lineIntersect (aP, aP') (bP, bP')
+      | i <- [0 .. pSize b-1]
+      , let aP = pAccess a edge
+            aP' = pAccess a (edge+1)
+            bP = pAccess b i
+            bP' = pAccess b (i+1)
+      ]
 
 ---------------------------------------------------------
 -- SSSP visibility and SSSP windows
 
-ssspVisibility :: Polygon -> Polygon
+ssspVisibility :: (Real a, Fractional a) => APolygon a -> APolygon a
 ssspVisibility p = mkPolygon $
     V.fromList $ clearDups $ go [0 .. pSize p-1] -- ([root..pSize p-1]  ++ [0 .. root-1])
   where
