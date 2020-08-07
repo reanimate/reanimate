@@ -102,7 +102,7 @@ library
                       Paths_reanimate
   build-depends:
     base                 >=4.10 && <5,
-    JuicyPixels          >=3.3.5,
+    JuicyPixels          >=3.3.3,
     aeson                >=1.3.0.0,
     ansi-terminal        >=0.8.0.4,
     array                >=0.5.2.0,
@@ -119,7 +119,7 @@ library
     filelock             >=0.1.1.2,
     filepath             >=1.4.2,
     fsnotify             >=0.3.0.1,
-    geojson              >=4.0.1,
+    geojson              >=3.0.4,
     ghcid                >=0.7,
     hashable             >=1.2.7.0,
     lens                 >=4.16.1,
