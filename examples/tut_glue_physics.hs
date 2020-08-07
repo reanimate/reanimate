@@ -6,12 +6,12 @@ module Main (main) where
 
 import           Chiphunk.Low
 import           Codec.Picture       (PixelRGBA8 (..))
+import           Control.Lens
 import           Control.Monad       (forM_)
 import           Linear.V2           (V2 (..))
 import           Reanimate
 import           Reanimate.Chiphunk
 import           Reanimate.PolyShape
-import           Reanimate.Ease
 import           System.IO.Unsafe    (unsafePerformIO)
 
 shatter :: Animation
@@ -52,8 +52,8 @@ main :: IO ()
 main = reanimate $ parA bg $ sceneAnimation $ do
     play $ shatter
     play $ shatter
-      # reverseA
-      # setDuration 5
-      # signalA (powerS 2)
+      & reverseA
+      & setDuration 5
+      & signalA (powerS 2)
   where
     bg = animate $ const $ mkBackgroundPixel (PixelRGBA8 252 252 252 0xFF)

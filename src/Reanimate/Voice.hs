@@ -41,6 +41,8 @@ import           Reanimate.Animation
 import           Reanimate.Svg
 import           Reanimate.Constants
 
+-- | Aligned transcript. Contains the transcript text as well as
+--   timing data for each word.
 data Transcript = Transcript
   { transcriptText  :: Text
   , transcriptKeys  :: Map Text Int
@@ -51,6 +53,8 @@ instance FromJSON Transcript where
   parseJSON = withObject "transcript" $ \o ->
     Transcript <$> o .: "transcript" <*> pure Map.empty <*> o .: "words"
 
+-- | Spoken word. Includes information about when it was spoken,
+--   its duration, and its phonemes.
 data TWord = TWord
   { wordAligned     :: Text
   , wordCase        :: Text
@@ -286,6 +290,7 @@ splitTranscript Transcript {..} =
           ]
   ]
 
+-- | Helper function for rendering a transcript.
 annotateWithTranscript :: Transcript -> Scene s ()
 annotateWithTranscript t = forM_ (transcriptWords t) $ \tword -> do
   let svg = scale 1 $ latex (wordReference tword)

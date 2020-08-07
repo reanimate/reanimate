@@ -1,5 +1,8 @@
 {-# LANGUAGE BangPatterns   #-}
-{-# LANGUAGE PackageImports #-}
+{-|
+  2D transformation matrices capable of translating, scaling,
+  rotating, and skewing.
+-}
 module Reanimate.Transform
   ( identity
   , transformPoint
@@ -9,14 +12,17 @@ module Reanimate.Transform
 
 -- XXX: Use Linear.Matrix instead of Data.Matrix to drop the 'matrix' dependency.
 import           Data.List
-import           "matrix" Data.Matrix (Matrix)
-import qualified "matrix" Data.Matrix as M
+import           Data.Matrix (Matrix)
+import qualified Data.Matrix as M
 import           Data.Maybe
 import           Graphics.SvgTree
 import           Linear.V2
 
 type TMatrix = Matrix Coord
 
+-- | Identity matrix.
+--
+--   @transformPoints identity x = x@
 identity :: TMatrix
 identity = M.identity 3
 
@@ -24,6 +30,7 @@ fromList :: [Coord] -> TMatrix
 fromList [a,b,c,d,e,f] = M.fromList 3 3 [a,c,e,b,d,f,0,0,1]
 fromList _             = error "Reanimate.Transform.fromList: bad input"
 
+-- | Apply a transformation matrix to a 2D point.
 transformPoint :: TMatrix -> RPoint -> RPoint
 transformPoint m (V2 x y) = V2 (a*x +c*y + e) (b*x + d*y +f)
   where
@@ -35,10 +42,12 @@ transformPoint m (V2 x y) = V2 (a*x +c*y + e) (b*x + d*y +f)
     !f = M.unsafeGet 2 3 m
     -- (a:c:e:b:d:f:_) = M.toList m
 
+-- | Convert multiple SVG transformations into a single transformation matrix.
 mkMatrix :: Maybe [Transformation] -> TMatrix
 mkMatrix Nothing   = identity
 mkMatrix (Just ts) = foldl' (*) identity (map transformationMatrix ts)
 
+-- | Convert an SVG transformation into a transformation matrix.
 transformationMatrix :: Transformation -> TMatrix
 transformationMatrix transformation =
   case transformation of
@@ -55,6 +64,7 @@ transformationMatrix transformation =
     rotate a = fromList [cos r,sin r,-sin r,cos r,0,0]
       where r = a * pi / 180
 
+-- | Convert a transformation matrix back into an SVG transformation.
 toTransformation :: TMatrix -> Transformation
 toTransformation m = TransformMatrix a b c d e f
   where

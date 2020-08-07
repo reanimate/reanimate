@@ -70,12 +70,12 @@ module Reanimate
     fromToS,
     reverseS,
     curveS,
+    powerS,
     bellS,
     oscillateS,
     fromListS,
     cubicBezierS,
     -- ** Scenes
-    (#),
     Scene
   , ZIndex
   , sceneAnimation    -- :: (forall s. Scene s a) -> Animation

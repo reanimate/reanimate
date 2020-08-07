@@ -11,6 +11,7 @@ import           Graphics.SvgTree           hiding (line, path, use)
 import           Reanimate.Constants
 import           Reanimate.Svg.Constructors
 
+-- | Replace all @<use>@ nodes with their definition.
 replaceUses :: Document -> Document
 replaceUses doc = doc & elements %~ map (mapTree replace)
   where
@@ -41,7 +42,7 @@ replaceUses doc = doc & elements %~ map (mapTree replace)
         Just tid -> Map.insert tid tree m
 
 -- FIXME: the viewbox is ignored. Can we use the viewbox as a mask?
--- Transform out viewbox. defs and CSS rules are discarded.
+-- | Transform out viewbox. Definitions and CSS rules are discarded.
 unbox :: Document -> Tree
 unbox doc@Document{_viewBox = Just (_minx, _minw, _width, _height)} =
   GroupTree $ defaultSvg
@@ -50,6 +51,8 @@ unbox doc =
   GroupTree $ defaultSvg
     & groupChildren .~ doc^.elements
 
+-- | Embed 'Document'. This keeps the entire document intact but makes
+--   it more difficult to use, say, `Reanimate.Svg.pathify` on it.
 embedDocument :: Document -> Tree
 embedDocument doc =
   translate (-screenWidth/2) (screenHeight/2) $

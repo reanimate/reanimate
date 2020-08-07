@@ -5,7 +5,6 @@
 {-# LANGUAGE RecordWildCards           #-}
 {-|
 Module      : Reanimate.Scene
-Description : Imperative animation API
 Copyright   : Written by David Himmelstrup
 License     : Unlicense
 Maintainer  : lemmih@gmail.com
@@ -159,6 +158,8 @@ type ZIndex = Int
 -- [(Time, Animation, ZIndex)]
 -- Map Time [(Animation, ZIndex)]
 type Gen s = ST s (Duration -> Time -> (SVG, ZIndex))
+-- | A 'Scene' represents a sequence of animations and variables
+--   that change over time.
 newtype Scene s a = M { unM :: Time -> ST s (a, Duration, Duration, [Gen s]) }
 
 instance Functor (Scene s) where
@@ -191,6 +192,7 @@ evalScene action = runST $ do
   (val, _, _ , _) <- unM action 0
   return val
 
+-- | Render a 'Scene' to an 'Animation'.
 sceneAnimation :: (forall s . Scene s a) -> Animation
 sceneAnimation action = runST
   (do
