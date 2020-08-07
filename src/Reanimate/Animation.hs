@@ -35,7 +35,6 @@ module Reanimate.Animation
   , freezeAtPercentage
   , addStatic
   -- * Misc
-  , (#)
   , getAnimationFrame
   , Sync(..)
   -- * Rendering
@@ -367,8 +366,8 @@ clamp a b number
   | a < b     = max a (min b number)
   | otherwise = max b (min a number)
 
-(#) :: a -> (a -> b) -> b
-o # f = f o
+-- (#) :: a -> (a -> b) -> b
+-- o # f = f o
 
 -- | Ask for an animation frame using a given synchronization policy.
 getAnimationFrame :: Sync -> Animation -> Time -> Duration -> SVG

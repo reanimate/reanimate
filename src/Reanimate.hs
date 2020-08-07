@@ -76,7 +76,6 @@ module Reanimate
     fromListS,
     cubicBezierS,
     -- ** Scenes
-    (#),
     Scene
   , ZIndex
   , sceneAnimation    -- :: (forall s. Scene s a) -> Animation
