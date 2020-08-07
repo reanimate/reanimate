@@ -20,6 +20,13 @@ import           Reanimate.Svg.BoundingBox
 import           Reanimate.Svg.Unuse
 import qualified Reanimate.Transform          as Transform
 
+-- | Remove transformations (such as translations, rotations, scaling)
+--   and apply them directly to the SVG nodes. Note, this function
+--   may convert nodes (such as Circle or Rect) to paths. Also note
+--   that /does/ change how the SVG is rendered. Particularly, stroke
+--   width is affected by directly applying scaling.
+--
+--   @lowerTransformations (scale 2 (mkCircle 1)) = mkCircle 2@
 lowerTransformations :: Tree -> Tree
 lowerTransformations = worker False Transform.identity
   where
@@ -55,6 +62,7 @@ lowerTransformations = worker False Transform.identity
         -- If we haven't tried to pathify, run pathify only once.
         _ -> worker True m (pathify t)
 
+-- | Remove all @id@ attributes.
 lowerIds :: Tree -> Tree
 lowerIds = mapTree worker
   where
@@ -62,6 +70,7 @@ lowerIds = mapTree worker
     worker t@PathTree{}  = t & attrId .~ Nothing
     worker t             = t
 
+-- | Optimize SVG tree without affecting how it is rendered.
 simplify :: Tree -> Tree
 simplify root =
   case worker root of
@@ -89,6 +98,11 @@ simplify root =
       | null (g^.groupChildren) = []
     dropNulls t = [t]
 
+-- | Separate grouped items. This is required by clip nodes.
+--
+-- @removeGroups (withFillColor "blue" $ mkGroup [mkCircle 1, mkRect 1 1])
+--    = [ withFillColor "blue" $ mkCircle 1
+--      , withFillColor "blue" $ mkRect 1 1 ]@
 removeGroups :: Tree -> [Tree]
 removeGroups = worker defaultSvg
   where
@@ -111,6 +125,7 @@ removeGroups = worker defaultSvg
       | null (g^.groupChildren) = []
     dropNulls t = [t]
 
+-- | Extract all path commands from a node (and its children) and concatenate them.
 extractPath :: Tree -> [PathCommand]
 extractPath = worker . simplify . lowerTransformations . pathify
   where

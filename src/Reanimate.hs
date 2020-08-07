@@ -70,6 +70,7 @@ module Reanimate
     fromToS,
     reverseS,
     curveS,
+    powerS,
     bellS,
     oscillateS,
     fromListS,
