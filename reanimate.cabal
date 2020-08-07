@@ -56,7 +56,6 @@ library
                       Reanimate.Svg.Constructors
                       Reanimate.Svg.BoundingBox
                       Reanimate.Svg.LineCommand
-                      -- Reanimate.Diagrams
                       Reanimate.Transform
                       Reanimate.Misc
                       Reanimate.Math.Common
@@ -66,14 +65,9 @@ library
                       Reanimate.Math.Visibility
                       Reanimate.Math.SSSP
                       Reanimate.Math.Balloon
-                      Reanimate.Math.Compatible
-                      Reanimate.Math.Render
                       Reanimate.Morph.Common
                       Reanimate.Morph.Linear
                       Reanimate.Morph.Rotational
-                      Reanimate.Morph.LeastWork
-                      Reanimate.Morph.LineBend
-                      Reanimate.Morph.LeastDifference
                       Reanimate.Morph.Cache
                       Reanimate.Raster
                       Reanimate.ColorComponents

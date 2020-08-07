@@ -2,21 +2,16 @@ module Reanimate.Math.Render where
 
 import           Codec.Picture.Types
 import           Control.Monad
--- import           Data.List
 import qualified Data.Text                  as T
 import qualified Data.Vector                as V
 import           Linear.V2
 import           Reanimate.Animation
 import           Reanimate.ColorMap
--- import           Reanimate.Constants
 import           Reanimate.LaTeX
--- import           Reanimate.Math.Compatible
--- import           Reanimate.Math.EarClip
-import           Reanimate.Math.Polygon
 import           Reanimate.Math.Common
+import           Reanimate.Math.Polygon
 import           Reanimate.Math.SSSP
 import           Reanimate.Math.Triangulate
--- import           Reanimate.Math.Visibility
 import           Reanimate.Scene
 import           Reanimate.Svg
 
