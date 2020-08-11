@@ -8,6 +8,7 @@ import           Reanimate
 import           Reanimate.Povray  (povraySlow')
 
 import           Codec.Picture
+import           Control.Lens
 import           Control.Monad
 import           Data.Text         (Text)
 import qualified Data.Text         as T
@@ -25,7 +26,7 @@ main = reanimate $ parA bg $ sceneAnimation $ do
       tweenVar xRot (wobbleDur/2) $ \v -> fromToS v (v-90) . curveS 2
     destroySprite wf
     play $ mkAnimation drawDuration (\t -> partialSvg t (wireframe (-45) 220))
-      # reverseA
+      & reverseA
   where
     drawDuration = 10
     wobbles = 3
@@ -78,7 +79,7 @@ sphere {
   <0,0,0>, 3
   texture {
     uv_mapping pigment{
-      image_map{ png ${png_} }
+      image_map{ png "${png_}" }
     }
   }
   rotate <0,${rotY_},0>

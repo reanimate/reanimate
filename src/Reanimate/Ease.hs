@@ -1,3 +1,7 @@
+{-|
+  Easing functions modify the rate of change in animations.
+  More examples can be seen here: <https://easings.net/>.
+-}
 module Reanimate.Ease
   ( Signal
   , constantS
@@ -67,6 +71,13 @@ curveS steepness s =
     then 0.5 * (2*s)**steepness
     else 1-0.5 * (2 - 2*s)**steepness
 
+-- | Power curve signal. Takes a steepness parameter. 2 is a good default.
+--
+--   Example:
+--
+--   > signalA (powerS 2) drawProgress
+--
+--   <<docs/gifs/doc_powerS.gif>>
 powerS :: Double -> Signal
 powerS steepness s = s**steepness
 

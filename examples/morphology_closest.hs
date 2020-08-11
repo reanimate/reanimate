@@ -6,8 +6,9 @@ module Main(main) where
 
 import           Codec.Picture
 import           Codec.Picture.Types
+import           Control.Lens           ((&))
 import           Control.Monad
-import           Graphics.SvgTree         (LineJoin (..))
+import           Graphics.SvgTree       (LineJoin (..))
 import           Reanimate
 import           Reanimate.Morph.Common
 import           Reanimate.Morph.Linear
@@ -34,11 +35,11 @@ main = reanimate $
     showPair from to =
       waitOn $ do
         fork $ play $ mkAnimation 4 (morph rawLinear from to)
-          # mapA (translate (-4) (-0.5))
-          # signalA (curveS 4)
+          & mapA (translate (-4) (-0.5))
+          & signalA (curveS 4)
         fork $ play $ mkAnimation 4 (morph linear from to)
-          # mapA (translate (4) (-0.5))
-          # signalA (curveS 4)
+          & mapA (translate (4) (-0.5))
+          & signalA (curveS 4)
 
     pairs = zip stages (tail stages ++ [head stages])
     stages = map (lowerTransformations . scale 8 . pathify . center) $ colorize

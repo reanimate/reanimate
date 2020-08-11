@@ -35,7 +35,6 @@ module Reanimate.Animation
   , freezeAtPercentage
   , addStatic
   -- * Misc
-  , (#)
   , getAnimationFrame
   , Sync(..)
   -- * Rendering
@@ -60,11 +59,13 @@ type Duration = Double
 -- | Time signal. Goes from 0 to 1, inclusive.
 type Time = Double
 
+-- | SVG node.
 type SVG = Tree
 
 -- | Animations are SVGs over a finite time.
 data Animation = Animation Duration (Time -> SVG)
 
+-- | Construct an animation with a given duration.
 mkAnimation :: Duration -> (Time -> SVG) -> Animation
 mkAnimation = Animation
 
@@ -183,9 +184,11 @@ frameAt t (Animation d f) = f t'
   where
     t' = clamp 0 1 (t/d)
 
+-- | Helper function for pretty-printing SVG nodes.
 renderTree :: SVG -> String
 renderTree t = maybe "" ppElement $ xmlOfTree t
 
+-- | Helper function for pretty-printing SVG nodes as SVG documents.
 renderSvg :: Maybe Number -- ^ The number to use as value of the @width@ attribute of the resulting top-level svg element. If @Nothing@, the width attribute won't be rendered.
           -> Maybe Number -- ^ Similar to previous argument, but for @height@ attribute.
           -> SVG          -- ^ SVG to render
@@ -354,6 +357,7 @@ dropA len (Animation d gen) = Animation len' $ \t ->
   where
     len' = d - clamp 0 d len
 
+-- | @lastA duration animation@ return the last @duration@ seconds of the animation.
 lastA :: Duration -> Animation -> Animation
 lastA len a = dropA (duration a - len) a
 
@@ -362,9 +366,10 @@ clamp a b number
   | a < b     = max a (min b number)
   | otherwise = max b (min a number)
 
-(#) :: a -> (a -> b) -> b
-o # f = f o
+-- (#) :: a -> (a -> b) -> b
+-- o # f = f o
 
+-- | Ask for an animation frame using a given synchronization policy.
 getAnimationFrame :: Sync -> Animation -> Time -> Duration -> SVG
 getAnimationFrame sync (Animation aDur aGen) t d =
   case sync of
@@ -375,6 +380,7 @@ getAnimationFrame sync (Animation aDur aGen) t d =
   where
     takeFrac f = snd (properFraction f :: (Int, Double))
 
+-- | Animation synchronization policies.
 data Sync
   = SyncStretch
   | SyncLoop

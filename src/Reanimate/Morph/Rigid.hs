@@ -66,28 +66,35 @@ on the shear.
 -}
 module Reanimate.Morph.Rigid where
 
-import           Data.Foldable (toList)
+import           Control.Lens
+import           Data.Foldable                 (toList)
+import qualified Data.Map                      as M
+import           Data.Maybe
 import           Data.Vector                   (Vector)
 import qualified Data.Vector                   as V
 import           Linear.Quaternion
-import           Linear.Vector
 import           Linear.V2
 import           Linear.V3
+import           Linear.Vector
 import qualified Numeric.LinearAlgebra         as Matrix
-import           Numeric.LinearAlgebra.HMatrix (GMatrix, Matrix,
-                                                toLists, (!), (><))
-import Reanimate.Animation
-import Reanimate.Svg
-
+import           Numeric.LinearAlgebra.HMatrix (GMatrix, Matrix, toLists, (!),
+                                                (><))
+import           Reanimate.Animation
+import           Reanimate.Math.Compatible     (compatiblyTriangulateP)
+import qualified Reanimate.Math.DCEL           as DCEL
+import           Reanimate.Math.Polygon        (mkPolygon, pCopy,
+                                                polygonPoints)
+import           Reanimate.Morph.Common
+import           Reanimate.Svg
 
 type P = V2 Double
 type Trig = (P,P,P)
 type RelTrig = (Int,Int,Int)
 
 data Mesh = Mesh
-  { meshPointsA :: Vector P
-  , meshPointsB :: Vector P
-  , meshOutline :: Vector Int
+  { meshPointsA   :: Vector P
+  , meshPointsB   :: Vector P
+  , meshOutline   :: Vector Int
   -- , meshSteiner :: Vector Int
   , meshTriangles :: Vector RelTrig }
 
@@ -148,7 +155,7 @@ applyA :: Matrix Double -> Trig -> Trig
 applyA a p =
     case toLists (a <> matP) of
       [ [x1, x2], [y1, y2] ] -> (V2 0 0, V2 x1 y1, V2 x2 y2)
-      _ -> error "invalid matrix"
+      _                      -> error "invalid matrix"
   where
     matP = trigToMatrix p
 
@@ -178,12 +185,12 @@ trigToMatrix (p1,p2,p3) = matP
 
 
 data Prep = Prep
-  { prepPivot    :: (P, P)
-  , prepPointsA  :: Vector P
-  , prepPointsB  :: Vector P
-  , prepRS       :: Vector (Matrix Double, Matrix Double)
-  , prepRSRev    :: Vector (Matrix Double, Matrix Double)
-  , prepUToB     :: GMatrix
+  { prepPivot   :: (P, P)
+  , prepPointsA :: Vector P
+  , prepPointsB :: Vector P
+  , prepRS      :: Vector (Matrix Double, Matrix Double)
+  , prepRSRev   :: Vector (Matrix Double, Matrix Double)
+  , prepUToB    :: GMatrix
   }
 
 symmetric :: Bool
@@ -204,7 +211,7 @@ prepare Mesh{..} = Prep
   where
     aOrigin = meshPointsA V.! pivotIdx
     bOrigin = meshPointsB V.! pivotIdx
-    pivotIdx = 0 
+    pivotIdx = 0
     -- pivotIdx = case V.head meshTriangles of
     --     (a,_,_) -> a
     mkAbs p (a,b,c) = (p V.! a,p V.! b,p V.! c)
@@ -252,7 +259,7 @@ interpolate Prep{..} t = V.fromList $
       False
       1e-9
       1e-9
-      1000
+      10000
       prepUToB
       b
       (Matrix.fromList $ concat [ [x,y] | V2 x y <- V.toList target ])
@@ -261,7 +268,7 @@ interpolate Prep{..} t = V.fromList $
       then prepPointsA
       else prepPointsB
     worker (x:y:xs) = V2 x y ^+^ pivot : worker xs
-    worker _ = []
+    worker _        = []
     pivot = case prepPivot of
       (src, dst) -> lerp t dst src
     n = V.length prepRS
@@ -279,3 +286,61 @@ interpolate Prep{..} t = V.fromList $
       , let a = computeA_RSt r s (1-t)
       , j <- [0..3]
       ]
+
+toRigidMesh :: DCEL.Mesh (V2 Double) -> DCEL.Mesh (V2 Double) -> Mesh
+toRigidMesh meshA meshB = Mesh
+    { meshPointsA = pointsA
+    , meshPointsB = pointsB
+    , meshOutline = outline
+    , meshTriangles = trigs }
+  where
+    pointsA = V.fromList $ map DCEL._vertexPosition $ M.elems (meshA^.DCEL.meshVertices)
+    pointsB = V.fromList $ map DCEL._vertexPosition $ M.elems (meshB^.DCEL.meshVertices)
+    outline = V.fromList
+      [ fromJust (V.elemIndex v pointsA)
+      | eid <- DCEL.faceEdges (meshA^.DCEL.meshOuterFace) meshA
+      , let edge = DCEL.meshGetEdge eid meshA
+            v = DCEL._vertexPosition (DCEL.meshGetVertex (edge^.DCEL.edgeVertex) meshA)
+      ]
+    trigs = V.fromList
+      [ (aIdx, bIdx, cIdx)
+      | fid <- M.keys (meshA^.DCEL.meshFaces)
+      , fid /= (meshA^.DCEL.meshOuterFace)
+      , let edges = map (`DCEL.meshGetEdge` meshA) (DCEL.faceEdges fid meshA)
+            vs = map (`DCEL.meshGetVertex` meshA) $ map DCEL._edgeVertex edges
+            ps = map DCEL._vertexPosition vs
+            [aIdx, bIdx, cIdx] = map (fromJust . (`V.elemIndex` pointsA)) ps
+            -- p = mkPolygon (V.fromList $ map (fmap realToFrac) ps)
+      -- , pIsSimple p || error "invalid polygon"
+      ]
+
+
+{-# INLINE rigidMorph #-}
+rigidMorph :: Trajectory
+rigidMorph (p1', p2') = \t ->
+    let points = V.map (fmap realToFrac) $ interpolate optPrep t
+    in mkPolygon (V.map (\i -> points V.! i) (meshOutline optMesh))
+  where
+    p1 = pCopy p1'
+    p2 = pCopy p2'
+    (p1s,p2s) = unzip (compatiblyTriangulateP p1 p2)
+    m2 = DCEL.buildMesh $ DCEL.polygonsMesh
+         (map (fmap realToFrac) $ V.toList $ polygonPoints p2)
+         (map (map (fmap realToFrac) . V.toList . polygonPoints) p2s)
+
+    m1 = DCEL.buildMesh $ DCEL.polygonsMesh
+          (map (fmap realToFrac) $ V.toList $ polygonPoints p1)
+          (map (map (fmap realToFrac) . V.toList . polygonPoints) p1s)
+    
+    optPrep   = prepare optMesh
+    optMesh   = toRigidMesh  m1final m2final
+    pipeline1 = last . take 20 . iterate 
+      (uncurry DCEL.delaunayFlip .
+      uncurry DCEL.splitInternalEdges . 
+      (\(a,b) -> (DCEL.meshSmoothPosition a, DCEL.meshSmoothPosition b)))
+    (m1final, m2final) = last $ take 20 $ iterate 
+      (pipeline1 .
+        uncurry DCEL.splitLongestEdge .
+        pipeline1
+        ) (m1,m2)
+

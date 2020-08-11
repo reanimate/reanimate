@@ -3,9 +3,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
+import           Linear.V2
 import           Reanimate
+import           Reanimate.Internal.CubicBezier
 import           Reanimate.PolyShape
-import qualified Geom2D.CubicBezier  as G
 
 polygonTest :: Animation
 polygonTest = mkAnimation 10 $ \t ->
@@ -35,14 +36,14 @@ main = reanimate $ bg `parA` polygonTest
     bg = animate $ const $ mkBackground "black"
 
 iShape :: PolyShape
-iShape = PolyShape $ G.ClosedPath
-  [(G.Point 2 2, G.JoinLine)
-  ,(G.Point 0 2, G.JoinLine)
-  ,(G.Point 0 1, G.JoinLine)
-  ,(G.Point 1 1, G.JoinLine)
-  ,(G.Point 1 0, G.JoinLine)
-  ,(G.Point 3 0, G.JoinLine)
-  ,(G.Point 3 1, G.JoinLine)
-  ,(G.Point 4 1, G.JoinLine)
-  ,(G.Point 4 2, G.JoinLine)
+iShape = PolyShape $ ClosedPath
+  [(V2 2 2, JoinLine)
+  ,(V2 0 2, JoinLine)
+  ,(V2 0 1, JoinLine)
+  ,(V2 1 1, JoinLine)
+  ,(V2 1 0, JoinLine)
+  ,(V2 3 0, JoinLine)
+  ,(V2 3 1, JoinLine)
+  ,(V2 4 1, JoinLine)
+  ,(V2 4 2, JoinLine)
   ]

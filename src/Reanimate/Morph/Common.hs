@@ -26,7 +26,7 @@ import           Linear.V2
 import           Reanimate.Animation
 import           Reanimate.ColorComponents
 import           Reanimate.Ease
-import           Reanimate.Math.Polygon    (Polygon, mkPolygon, pAddPoints,
+import           Reanimate.Math.Polygon    (Polygon, APolygon, mkPolygon, pAddPoints,
                                             pCentroid, pCutEqual, pSize,
                                             polygonPoints)
 import           Reanimate.PolyShape
@@ -55,6 +55,7 @@ data Morph = Morph
   , morphObjectCorrespondence :: ObjectCorrespondence
   }
 
+{-# INLINE morph #-}
 morph :: Morph -> SVG -> SVG -> Double -> SVG
 morph Morph{..} src dst = \t ->
   case t of
@@ -77,7 +78,7 @@ morph Morph{..} src dst = \t ->
       , let arranged = morphPointCorrespondence srcPoly' dstPoly'
       ]
 
-normalizePolygons :: Polygon -> Polygon -> (Polygon, Polygon)
+normalizePolygons :: (Real a, Fractional a) => APolygon a -> APolygon a -> (APolygon a, APolygon a)
 normalizePolygons src dst =
     (pAddPoints (max 0 $ dstN-srcN) src
     ,pAddPoints (max 0 $ srcN-dstN) dst)

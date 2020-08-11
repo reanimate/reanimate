@@ -1,4 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-|
+  A colormap takes a number between 0 and 1 (inclusive) and spits out a color.
+  The colors do not have an alpha component but one can be added with
+  `Codec.Picture.Types.promotePixel`.
+-}
 module Reanimate.ColorMap
   ( turbo
   , viridis

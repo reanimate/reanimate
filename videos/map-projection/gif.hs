@@ -1,121 +1,81 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
-{-# LANGUAGE OverloadedStrings, ApplicativeDo #-}
+{-# LANGUAGE ApplicativeDo #-}
 module Main(main) where
 
-import qualified Data.Text as T
-import           Codec.Picture
-import           Codec.Picture.Jpg
-import           Codec.Picture.Types
-import           Control.Monad.ST
-import           Control.Monad
-import qualified Data.ByteString     as BS
-import           Reanimate
-import           Reanimate.Animation
-import           Reanimate.Scene
-import           Reanimate.GeoProjection
-import           Reanimate.Builtin.Documentation
-import           System.IO.Unsafe
-import           Data.Geospatial         hiding (LonLat)
-import           Data.LinearRing
-import qualified Data.LineString         as Line
+import           Control.Lens                    ((^.))
 import           Data.Aeson
-import           Data.Map                (Map)
-import qualified Data.Map                as Map
-import           Graphics.SvgTree        (PathCommand (..), Tree (None))
-import           Data.Foldable
-import           Control.Lens            ((^.))
+import           Data.Foldable                   (toList)
+import           Data.Geospatial                 (GeoFeature (..),
+                                                  GeospatialGeometry (..),
+                                                  PointXY (..), geofeatures,
+                                                  geometry, retrieveXY,
+                                                  splitGeoMultiLine,
+                                                  splitGeoMultiPolygon,
+                                                  unGeoLine, unGeoPolygon)
+import           Data.LinearRing                 (fromLinearRing)
+import           Data.LineString                 (fromLineString)
+import           Graphics.SvgTree                (Tree (None))
+import           Reanimate
+import           Reanimate.Builtin.Documentation
+import           Reanimate.GeoProjection
+import           System.IO.Unsafe
 
 
 main :: IO ()
 main = reanimate $ sceneAnimation $ do
-    newSpriteSVG $ mkBackgroundPixel rtfdBackgroundColor
+    -- Set the background to 'rtfdBackgroundColor'
+    newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
+
+    -- We'll be cycling through projections so let's create a variable
+    -- containing the current projection.
     prevProj <- newVar equirectangularP
-    let push label proj = do
+    -- Now we can define a function that animates smoothly from the
+    -- current projection to a new projection.
+    let push _label proj = do
           prev <- readVar prevProj
-          play $ pauseAtEnd waitT $ signalA (curveS 2) $
-            mkAnimation morphT $ \t ->
-              mkGroup $
-              [ grid $ mergeP prev proj t ]
+          play $ animate (\t -> grid $ mergeP prev proj t)
+            # setDuration morphT -- Set the length of the animation
+            # signalA (curveS 2) -- Ease in and ease out.
+            # pauseAtEnd waitT   -- Then wait on the last frame.
+          -- The morph from one projection to another has finished so
+          -- update the variable with new projection.
           writeVar prevProj proj
 
-    -- play $ staticFrame morphT $
-    --   mkGroup
-    --   [ grid equirectangularP ]
-
-    -- push "Lambert" lambertP
-    --push "Web Mercator" mercatorP
+    -- Cycle from 'equirectangularP' through 5 projections and then
+    -- back to 'equirectangularP'.
     push "Mollweide" mollweideP
     push "Bottomley 30\\degree" (bottomleyP (toRads 30))
-    -- 4
     push "Werner" wernerP
-    -- 5
-    -- push "Bonne 45\\degree" (bonneP (toRads 45))
-    -- pushT
-    --   (\t -> "Bonne " <> T.pack (show $ round $ fromToS 45 0 t) <> "\\degree")
-    --   (bonneP . toRads . fromToS 45 0)
-    -- 6
-    -- push "Eckert I" eckert1P
-    -- push "Eckert III" eckert3P
-    -- push "Eckert IV" eckert5P
-    -- 7
-    -- push "Fahey" faheyP
-    -- 8
-    -- push "August" augustP
-    -- 9
     push "Foucaut" foucautP
-    -- 10
     push "Lagrange" lagrangeP
 
     prev <- readVar prevProj
-    play $ signalA (curveS 2) $
-      mkAnimation morphT $ grid . mergeP prev equirectangularP
+    play $ animate (\t -> grid $ mergeP prev equirectangularP t)
+      # setDuration morphT -- Set the length of the animation
+      # signalA (curveS 2) -- Ease in and ease out.
+      # pauseAtEnd waitT   -- Then wait on the last frame.
   where
-    waitT = 0
-    morphT = 1
+    waitT = 0  -- Seconds to wait between transformations
+    morphT = 1 -- Duration (in seconds) of each transformation
 
-toRads :: Double -> Double
-toRads dec = dec/180 * pi
-
-
+-- Draw grid lines and land borders.
 grid :: Projection -> SVG
--- grid p = None
 grid p =
   withStrokeWidth strokeWidth $
   lowerTransformations $
-  scaleXY
-    (screenWidth)
-    (screenHeight)
-   $
+  scaleXY screenWidth screenHeight $
   translate (-1/2) (-1/2) $
-
-  withFillOpacity 0 $
+  withFillOpacity 0 $ withStrokeColor "black" $
   mkGroup
-  [ mkGroup []
-  , withStrokeColor "black" $
-    withFillOpacity 0 $ mkGroup
+  [ mkGroup
     [ geometryToSVG p geo
     | geo <- landBorders
     ]
-  , withStrokeColor "black" $
-    mkGroup $ map mkLinePath (latitudeLines p ++ longitudeLines p)
+  , mkGroup $ map mkLinePath (latitudeLines p ++ longitudeLines p)
   ]
   where
     strokeWidth = defaultStrokeWidth * 0.5
-
-worldLine :: Projection -> SVG
-worldLine p =
-  mkLinePath $
-    map apply
-    [ (-pi, -halfPi)
-    , (-pi, halfPi)
-    , (pi, halfPi)
-    , (pi, -halfPi)
-    , (-pi, -halfPi) ]
-  where
-    apply (lam, phi) =
-      let XYCoord x y = projectionForward p $ LonLat lam phi
-      in (x, y)
 
 latitudeLines :: Projection -> [[(Double, Double)]]
 latitudeLines p =
@@ -147,21 +107,17 @@ longitudeLines p =
       , let lam = fromToS (-pi) pi (n/segments)
       , let XYCoord x y = projectionForward p $ LonLat lam phi ]
 
-halfPi :: Double
-halfPi = pi/2
-
 landBorders :: [(GeospatialGeometry)]
 landBorders = unsafePerformIO $ do
   Just geo <- decodeFileStrict "countries.json"
   return
     [ (feature ^. geometry)
-    | feature <- toList $ geo ^. geofeatures
-    , let p = feature ^. properties :: Map String Value
+    | feature <- toList $ geo ^. geofeatures :: [GeoFeature Value]
     ]
 
 geometryToSVG :: Projection -> GeospatialGeometry -> SVG
-geometryToSVG p geometry =
-  case geometry of
+geometryToSVG p geo =
+  case geo of
     MultiPolygon mpolygon ->
       mkGroup $ map (geometryToSVG p . Polygon) $ toList (splitGeoMultiPolygon mpolygon)
     Polygon poly ->
@@ -176,9 +132,16 @@ geometryToSVG p geometry =
     Line line ->
       mkLinePath
       [ (x', y')
-      | PointXY x y <- map retrieveXY (Line.fromLineString (line ^. unGeoLine))
+      | PointXY x y <- map retrieveXY (fromLineString (line ^. unGeoLine))
       , let XYCoord x' y' = projectionForward p $ LonLat (x/180*pi) (y/180*pi)
       ]
     MultiLine ml ->
       mkGroup $ map (geometryToSVG p . Line) $ toList (splitGeoMultiLine ml)
     _ -> None
+
+-- Convert degrees to radians
+toRads :: Double -> Double
+toRads dec = dec/180 * pi
+
+halfPi :: Double
+halfPi = pi/2

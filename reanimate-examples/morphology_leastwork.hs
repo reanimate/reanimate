@@ -6,12 +6,13 @@ module Main(main) where
 
 import           Codec.Picture
 import           Codec.Picture.Types
+import           Control.Lens              ((&))
 import           Control.Monad
-import           Graphics.SvgTree         (LineJoin (..))
+import           Graphics.SvgTree          (LineJoin (..))
 import           Reanimate
 import           Reanimate.Morph.Common
+import           Reanimate.Morph.LeastWork
 import           Reanimate.Morph.Linear
-import           Reanimate.Morph.LineBend
 
 bgColor :: PixelRGBA8
 bgColor = PixelRGBA8 252 252 252 0xFF
@@ -29,19 +30,22 @@ main = reanimate $
         center $ latex "linear"
       _ <- newSpriteSVG $
         withStrokeWidth 0 $ translate (3) 4 $
-        center $ latex "line bend"
+        center $ latex "least-work"
       forM_ pairs $ uncurry showPair
   where
     showPair from to =
       waitOn $ do
         fork $ play $ mkAnimation 4 (morph linear from to)
-          # mapA (translate (-3) (-0.5))
-          # signalA (curveS 4)
+          & mapA (translate (-3) (-0.5))
+          & signalA (curveS 4)
         fork $ play $ mkAnimation 4 (morph myMorph from to)
-          # mapA (translate (3) (-0.5))
-          # signalA (curveS 4)
+          & mapA (translate (3) (-0.5))
+          & signalA (curveS 4)
 
-    myMorph = linear{morphTrajectory = lineBend }
+    stretchCosts = defaultStretchCosts
+      { stretchStiffness = 2 }
+    bendCosts = defaultBendCosts
+    myMorph = linear{morphPointCorrespondence = leastWork stretchCosts bendCosts }
     pairs = zip stages (tail stages ++ [head stages])
     stages = map (lowerTransformations . scale 6 . pathify . center) $ colorize
       [ latex "X"
@@ -51,6 +55,9 @@ main = reanimate $
       , latex "I"
       , latex "$\\pi$"
       , latex "1"
+      , latex "T"
+      , latex "I"
+      , latex "L"
       , latex "S"
       , mkRect 0.5 0.5
       ]

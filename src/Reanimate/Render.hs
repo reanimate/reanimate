@@ -1,7 +1,7 @@
 {-# LANGUAGE MultiWayIf #-}
 module Reanimate.Render
   ( render
-  , renderSvgs            -- :: Animation -> IO ()
+  , renderSvgs
   , renderSnippets        -- :: Animation -> IO ()
   , Format(..)
   , Raster(..)
@@ -13,13 +13,13 @@ module Reanimate.Render
 
 import           Control.Concurrent
 import           Control.Exception
-import           Control.Monad          (forM_, forever, unless, void, when)
+import           Control.Monad             (forM_, forever, unless, void, when)
 import           Data.Either
 import           Data.Function
-import qualified Data.Text              as T
-import qualified Data.Text.IO           as T
+import qualified Data.Text                 as T
+import qualified Data.Text.IO              as T
 import           Data.Time
-import           Graphics.SvgTree       (Number (..))
+import           Graphics.SvgTree          (Number (..))
 import           Numeric
 import           Reanimate.Animation
 import           Reanimate.Driver.Check
@@ -28,24 +28,39 @@ import           Reanimate.Misc
 import           Reanimate.Parameters
 import           System.Console.ANSI.Codes
 import           System.Exit
-import           System.FilePath        ((</>), replaceExtension)
+import           System.FileLock (withTryFileLock, SharedExclusive(..), unlockFile)
+import           System.Directory
+import           System.FilePath           (replaceExtension, (<.>), (</>))
 import           System.IO
-import           Text.Printf            (printf)
+import           Text.Printf               (printf)
 
-renderSvgs :: Animation -> IO ()
-renderSvgs ani = do
+idempotentFile :: FilePath -> IO () -> IO ()
+idempotentFile path action = do
+    _ <- withTryFileLock lockFile Exclusive $ \lock -> do
+      haveFile <- doesFileExist path
+      unless haveFile action
+      unlockFile lock
+      _ <- try (removeFile lockFile) :: IO (Either SomeException ())
+      return ()
+    return ()
+  where
+    lockFile = path <.> "lock"
+
+renderSvgs :: FilePath -> Int -> Bool -> Animation -> IO ()
+renderSvgs folder offset _prettyPrint ani = do
   print frameCount
   lock <- newMVar ()
 
-  handle errHandler $ concurrentForM_ (frameOrder rate frameCount) $ \nth -> do
-    let -- frame = frameAt (recip (fromIntegral rate-1) * fromIntegral nth) ani
+  handle errHandler $ concurrentForM_ (frameOrder rate frameCount) $ \nth' -> do
+    let nth = (nth'+offset) `mod` frameCount
         now = (duration ani / (fromIntegral frameCount - 1)) * fromIntegral nth
         frame = frameAt (if frameCount <= 1 then 0 else now) ani
         svg = renderSvg Nothing Nothing frame
-    _ <- evaluate (length svg)
+        path = folder </> show nth <.> "svg"
+
+    idempotentFile path $ writeFile path svg
     withMVar lock $ \_ -> do
-      putStr (show nth)
-      T.putStrLn $ T.concat . T.lines . T.pack $ svg
+      print nth
       hFlush stdout
  where
   rate       = 60
@@ -246,7 +261,7 @@ generateFrames raster ani width_ height_ rate partial action = withTempDir $ \tm
         writeFile (frameName n) $ renderSvg width height $ nthFrame n
         modifyMVar_ done $ \nDone -> return (nDone + 1)
 
-  when (raster /= RasterNone)
+  when (isValidRaster raster)
     $ progressPrinter "rastered" frameCount
     $ \done -> handle h $ concurrentForM_ frames $ \n -> do
         applyRaster raster (frameName n)
@@ -254,6 +269,9 @@ generateFrames raster ani width_ height_ rate partial action = withTempDir $ \tm
 
   action (tmp </> rasterTemplate raster)
  where
+  isValidRaster RasterNone = False
+  isValidRaster RasterAuto = False
+  isValidRaster _          = True
 
   width  = Just $ Px $ fromIntegral width_
   height = Just $ Px $ fromIntegral height_
@@ -284,6 +302,7 @@ ppDiff diff | hours == 0 && mins == 0 = show secs ++ "s"
 
 rasterTemplate :: Raster -> String
 rasterTemplate RasterNone = "render-%05d.svg"
+rasterTemplate RasterAuto = "render-%05d.svg"
 rasterTemplate _          = "render-%05d.png"
 
 requireRaster :: Raster -> IO Raster

@@ -1,0 +1,84 @@
+name: HPC
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-haskell@v1
+      with:
+        ghc-version: '8.8.2'
+        cabal-version: '3.0'
+
+    - name: Cache
+      uses: actions/cache@v1
+      env:
+        cache-name: cache-cabal
+      with:
+        path: ~/.cabal
+        key: ${{ runner.os }}-hpc-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/cabal.project') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
+    - name: Install dependencies
+      run: |
+        cabal v2-update
+        cabal v2-build --enable-coverage --only-dependencies
+
+    - name: Build
+      run: |
+        cabal v2-build --enable-coverage
+
+    - name: Generate HPC files
+      run: |
+        set -o xtrace
+        for gold in examples/*.golden; do
+          cabal v2-exec --enable-coverage -- ghc -package reanimate "${gold%.golden}.hs" --make
+          reanimate_datadir=$(pwd) ${gold%.golden} test > /dev/null
+        done;
+    
+    - name: Merge HPC files
+      run: hpc sum --union *.tix --output=total.tix
+
+    - name: Report
+      run: |
+        hpc report --hpcdir $(find dist-newstyle -name 'hpc')/vanilla/mix/*/ total.tix
+
+    - name: Markup
+      run: |
+        hpc markup --destdir=hpc --hpcdir $(find dist-newstyle -name 'hpc')/vanilla/mix/*/ total.tix
+
+    - name: HPC Badge
+      run: |
+        COVERAGE=$(cat hpc/hpc_index.html | tr '\n' ' ' | sed "s/.*Program Coverage Total.*>\([0-9]\{1,3\}\)%.*>\([0-9]\{1,3\}\)%.*>\([0-9]\{1,3\}\)%.*/\1/")
+        echo "\
+          { \"schemaVersion\": 1, \
+            \"label\": \"api tests\", \
+            \"message\": \"$COVERAGE%\", \
+            \"color\": \"success\" \
+          }" > hpc/hpc_badge.json
+
+    - name: Haddock  Badge
+      run: |
+        cabal v2-haddock --enable-coverage | grep " in " | sort -hr > hpc/haddock.txt
+        COVERAGE=$(awk '{good += $3; total += $5} END {printf "%.0f", good/total*100}' hpc/haddock.txt)
+        echo "\
+          { \"schemaVersion\": 1, \
+            \"label\": \"api docs\", \
+            \"message\": \"$COVERAGE%\", \
+            \"color\": \"success\" \
+          }" > hpc/haddock_badge.json
+
+    - name: Deploy 🚀
+      uses: JamesIves/github-pages-deploy-action@3.5.9
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        BRANCH: gh-pages # The branch the action should deploy to.
+        FOLDER: hpc # The folder the action should deploy.
