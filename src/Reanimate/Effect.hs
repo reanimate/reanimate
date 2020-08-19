@@ -79,7 +79,8 @@ delayE delayT fn d = overEnding (d-delayT) fn d
 
 -- | Modify the animation by applying the effect. If desired, you can apply multiple effects to single animation by calling this function multiple times.
 applyE :: Effect -> Animation -> Animation
-applyE fn (Animation d genFrame) = Animation d $ \t -> fn d (d*t) $ genFrame t
+applyE fn ani = let d = duration ani
+                in mkAnimation d $ \t -> fn d (d*t) $ frameAt (d*t) ani
 
 -- | Build an effect from an image-modifying function. This effect does not change as time passes.
 constE :: (Tree -> Tree) -> Effect
