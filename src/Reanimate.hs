@@ -39,7 +39,7 @@ module Reanimate
     SVG,
     Time,
     Duration,
-    Animation(..),
+    Animation,
     mkAnimation,
     animate,
     staticFrame,
