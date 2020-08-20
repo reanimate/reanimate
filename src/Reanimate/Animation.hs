@@ -2,7 +2,7 @@ module Reanimate.Animation
   ( Duration
   , Time
   , SVG
-  , Animation(..) -- TODO should this be exposed? The constructor is used directly in Effect.hs
+  , Animation
   -- * Creating animations
   , mkAnimation
   , animate
