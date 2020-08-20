@@ -44,5 +44,6 @@ RUN (cd reanimate-playground && \
     playground test
 
 EXPOSE 10161/tcp
+EXPOSE 10162/tcp
 
 ENTRYPOINT playground
