@@ -177,7 +177,7 @@ feat3D = rotateSphere
   & repeatA 10
 
 frameAtT :: Double -> Animation -> SVG
-frameAtT t ani = getAnimationFrame SyncFreeze ani t 0
+frameAtT t ani = getAnimationFrame SyncStretch ani t 1
 
 featLaTeX :: Animation
 featLaTeX = animate $ \t ->
