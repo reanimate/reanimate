@@ -481,11 +481,7 @@ problemView problem =
 
         ConnectionFailed ->
             Html.div []
-                [ Html.text "Failed to establish connection. Possible causes include: "
-                , Html.ul []
-                    [ Html.li [] [ Html.text "The reanimate script is not running" ]
-                    , Html.li [] [ Html.text "At most one viewer window can connect at time. Maybe there's another browser window/tab already connected?" ]
-                    ]
+                [ Html.text "Failed to establish connection to server. Sorry. :-/"
                 ]
 
         PortMessageDecodeFailure decodeError ->
