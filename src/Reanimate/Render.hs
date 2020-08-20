@@ -3,6 +3,7 @@ module Reanimate.Render
   ( render
   , renderSvgs
   , renderSnippets        -- :: Animation -> IO ()
+  , renderOneFrame
   , Format(..)
   , Raster(..)
   , Width, Height, FPS
@@ -68,6 +69,27 @@ renderSvgs folder offset _prettyPrint ani = do
   errHandler (ErrorCall msg) = do
     hPutStrLn stderr msg
     exitWith (ExitFailure 1)
+
+renderOneFrame :: FilePath -> Int -> Bool -> Int -> Animation -> IO ()
+renderOneFrame folder offset _prettyPrint rate ani =
+    worker (frameOrder rate frameCount)
+  where
+    worker [] = putStrLn "Done"
+    worker (x:xs) = do
+      let nth = (x+offset) `mod` frameCount
+          now = (duration ani / (fromIntegral frameCount - 1)) * fromIntegral nth
+          frame = frameAt (if frameCount <= 1 then 0 else now) ani
+          svg = renderSvg Nothing Nothing frame
+          path = folder </> show nth <.> "svg"
+          tmpPath = path <.> "tmp"
+      haveFile <- doesFileExist path
+      if haveFile
+        then worker xs
+        else do
+          writeFile tmpPath svg
+          renameOrCopyFile tmpPath path
+          print nth
+    frameCount = round (duration ani * fromIntegral rate) :: Int
 
 -- XXX: Merge with 'renderSvgs'
 renderSnippets :: Animation -> IO ()
