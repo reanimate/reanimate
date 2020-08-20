@@ -45,20 +45,20 @@
         <option>Example 1</option>
         <option>Example 2</option>
       </select>
-      <textarea id="editor"></textarea>
+      <div id="editor"></div>
     </div>
     <div class="gutter-column-1"></div>
     <div class="edit-box">
       <div class="media-buttons column-header">
         <div style="display: flex;flex-flow:row;justify-content: space-between;">
-          <img src="home-white-48dp.svg">
+          <a href="https://reanimate.github.io/"><img src="home-white-48dp.svg"></a>
           <div>
-            <img src="replay_10-white-48dp.svg">
-            <img src="skip_previous-white-48dp.svg">
-            <img src="play_circle_outline-white-48dp.svg">
-            <img src="pause_circle_outline-white-48dp.svg">
-            <img src="skip_next-white-48dp.svg">
-            <img src="forward_10-white-48dp.svg">
+            <img id="seek-10" src="replay_10-white-48dp.svg">
+            <img id="seek-1" src="skip_previous-white-48dp.svg">
+            <img id="play" src="play_circle_outline-white-48dp.svg">
+            <img id="pause" src="pause_circle_outline-white-48dp.svg">
+            <img id="seek1" src="skip_next-white-48dp.svg">
+            <img id="seek10" src="forward_10-white-48dp.svg">
           </div>
           <img src="help_outline-white-48dp.svg">
         </div>
@@ -70,15 +70,46 @@
   <script type="text/javascript">
     var app = playgroundInit('elm');
 
-    var myCodeMirror = CodeMirror.fromTextArea(document.querySelector('#editor'), {
+    var myCodeMirror = CodeMirror(document.querySelector('#editor'), {
       lineNumbers: true,
-      value: "function myScript(){return 100;}\n",
+      value: "animation :: Animation\nanimation = docEnv $\n  drawBox\n",
       mode: "haskell",
       lineWrapping: true
     });
     myCodeMirror.on('change', function () {
+      document.querySelector('.media-buttons').classList.remove('paused');
+      app.ports.receiveControlMsg.send('play');
       app.ports.receiveEditorMsg.send(myCodeMirror.getValue());
     });
+
+    document.getElementById('play').onclick = function() {
+      document.querySelector('.media-buttons').classList.toggle('paused');
+      app.ports.receiveControlMsg.send('play');
+    };
+    document.getElementById('pause').onclick = function() {
+      document.querySelector('.media-buttons').classList.toggle('paused');
+      app.ports.receiveControlMsg.send('pause');
+    };
+    document.getElementById('seek1').onclick = function() {
+      document.querySelector('.media-buttons').classList.add('paused');
+      app.ports.receiveControlMsg.send('pause');
+      app.ports.receiveControlMsg.send('seek1');
+    };
+    document.getElementById('seek10').onclick = function() {
+      document.querySelector('.media-buttons').classList.add('paused');
+      app.ports.receiveControlMsg.send('pause');
+      app.ports.receiveControlMsg.send('seek10');
+    };
+    document.getElementById('seek-1').onclick = function() {
+      document.querySelector('.media-buttons').classList.add('paused');
+      app.ports.receiveControlMsg.send('pause');
+      app.ports.receiveControlMsg.send('seek-1');
+    };
+    document.getElementById('seek-10').onclick = function() {
+      document.querySelector('.media-buttons').classList.add('paused');
+      app.ports.receiveControlMsg.send('pause');
+      app.ports.receiveControlMsg.send('seek-10');
+    };
 
   </script>
   <script>

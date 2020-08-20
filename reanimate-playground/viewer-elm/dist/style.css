@@ -104,11 +104,21 @@ pre {
 .edit-box .column-header {
   flex: 0 1 auto;
 }
-.edit-box .CodeMirror {
+.edit-box #editor {
   flex: 1 1 auto;
 }
 .edit-box .app {
   flex: 1 1 auto;
+}
+
+.media-buttons.paused #pause {
+  display: none;
+}
+.media-buttons:not(.paused) #play {
+  display: none;
+}
+.media-buttons img:hover {
+  cursor: pointer;
 }
 
 .github-corner:hover .octo-arm {

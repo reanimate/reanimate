@@ -32,7 +32,8 @@ subscriptions model =
     Platform.Sub.batch
         [ Ports.receiveSocketMsg (WebSocket.receive MessageReceived)
         , Ports.receiveEditorMsg Change
-        , Keyboard.downs KeyPressed
+        , Ports.receiveControlMsg parseControlMsg
+        -- , Keyboard.downs KeyPressed
         , case model of
             Animating { player } ->
                 case player of
@@ -48,6 +49,16 @@ subscriptions model =
                 Sub.none
         ]
 
+parseControlMsg : String -> Msg
+parseControlMsg msg =
+    case msg of
+        "pause"   -> Pause
+        "play"    -> Play
+        "seek1"   -> Seek 1
+        "seek10"  -> Seek 10
+        "seek-1"  -> Seek -1
+        "seek-10" -> Seek -10
+        _         -> NoOp
 
 type Msg
     = MessageReceived (Result Json.Decode.Error WebSocket.WebSocketMsg)
