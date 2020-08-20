@@ -22,7 +22,7 @@
   44% (  4 /  9) in 'Reanimate.LaTeX'
   42% ( 47 /111) in 'Reanimate.Scene'
   42% ( 17 / 40) in 'Reanimate.GeoProjection'
-  33% (  4 / 12) in 'Reanimate.Render'
+  31% (  4 / 13) in 'Reanimate.Render'
   25% (  1 /  4) in 'Reanimate.Builtin.Slide'
   12% (  2 / 17) in 'Reanimate.Math.SSSP'
   10% (  3 / 30) in 'Reanimate.PolyShape'
