@@ -6,6 +6,12 @@ services:
       - .cache:/root/.cache
 #    environment:
 #      DISCORD_TOKEN: ''
+  playground:
+    image: reanimate/playground
+    ports:
+      - "10161:10161"
+    volumes:
+      - .cache:/root/.cache
   watch:
     image: v2tec/watchtower
     volumes:
