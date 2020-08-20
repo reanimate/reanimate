@@ -78,10 +78,11 @@ frameRate = 30
 -}
 
 main :: IO ()
-main = forever $ do
+main = do
   backend <- newBackend
   args <- getArgs
   case args of
+    ["test"] -> putStrLn "Test OK"
     [] -> do
       root <- cacheDir
       tid <- forkIO $ run 10162 (staticApp $ defaultWebAppSettings root)
