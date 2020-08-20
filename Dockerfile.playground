@@ -43,5 +43,6 @@ RUN (cd reanimate-playground && \
     stack install --no-install-ghc --system-ghc) && \
     playground test
 
+EXPOSE 10161/tcp
 
 ENTRYPOINT playground
