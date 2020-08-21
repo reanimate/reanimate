@@ -106,6 +106,7 @@ pre {
 }
 .edit-box #editor {
   flex: 1 1 auto;
+  overflow-y: auto;
 }
 .edit-box .app {
   flex: 1 1 auto;
