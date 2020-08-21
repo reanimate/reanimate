@@ -5179,7 +5179,6 @@ var $author$project$Main$Disconnected = {$: 0};
 var $bburdette$websocket$WebSocket$Connect = function (a) {
 	return {$: 0, a: a};
 };
-var $author$project$Main$backend = '149.56.132.163';
 var $elm$json$Json$Encode$object = function (pairs) {
 	return _Json_wrap(
 		A3(
@@ -5249,11 +5248,12 @@ var $bburdette$websocket$WebSocket$send = F2(
 			$bburdette$websocket$WebSocket$encodeCmd(wsc));
 	});
 var $author$project$Ports$sendSocketCommand = _Platform_outgoingPort('sendSocketCommand', $elm$core$Basics$identity);
+var $author$project$Main$wsBackend = 'wss://reanimate.clozecards.com/ws/';
 var $author$project$Main$connectCommand = A2(
 	$bburdette$websocket$WebSocket$send,
 	$author$project$Ports$sendSocketCommand,
 	$bburdette$websocket$WebSocket$Connect(
-		{as: 'ws://' + ($author$project$Main$backend + ':10161'), aa: 'TheSocket', aI: ''}));
+		{as: $author$project$Main$wsBackend, aa: 'TheSocket', aI: ''}));
 var $author$project$Main$init = function (_v0) {
 	return _Utils_Tuple2($author$project$Main$Disconnected, $author$project$Main$connectCommand);
 };
@@ -6675,6 +6675,7 @@ var $elm$html$Html$Attributes$src = function (url) {
 		'src',
 		_VirtualDom_noJavaScriptOrHtmlUri(url));
 };
+var $author$project$Main$webBackend = 'https://reanimate.clozecards.com/';
 var $author$project$Main$frameView = F7(
 	function (bestFrame, frameIndex, frameCount, frames, showingHelp, frameDeltas, isPaused) {
 		var progressView = function () {
@@ -6688,7 +6689,8 @@ var $author$project$Main$frameView = F7(
 					$elm$html$Html$img,
 					_List_fromArray(
 						[
-							$elm$html$Html$Attributes$src('http://' + ($author$project$Main$backend + (':10162/' + svgUrl)))
+							$elm$html$Html$Attributes$src(
+							_Utils_ap($author$project$Main$webBackend, svgUrl))
 						]),
 					_List_Nil);
 			} else {
@@ -6741,38 +6743,6 @@ var $author$project$Main$frameView = F7(
 			_List_fromArray(
 				[bar, image]));
 	});
-var $elm$html$Html$Attributes$href = function (url) {
-	return A2(
-		$elm$html$Html$Attributes$stringProperty,
-		'href',
-		_VirtualDom_noJavaScriptUri(url));
-};
-var $elm$virtual_dom$VirtualDom$node = function (tag) {
-	return _VirtualDom_node(
-		_VirtualDom_noScript(tag));
-};
-var $elm$html$Html$node = $elm$virtual_dom$VirtualDom$node;
-var $elm$html$Html$Attributes$rel = _VirtualDom_attribute('rel');
-var $author$project$Main$mkLink = function (svgUrl) {
-	return A3(
-		$elm$html$Html$node,
-		'link',
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$rel('prefetch'),
-				$elm$html$Html$Attributes$href('http://' + ($author$project$Main$backend + (':10162/' + svgUrl)))
-			]),
-		_List_Nil);
-};
-var $author$project$Main$linkPrefetches = function (frames) {
-	return A2(
-		$elm$html$Html$div,
-		_List_Nil,
-		A2(
-			$elm$core$List$map,
-			$author$project$Main$mkLink,
-			$elm$core$Dict$values(frames)));
-};
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$pre = _VirtualDom_node('pre');
 var $author$project$Main$problemView = function (problem) {
@@ -6852,20 +6822,11 @@ var $author$project$Main$view = function (model) {
 								var bestFrame = model.a.D;
 								var showingHelp = model.a.G;
 								var frameDeltas = model.a.E;
-								return A2(
-									$elm$html$Html$div,
-									_List_Nil,
-									_List_fromArray(
-										[
-											$author$project$Main$linkPrefetches(frames),
-											function () {
-											if (!player.$) {
-												return A7($author$project$Main$frameView, bestFrame, frameIndex, frameCount, frames, showingHelp, frameDeltas, true);
-											} else {
-												return A7($author$project$Main$frameView, bestFrame, frameIndex, frameCount, frames, showingHelp, frameDeltas, false);
-											}
-										}()
-										]));
+								if (!player.$) {
+									return A7($author$project$Main$frameView, bestFrame, frameIndex, frameCount, frames, showingHelp, frameDeltas, true);
+								} else {
+									return A7($author$project$Main$frameView, bestFrame, frameIndex, frameCount, frames, showingHelp, frameDeltas, false);
+								}
 						}
 					}()
 					]))
