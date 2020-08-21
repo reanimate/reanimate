@@ -10,6 +10,7 @@ services:
     image: reanimate/playground
     ports:
       - "10161:10161"
+      - "10162:10162"
     volumes:
       - .cache:/root/.cache
   watch:

@@ -14,6 +14,9 @@ jobs:
       with:
         ghc-version: '8.8.2'
         cabal-version: '3.0'
+    - uses: jorelali/setup-elm@v2
+      with:
+        elm-version: 0.19.1
 
     - name: Cache
       uses: actions/cache@v1
@@ -65,7 +68,7 @@ jobs:
             \"color\": \"success\" \
           }" > hpc/hpc_badge.json
 
-    - name: Haddock  Badge
+    - name: Haddock Badge
       run: |
         cabal v2-haddock --enable-coverage | grep " in " | sort -hr > hpc/haddock.txt
         COVERAGE=$(awk '{good += $3; total += $5} END {printf "%.0f", good/total*100}' hpc/haddock.txt)
@@ -75,6 +78,15 @@ jobs:
             \"message\": \"$COVERAGE%\", \
             \"color\": \"success\" \
           }" > hpc/haddock_badge.json
+
+    - name: Playground
+      run: |
+        cd reanimate-playground/viewer-elm
+        npm install
+        npm run build
+        npm run minify
+        mkdir hpc/playground
+        cp dist/* hpc/playground/
 
     - name: Deploy 🚀
       uses: JamesIves/github-pages-deploy-action@3.5.9
