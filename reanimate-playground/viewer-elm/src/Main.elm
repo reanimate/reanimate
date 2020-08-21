@@ -18,10 +18,22 @@ import Time
 import WebSocket
 
 
-backend : String
-backend =
-    "149.56.132.163"
+wsBackend : String
+wsBackend =
+    "wss://reanimate.clozecards.com/ws/"
 
+
+
+--wsBackend = "ws://localhost:10161/"
+
+
+webBackend : String
+webBackend =
+    "https://reanimate.clozecards.com/"
+
+
+
+-- webBackend = "http://localhost:10162/"
 -- backend = "localhost"
 
 
@@ -155,7 +167,7 @@ connectCommand =
     WebSocket.send Ports.sendSocketCommand <|
         WebSocket.Connect
             { name = "TheSocket"
-            , address = "ws://" ++ backend ++ ":10161"
+            , address = wsBackend
             , protocol = ""
             }
 
@@ -385,15 +397,12 @@ view model =
                     problemView problem
 
                 Animating { frameCount, frames, frameIndex, player, bestFrame, showingHelp, frameDeltas } ->
-                    Html.div []
-                        [ linkPrefetches frames
-                        , case player of
-                            Paused ->
-                                frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas True
+                    case player of
+                        Paused ->
+                            frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas True
 
-                            Playing _ ->
-                                frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas False
-                        ]
+                        Playing _ ->
+                            frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas False
             ]
         ]
 
@@ -425,17 +434,11 @@ playControls paused =
         ]
 
 
-linkPrefetches : Frames -> Html Msg
-linkPrefetches frames =
-    Html.div []
-        (List.map mkLink (Dict.values frames))
-
-
 mkLink : String -> Html Msg
 mkLink svgUrl =
     Html.node "link"
         [ Attr.rel "prefetch"
-        , Attr.href ("http://" ++ backend ++ ":10162/" ++ svgUrl)
+        , Attr.href (webBackend ++ svgUrl)
         ]
         []
 
@@ -446,7 +449,7 @@ frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas isPause
         image =
             case bestFrame of
                 Just svgUrl ->
-                    Html.img [ src ("http://" ++ backend ++ ":10162/" ++ svgUrl) ] []
+                    Html.img [ src (webBackend ++ svgUrl) ] []
 
                 Nothing ->
                     Html.text ""
