@@ -6,15 +6,25 @@ import Browser.Events
 import Dict exposing (Dict)
 import Fps
 import Html exposing (Html)
-import Html.Attributes as Attr exposing (class, disabled, id, src, style, title, value)
+import Html.Attributes as Attr exposing (class, disabled, href, id, rel, src, style, title, value)
 import Html.Events exposing (onClick, onInput)
 import Json.Decode
 import Keyboard exposing (RawKey)
+import List
 import Platform.Sub
 import Ports
 import Task
 import Time
 import WebSocket
+
+
+backend : String
+backend =
+    "149.56.132.163"
+
+
+
+-- backend = "localhost"
 
 
 main : Program () Model Msg
@@ -33,6 +43,7 @@ subscriptions model =
         [ Ports.receiveSocketMsg (WebSocket.receive MessageReceived)
         , Ports.receiveEditorMsg Change
         , Ports.receiveControlMsg parseControlMsg
+
         -- , Keyboard.downs KeyPressed
         , case model of
             Animating { player } ->
@@ -49,16 +60,31 @@ subscriptions model =
                 Sub.none
         ]
 
+
 parseControlMsg : String -> Msg
 parseControlMsg msg =
     case msg of
-        "pause"   -> Pause
-        "play"    -> Play
-        "seek1"   -> Seek 1
-        "seek10"  -> Seek 10
-        "seek-1"  -> Seek -1
-        "seek-10" -> Seek -10
-        _         -> NoOp
+        "pause" ->
+            Pause
+
+        "play" ->
+            Play
+
+        "seek1" ->
+            Seek 1
+
+        "seek10" ->
+            Seek 10
+
+        "seek-1" ->
+            Seek -1
+
+        "seek-10" ->
+            Seek -10
+
+        _ ->
+            NoOp
+
 
 type Msg
     = MessageReceived (Result Json.Decode.Error WebSocket.WebSocketMsg)
@@ -134,6 +160,7 @@ connectCommand =
             , address = "ws://localhost:10161"
             , protocol = ""
             }
+
 
 sendSource : String -> Cmd msg
 sendSource txt =
@@ -343,8 +370,8 @@ processMessage data model =
 
 view : Model -> Html Msg
 view model =
-    Html.div [ class "app"]
-        [ Html.div [ Attr.id "view"]
+    Html.div [ class "app" ]
+        [ Html.div [ Attr.id "view" ]
             [ case model of
                 Disconnected ->
                     Html.text "Disconnected"
@@ -360,12 +387,15 @@ view model =
                     problemView problem
 
                 Animating { frameCount, frames, frameIndex, player, bestFrame, showingHelp, frameDeltas } ->
-                    case player of
-                        Paused ->
-                            frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas True
+                    Html.div []
+                        [ linkPrefetches frames
+                        , case player of
+                            Paused ->
+                                frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas True
 
-                        Playing _ ->
-                            frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas False
+                            Playing _ ->
+                                frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas False
+                        ]
             ]
         ]
 
@@ -395,6 +425,21 @@ playControls paused =
         , Html.button [ class "button", onClick (Seek 1), disabled (not paused), title "1 frame forward" ] [ Html.text ">" ]
         , Html.button [ class "button", onClick (Seek 10), disabled (not paused), title "10 frames forward" ] [ Html.text ">>" ]
         ]
+
+
+linkPrefetches : Frames -> Html Msg
+linkPrefetches frames =
+    Html.div []
+        (List.map mkLink (Dict.values frames))
+
+
+mkLink : String -> Html Msg
+mkLink svgUrl =
+    Html.node "link"
+        [ Attr.rel "prefetch"
+        , Attr.href ("http://" ++ backend ++ ":10162/" ++ svgUrl)
+        ]
+        []
 
 
 frameView : Maybe String -> Int -> Int -> Frames -> Bool -> List Float -> Bool -> Html Msg
@@ -441,12 +486,12 @@ frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas isPause
                             ++ String.padLeft digitCount '0' (String.fromInt (frameIndex + 1))
                             ++ " / "
                             ++ frameCountStr
-                            -- ++ (if isPaused then
-                            --         " "
 
-                            --     else
-                            --         Fps.showAverage frameDeltas
-                            --    )
+                    -- ++ (if isPaused then
+                    --         " "
+                    --     else
+                    --         Fps.showAverage frameDeltas
+                    --    )
                     ]
                 , progressView
                 , helpView
