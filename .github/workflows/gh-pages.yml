@@ -1,4 +1,4 @@
-name: HPC
+name: GitHub Page
 
 on:
   push:
@@ -81,11 +81,12 @@ jobs:
 
     - name: Playground
       run: |
+        CWD=`pwd`
         cd reanimate-playground/viewer-elm
         npm install
         npm run build
-        mkdir ~/hpc/playground
-        cp dist/* ~/hpc/playground/
+        mkdir $CWD/hpc/playground
+        cp dist/* $CWD/hpc/playground/
 
     - name: Deploy 🚀
       uses: JamesIves/github-pages-deploy-action@3.5.9
