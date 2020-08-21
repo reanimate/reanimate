@@ -1,4 +1,4 @@
-port module Ports exposing (receiveControlMsg, receiveEditorMsg, receiveSocketMsg, sendSocketCommand, prefetchImageCommand)
+port module Ports exposing (prefetchImageCommand, receiveControlMsg, receiveEditorMsg, receiveSocketMsg, sendSocketCommand)
 
 import Json.Decode exposing (Value)
 

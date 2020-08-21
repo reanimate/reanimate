@@ -14,15 +14,37 @@ import List
 import Platform.Sub
 import Ports
 import Task
-import Time
 import WebSocket
 
 
-backend : String
-backend =
-    "149.56.132.163"
+type Backend
+    = Production
+    | Local
 
--- backend = "localhost"
+
+backend : Backend
+backend =
+    Production
+
+
+wsBackend : String
+wsBackend =
+    case backend of
+        Production ->
+            "wss://reanimate.clozecards.com/ws/"
+
+        Local ->
+            "ws://localhost:10161/"
+
+
+webBackend : String
+webBackend =
+    case backend of
+        Production ->
+            "https://reanimate.clozecards.com/"
+
+        Local ->
+            "http://localhost:10162/"
 
 
 main : Program () Model Msg
@@ -41,8 +63,6 @@ subscriptions model =
         [ Ports.receiveSocketMsg (WebSocket.receive MessageReceived)
         , Ports.receiveEditorMsg Change
         , Ports.receiveControlMsg parseControlMsg
-
-        -- , Keyboard.downs KeyPressed
         , case model of
             Animating { player } ->
                 case player of
@@ -91,8 +111,6 @@ type Msg
     | Pause
     | Play
     | Seek Int
-    | KeyPressed Keyboard.RawKey
-    | ToggleHelp
     | NoOp
     | Change String
 
@@ -111,7 +129,6 @@ type alias Animation =
     , frameIndex : Int
     , player : Player
     , bestFrame : Maybe String
-    , showingHelp : Bool
     , frameDeltas : List Float
     }
 
@@ -123,7 +140,6 @@ initAnimation frameCount =
     , frameIndex = 0
     , player = Playing 0
     , bestFrame = Nothing
-    , showingHelp = False
     , frameDeltas = Fps.init
     }
 
@@ -155,7 +171,7 @@ connectCommand =
     WebSocket.send Ports.sendSocketCommand <|
         WebSocket.Connect
             { name = "TheSocket"
-            , address = "ws://" ++ backend ++ ":10161"
+            , address = wsBackend
             , protocol = ""
             }
 
@@ -247,16 +263,10 @@ update msg model =
         MessageReceived result ->
             ( processResult result model, Cmd.none )
 
-        KeyPressed rawKey ->
-            ( model, processKeyPress rawKey model )
-
         Pause ->
             ( updateAnimation (\animation -> { animation | player = Paused }) model
             , blurPlayOrPause
             )
-
-        ToggleHelp ->
-            ( updateAnimation (\animation -> { animation | showingHelp = not animation.showingHelp }) model, Cmd.none )
 
         AttemptReconnect ->
             ( model, connectCommand )
@@ -378,22 +388,15 @@ view model =
                     Html.text "Connected"
 
                 Compiling ->
-                    -- TODO it would be nice to have some progress indication (at least animated spinner or something)
+                    -- it would be nice to have some progress indication
+                    -- (at least animated spinner or something)
                     Html.text "Compiling ..."
 
                 Problem problem ->
                     problemView problem
 
-                Animating { frameCount, frames, frameIndex, player, bestFrame, showingHelp, frameDeltas } ->
-                    Html.div []
-                        [ linkPrefetches frames
-                        , case player of
-                            Paused ->
-                                frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas True
-
-                            Playing _ ->
-                                frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas False
-                        ]
+                Animating { bestFrame } ->
+                    frameView bestFrame
             ]
         ]
 
@@ -410,106 +413,20 @@ framesPerMillisecond =
     0.03
 
 
-playControls : Bool -> Html Msg
-playControls paused =
-    Html.div [ class "media-controls" ]
-        [ Html.button [ class "button", onClick (Seek -10), disabled (not paused), title "10 frames back" ] [ Html.text "<<" ]
-        , Html.button [ class "button", onClick (Seek -1), disabled (not paused), title "1 frame back" ] [ Html.text "<" ]
-        , if paused then
-            Html.button [ class "button", onClick Play, id playOrPauseId ] [ Html.text "Play" ]
 
-          else
-            Html.button [ class "button", onClick Pause, id playOrPauseId ] [ Html.text "Pause" ]
-        , Html.button [ class "button", onClick (Seek 1), disabled (not paused), title "1 frame forward" ] [ Html.text ">" ]
-        , Html.button [ class "button", onClick (Seek 10), disabled (not paused), title "10 frames forward" ] [ Html.text ">>" ]
-        ]
-
-
-linkPrefetches : Frames -> Html Msg
-linkPrefetches frames =
-    Html.div []
-        (List.map mkLink (Dict.values frames))
-
-
-mkLink : String -> Html Msg
-mkLink svgUrl =
-    Html.node "link"
-        [ Attr.rel "prefetch"
-        , Attr.href ("http://" ++ backend ++ ":10162/" ++ svgUrl)
-        ]
-        []
-
-
-frameView : Maybe String -> Int -> Int -> Frames -> Bool -> List Float -> Bool -> Html Msg
-frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas isPaused =
+frameView : Maybe String -> Html Msg
+frameView bestFrame =
     let
         image =
             case bestFrame of
                 Just svgUrl ->
-                    Html.img [ src ("http://" ++ backend ++ ":10162/" ++ svgUrl) ] []
+                    Html.img [ src (webBackend ++ svgUrl) ] []
 
                 Nothing ->
                     Html.text ""
-
-        frameCountStr =
-            String.fromInt frameCount
-
-        digitCount =
-            String.length frameCountStr
-
-        progressView =
-            let
-                receivedFrames =
-                    Dict.size frames
-            in
-            if receivedFrames /= frameCount then
-                progressBar receivedFrames frameCount
-
-            else
-                Html.text ""
-
-        helpView =
-            if showingHelp then
-                helpModal
-
-            else
-                Html.button [ class "help-button button", onClick ToggleHelp ] [ Html.text "?" ]
-
-        bar =
-            Html.div [ class "bar" ]
-                [ playControls isPaused
-                , Html.span []
-                    [ Html.text <|
-                        " Frame: "
-                            ++ String.padLeft digitCount '0' (String.fromInt (frameIndex + 1))
-                            ++ " / "
-                            ++ frameCountStr
-
-                    -- ++ (if isPaused then
-                    --         " "
-                    --     else
-                    --         Fps.showAverage frameDeltas
-                    --    )
-                    ]
-                , progressView
-                , helpView
-                ]
     in
     Html.div [ class "viewer" ]
-        [ bar
-        , image
-        ]
-
-
-progressBar : Int -> Int -> Html msg
-progressBar receivedFrames frameCount =
-    Html.label []
-        [ Html.span [] [ Html.text " | Loading frames " ]
-        , Html.progress
-            [ value (String.fromInt receivedFrames)
-            , Attr.max (String.fromInt frameCount)
-            ]
-            []
+        [ image
         ]
 
 
@@ -532,63 +449,3 @@ problemView problem =
 
         UnexpectedMessage problemDescription ->
             Html.text ("Unexpected message: " ++ problemDescription)
-
-
-processKeyPress : RawKey -> Model -> Cmd Msg
-processKeyPress rawKey model =
-    Keyboard.oneOf [ Keyboard.navigationKey, Keyboard.whitespaceKey ] rawKey
-        |> Maybe.andThen
-            (\key ->
-                case key of
-                    Keyboard.ArrowDown ->
-                        Just (Seek -10)
-
-                    Keyboard.ArrowUp ->
-                        Just (Seek 10)
-
-                    Keyboard.ArrowRight ->
-                        Just (Seek 1)
-
-                    Keyboard.ArrowLeft ->
-                        Just (Seek -1)
-
-                    Keyboard.Spacebar ->
-                        case model of
-                            Animating { player } ->
-                                case player of
-                                    Playing _ ->
-                                        Just Pause
-
-                                    Paused ->
-                                        Just Play
-
-                            _ ->
-                                Nothing
-
-                    _ ->
-                        Nothing
-            )
-        |> Maybe.map (Task.succeed >> Task.perform identity)
-        |> Maybe.withDefault Cmd.none
-
-
-helpModal : Html Msg
-helpModal =
-    let
-        explainKey key legend =
-            Html.tr []
-                [ Html.td [] [ Html.b [] [ Html.text key ] ]
-                , Html.td [] [ Html.text legend ]
-                ]
-    in
-    Html.div [ class "help-dialog" ]
-        [ Html.h2 [ style "margin-top" "0px" ] [ Html.text "Keyboard shortcuts" ]
-        , Html.button [ class "help-button button", onClick ToggleHelp ] [ Html.text "X" ]
-        , Html.table []
-            [ explainKey "SPACEBAR" "Pause / Play animation"
-            , explainKey "ARROW LEFT" " Move back 1 frame"
-            , explainKey "ARROW RIGHT" " Move forward 1 frame"
-            , explainKey "ARROW UP" " Move forward 10 frames"
-            , explainKey "ARROW DOWN" " Move back 10 frames"
-            ]
-        ]
