@@ -94,39 +94,41 @@
       mode: "haskell",
       lineWrapping: true
     });
+
+
     myCodeMirror.on('change', function () {
       document.querySelector('.media-buttons').classList.remove('paused');
-      app.ports.receiveControlMsg.send('play');
-      app.ports.receiveEditorMsg.send(myCodeMirror.getValue());
+      app.play();
+      app.newCode(myCodeMirror.getValue());
     });
 
     document.getElementById('play').onclick = function() {
       document.querySelector('.media-buttons').classList.toggle('paused');
-      app.ports.receiveControlMsg.send('play');
+      app.play();
     };
     document.getElementById('pause').onclick = function() {
       document.querySelector('.media-buttons').classList.toggle('paused');
-      app.ports.receiveControlMsg.send('pause');
+      app.pause();
     };
     document.getElementById('seek1').onclick = function() {
       document.querySelector('.media-buttons').classList.add('paused');
-      app.ports.receiveControlMsg.send('pause');
-      app.ports.receiveControlMsg.send('seek1');
+      app.pause();
+      app.seek1();
     };
     document.getElementById('seek10').onclick = function() {
       document.querySelector('.media-buttons').classList.add('paused');
-      app.ports.receiveControlMsg.send('pause');
-      app.ports.receiveControlMsg.send('seek10');
+      app.pause();
+      app.seek10();
     };
     document.getElementById('seek-1').onclick = function() {
       document.querySelector('.media-buttons').classList.add('paused');
-      app.ports.receiveControlMsg.send('pause');
-      app.ports.receiveControlMsg.send('seek-1');
+      app.pause();
+      app.seek_1();
     };
     document.getElementById('seek-10').onclick = function() {
       document.querySelector('.media-buttons').classList.add('paused');
-      app.ports.receiveControlMsg.send('pause');
-      app.ports.receiveControlMsg.send('seek-10');
+      app.pause();
+      app.seek_10();
     };
     document.getElementById('help').onclick = function() {
       document.querySelector('#help-modal').classList.add('is-active');

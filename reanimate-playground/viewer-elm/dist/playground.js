@@ -1,5 +1,8 @@
+const backend = "149.56.132.163";
+
 function playgroundInit(elt) {
   var mySockets = {};
+  var frames = {};
 
   function sendSocketCommand(wat) {
     if (wat.cmd == "connect") {
@@ -12,6 +15,16 @@ function playgroundInit(elt) {
         });
       }
       socket.onmessage = function (event) {
+        const lines = event.data.split('\n');
+        const cmd = lines[0];
+        if( cmd === "frame_count" ) {
+          frames = {};
+        } else if ( cmd === "frame") {
+          const nth = parseInt(lines[1]);
+          const url = lines[2];
+          frames[nth] = new Image();
+          frames[nth].src = "http://"+backend+":10162/"+url;
+        }
         app.ports.receiveSocketMsg.send({
           name: wat.name,
           msg: "data",
@@ -40,5 +53,27 @@ function playgroundInit(elt) {
     node: document.getElementById(elt)
   });
   app.ports.sendSocketCommand.subscribe(sendSocketCommand);
-  return app;
+  return {
+    play: function () {
+      app.ports.receiveControlMsg.send('play');
+    },
+    pause: function () {
+      app.ports.receiveControlMsg.send('pause');
+    },
+    seek1: function () {
+      app.ports.receiveControlMsg.send('seek1');
+    },
+    seek10: function () {
+      app.ports.receiveControlMsg.send('seek10');
+    },
+    seek_1: function () {
+      app.ports.receiveControlMsg.send('seek-1');
+    },
+    seek_10: function () {
+      app.ports.receiveControlMsg.send('seek-10');
+    },
+    newCode: function(code) {
+      app.ports.receiveEditorMsg.send(code);
+    }
+  };
 }
