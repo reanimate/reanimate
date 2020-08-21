@@ -3,11 +3,13 @@ const backend = "149.56.132.163";
 function playgroundInit(elt) {
   var mySockets = {};
   var frames = {};
+  var lastScript = "";
 
   function sendSocketCommand(wat) {
     if (wat.cmd == "connect") {
       socket = new WebSocket(wat.address);
       socket.onopen = function (event) {
+        socket.send(lastScript);
         app.ports.receiveSocketMsg.send({
           name: wat.name,
           msg: "data",
@@ -42,7 +44,9 @@ function playgroundInit(elt) {
       socket.onclose = connectionFailedHandler;
       mySockets[wat.name] = socket;
     } else if (wat.cmd == "send") {
-      mySockets[wat.name].send(wat.content);
+      if( mySockets[wat.name].readyState === mySockets[wat.name].OPEN ) {
+        mySockets[wat.name].send(wat.content);
+      }
     } else if (wat.cmd == "close") {
       mySockets[wat.name].close();
       delete mySockets[wat.name];
@@ -73,6 +77,7 @@ function playgroundInit(elt) {
       app.ports.receiveControlMsg.send('seek-10');
     },
     newCode: function(code) {
+      lastScript = code;
       app.ports.receiveEditorMsg.send(code);
     }
   };

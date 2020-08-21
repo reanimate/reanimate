@@ -95,10 +95,10 @@
       lineWrapping: true
     });
 
+    app.newCode(myCodeMirror.getValue());
 
     myCodeMirror.on('change', function () {
       document.querySelector('.media-buttons').classList.remove('paused');
-      app.play();
       app.newCode(myCodeMirror.getValue());
     });
 
