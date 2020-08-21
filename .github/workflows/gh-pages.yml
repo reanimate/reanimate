@@ -84,8 +84,8 @@ jobs:
         cd reanimate-playground/viewer-elm
         npm install
         npm run build
-        mkdir hpc/playground
-        cp dist/* hpc/playground/
+        mkdir ~/hpc/playground
+        cp dist/* ~/hpc/playground/
 
     - name: Deploy 🚀
       uses: JamesIves/github-pages-deploy-action@3.5.9
