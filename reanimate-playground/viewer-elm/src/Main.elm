@@ -17,6 +17,9 @@ import Task
 import Time
 import WebSocket
 
+backend : String
+backend = "149.56.132.163"
+-- backend = "localhost"
 
 backend : String
 backend =
@@ -157,7 +160,7 @@ connectCommand =
     WebSocket.send Ports.sendSocketCommand <|
         WebSocket.Connect
             { name = "TheSocket"
-            , address = "ws://localhost:10161"
+            , address = "ws://" ++ backend ++ ":10161"
             , protocol = ""
             }
 
@@ -448,7 +451,7 @@ frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas isPause
         image =
             case bestFrame of
                 Just svgUrl ->
-                    Html.img [ src ("http://localhost:10162/" ++ svgUrl) ] []
+                    Html.img [ src ("http://" ++ backend ++ ":10162/" ++ svgUrl) ] []
 
                 Nothing ->
                     Html.text ""
@@ -526,11 +529,7 @@ problemView problem =
 
         ConnectionFailed ->
             Html.div []
-                [ Html.text "Failed to establish connection. Possible causes include: "
-                , Html.ul []
-                    [ Html.li [] [ Html.text "The reanimate script is not running" ]
-                    , Html.li [] [ Html.text "At most one viewer window can connect at time. Maybe there's another browser window/tab already connected?" ]
-                    ]
+                [ Html.text "Failed to establish connection to server. Sorry. :-/"
                 ]
 
         PortMessageDecodeFailure decodeError ->

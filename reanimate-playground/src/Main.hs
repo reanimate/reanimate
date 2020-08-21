@@ -98,7 +98,7 @@ opts = defaultConnectionOptions
 serverMain :: Backend -> IO ()
 serverMain backend = do
   let options = ServerOptions
-        { serverHost = "127.0.0.1"
+        { serverHost = "0.0.0.0"
         , serverPort = 10161
         , serverConnectionOptions = opts
         , serverRequirePong = Nothing }
