@@ -84,7 +84,6 @@ jobs:
         cd reanimate-playground/viewer-elm
         npm install
         npm run build
-        npm run minify
         mkdir hpc/playground
         cp dist/* hpc/playground/
 
