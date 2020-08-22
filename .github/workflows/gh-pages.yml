@@ -30,6 +30,12 @@ jobs:
           ${{ runner.os }}-build-
           ${{ runner.os }}-
 
+    - name: Cache
+      uses: actions/cache@v1
+      with:
+        path: ~/.stack
+        key: ${{ runner.os }}-${{ hashFiles('**/*.cabal') }}-stack
+
     - name: Install dependencies
       run: |
         cabal v2-update
