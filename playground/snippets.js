@@ -1,1 +1,2 @@
 const snippets = [{"title": "Composition","url": "https://reanimate.clozecards.com/ATcv1$xjG06/30.svg","code": "animation :: Animation\nanimation = docEnv $\n  drawBox `parA` drawCircle\n\n"},{"title": "Color Maps","url": "https://reanimate.clozecards.com/HPNi7PpImrc/15.svg","code": "animation :: Animation\nanimation = docEnv $ staticFrame 1 $\n  showColorMap parula\n"}];
+const playgroundVersion = "2020-08-22 (42d23)";
