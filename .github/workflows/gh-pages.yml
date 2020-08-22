@@ -18,7 +18,7 @@ jobs:
       with:
         elm-version: 0.19.1
 
-    - name: Cache
+    - name: Cache Cabal
       uses: actions/cache@v1
       env:
         cache-name: cache-cabal
@@ -30,11 +30,17 @@ jobs:
           ${{ runner.os }}-build-
           ${{ runner.os }}-
 
-    - name: Cache
+    - name: Cache StackRoot
       uses: actions/cache@v1
       with:
         path: ~/.stack
         key: ${{ runner.os }}-${{ hashFiles('**/*.cabal') }}-stack
+
+    - name: Cache Stack
+      uses: actions/cache@v1
+      with:
+        path: ~/.stack-work
+        key: ${{ runner.os }}-${{ hashFiles('**/*.cabal') }}-stack-work
 
     - name: Install dependencies
       run: |
