@@ -1,6 +1,7 @@
 <html>
 
 <head>
+  <meta charset="utf-8" />
   <title>Reanimate - viewer</title>
   <script src="https://unpkg.com/split-grid/dist/split-grid.js"></script>
   <script type="text/javascript" src="elm.js"></script>
@@ -75,9 +76,34 @@
         <button class="delete" aria-label="close"></button>
       </header>
       <section class="modal-card-body">
-        <ul>
-          <li>List</li>
-        </ul>
+        <div class="content">
+          <p>
+            This playground is funded by
+            <a href="https://github.com/sponsors/Lemmih">GitHub Sponsors ❤.</a>
+          </p>
+          <p>
+            Animations are rendered with the following restrictions:
+          </p>
+          <ul>
+            <li>Frame-rate is limited to 30 fps.</li>
+            <li>Animation are capped at 60 seconds.</li>
+            <li>Disk storage is capped at 5 megs per animation.</li>
+            <li>CPU time is capped at 30 seconds if the server is below capacity</li>
+            <li>CPU time is capped at 5 seconds if the server is at capacity.</li>
+            <li>Template Haskell is forbidden.</li>
+          </ul>
+          <p>
+            Animations are rendered incrementally with increasing frame-rate, starting
+            at 1fps and ending at 30fps. If an animation requires 10 seconds to render
+            but is only allocated 5, this animation will still be watchable in its entirety
+            but will play at 15fps rather than 30fps.
+          </p>
+          <p>
+            <script>
+              document.write('Playground version: ' + playgroundVersion);
+            </script>
+          </p>
+        </div>
       </section>
       <!-- <footer class="modal-card-foot">
       </footer> -->

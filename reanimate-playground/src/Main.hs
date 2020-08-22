@@ -41,17 +41,17 @@ import           System.Timeout
 import           Text.Printf
 
 gi :: GitInfo
-gi = undefined -- $$tGitInfoCwd
+gi = $$tGitInfoCwd
 
-botCommitDate :: UTCTime
-Just botCommitDate = parseTimeM
+playgroundCommitDate :: UTCTime
+Just playgroundCommitDate = parseTimeM
   True
   defaultTimeLocale
   "%a %b %e %X %Y %z" (giCommitDate gi)
 
-botVersion :: Text
-botVersion = T.pack $
-  formatTime defaultTimeLocale "%F" botCommitDate ++
+playgroundVersion :: Text
+playgroundVersion = T.pack $
+  formatTime defaultTimeLocale "%F" playgroundCommitDate ++
   " (" ++ take 5 (giHash gi) ++ ")"
 
 computeLimit :: Int
@@ -66,17 +66,6 @@ memoryLimit = "-M1G"
 
 frameRate :: Int
 frameRate = 30
-
-{- Commands:
-
->> code
-
-:doc
-
-:version
-
-:clear-cache
--}
 
 main :: IO ()
 main = do
@@ -100,6 +89,7 @@ main = do
           "}"
         | (title, url, inp) <- snippets ] ++
         "];"
+      putStrLn $ "const playgroundVersion = " ++ show playgroundVersion ++ ";"
     [] -> do
       root <- cacheDir
       tid <- forkIO $ run 10162 (staticApp $ defaultWebAppSettings root)
