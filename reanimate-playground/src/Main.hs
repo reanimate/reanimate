@@ -280,6 +280,8 @@ withHaskellFile m action = withSystemTempFile "playground.hs" $ \target h -> do
     T.appendFile target "import Reanimate.Builtin.Images\n"
     T.appendFile target "import Reanimate.Builtin.CirclePlot\n"
     T.appendFile target "import Reanimate.Builtin.TernaryPlot\n"
+    T.appendFile target "import Reanimate.Builtin.Slide\n"
+    T.appendFile target "import Reanimate.Transition\n"
     T.appendFile target "import Reanimate.Morph.Common\n"
     T.appendFile target "import Reanimate.Morph.Linear\n"
     T.appendFile target "import Reanimate.Scene\n"

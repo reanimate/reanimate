@@ -133,12 +133,13 @@
 
     var myCodeMirror = CodeMirror(document.querySelector('#editor'), {
       lineNumbers: true,
-      value: "animation :: Animation\nanimation = docEnv $\n  drawBox\n",
+      value: '',
       mode: "haskell",
       lineWrapping: true
     });
 
-    app.newCode(myCodeMirror.getValue());
+    myCodeMirror.setValue(snippets[0].code);
+    app.newCode(snippets[0].code);
 
     const mediaButtons = document.querySelector('.media-buttons');
 
@@ -192,13 +193,14 @@
     };
     configureModal(examplesModal)
 
-  </script>
-  <script>
     Split({ // gutters specified in options
       columnGutters: [{
         track: 1,
         element: document.querySelector('.gutter-column-1'),
-      }]
+      }],
+      onDragEnd: function () {
+        myCodeMirror.refresh();
+      }
     });
   </script>
 </body>
