@@ -77,7 +77,7 @@ pre {
   cursor: ew-resize;
 }
 .grid {
-  grid-template-columns: 1fr 10px 2fr;
+  grid-template-columns: 3fr 10px 4fr;
   display: grid;
 }
 .grid textarea {
