@@ -25,7 +25,7 @@ function playgroundInit(elt) {
           const nth = parseInt(lines[1]);
           const url = lines[2];
           frames[nth] = new Image();
-          frames[nth].src = "http://"+backend+":10162/"+url;
+          frames[nth].src = "https://reanimate.clozecards.com/"+url;
         }
         app.ports.receiveSocketMsg.send({
           name: wat.name,
