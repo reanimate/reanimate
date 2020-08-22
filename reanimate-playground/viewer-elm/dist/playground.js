@@ -82,3 +82,21 @@ function playgroundInit(elt) {
     }
   };
 }
+
+function renderSnippets(elt, myCodeMirror) {
+  for(var i=0;i<snippets.length;i++) {
+    const div = document.createElement("div");
+    const title = document.createElement("span");
+    const img = document.createElement("img");
+    const code = snippets[i].code;
+    title.innerHTML = snippets[i].title;
+    img.src = snippets[i].url;
+    div.appendChild(title)
+    div.appendChild(img)
+    div.onclick = function () {
+      myCodeMirror.setValue(code);
+      document.querySelector('#examples-modal').classList.remove('is-active');
+    };
+    elt.appendChild(div)
+  }
+}

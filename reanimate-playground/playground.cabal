@@ -23,6 +23,7 @@ executable playground
         githash -any,
         time -any,
         haskell-src-exts -any,
+        temporary,
         websockets -any,
         warp,
         wai-app-static
