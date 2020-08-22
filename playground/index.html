@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
   <link rel="stylesheet" href="style.css">
 
+  <script src="snippets.js"></script>
   <script src="playground.js"></script>
 </head>
 
@@ -41,10 +42,6 @@
 
   <div class="grid">
     <div class="edit-box">
-      <select class="column-header">
-        <option>Example 1</option>
-        <option>Example 2</option>
-      </select>
       <div id="editor"></div>
     </div>
     <div class="gutter-column-1"></div>
@@ -60,7 +57,10 @@
             <img id="seek1" src="skip_next-white-48dp.svg">
             <img id="seek10" src="forward_10-white-48dp.svg">
           </div>
-          <img id="help" src="help_outline-white-48dp.svg">
+          <div>
+            <img id="examples" src="collections-white-48dp.svg">
+            <img id="help" src="help_outline-white-48dp.svg">
+          </div>
         </div>
       </div>
       <div id="elm"></div>
@@ -85,6 +85,45 @@
     <button class="modal-close is-large" area-label="close"></button>
   </div>
 
+  <div id="examples-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Reanimate Examples</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        <!-- 
+          Title
+          Url
+          Code
+        -->
+        <div class="snippet-container">
+          <!-- <div>
+            <span>drawBox</span>
+            <img src="https://reanimate.clozecards.com/EwyRzmx8zxM/30.svg">
+          </div>
+          <div>
+            <span>drawCircle</span>
+            <img src="https://reanimate.clozecards.com/EwyRzmx8zxM/50.svg">
+          </div>
+          <div>2</div>
+          <div>3</div>
+          <div>4</div>
+          <div>5</div>
+          <div>6</div>
+          <div>7</div>
+          <div>8</div>
+          <div>9</div>
+          <div>10</div> -->
+        </div>
+      </section>
+      <!-- <footer class="modal-card-foot">
+      </footer> -->
+    </div>
+    <button class="modal-close is-large" area-label="close"></button>
+  </div>
+
   <script type="text/javascript">
     var app = playgroundInit('elm');
 
@@ -95,52 +134,67 @@
       lineWrapping: true
     });
 
+    app.newCode(myCodeMirror.getValue());
 
     myCodeMirror.on('change', function () {
       document.querySelector('.media-buttons').classList.remove('paused');
-      app.play();
       app.newCode(myCodeMirror.getValue());
     });
 
-    document.getElementById('play').onclick = function() {
+    renderSnippets(document.querySelector('.snippet-container'), myCodeMirror);
+
+    document.getElementById('play').onclick = function () {
       document.querySelector('.media-buttons').classList.toggle('paused');
       app.play();
     };
-    document.getElementById('pause').onclick = function() {
+    document.getElementById('pause').onclick = function () {
       document.querySelector('.media-buttons').classList.toggle('paused');
       app.pause();
     };
-    document.getElementById('seek1').onclick = function() {
+    document.getElementById('seek1').onclick = function () {
       document.querySelector('.media-buttons').classList.add('paused');
       app.pause();
       app.seek1();
     };
-    document.getElementById('seek10').onclick = function() {
+    document.getElementById('seek10').onclick = function () {
       document.querySelector('.media-buttons').classList.add('paused');
       app.pause();
       app.seek10();
     };
-    document.getElementById('seek-1').onclick = function() {
+    document.getElementById('seek-1').onclick = function () {
       document.querySelector('.media-buttons').classList.add('paused');
       app.pause();
       app.seek_1();
     };
-    document.getElementById('seek-10').onclick = function() {
+    document.getElementById('seek-10').onclick = function () {
       document.querySelector('.media-buttons').classList.add('paused');
       app.pause();
       app.seek_10();
     };
-    document.getElementById('help').onclick = function() {
+    document.getElementById('help').onclick = function () {
       document.querySelector('#help-modal').classList.add('is-active');
     };
-    document.querySelector('#help-modal .modal-background').onclick = function() {
+    document.querySelector('#help-modal .modal-background').onclick = function () {
       document.querySelector('#help-modal').classList.remove('is-active');
     };
-    document.querySelector('#help-modal .modal-close').onclick = function() {
+    document.querySelector('#help-modal .modal-close').onclick = function () {
       document.querySelector('#help-modal').classList.remove('is-active');
     };
-    document.querySelector('#help-modal .delete').onclick = function() {
+    document.querySelector('#help-modal .delete').onclick = function () {
       document.querySelector('#help-modal').classList.remove('is-active');
+    };
+
+    document.getElementById('examples').onclick = function () {
+      document.querySelector('#examples-modal').classList.add('is-active');
+    };
+    document.querySelector('#examples-modal .modal-background').onclick = function () {
+      document.querySelector('#examples-modal').classList.remove('is-active');
+    };
+    document.querySelector('#examples-modal .modal-close').onclick = function () {
+      document.querySelector('#examples-modal').classList.remove('is-active');
+    };
+    document.querySelector('#examples-modal .delete').onclick = function () {
+      document.querySelector('#examples-modal').classList.remove('is-active');
     };
 
   </script>

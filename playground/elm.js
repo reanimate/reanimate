@@ -784,11 +784,11 @@ function _Debug_crash_UNUSED(identifier, fact1, fact2, fact3, fact4)
 
 function _Debug_regionToString(region)
 {
-	if (region.P.F === region.U.F)
+	if (region.O.E === region.T.E)
 	{
-		return 'on line ' + region.P.F;
+		return 'on line ' + region.O.E;
 	}
-	return 'on lines ' + region.P.F + ' through ' + region.U.F;
+	return 'on lines ' + region.O.E + ' through ' + region.T.E;
 }
 
 
@@ -1857,9 +1857,9 @@ var _Platform_worker = F4(function(impl, flagDecoder, debugMetadata, args)
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.aE,
-		impl.aM,
-		impl.aK,
+		impl.aD,
+		impl.aL,
+		impl.aJ,
 		function() { return function() {} }
 	);
 });
@@ -2704,9 +2704,9 @@ var _VirtualDom_mapEventTuple = F2(function(func, tuple)
 var _VirtualDom_mapEventRecord = F2(function(func, record)
 {
 	return {
-		q: func(record.q),
-		Q: record.Q,
-		N: record.N
+		p: func(record.p),
+		P: record.P,
+		M: record.M
 	}
 });
 
@@ -2974,11 +2974,11 @@ function _VirtualDom_makeCallback(eventNode, initialHandler)
 		// 3 = Custom
 
 		var value = result.a;
-		var message = !tag ? value : tag < 3 ? value.a : value.q;
-		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.Q;
+		var message = !tag ? value : tag < 3 ? value.a : value.p;
+		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.P;
 		var currentEventNode = (
 			stopPropagation && event.stopPropagation(),
-			(tag == 2 ? value.b : tag == 3 && value.N) && event.preventDefault(),
+			(tag == 2 ? value.b : tag == 3 && value.M) && event.preventDefault(),
 			eventNode
 		);
 		var tagger;
@@ -3928,11 +3928,11 @@ var _Browser_element = _Debugger_element || F4(function(impl, flagDecoder, debug
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.aE,
-		impl.aM,
-		impl.aK,
+		impl.aD,
+		impl.aL,
+		impl.aJ,
 		function(sendToApp, initialModel) {
-			var view = impl.aN;
+			var view = impl.aM;
 			/**/
 			var domNode = args['node'];
 			//*/
@@ -3964,12 +3964,12 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.aE,
-		impl.aM,
-		impl.aK,
+		impl.aD,
+		impl.aL,
+		impl.aJ,
 		function(sendToApp, initialModel) {
-			var divertHrefToApp = impl.O && impl.O(sendToApp)
-			var view = impl.aN;
+			var divertHrefToApp = impl.N && impl.N(sendToApp)
+			var view = impl.aM;
 			var title = _VirtualDom_doc.title;
 			var bodyNode = _VirtualDom_doc.body;
 			var currNode = _VirtualDom_virtualize(bodyNode);
@@ -3977,12 +3977,12 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 			{
 				_VirtualDom_divertHrefToApp = divertHrefToApp;
 				var doc = view(model);
-				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.au);
+				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.at);
 				var patches = _VirtualDom_diff(currNode, nextNode);
 				bodyNode = _VirtualDom_applyPatches(bodyNode, currNode, patches, sendToApp);
 				currNode = nextNode;
 				_VirtualDom_divertHrefToApp = 0;
-				(title !== doc.aL) && (_VirtualDom_doc.title = title = doc.aL);
+				(title !== doc.aK) && (_VirtualDom_doc.title = title = doc.aK);
 			});
 		}
 	);
@@ -4038,12 +4038,12 @@ function _Browser_makeAnimator(model, draw)
 
 function _Browser_application(impl)
 {
-	var onUrlChange = impl.aF;
-	var onUrlRequest = impl.aG;
+	var onUrlChange = impl.aE;
+	var onUrlRequest = impl.aF;
 	var key = function() { key.a(onUrlChange(_Browser_getUrl())); };
 
 	return _Browser_document({
-		O: function(sendToApp)
+		N: function(sendToApp)
 		{
 			key.a = sendToApp;
 			_Browser_window.addEventListener('popstate', key);
@@ -4059,9 +4059,9 @@ function _Browser_application(impl)
 					var next = $elm$url$Url$fromString(href).a;
 					sendToApp(onUrlRequest(
 						(next
-							&& curr.aI === next.aI
-							&& curr.Y === next.Y
-							&& curr.ae.a === next.ae.a
+							&& curr.aH === next.aH
+							&& curr.X === next.X
+							&& curr.ad.a === next.ad.a
 						)
 							? $elm$browser$Browser$Internal(next)
 							: $elm$browser$Browser$External(href)
@@ -4069,13 +4069,13 @@ function _Browser_application(impl)
 				}
 			});
 		},
-		aE: function(flags)
+		aD: function(flags)
 		{
-			return A3(impl.aE, flags, _Browser_getUrl(), key);
+			return A3(impl.aD, flags, _Browser_getUrl(), key);
 		},
-		aN: impl.aN,
 		aM: impl.aM,
-		aK: impl.aK
+		aL: impl.aL,
+		aJ: impl.aJ
 	});
 }
 
@@ -4141,17 +4141,17 @@ var _Browser_decodeEvent = F2(function(decoder, event)
 function _Browser_visibilityInfo()
 {
 	return (typeof _VirtualDom_doc.hidden !== 'undefined')
-		? { aC: 'hidden', av: 'visibilitychange' }
+		? { aB: 'hidden', au: 'visibilitychange' }
 		:
 	(typeof _VirtualDom_doc.mozHidden !== 'undefined')
-		? { aC: 'mozHidden', av: 'mozvisibilitychange' }
+		? { aB: 'mozHidden', au: 'mozvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.msHidden !== 'undefined')
-		? { aC: 'msHidden', av: 'msvisibilitychange' }
+		? { aB: 'msHidden', au: 'msvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.webkitHidden !== 'undefined')
-		? { aC: 'webkitHidden', av: 'webkitvisibilitychange' }
-		: { aC: 'hidden', av: 'visibilitychange' };
+		? { aB: 'webkitHidden', au: 'webkitvisibilitychange' }
+		: { aB: 'hidden', au: 'visibilitychange' };
 }
 
 
@@ -4232,12 +4232,12 @@ var _Browser_call = F2(function(functionName, id)
 function _Browser_getViewport()
 {
 	return {
-		ak: _Browser_getScene(),
-		an: {
-			ap: _Browser_window.pageXOffset,
-			aq: _Browser_window.pageYOffset,
-			ao: _Browser_doc.documentElement.clientWidth,
-			X: _Browser_doc.documentElement.clientHeight
+		aj: _Browser_getScene(),
+		am: {
+			ao: _Browser_window.pageXOffset,
+			ap: _Browser_window.pageYOffset,
+			an: _Browser_doc.documentElement.clientWidth,
+			W: _Browser_doc.documentElement.clientHeight
 		}
 	};
 }
@@ -4247,8 +4247,8 @@ function _Browser_getScene()
 	var body = _Browser_doc.body;
 	var elem = _Browser_doc.documentElement;
 	return {
-		ao: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
-		X: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
+		an: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
+		W: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
 	};
 }
 
@@ -4271,15 +4271,15 @@ function _Browser_getViewportOf(id)
 	return _Browser_withNode(id, function(node)
 	{
 		return {
-			ak: {
-				ao: node.scrollWidth,
-				X: node.scrollHeight
+			aj: {
+				an: node.scrollWidth,
+				W: node.scrollHeight
 			},
-			an: {
-				ap: node.scrollLeft,
-				aq: node.scrollTop,
-				ao: node.clientWidth,
-				X: node.clientHeight
+			am: {
+				ao: node.scrollLeft,
+				ap: node.scrollTop,
+				an: node.clientWidth,
+				W: node.clientHeight
 			}
 		};
 	});
@@ -4309,18 +4309,18 @@ function _Browser_getElement(id)
 		var x = _Browser_window.pageXOffset;
 		var y = _Browser_window.pageYOffset;
 		return {
-			ak: _Browser_getScene(),
-			an: {
-				ap: x,
-				aq: y,
-				ao: _Browser_doc.documentElement.clientWidth,
-				X: _Browser_doc.documentElement.clientHeight
+			aj: _Browser_getScene(),
+			am: {
+				ao: x,
+				ap: y,
+				an: _Browser_doc.documentElement.clientWidth,
+				W: _Browser_doc.documentElement.clientHeight
 			},
-			az: {
-				ap: x + rect.left,
-				aq: y + rect.top,
-				ao: rect.width,
-				X: rect.height
+			ay: {
+				ao: x + rect.left,
+				ap: y + rect.top,
+				an: rect.width,
+				W: rect.height
 			}
 		};
 	});
@@ -4355,43 +4355,6 @@ function _Browser_load(url)
 		}
 	}));
 }
-
-
-
-var _Bitwise_and = F2(function(a, b)
-{
-	return a & b;
-});
-
-var _Bitwise_or = F2(function(a, b)
-{
-	return a | b;
-});
-
-var _Bitwise_xor = F2(function(a, b)
-{
-	return a ^ b;
-});
-
-function _Bitwise_complement(a)
-{
-	return ~a;
-};
-
-var _Bitwise_shiftLeftBy = F2(function(offset, a)
-{
-	return a << offset;
-});
-
-var _Bitwise_shiftRightBy = F2(function(offset, a)
-{
-	return a >> offset;
-});
-
-var _Bitwise_shiftRightZfBy = F2(function(offset, a)
-{
-	return a >>> offset;
-});
 var $elm$core$Basics$EQ = 1;
 var $elm$core$Basics$GT = 2;
 var $elm$core$Basics$LT = 0;
@@ -4896,7 +4859,7 @@ var $elm$url$Url$Http = 0;
 var $elm$url$Url$Https = 1;
 var $elm$url$Url$Url = F6(
 	function (protocol, host, port_, path, query, fragment) {
-		return {W: fragment, Y: host, ac: path, ae: port_, aI: protocol, ah: query};
+		return {V: fragment, X: host, ab: path, ad: port_, aH: protocol, ag: query};
 	});
 var $elm$core$String$contains = _String_contains;
 var $elm$core$String$length = _String_length;
@@ -5205,13 +5168,13 @@ var $bburdette$websocket$WebSocket$encodeCmd = function (wsc) {
 						$elm$json$Json$Encode$string('connect')),
 						_Utils_Tuple2(
 						'name',
-						$elm$json$Json$Encode$string(msg.aa)),
+						$elm$json$Json$Encode$string(msg._)),
 						_Utils_Tuple2(
 						'address',
-						$elm$json$Json$Encode$string(msg.as)),
+						$elm$json$Json$Encode$string(msg.ar)),
 						_Utils_Tuple2(
 						'protocol',
-						$elm$json$Json$Encode$string(msg.aI))
+						$elm$json$Json$Encode$string(msg.aH))
 					]));
 		case 1:
 			var msg = wsc.a;
@@ -5223,10 +5186,10 @@ var $bburdette$websocket$WebSocket$encodeCmd = function (wsc) {
 						$elm$json$Json$Encode$string('send')),
 						_Utils_Tuple2(
 						'name',
-						$elm$json$Json$Encode$string(msg.aa)),
+						$elm$json$Json$Encode$string(msg._)),
 						_Utils_Tuple2(
 						'content',
-						$elm$json$Json$Encode$string(msg.aw))
+						$elm$json$Json$Encode$string(msg.av))
 					]));
 		default:
 			var msg = wsc.a;
@@ -5238,7 +5201,7 @@ var $bburdette$websocket$WebSocket$encodeCmd = function (wsc) {
 						$elm$json$Json$Encode$string('close')),
 						_Utils_Tuple2(
 						'name',
-						$elm$json$Json$Encode$string(msg.aa))
+						$elm$json$Json$Encode$string(msg._))
 					]));
 	}
 };
@@ -5248,17 +5211,26 @@ var $bburdette$websocket$WebSocket$send = F2(
 			$bburdette$websocket$WebSocket$encodeCmd(wsc));
 	});
 var $author$project$Ports$sendSocketCommand = _Platform_outgoingPort('sendSocketCommand', $elm$core$Basics$identity);
-var $author$project$Main$wsBackend = 'wss://reanimate.clozecards.com/ws/';
+var $author$project$Main$Production = 0;
+var $author$project$Main$backend = 0;
+var $author$project$Main$wsBackend = function () {
+	var _v0 = $author$project$Main$backend;
+	if (!_v0) {
+		return 'wss://reanimate.clozecards.com/ws/';
+	} else {
+		return 'ws://localhost:10161/';
+	}
+}();
 var $author$project$Main$connectCommand = A2(
 	$bburdette$websocket$WebSocket$send,
 	$author$project$Ports$sendSocketCommand,
 	$bburdette$websocket$WebSocket$Connect(
-		{as: $author$project$Main$wsBackend, aa: 'TheSocket', aI: ''}));
+		{ar: $author$project$Main$wsBackend, _: 'TheSocket', aH: ''}));
 var $author$project$Main$init = function (_v0) {
 	return _Utils_Tuple2($author$project$Main$Disconnected, $author$project$Main$connectCommand);
 };
 var $author$project$Main$Change = function (a) {
-	return {$: 9, a: a};
+	return {$: 7, a: a};
 };
 var $author$project$Main$MessageReceived = function (a) {
 	return {$: 0, a: a};
@@ -5273,7 +5245,7 @@ var $elm$browser$Browser$AnimationManager$Delta = function (a) {
 };
 var $elm$browser$Browser$AnimationManager$State = F3(
 	function (subs, request, oldTime) {
-		return {M: oldTime, aj: request, al: subs};
+		return {L: oldTime, ai: request, ak: subs};
 	});
 var $elm$browser$Browser$AnimationManager$init = $elm$core$Task$succeed(
 	A3($elm$browser$Browser$AnimationManager$State, _List_Nil, $elm$core$Maybe$Nothing, 0));
@@ -5284,8 +5256,8 @@ var $elm$core$Platform$sendToSelf = _Platform_sendToSelf;
 var $elm$core$Process$spawn = _Scheduler_spawn;
 var $elm$browser$Browser$AnimationManager$onEffects = F3(
 	function (router, subs, _v0) {
-		var request = _v0.aj;
-		var oldTime = _v0.M;
+		var request = _v0.ai;
+		var oldTime = _v0.L;
 		var _v1 = _Utils_Tuple2(request, subs);
 		if (_v1.a.$ === 1) {
 			if (!_v1.b.b) {
@@ -5333,8 +5305,8 @@ var $elm$time$Time$Posix = $elm$core$Basics$identity;
 var $elm$time$Time$millisToPosix = $elm$core$Basics$identity;
 var $elm$browser$Browser$AnimationManager$onSelfMsg = F3(
 	function (router, newTime, _v0) {
-		var subs = _v0.al;
-		var oldTime = _v0.M;
+		var subs = _v0.ak;
+		var oldTime = _v0.L;
 		var send = function (sub) {
 			if (!sub.$) {
 				var tagger = sub.a;
@@ -5400,7 +5372,7 @@ var $elm$browser$Browser$AnimationManager$onAnimationFrameDelta = function (tagg
 		$elm$browser$Browser$AnimationManager$Delta(tagger));
 };
 var $elm$browser$Browser$Events$onAnimationFrameDelta = $elm$browser$Browser$AnimationManager$onAnimationFrameDelta;
-var $author$project$Main$NoOp = {$: 8};
+var $author$project$Main$NoOp = {$: 6};
 var $author$project$Main$Pause = {$: 3};
 var $author$project$Main$Play = {$: 4};
 var $author$project$Main$Seek = function (a) {
@@ -5447,7 +5419,7 @@ var $bburdette$websocket$WebSocket$decodeMsg = A2(
 					F2(
 						function (a, b) {
 							return $bburdette$websocket$WebSocket$Error(
-								{aA: b, aa: a});
+								{az: b, _: a});
 						}),
 					A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
 					A2($elm$json$Json$Decode$field, 'error', $elm$json$Json$Decode$string));
@@ -5457,7 +5429,7 @@ var $bburdette$websocket$WebSocket$decodeMsg = A2(
 					F2(
 						function (a, b) {
 							return $bburdette$websocket$WebSocket$Data(
-								{ax: b, aa: a});
+								{aw: b, _: a});
 						}),
 					A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
 					A2($elm$json$Json$Decode$field, 'data', $elm$json$Json$Decode$string));
@@ -5488,7 +5460,7 @@ var $author$project$Main$subscriptions = function (model) {
 				$author$project$Ports$receiveControlMsg($author$project$Main$parseControlMsg),
 				function () {
 				if (model.$ === 3) {
-					var player = model.a.j;
+					var player = model.a.m;
 					if (player.$ === 1) {
 						return $elm$browser$Browser$Events$onAnimationFrameDelta($author$project$Main$TimeDeltaReceived);
 					} else {
@@ -5768,168 +5740,6 @@ var $elm$core$Dict$member = F2(
 	});
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $elm$core$Basics$not = _Basics_not;
-var $elm$core$Maybe$andThen = F2(
-	function (callback, maybeValue) {
-		if (!maybeValue.$) {
-			var value = maybeValue.a;
-			return callback(value);
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
-	});
-var $elm$core$Basics$composeR = F3(
-	function (f, g, x) {
-		return g(
-			f(x));
-	});
-var $elm$core$Maybe$map = F2(
-	function (f, maybe) {
-		if (!maybe.$) {
-			var value = maybe.a;
-			return $elm$core$Maybe$Just(
-				f(value));
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
-	});
-var $ohanhi$keyboard$Keyboard$ArrowDown = {$: 18};
-var $ohanhi$keyboard$Keyboard$ArrowLeft = {$: 19};
-var $ohanhi$keyboard$Keyboard$ArrowRight = {$: 20};
-var $ohanhi$keyboard$Keyboard$ArrowUp = {$: 21};
-var $ohanhi$keyboard$Keyboard$End = {$: 22};
-var $ohanhi$keyboard$Keyboard$Home = {$: 23};
-var $ohanhi$keyboard$Keyboard$PageDown = {$: 24};
-var $ohanhi$keyboard$Keyboard$PageUp = {$: 25};
-var $ohanhi$keyboard$Keyboard$navigationKey = function (_v0) {
-	var value = _v0;
-	switch (value) {
-		case 'ArrowDown':
-			return $elm$core$Maybe$Just($ohanhi$keyboard$Keyboard$ArrowDown);
-		case 'ArrowLeft':
-			return $elm$core$Maybe$Just($ohanhi$keyboard$Keyboard$ArrowLeft);
-		case 'ArrowRight':
-			return $elm$core$Maybe$Just($ohanhi$keyboard$Keyboard$ArrowRight);
-		case 'ArrowUp':
-			return $elm$core$Maybe$Just($ohanhi$keyboard$Keyboard$ArrowUp);
-		case 'Down':
-			return $elm$core$Maybe$Just($ohanhi$keyboard$Keyboard$ArrowDown);
-		case 'Left':
-			return $elm$core$Maybe$Just($ohanhi$keyboard$Keyboard$ArrowLeft);
-		case 'Right':
-			return $elm$core$Maybe$Just($ohanhi$keyboard$Keyboard$ArrowRight);
-		case 'Up':
-			return $elm$core$Maybe$Just($ohanhi$keyboard$Keyboard$ArrowUp);
-		case 'End':
-			return $elm$core$Maybe$Just($ohanhi$keyboard$Keyboard$End);
-		case 'Home':
-			return $elm$core$Maybe$Just($ohanhi$keyboard$Keyboard$Home);
-		case 'PageDown':
-			return $elm$core$Maybe$Just($ohanhi$keyboard$Keyboard$PageDown);
-		case 'PageUp':
-			return $elm$core$Maybe$Just($ohanhi$keyboard$Keyboard$PageUp);
-		default:
-			return $elm$core$Maybe$Nothing;
-	}
-};
-var $ohanhi$keyboard$Keyboard$oneOf = F2(
-	function (fns, key) {
-		oneOf:
-		while (true) {
-			if (!fns.b) {
-				return $elm$core$Maybe$Nothing;
-			} else {
-				var fn = fns.a;
-				var rest = fns.b;
-				var _v1 = fn(key);
-				if (!_v1.$) {
-					var a = _v1.a;
-					return $elm$core$Maybe$Just(a);
-				} else {
-					var $temp$fns = rest,
-						$temp$key = key;
-					fns = $temp$fns;
-					key = $temp$key;
-					continue oneOf;
-				}
-			}
-		}
-	});
-var $ohanhi$keyboard$Keyboard$Enter = {$: 15};
-var $ohanhi$keyboard$Keyboard$Spacebar = {$: 17};
-var $ohanhi$keyboard$Keyboard$Tab = {$: 16};
-var $ohanhi$keyboard$Keyboard$whitespaceKey = function (_v0) {
-	var value = _v0;
-	switch (value) {
-		case 'Enter':
-			return $elm$core$Maybe$Just($ohanhi$keyboard$Keyboard$Enter);
-		case 'Tab':
-			return $elm$core$Maybe$Just($ohanhi$keyboard$Keyboard$Tab);
-		case 'Spacebar':
-			return $elm$core$Maybe$Just($ohanhi$keyboard$Keyboard$Spacebar);
-		case ' ':
-			return $elm$core$Maybe$Just($ohanhi$keyboard$Keyboard$Spacebar);
-		default:
-			return $elm$core$Maybe$Nothing;
-	}
-};
-var $elm$core$Maybe$withDefault = F2(
-	function (_default, maybe) {
-		if (!maybe.$) {
-			var value = maybe.a;
-			return value;
-		} else {
-			return _default;
-		}
-	});
-var $author$project$Main$processKeyPress = F2(
-	function (rawKey, model) {
-		return A2(
-			$elm$core$Maybe$withDefault,
-			$elm$core$Platform$Cmd$none,
-			A2(
-				$elm$core$Maybe$map,
-				A2(
-					$elm$core$Basics$composeR,
-					$elm$core$Task$succeed,
-					$elm$core$Task$perform($elm$core$Basics$identity)),
-				A2(
-					$elm$core$Maybe$andThen,
-					function (key) {
-						switch (key.$) {
-							case 18:
-								return $elm$core$Maybe$Just(
-									$author$project$Main$Seek(-10));
-							case 21:
-								return $elm$core$Maybe$Just(
-									$author$project$Main$Seek(10));
-							case 20:
-								return $elm$core$Maybe$Just(
-									$author$project$Main$Seek(1));
-							case 19:
-								return $elm$core$Maybe$Just(
-									$author$project$Main$Seek(-1));
-							case 17:
-								if (model.$ === 3) {
-									var player = model.a.j;
-									if (player.$ === 1) {
-										return $elm$core$Maybe$Just($author$project$Main$Pause);
-									} else {
-										return $elm$core$Maybe$Just($author$project$Main$Play);
-									}
-								} else {
-									return $elm$core$Maybe$Nothing;
-								}
-							default:
-								return $elm$core$Maybe$Nothing;
-						}
-					},
-					A2(
-						$ohanhi$keyboard$Keyboard$oneOf,
-						_List_fromArray(
-							[$ohanhi$keyboard$Keyboard$navigationKey, $ohanhi$keyboard$Keyboard$whitespaceKey]),
-						rawKey))));
-	});
 var $author$project$Main$PortMessageDecodeFailure = function (a) {
 	return {$: 2, a: a};
 };
@@ -5972,13 +5782,12 @@ var $elm$core$List$repeat = F2(
 var $author$project$Fps$init = A2($elm$core$List$repeat, 50, 1000);
 var $author$project$Main$initAnimation = function (frameCount) {
 	return {
-		D: $elm$core$Maybe$Nothing,
-		z: frameCount,
-		E: $author$project$Fps$init,
-		p: 0,
-		u: $elm$core$Dict$empty,
-		j: $author$project$Main$Playing(0),
-		G: false
+		C: $elm$core$Maybe$Nothing,
+		D: frameCount,
+		J: $author$project$Fps$init,
+		t: 0,
+		y: $elm$core$Dict$empty,
+		m: $author$project$Main$Playing(0)
 	};
 };
 var $elm$core$String$lines = _String_lines;
@@ -6053,7 +5862,7 @@ var $author$project$Main$processMessage = F2(
 										_Utils_update(
 											animation,
 											{
-												u: A3($elm$core$Dict$insert, frameIndex, svgUrl, animation.u)
+												y: A3($elm$core$Dict$insert, frameIndex, svgUrl, animation.y)
 											}));
 								} else {
 									return $author$project$Main$Problem(
@@ -6085,11 +5894,11 @@ var $author$project$Main$processResult = F2(
 		} else {
 			var wsMsg = result.a;
 			if (!wsMsg.$) {
-				var error = wsMsg.a.aA;
+				var error = wsMsg.a.az;
 				return $author$project$Main$Problem(
 					$author$project$Main$UnexpectedMessage(error));
 			} else {
-				var data = wsMsg.a.ax;
+				var data = wsMsg.a.aw;
 				return A2($author$project$Main$processMessage, data, model);
 			}
 		}
@@ -6102,7 +5911,7 @@ var $author$project$Main$sendSource = function (txt) {
 		$bburdette$websocket$WebSocket$send,
 		$author$project$Ports$sendSocketCommand,
 		$bburdette$websocket$WebSocket$Send(
-			{aw: txt, aa: 'TheSocket'}));
+			{av: txt, _: 'TheSocket'}));
 };
 var $author$project$Fps$addToHead = F2(
 	function (dt, fps) {
@@ -6267,10 +6076,10 @@ var $author$project$Main$update = F2(
 					A2(
 						$author$project$Main$updateAnimation,
 						function (animation) {
-							var frameCount = animation.z;
-							var frames = animation.u;
-							var player = animation.j;
-							var frameDeltas = animation.E;
+							var frameCount = animation.D;
+							var frames = animation.y;
+							var player = animation.m;
+							var frameDeltas = animation.J;
 							if (player.$ === 1) {
 								var time = player.a;
 								var newTime = time + delta;
@@ -6279,10 +6088,10 @@ var $author$project$Main$update = F2(
 								return _Utils_update(
 									animation,
 									{
-										D: A2($author$project$Main$lookupBestFrame, newFrameIndex, frames),
-										E: A3($author$project$Fps$update, hasNewFrame, delta, frameDeltas),
-										p: newFrameIndex,
-										j: $author$project$Main$Playing(newTime)
+										C: A2($author$project$Main$lookupBestFrame, newFrameIndex, frames),
+										J: A3($author$project$Fps$update, hasNewFrame, delta, frameDeltas),
+										t: newFrameIndex,
+										m: $author$project$Main$Playing(newTime)
 									});
 							} else {
 								return animation;
@@ -6295,16 +6104,16 @@ var $author$project$Main$update = F2(
 					A2(
 						$author$project$Main$updateAnimation,
 						function (animation) {
-							var frameCount = animation.z;
-							var frameIndex = animation.p;
-							var player = animation.j;
+							var frameCount = animation.D;
+							var frameIndex = animation.t;
+							var player = animation.m;
 							if (!player.$) {
 								var newTime = frameIndex / $author$project$Main$framesPerMillisecond;
 								return _Utils_update(
 									animation,
 									{
-										p: A2($author$project$Main$frameIndexAt, newTime, frameCount),
-										j: $author$project$Main$Playing(newTime)
+										t: A2($author$project$Main$frameIndexAt, newTime, frameCount),
+										m: $author$project$Main$Playing(newTime)
 									});
 							} else {
 								return animation;
@@ -6318,17 +6127,17 @@ var $author$project$Main$update = F2(
 					A2(
 						$author$project$Main$updateAnimation,
 						function (animation) {
-							var player = animation.j;
-							var frameIndex = animation.p;
-							var frameCount = animation.z;
-							var frames = animation.u;
+							var player = animation.m;
+							var frameIndex = animation.t;
+							var frameCount = animation.D;
+							var frames = animation.y;
 							if (!player.$) {
 								var newFrameIndex = A2($elm$core$Basics$modBy, frameCount, frameIndex + delta);
 								return _Utils_update(
 									animation,
 									{
-										D: A2($author$project$Main$lookupBestFrame, newFrameIndex, frames),
-										p: newFrameIndex
+										C: A2($author$project$Main$lookupBestFrame, newFrameIndex, frames),
+										t: newFrameIndex
 									});
 							} else {
 								return animation;
@@ -6341,11 +6150,6 @@ var $author$project$Main$update = F2(
 				return _Utils_Tuple2(
 					A2($author$project$Main$processResult, result, model),
 					$elm$core$Platform$Cmd$none);
-			case 6:
-				var rawKey = msg.a;
-				return _Utils_Tuple2(
-					model,
-					A2($author$project$Main$processKeyPress, rawKey, model));
 			case 3:
 				return _Utils_Tuple2(
 					A2(
@@ -6353,24 +6157,13 @@ var $author$project$Main$update = F2(
 						function (animation) {
 							return _Utils_update(
 								animation,
-								{j: $author$project$Main$Paused});
+								{m: $author$project$Main$Paused});
 						},
 						model),
 					$author$project$Main$blurPlayOrPause);
-			case 7:
-				return _Utils_Tuple2(
-					A2(
-						$author$project$Main$updateAnimation,
-						function (animation) {
-							return _Utils_update(
-								animation,
-								{G: !animation.G});
-						},
-						model),
-					$elm$core$Platform$Cmd$none);
 			case 2:
 				return _Utils_Tuple2(model, $author$project$Main$connectCommand);
-			case 8:
+			case 6:
 				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 			default:
 				var txt = msg.a;
@@ -6388,361 +6181,49 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 	});
 var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
 var $elm$html$Html$div = _VirtualDom_node('div');
-var $author$project$Main$ToggleHelp = {$: 7};
-var $elm$html$Html$button = _VirtualDom_node('button');
-var $elm$html$Html$b = _VirtualDom_node('b');
-var $elm$html$Html$h2 = _VirtualDom_node('h2');
-var $elm$virtual_dom$VirtualDom$Normal = function (a) {
-	return {$: 0, a: a};
-};
-var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
-var $elm$html$Html$Events$on = F2(
-	function (event, decoder) {
-		return A2(
-			$elm$virtual_dom$VirtualDom$on,
-			event,
-			$elm$virtual_dom$VirtualDom$Normal(decoder));
-	});
-var $elm$html$Html$Events$onClick = function (msg) {
-	return A2(
-		$elm$html$Html$Events$on,
-		'click',
-		$elm$json$Json$Decode$succeed(msg));
-};
-var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
-var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
-var $elm$html$Html$table = _VirtualDom_node('table');
-var $elm$html$Html$td = _VirtualDom_node('td');
-var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
-var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
-var $elm$html$Html$tr = _VirtualDom_node('tr');
-var $author$project$Main$helpModal = function () {
-	var explainKey = F2(
-		function (key, legend) {
-			return A2(
-				$elm$html$Html$tr,
-				_List_Nil,
-				_List_fromArray(
-					[
-						A2(
-						$elm$html$Html$td,
-						_List_Nil,
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$b,
-								_List_Nil,
-								_List_fromArray(
-									[
-										$elm$html$Html$text(key)
-									]))
-							])),
-						A2(
-						$elm$html$Html$td,
-						_List_Nil,
-						_List_fromArray(
-							[
-								$elm$html$Html$text(legend)
-							]))
-					]));
-		});
-	return A2(
-		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$class('help-dialog')
-			]),
-		_List_fromArray(
-			[
-				A2(
-				$elm$html$Html$h2,
-				_List_fromArray(
-					[
-						A2($elm$html$Html$Attributes$style, 'margin-top', '0px')
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text('Keyboard shortcuts')
-					])),
-				A2(
-				$elm$html$Html$button,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('help-button button'),
-						$elm$html$Html$Events$onClick($author$project$Main$ToggleHelp)
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text('X')
-					])),
-				A2(
-				$elm$html$Html$table,
-				_List_Nil,
-				_List_fromArray(
-					[
-						A2(explainKey, 'SPACEBAR', 'Pause / Play animation'),
-						A2(explainKey, 'ARROW LEFT', ' Move back 1 frame'),
-						A2(explainKey, 'ARROW RIGHT', ' Move forward 1 frame'),
-						A2(explainKey, 'ARROW UP', ' Move forward 10 frames'),
-						A2(explainKey, 'ARROW DOWN', ' Move back 10 frames')
-					]))
-			]));
-}();
 var $elm$html$Html$img = _VirtualDom_node('img');
-var $elm$core$Basics$neq = _Utils_notEqual;
-var $elm$core$String$cons = _String_cons;
-var $elm$core$String$fromChar = function (_char) {
-	return A2($elm$core$String$cons, _char, '');
-};
-var $elm$core$Bitwise$and = _Bitwise_and;
-var $elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
-var $elm$core$String$repeatHelp = F3(
-	function (n, chunk, result) {
-		return (n <= 0) ? result : A3(
-			$elm$core$String$repeatHelp,
-			n >> 1,
-			_Utils_ap(chunk, chunk),
-			(!(n & 1)) ? result : _Utils_ap(result, chunk));
-	});
-var $elm$core$String$repeat = F2(
-	function (n, chunk) {
-		return A3($elm$core$String$repeatHelp, n, chunk, '');
-	});
-var $elm$core$String$padLeft = F3(
-	function (n, _char, string) {
-		return _Utils_ap(
-			A2(
-				$elm$core$String$repeat,
-				n - $elm$core$String$length(string),
-				$elm$core$String$fromChar(_char)),
-			string);
-	});
-var $elm$json$Json$Encode$bool = _Json_wrap;
-var $elm$html$Html$Attributes$boolProperty = F2(
-	function (key, bool) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			$elm$json$Json$Encode$bool(bool));
-	});
-var $elm$html$Html$Attributes$disabled = $elm$html$Html$Attributes$boolProperty('disabled');
-var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
-var $elm$html$Html$Attributes$title = $elm$html$Html$Attributes$stringProperty('title');
-var $author$project$Main$playControls = function (paused) {
-	return A2(
-		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$class('media-controls')
-			]),
-		_List_fromArray(
-			[
-				A2(
-				$elm$html$Html$button,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('button'),
-						$elm$html$Html$Events$onClick(
-						$author$project$Main$Seek(-10)),
-						$elm$html$Html$Attributes$disabled(!paused),
-						$elm$html$Html$Attributes$title('10 frames back')
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text('<<')
-					])),
-				A2(
-				$elm$html$Html$button,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('button'),
-						$elm$html$Html$Events$onClick(
-						$author$project$Main$Seek(-1)),
-						$elm$html$Html$Attributes$disabled(!paused),
-						$elm$html$Html$Attributes$title('1 frame back')
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text('<')
-					])),
-				paused ? A2(
-				$elm$html$Html$button,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('button'),
-						$elm$html$Html$Events$onClick($author$project$Main$Play),
-						$elm$html$Html$Attributes$id($author$project$Main$playOrPauseId)
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text('Play')
-					])) : A2(
-				$elm$html$Html$button,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('button'),
-						$elm$html$Html$Events$onClick($author$project$Main$Pause),
-						$elm$html$Html$Attributes$id($author$project$Main$playOrPauseId)
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text('Pause')
-					])),
-				A2(
-				$elm$html$Html$button,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('button'),
-						$elm$html$Html$Events$onClick(
-						$author$project$Main$Seek(1)),
-						$elm$html$Html$Attributes$disabled(!paused),
-						$elm$html$Html$Attributes$title('1 frame forward')
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text('>')
-					])),
-				A2(
-				$elm$html$Html$button,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('button'),
-						$elm$html$Html$Events$onClick(
-						$author$project$Main$Seek(10)),
-						$elm$html$Html$Attributes$disabled(!paused),
-						$elm$html$Html$Attributes$title('10 frames forward')
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text('>>')
-					]))
-			]));
-};
-var $elm$html$Html$label = _VirtualDom_node('label');
-var $elm$html$Html$Attributes$max = $elm$html$Html$Attributes$stringProperty('max');
-var $elm$html$Html$progress = _VirtualDom_node('progress');
-var $elm$html$Html$span = _VirtualDom_node('span');
-var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
-var $author$project$Main$progressBar = F2(
-	function (receivedFrames, frameCount) {
-		return A2(
-			$elm$html$Html$label,
-			_List_Nil,
-			_List_fromArray(
-				[
-					A2(
-					$elm$html$Html$span,
-					_List_Nil,
-					_List_fromArray(
-						[
-							$elm$html$Html$text(' | Loading frames ')
-						])),
-					A2(
-					$elm$html$Html$progress,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$value(
-							$elm$core$String$fromInt(receivedFrames)),
-							$elm$html$Html$Attributes$max(
-							$elm$core$String$fromInt(frameCount))
-						]),
-					_List_Nil)
-				]));
-	});
-var $elm$core$Dict$sizeHelp = F2(
-	function (n, dict) {
-		sizeHelp:
-		while (true) {
-			if (dict.$ === -2) {
-				return n;
-			} else {
-				var left = dict.d;
-				var right = dict.e;
-				var $temp$n = A2($elm$core$Dict$sizeHelp, n + 1, right),
-					$temp$dict = left;
-				n = $temp$n;
-				dict = $temp$dict;
-				continue sizeHelp;
-			}
-		}
-	});
-var $elm$core$Dict$size = function (dict) {
-	return A2($elm$core$Dict$sizeHelp, 0, dict);
-};
 var $elm$html$Html$Attributes$src = function (url) {
 	return A2(
 		$elm$html$Html$Attributes$stringProperty,
 		'src',
 		_VirtualDom_noJavaScriptOrHtmlUri(url));
 };
-var $author$project$Main$webBackend = 'https://reanimate.clozecards.com/';
-var $author$project$Main$frameView = F7(
-	function (bestFrame, frameIndex, frameCount, frames, showingHelp, frameDeltas, isPaused) {
-		var progressView = function () {
-			var receivedFrames = $elm$core$Dict$size(frames);
-			return (!_Utils_eq(receivedFrames, frameCount)) ? A2($author$project$Main$progressBar, receivedFrames, frameCount) : $elm$html$Html$text('');
-		}();
-		var image = function () {
-			if (!bestFrame.$) {
-				var svgUrl = bestFrame.a;
-				return A2(
-					$elm$html$Html$img,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$src(
-							_Utils_ap($author$project$Main$webBackend, svgUrl))
-						]),
-					_List_Nil);
-			} else {
-				return $elm$html$Html$text('');
-			}
-		}();
-		var helpView = showingHelp ? $author$project$Main$helpModal : A2(
-			$elm$html$Html$button,
-			_List_fromArray(
-				[
-					$elm$html$Html$Attributes$class('help-button button'),
-					$elm$html$Html$Events$onClick($author$project$Main$ToggleHelp)
-				]),
-			_List_fromArray(
-				[
-					$elm$html$Html$text('?')
-				]));
-		var frameCountStr = $elm$core$String$fromInt(frameCount);
-		var digitCount = $elm$core$String$length(frameCountStr);
-		var bar = A2(
-			$elm$html$Html$div,
-			_List_fromArray(
-				[
-					$elm$html$Html$Attributes$class('bar')
-				]),
-			_List_fromArray(
-				[
-					$author$project$Main$playControls(isPaused),
-					A2(
-					$elm$html$Html$span,
-					_List_Nil,
-					_List_fromArray(
-						[
-							$elm$html$Html$text(
-							' Frame: ' + (A3(
-								$elm$core$String$padLeft,
-								digitCount,
-								'0',
-								$elm$core$String$fromInt(frameIndex + 1)) + (' / ' + frameCountStr)))
-						])),
-					progressView,
-					helpView
-				]));
-		return A2(
-			$elm$html$Html$div,
-			_List_fromArray(
-				[
-					$elm$html$Html$Attributes$class('viewer')
-				]),
-			_List_fromArray(
-				[bar, image]));
-	});
+var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $author$project$Main$webBackend = function () {
+	var _v0 = $author$project$Main$backend;
+	if (!_v0) {
+		return 'https://reanimate.clozecards.com/';
+	} else {
+		return 'http://localhost:10162/';
+	}
+}();
+var $author$project$Main$frameView = function (bestFrame) {
+	var image = function () {
+		if (!bestFrame.$) {
+			var svgUrl = bestFrame.a;
+			return A2(
+				$elm$html$Html$img,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$src(
+						_Utils_ap($author$project$Main$webBackend, svgUrl))
+					]),
+				_List_Nil);
+		} else {
+			return $elm$html$Html$text('');
+		}
+	}();
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('viewer')
+			]),
+		_List_fromArray(
+			[image]));
+};
+var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$pre = _VirtualDom_node('pre');
 var $author$project$Main$problemView = function (problem) {
@@ -6815,24 +6296,14 @@ var $author$project$Main$view = function (model) {
 								var problem = model.a;
 								return $author$project$Main$problemView(problem);
 							default:
-								var frameCount = model.a.z;
-								var frames = model.a.u;
-								var frameIndex = model.a.p;
-								var player = model.a.j;
-								var bestFrame = model.a.D;
-								var showingHelp = model.a.G;
-								var frameDeltas = model.a.E;
-								if (!player.$) {
-									return A7($author$project$Main$frameView, bestFrame, frameIndex, frameCount, frames, showingHelp, frameDeltas, true);
-								} else {
-									return A7($author$project$Main$frameView, bestFrame, frameIndex, frameCount, frames, showingHelp, frameDeltas, false);
-								}
+								var bestFrame = model.a.C;
+								return $author$project$Main$frameView(bestFrame);
 						}
 					}()
 					]))
 			]));
 };
 var $author$project$Main$main = $elm$browser$Browser$element(
-	{aE: $author$project$Main$init, aK: $author$project$Main$subscriptions, aM: $author$project$Main$update, aN: $author$project$Main$view});
+	{aD: $author$project$Main$init, aJ: $author$project$Main$subscriptions, aL: $author$project$Main$update, aM: $author$project$Main$view});
 _Platform_export({'Main':{'init':$author$project$Main$main(
 	$elm$json$Json$Decode$succeed(0))(0)}});}(this));
