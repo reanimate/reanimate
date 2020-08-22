@@ -93,29 +93,7 @@
         <button class="delete" aria-label="close"></button>
       </header>
       <section class="modal-card-body">
-        <!-- 
-          Title
-          Url
-          Code
-        -->
         <div class="snippet-container">
-          <!-- <div>
-            <span>drawBox</span>
-            <img src="https://reanimate.clozecards.com/EwyRzmx8zxM/30.svg">
-          </div>
-          <div>
-            <span>drawCircle</span>
-            <img src="https://reanimate.clozecards.com/EwyRzmx8zxM/50.svg">
-          </div>
-          <div>2</div>
-          <div>3</div>
-          <div>4</div>
-          <div>5</div>
-          <div>6</div>
-          <div>7</div>
-          <div>8</div>
-          <div>9</div>
-          <div>10</div> -->
         </div>
       </section>
       <!-- <footer class="modal-card-foot">
@@ -136,66 +114,57 @@
 
     app.newCode(myCodeMirror.getValue());
 
+    const mediaButtons = document.querySelector('.media-buttons');
+
     myCodeMirror.on('change', function () {
-      document.querySelector('.media-buttons').classList.remove('paused');
+      mediaButtons.classList.remove('paused');
+      app.pause();
       app.newCode(myCodeMirror.getValue());
     });
 
     renderSnippets(document.querySelector('.snippet-container'), myCodeMirror);
 
     document.getElementById('play').onclick = function () {
-      document.querySelector('.media-buttons').classList.toggle('paused');
+      mediaButtons.classList.toggle('paused');
       app.play();
     };
     document.getElementById('pause').onclick = function () {
-      document.querySelector('.media-buttons').classList.toggle('paused');
+      mediaButtons.classList.toggle('paused');
       app.pause();
     };
     document.getElementById('seek1').onclick = function () {
-      document.querySelector('.media-buttons').classList.add('paused');
+      mediaButtons.classList.add('paused');
       app.pause();
       app.seek1();
     };
     document.getElementById('seek10').onclick = function () {
-      document.querySelector('.media-buttons').classList.add('paused');
+      mediaButtons.classList.add('paused');
       app.pause();
       app.seek10();
     };
     document.getElementById('seek-1').onclick = function () {
-      document.querySelector('.media-buttons').classList.add('paused');
+      mediaButtons.classList.add('paused');
       app.pause();
       app.seek_1();
     };
     document.getElementById('seek-10').onclick = function () {
-      document.querySelector('.media-buttons').classList.add('paused');
+      mediaButtons.classList.add('paused');
       app.pause();
       app.seek_10();
     };
-    document.getElementById('help').onclick = function () {
-      document.querySelector('#help-modal').classList.add('is-active');
+    const helpIcon = document.getElementById('help');
+    const helpModal = document.querySelector('#help-modal');
+    helpIcon.onclick = function () {
+      openModal(helpModal);
     };
-    document.querySelector('#help-modal .modal-background').onclick = function () {
-      document.querySelector('#help-modal').classList.remove('is-active');
-    };
-    document.querySelector('#help-modal .modal-close').onclick = function () {
-      document.querySelector('#help-modal').classList.remove('is-active');
-    };
-    document.querySelector('#help-modal .delete').onclick = function () {
-      document.querySelector('#help-modal').classList.remove('is-active');
-    };
+    configureModal(helpModal);
 
-    document.getElementById('examples').onclick = function () {
-      document.querySelector('#examples-modal').classList.add('is-active');
+    const examplesIcon = document.getElementById('examples')
+    const examplesModal = document.getElementById('examples-modal')
+    examplesIcon.onclick = function () {
+      openModal(examplesModal);
     };
-    document.querySelector('#examples-modal .modal-background').onclick = function () {
-      document.querySelector('#examples-modal').classList.remove('is-active');
-    };
-    document.querySelector('#examples-modal .modal-close').onclick = function () {
-      document.querySelector('#examples-modal').classList.remove('is-active');
-    };
-    document.querySelector('#examples-modal .delete').onclick = function () {
-      document.querySelector('#examples-modal').classList.remove('is-active');
-    };
+    configureModal(examplesModal)
 
   </script>
   <script>

@@ -133,6 +133,9 @@ pre {
   margin: 1em;
   position: relative;
 }
+.snippet-container > div:hover {
+  cursor: pointer;
+}
 .snippet-container > div > span {
   position: absolute;
   display: block;
