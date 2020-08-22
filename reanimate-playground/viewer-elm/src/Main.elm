@@ -11,6 +11,7 @@ import Html.Events exposing (onClick, onInput)
 import Json.Decode
 import Keyboard exposing (RawKey)
 import List
+import Time
 import Platform.Sub
 import Ports
 import Task
@@ -72,8 +73,8 @@ subscriptions model =
                     Paused ->
                         Sub.none
 
-            -- Problem ConnectionFailed ->
-            --     Time.every 2000 (always AttemptReconnect)
+            Problem ConnectionFailed ->
+                Time.every 2000 (always AttemptReconnect)
             _ ->
                 Sub.none
         ]
