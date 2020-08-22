@@ -1,3 +1,2 @@
 cradle:
-  stack:
-    component: "playground"
+  stack: {component: "playground"}

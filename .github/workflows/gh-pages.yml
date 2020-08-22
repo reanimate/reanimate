@@ -82,7 +82,11 @@ jobs:
     - name: Playground
       run: |
         CWD=`pwd`
-        cd reanimate-playground/viewer-elm
+        stack build
+        cd reanimate-playground
+        stack build
+        stack exec --cwd ../ playground snippets reanimate-playground/snippets > viewer-elm/dist/snippets.js
+        cd viewer-elm
         npm install
         npm run build
         mkdir $CWD/hpc/playground

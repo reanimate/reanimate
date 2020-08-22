@@ -34,6 +34,7 @@ import           System.Directory
 import           System.Environment
 import           System.Exit
 import           System.FilePath
+import           System.IO.Temp
 import           System.IO
 import           System.Process
 import           System.Timeout
@@ -83,6 +84,22 @@ main = do
   args <- getArgs
   case args of
     ["test"] -> putStrLn "Test OK"
+    ["snippets", folder] -> do
+      files <- sort <$> getDirectoryContents folder
+      ghci <- takeMVar (backendGhci backend)
+      snippets <- mapM (genSnippet ghci)
+        [ folder </> file
+        | file <- files, takeExtension file == ".hs" ]
+      putStr "const snippets = "
+      putStrLn $
+        "[" ++ intercalate ","
+        [ "{" ++
+          "\"title\": " ++ show title ++ "," ++
+          "\"url\": " ++ show url ++ "," ++
+          "\"code\": " ++ show inp ++
+          "}"
+        | (title, url, inp) <- snippets ] ++
+        "];"
     [] -> do
       root <- cacheDir
       tid <- forkIO $ run 10162 (staticApp $ defaultWebAppSettings root)
@@ -90,6 +107,23 @@ main = do
     _ -> do
       hPutStrLn stderr "Invalid arguments"
       exitWith (ExitFailure 1)
+
+genSnippet :: Ghci -> FilePath -> IO (String, String, Text)
+genSnippet ghci path = do
+    inp <- T.readFile path
+    let ParseOk m = parseHaskell inp
+        h = sourceHash m
+    withHaskellFile m $ \hsFile -> do
+      _ <- reqGhcOutput ghci $ ":load " ++ hsFile
+      out <- reqGhcOutput ghci "Reanimate.duration animation"
+      let dur = read (unlines out) :: Double
+          frames = round (dur * fromIntegral frameRate) :: Int
+          url = "https://reanimate.clozecards.com/" ++ h ++ "/" ++ show (frames `div` 2) ++ ".svg"
+          title = takeWhileEnd (/= '_') (takeBaseName path)
+      return (title, url, inp)
+  where
+    takeWhileEnd f = reverse . takeWhile f . reverse
+
 
 opts :: ConnectionOptions
 opts = defaultConnectionOptions
@@ -189,10 +223,10 @@ requestRender backend render = do
 newGhci :: IO Ghci
 newGhci = do
   let fastProc = proc "stack" ["exec", "ghci", "--rts-options="++memoryLimit]
-  (fastGhci, _loads) <- startGhciProcess fastProc (\_stream msg -> putStrLn msg)
+  (fastGhci, _loads) <- startGhciProcess fastProc (\_stream msg -> hPutStrLn stderr msg)
 
-  void $ exec fastGhci "import qualified Reanimate"
-  void $ exec fastGhci "import qualified Reanimate.Render as Reanimate"
+  void $ reqGhcOutput fastGhci "import qualified Reanimate"
+  void $ reqGhcOutput fastGhci "import qualified Reanimate.Render as Reanimate"
   return fastGhci
 
 newBackend :: IO Backend
@@ -201,8 +235,7 @@ newBackend = do
   queue <- newEmptyMVar
   tid <- forkIO $ forever $ do
     req <- takeMVar queue
-    guardWanted req $ do
-      hs <- writeHaskellFile (renderCode req)
+    guardWanted req $ withHaskellFile (renderCode req) $ \hs -> do
       ghci <- readMVar ghciRef
       guardGhci req ghci (":load " ++ hs) $ \_ -> guardWanted req $
         guardGhci req ghci "Reanimate.duration animation" $ \out -> do
@@ -247,8 +280,9 @@ cacheDir = do
   createDirectoryIfMissing True root
   return root
 
-writeHaskellFile :: Module SrcSpanInfo -> IO FilePath
-writeHaskellFile m = do
+withHaskellFile :: Module SrcSpanInfo -> (FilePath -> IO a) -> IO a
+withHaskellFile m action = withSystemTempFile "playground.hs" $ \target h -> do
+    hClose h
     T.writeFile target  "{-# LANGUAGE OverloadedStrings #-}\n"
     T.appendFile target "module Animation where\n"
     T.appendFile target "import Reanimate\n"
@@ -262,9 +296,7 @@ writeHaskellFile m = do
     T.appendFile target "import Control.Lens\n"
     T.appendFile target "import Codec.Picture.Types\n"
     T.appendFile target $ T.pack $ prettyPrint m
-    return target
-  where
-    target = "playground.hs"
+    action target
 
 splitGhciOutput :: Ghci -> String -> IO ([String], [String])
 splitGhciOutput ghci cmd = do
@@ -275,6 +307,13 @@ splitGhciOutput ghci cmd = do
       Stdout -> modifyIORef out (++[msg])
       Stderr -> modifyIORef err (++[msg])
   (,) <$> readIORef err <*> readIORef out
+
+reqGhcOutput :: Ghci -> String -> IO [String]
+reqGhcOutput ghci cmd = do
+  (err, out) <- splitGhciOutput ghci cmd
+  unless (null err) $
+    error (unlines err)
+  return out
 
 logMsg :: String -> IO ()
 logMsg msg = do

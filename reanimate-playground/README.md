@@ -18,3 +18,22 @@ Test against:
 
 
 
+# How to run locally:
+
+## Backend
+
+```
+stack build
+stack exec --cwd ../ playground
+```
+
+## Frontend
+
+By default the frontend will use the backend running at reanimate.clozecards.com.
+To switch to a local backend, change 'backend' in Main.elm to 'Local'.
+
+```
+cd viewer-elm
+npm install
+npm run dev-server
+```
