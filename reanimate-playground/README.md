@@ -37,3 +37,13 @@ cd viewer-elm
 npm install
 npm run dev-server
 ```
+
+# Design
+
+The playground frontend connects to the backend (reanimate.clozecards.com) over HTTPS.
+The backend runs nginx to serve static files and as a reverse proxy for the
+websocket server. All backend services are run in docker and auto-updated.
+SSL certificate is from lets-encrypt.org
+Frontend is written in Elm and automatically deployed to reanimate's GitHub Page
+on every push to master. The built-in examples are in the 'snippets/' folder
+and they are type-checked on every commit to master.
