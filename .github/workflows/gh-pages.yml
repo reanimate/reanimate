@@ -13,34 +13,21 @@ jobs:
     - uses: actions/setup-haskell@v1
       with:
         ghc-version: '8.8'
-        cabal-version: '3.0'
+        cabal-version: 'latest'
     - uses: jorelali/setup-elm@v2
       with:
         elm-version: 0.19.1
 
-    - name: Cache Cabal
-      uses: actions/cache@v1
-      env:
-        cache-name: cache-cabal
+    - name: Cache
+      uses: actions/cache@v2
       with:
-        path: ~/.cabal
-        key: ${{ runner.os }}-hpc-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/cabal.project') }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-build-
-          ${{ runner.os }}-
-
-    - name: Cache StackRoot
-      uses: actions/cache@v1
-      with:
-        path: ~/.stack
-        key: ${{ runner.os }}-${{ hashFiles('**/*.cabal') }}-stack
-
-    - name: Cache Stack
-      uses: actions/cache@v1
-      with:
-        path: ~/.stack-work
-        key: ${{ runner.os }}-${{ hashFiles('**/*.cabal') }}-stack-work
+        path: |
+          ~/.cabal
+          ~/.stack
+          ~/.stack-work
+          ~/.dist-newstyle
+          ~/.ghc
+        key: ${{ runner.os }}-${{ hashFiles('**/*.cabal') }}-cache
 
     - name: Install dependencies
       run: |
