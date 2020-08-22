@@ -114,14 +114,15 @@
 
     app.newCode(myCodeMirror.getValue());
 
+    const mediaButtons = document.querySelector('.media-buttons');
+
     myCodeMirror.on('change', function () {
-      document.querySelector('.media-buttons').classList.remove('paused');
+      mediaButtons.classList.remove('paused');
+      app.pause();
       app.newCode(myCodeMirror.getValue());
     });
 
     renderSnippets(document.querySelector('.snippet-container'), myCodeMirror);
-
-    const mediaButtons = document.querySelector('.media-buttons');
 
     document.getElementById('play').onclick = function () {
       mediaButtons.classList.toggle('paused');
