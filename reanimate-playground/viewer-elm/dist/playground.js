@@ -22,6 +22,7 @@ function playgroundInit(elt) {
         if( cmd === "frame_count" ) {
           frames = {};
         } else if ( cmd === "frame") {
+          // Prefetch image.
           const nth = parseInt(lines[1]);
           const url = lines[2];
           frames[nth] = new Image();
@@ -95,8 +96,28 @@ function renderSnippets(elt, myCodeMirror) {
     div.appendChild(img)
     div.onclick = function () {
       myCodeMirror.setValue(code);
-      document.querySelector('#examples-modal').classList.remove('is-active');
+      closeModal(document.querySelector('#examples-modal'));
     };
     elt.appendChild(div)
   }
+}
+
+function closeModal(modal) {
+  modal.classList.remove('is-active');
+}
+function openModal(modal) {
+  modal.classList.add('is-active');
+}
+
+// Add javascript handlers to modal for closing.
+function configureModal(modal) {
+  modal.querySelector('.modal-background').onclick = function () {
+    modal.classList.remove('is-active');
+  };
+  modal.querySelector('.modal-close').onclick = function () {
+    modal.classList.remove('is-active');
+  };
+  modal.querySelector('.delete').onclick = function () {
+    modal.classList.remove('is-active');
+  };
 }
