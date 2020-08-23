@@ -24,10 +24,10 @@ drawLatex txt = do
     wait 0.7
     -- Fill in letters
     play $ animate $ \t ->
-      withFillOpacity t $
+      withFillOpacity t $ withStrokeWidth 0 $
       svg
     -- Hold static image and then fade out
-    play $ staticFrame 2 svg
+    play $ staticFrame 2 (withStrokeWidth 0 svg)
       & applyE (overEnding 0.3 fadeOutE)
   where
     svg = scale 2 $ center $ latexAlign txt
