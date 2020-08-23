@@ -1,0 +1,46 @@
+div.playground-embed {
+  display: grid;
+}
+@media (orientation: landscape) {
+  div.playground-embed {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (orientation: portrait) {
+  div.playground-embed {
+    grid-template-rows: 1fr 1fr;
+  }
+}
+
+div.playground-embed div.playground-editor {
+  border: 1px solid black;
+  font-size: 14px;
+  position: relative;
+  padding-top: 56.25%
+}
+
+div.playground-embed div.playground-viewer {
+  position: relative;
+  padding-top: 56.25%;
+}
+
+div.playground-embed div.playground-player {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: auto;
+  font-size: 14px;
+}
+div.playground-embed div.playground-player h1 {
+  font-size: 34px;
+}
+div.playground-embed .CodeMirror {
+  height: auto;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}

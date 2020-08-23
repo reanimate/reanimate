@@ -55,7 +55,7 @@ function playgroundInit(elt) {
   }
 
   var app = Elm.Main.init({
-    node: document.getElementById(elt)
+    node: elt
   });
   app.ports.sendSocketCommand.subscribe(sendSocketCommand);
   return {
