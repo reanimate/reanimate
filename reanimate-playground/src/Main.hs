@@ -287,6 +287,7 @@ withHaskellFile m action = withSystemTempFile "playground.hs" $ \target h -> do
     T.appendFile target "import Reanimate.Scene\n"
     T.appendFile target "import Control.Lens\n"
     T.appendFile target "import Codec.Picture.Types\n"
+    T.appendFile target "{-# LINE 1 \"playground\" #-}\n"
     T.appendFile target $ T.pack $ prettyPrint m
     action target
 
