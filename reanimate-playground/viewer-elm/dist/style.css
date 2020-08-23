@@ -89,13 +89,6 @@ pre {
   border: 0px solid #eee;
   height: auto;
 }
-.select2 {
-}
-.select2-selection--single {
-  border: 0 !important;
-  border-bottom: 1px solid #aaa !important;
-  border-radius: 0 !important;
-}
 .edit-box {
   display: flex;
   flex-flow: column;
