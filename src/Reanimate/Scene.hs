@@ -1,7 +1,6 @@
 {-# LANGUAGE ApplicativeDo             #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE RankNTypes                #-}
-{-# LANGUAGE TemplateHaskell           #-}
 {-# LANGUAGE RecordWildCards           #-}
 {-|
 Module      : Reanimate.Scene
@@ -87,6 +86,7 @@ module Reanimate.Scene
   , oLeftX
   , oRightX
   , oCenterXY
+  , oNew
   , newObject
   , oValue
   , oModify
@@ -862,6 +862,9 @@ oTweenV o d fn = oTween o d (\t -> oValue %~ fn t)
 oTweenVS :: Renderable a => Object s a -> Duration -> (Double -> State a b) -> Scene s ()
 oTweenVS o d fn = oTween o d (\t -> oValue %~ execState (fn t))
 
+oNew :: Renderable a => a -> Scene s (Object s a)
+oNew = newObject
+
 newObject :: Renderable a => a -> Scene s (Object s a)
 newObject val = do
   ref <- newVar ObjectData
@@ -897,14 +900,35 @@ newObject val = do
     svg = toSVG val
 
 newtype Circle = Circle {_circleRadius :: Double}
+
+circleRadius :: Iso' Circle Double
+circleRadius = iso _circleRadius Circle
+
 instance Renderable Circle where
   toSVG (Circle r) = mkCircle r
 
 data Rectangle = Rectangle { _rectWidth :: Double, _rectHeight :: Double }
+
+rectWidth :: Lens' Rectangle Double
+rectWidth = lens _rectWidth $ \obj val -> obj{_rectWidth=val}
+
+rectHeight :: Lens' Rectangle Double
+rectHeight = lens _rectHeight $ \obj val -> obj{_rectHeight=val}
+
 instance Renderable Rectangle where
   toSVG (Rectangle w h) = mkRect w h
 
 data Morph = Morph { _morphDelta :: Double, _morphSrc :: SVG, _morphDst :: SVG }
+
+morphDelta :: Lens' Morph Double
+morphDelta = lens _morphDelta $ \obj val -> obj{_morphDelta = val}
+
+morphSrc :: Lens' Morph SVG
+morphSrc = lens _morphSrc $ \obj val -> obj{_morphSrc = val}
+
+morphDst :: Lens' Morph SVG
+morphDst = lens _morphDst $ \obj val -> obj{_morphDst = val}
+
 instance Renderable Morph where
   toSVG (Morph t src dst) = morph linear src dst t
 
@@ -955,10 +979,6 @@ cameraPan cam d (x,y) =
   oTweenS cam d $ \t -> do
     oTranslate._1 %= \v -> fromToS v x t
     oTranslate._2 %= \v -> fromToS v y t
-
-makeLenses ''Circle
-makeLenses ''Rectangle
-makeLenses ''Morph
 
 oShow :: Object s a -> Scene s ()
 oShow o = oModify o $ oShown .~ True
