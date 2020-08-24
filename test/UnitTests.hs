@@ -100,7 +100,10 @@ compileVideoFolder path = do
       files <- sort <$> getDirectoryContents path
       return $ testGroup "videos"
         [ testCase dir $ do
-            (ret, _stdout, err) <- readProcessWithExitCode "stack" (["ghc","--", "-i"++path</>dir, fullPath] ++ ghcOpts) ""
+            (ret, _stdout, err) <-
+              case buildSystem of
+                Stack  -> readProcessWithExitCode "stack" (["ghc","--", "-i"++path</>dir, fullPath] ++ ghcOpts) ""
+                Cabal  -> readProcessWithExitCode "cabal" (["v2-exec", "ghc","--", "-package", "reanimate", "-i"++path</>dir, fullPath] ++ ghcOpts) ""
             _ <- evaluate (length err)
             case ret of
               ExitFailure{} -> assertFailure $ "Failed to compile:\n" ++ err
