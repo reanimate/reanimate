@@ -15,10 +15,23 @@ import           System.Directory
 import           System.Exit
 import           System.FilePath
 import           System.IO
+import           System.IO.Unsafe
 import           System.Process
 import           Test.Tasty
 import           Test.Tasty.Golden
 import           Test.Tasty.HUnit
+
+data BuildSystem
+  = Cabal
+  | Stack
+
+buildSystem :: BuildSystem
+buildSystem = unsafePerformIO $ do
+  newbuild <- doesDirectoryExist "dist-newstyle"
+  stack <- doesDirectoryExist ".stack-work"
+  if newbuild then pure Cabal
+    else if stack then pure Stack
+    else error "Unknown build system."
 
 unitTestFolder :: FilePath -> IO TestTree
 unitTestFolder path = do
@@ -41,7 +54,9 @@ genGolden path = withTempDir $ \tmpDir -> withTempFile ".exe" $ \tmpExecutable -
                 ["-odir", tmpDir, "-hidir", tmpDir, "-o", tmpExecutable]
       runOpts = ["+RTS", "-M1G"]
   -- XXX: Check for errors.
-  runCmd "stack" $ ["ghc","--", path] ++ ghcOpts
+  case buildSystem of
+    Stack -> runCmd "stack" $ ["ghc","--", path] ++ ghcOpts
+    Cabal -> runCmd "cabal" $ ["v2-exec", "ghc","--", "-package", "reanimate", path] ++ ghcOpts
 
   (inh, outh, errh, pid) <- runInteractiveProcess tmpExecutable (["test"] ++ runOpts)
     Nothing Nothing
@@ -60,7 +75,11 @@ compileTestFolder path = do
   files <- sort <$> getDirectoryContents path
   return $ testGroup "compile"
     [ testCase file $ do
-        (ret, _stdout, err) <- readProcessWithExitCode "stack" (["ghc","--", fullPath] ++ ghcOpts) ""
+        (ret, _stdout, err) <-
+          case buildSystem of
+            Stack -> readProcessWithExitCode "stack" (["ghc","--", fullPath] ++ ghcOpts) ""
+            Cabal -> readProcessWithExitCode "cabal"
+              (["v2-exec","ghc","--", "-package", "reanimate", fullPath] ++ ghcOpts) ""
         _ <- evaluate (length err)
         case ret of
           ExitFailure{} -> assertFailure $ "Failed to compile:\n" ++ err
