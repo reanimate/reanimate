@@ -45,9 +45,9 @@ span.spaces    { background: white }
 <span class="lineno">   26 </span>import           Reanimate.Animation
 <span class="lineno">   27 </span>import           Reanimate.ColorComponents
 <span class="lineno">   28 </span>import           Reanimate.Ease
-<span class="lineno">   29 </span>import           Reanimate.Math.Polygon    (Polygon, APolygon, mkPolygon, pAddPoints,
-<span class="lineno">   30 </span>                                            pCentroid, pCutEqual, pSize,
-<span class="lineno">   31 </span>                                            polygonPoints)
+<span class="lineno">   29 </span>import           Reanimate.Math.Polygon    (APolygon, Epsilon, Polygon,
+<span class="lineno">   30 </span>                                            mkPolygon, pAddPoints, pCentroid,
+<span class="lineno">   31 </span>                                            pCutEqual, pSize, polygonPoints)
 <span class="lineno">   32 </span>import           Reanimate.PolyShape
 <span class="lineno">   33 </span>import           Reanimate.Svg
 <span class="lineno">   34 </span>
@@ -97,7 +97,7 @@ span.spaces    { background: white }
 <span class="lineno">   78 </span><span class="spaces">      </span><span class="istickedoff">, let arranged = morphPointCorrespondence srcPoly' dstPoly'</span>
 <span class="lineno">   79 </span><span class="spaces">      </span><span class="istickedoff">]</span></span>
 <span class="lineno">   80 </span>
-<span class="lineno">   81 </span>normalizePolygons :: (Real a, Fractional a) =&gt; APolygon a -&gt; APolygon a -&gt; (APolygon a, APolygon a)
+<span class="lineno">   81 </span>normalizePolygons :: (Real a, Fractional a, Epsilon a) =&gt; APolygon a -&gt; APolygon a -&gt; (APolygon a, APolygon a)
 <span class="lineno">   82 </span><span class="decl"><span class="istickedoff">normalizePolygons src dst =</span>
 <span class="lineno">   83 </span><span class="spaces">    </span><span class="istickedoff">(pAddPoints (max 0 $ dstN-srcN) src</span>
 <span class="lineno">   84 </span><span class="spaces">    </span><span class="istickedoff">,pAddPoints (max 0 $ srcN-dstN) dst)</span>

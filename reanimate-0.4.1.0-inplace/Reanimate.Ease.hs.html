@@ -30,111 +30,101 @@ span.spaces    { background: white }
 <span class="lineno">   11 </span>  , powerS
 <span class="lineno">   12 </span>  , bellS
 <span class="lineno">   13 </span>  , oscillateS
-<span class="lineno">   14 </span>  , fromListS
-<span class="lineno">   15 </span>  , cubicBezierS
-<span class="lineno">   16 </span>  ) where
-<span class="lineno">   17 </span>
-<span class="lineno">   18 </span>-- | Signals are time-varying variables. Signals can be composed using function
-<span class="lineno">   19 </span>--   composition.
-<span class="lineno">   20 </span>type Signal = Double -&gt; Double
-<span class="lineno">   21 </span>
-<span class="lineno">   22 </span>fromListS :: [(Double, Signal)] -&gt; Signal
-<span class="lineno">   23 </span><span class="decl"><span class="nottickedoff">fromListS fns t = worker 0 fns</span>
-<span class="lineno">   24 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">   25 </span><span class="spaces">    </span><span class="nottickedoff">worker _ [] = 0</span>
-<span class="lineno">   26 </span><span class="spaces">    </span><span class="nottickedoff">worker now [(len, fn)] = fn (min 1 ((t-now) / min (1-now) len))</span>
-<span class="lineno">   27 </span><span class="spaces">    </span><span class="nottickedoff">worker now ((len, fn):rest)</span>
-<span class="lineno">   28 </span><span class="spaces">      </span><span class="nottickedoff">| now+len &lt; t = worker (now+len) rest</span>
-<span class="lineno">   29 </span><span class="spaces">      </span><span class="nottickedoff">| otherwise = fn ((t-now) / len)</span></span>
+<span class="lineno">   14 </span>  , cubicBezierS
+<span class="lineno">   15 </span>  ) where
+<span class="lineno">   16 </span>
+<span class="lineno">   17 </span>-- | Signals are time-varying variables. Signals can be composed using function
+<span class="lineno">   18 </span>--   composition.
+<span class="lineno">   19 </span>type Signal = Double -&gt; Double
+<span class="lineno">   20 </span>
+<span class="lineno">   21 </span>-- | Constant signal.
+<span class="lineno">   22 </span>--
+<span class="lineno">   23 </span>--   Example:
+<span class="lineno">   24 </span>--
+<span class="lineno">   25 </span>--   &gt; signalA (constantS 0.5) drawProgress
+<span class="lineno">   26 </span>--
+<span class="lineno">   27 </span>--   &lt;&lt;docs/gifs/doc_constantS.gif&gt;&gt;
+<span class="lineno">   28 </span>constantS :: Double -&gt; Signal
+<span class="lineno">   29 </span><span class="decl"><span class="istickedoff">constantS = const</span></span>
 <span class="lineno">   30 </span>
-<span class="lineno">   31 </span>-- | Constant signal.
+<span class="lineno">   31 </span>-- | Signal with new starting and end values.
 <span class="lineno">   32 </span>--
 <span class="lineno">   33 </span>--   Example:
 <span class="lineno">   34 </span>--
-<span class="lineno">   35 </span>--   &gt; signalA (constantS 0.5) drawProgress
+<span class="lineno">   35 </span>--   &gt; signalA (fromToS 0.8 0.2) drawProgress
 <span class="lineno">   36 </span>--
-<span class="lineno">   37 </span>--   &lt;&lt;docs/gifs/doc_constantS.gif&gt;&gt;
-<span class="lineno">   38 </span>constantS :: Double -&gt; Signal
-<span class="lineno">   39 </span><span class="decl"><span class="istickedoff">constantS = const</span></span>
+<span class="lineno">   37 </span>--   &lt;&lt;docs/gifs/doc_fromToS.gif&gt;&gt;
+<span class="lineno">   38 </span>fromToS :: Double -&gt; Double -&gt; Signal
+<span class="lineno">   39 </span><span class="decl"><span class="istickedoff">fromToS from to t = from + (to-from)*t</span></span>
 <span class="lineno">   40 </span>
-<span class="lineno">   41 </span>-- | Signal with new starting and end values.
+<span class="lineno">   41 </span>-- | Reverse signal order.
 <span class="lineno">   42 </span>--
 <span class="lineno">   43 </span>--   Example:
 <span class="lineno">   44 </span>--
-<span class="lineno">   45 </span>--   &gt; signalA (fromToS 0.8 0.2) drawProgress
+<span class="lineno">   45 </span>--   &gt; signalA reverseS drawProgress
 <span class="lineno">   46 </span>--
-<span class="lineno">   47 </span>--   &lt;&lt;docs/gifs/doc_fromToS.gif&gt;&gt;
-<span class="lineno">   48 </span>fromToS :: Double -&gt; Double -&gt; Signal
-<span class="lineno">   49 </span><span class="decl"><span class="istickedoff">fromToS from to t = from + (to-from)*t</span></span>
+<span class="lineno">   47 </span>--   &lt;&lt;docs/gifs/doc_reverseS.gif&gt;&gt;
+<span class="lineno">   48 </span>reverseS :: Signal
+<span class="lineno">   49 </span><span class="decl"><span class="istickedoff">reverseS t = 1-t</span></span>
 <span class="lineno">   50 </span>
-<span class="lineno">   51 </span>-- | Reverse signal order.
+<span class="lineno">   51 </span>-- | S-curve signal. Takes a steepness parameter. 2 is a good default.
 <span class="lineno">   52 </span>--
 <span class="lineno">   53 </span>--   Example:
 <span class="lineno">   54 </span>--
-<span class="lineno">   55 </span>--   &gt; signalA reverseS drawProgress
+<span class="lineno">   55 </span>--   &gt; signalA (curveS 2) drawProgress
 <span class="lineno">   56 </span>--
-<span class="lineno">   57 </span>--   &lt;&lt;docs/gifs/doc_reverseS.gif&gt;&gt;
-<span class="lineno">   58 </span>reverseS :: Signal
-<span class="lineno">   59 </span><span class="decl"><span class="istickedoff">reverseS t = 1-t</span></span>
-<span class="lineno">   60 </span>
-<span class="lineno">   61 </span>-- | S-curve signal. Takes a steepness parameter. 2 is a good default.
-<span class="lineno">   62 </span>--
-<span class="lineno">   63 </span>--   Example:
-<span class="lineno">   64 </span>--
-<span class="lineno">   65 </span>--   &gt; signalA (curveS 2) drawProgress
-<span class="lineno">   66 </span>--
-<span class="lineno">   67 </span>--   &lt;&lt;docs/gifs/doc_curveS.gif&gt;&gt;
-<span class="lineno">   68 </span>curveS :: Double -&gt; Signal
-<span class="lineno">   69 </span><span class="decl"><span class="istickedoff">curveS steepness s =</span>
-<span class="lineno">   70 </span><span class="spaces">  </span><span class="istickedoff">if s &lt; 0.5</span>
-<span class="lineno">   71 </span><span class="spaces">    </span><span class="istickedoff">then 0.5 * (2*s)**steepness</span>
-<span class="lineno">   72 </span><span class="spaces">    </span><span class="istickedoff">else 1-0.5 * (2 - 2*s)**steepness</span></span>
+<span class="lineno">   57 </span>--   &lt;&lt;docs/gifs/doc_curveS.gif&gt;&gt;
+<span class="lineno">   58 </span>curveS :: Double -&gt; Signal
+<span class="lineno">   59 </span><span class="decl"><span class="istickedoff">curveS steepness s =</span>
+<span class="lineno">   60 </span><span class="spaces">  </span><span class="istickedoff">if s &lt; 0.5</span>
+<span class="lineno">   61 </span><span class="spaces">    </span><span class="istickedoff">then 0.5 * (2*s)**steepness</span>
+<span class="lineno">   62 </span><span class="spaces">    </span><span class="istickedoff">else 1-0.5 * (2 - 2*s)**steepness</span></span>
+<span class="lineno">   63 </span>
+<span class="lineno">   64 </span>-- | Power curve signal. Takes a steepness parameter. 2 is a good default.
+<span class="lineno">   65 </span>--
+<span class="lineno">   66 </span>--   Example:
+<span class="lineno">   67 </span>--
+<span class="lineno">   68 </span>--   &gt; signalA (powerS 2) drawProgress
+<span class="lineno">   69 </span>--
+<span class="lineno">   70 </span>--   &lt;&lt;docs/gifs/doc_powerS.gif&gt;&gt;
+<span class="lineno">   71 </span>powerS :: Double -&gt; Signal
+<span class="lineno">   72 </span><span class="decl"><span class="nottickedoff">powerS steepness s = s**steepness</span></span>
 <span class="lineno">   73 </span>
-<span class="lineno">   74 </span>-- | Power curve signal. Takes a steepness parameter. 2 is a good default.
+<span class="lineno">   74 </span>-- | Oscillate signal.
 <span class="lineno">   75 </span>--
 <span class="lineno">   76 </span>--   Example:
 <span class="lineno">   77 </span>--
-<span class="lineno">   78 </span>--   &gt; signalA (powerS 2) drawProgress
+<span class="lineno">   78 </span>--   &gt; signalA oscillateS drawProgress
 <span class="lineno">   79 </span>--
-<span class="lineno">   80 </span>--   &lt;&lt;docs/gifs/doc_powerS.gif&gt;&gt;
-<span class="lineno">   81 </span>powerS :: Double -&gt; Signal
-<span class="lineno">   82 </span><span class="decl"><span class="nottickedoff">powerS steepness s = s**steepness</span></span>
-<span class="lineno">   83 </span>
-<span class="lineno">   84 </span>-- | Oscillate signal.
-<span class="lineno">   85 </span>--
-<span class="lineno">   86 </span>--   Example:
-<span class="lineno">   87 </span>--
-<span class="lineno">   88 </span>--   &gt; signalA oscillateS drawProgress
-<span class="lineno">   89 </span>--
-<span class="lineno">   90 </span>--   &lt;&lt;docs/gifs/doc_oscillateS.gif&gt;&gt;
-<span class="lineno">   91 </span>oscillateS :: Signal
-<span class="lineno">   92 </span><span class="decl"><span class="istickedoff">oscillateS t =</span>
-<span class="lineno">   93 </span><span class="spaces">  </span><span class="istickedoff">if t &lt; 1/2</span>
-<span class="lineno">   94 </span><span class="spaces">    </span><span class="istickedoff">then t*2</span>
-<span class="lineno">   95 </span><span class="spaces">    </span><span class="istickedoff">else 2-t*2</span></span>
+<span class="lineno">   80 </span>--   &lt;&lt;docs/gifs/doc_oscillateS.gif&gt;&gt;
+<span class="lineno">   81 </span>oscillateS :: Signal
+<span class="lineno">   82 </span><span class="decl"><span class="istickedoff">oscillateS t =</span>
+<span class="lineno">   83 </span><span class="spaces">  </span><span class="istickedoff">if t &lt; 1/2</span>
+<span class="lineno">   84 </span><span class="spaces">    </span><span class="istickedoff">then t*2</span>
+<span class="lineno">   85 </span><span class="spaces">    </span><span class="istickedoff">else 2-t*2</span></span>
+<span class="lineno">   86 </span>
+<span class="lineno">   87 </span>-- | Bell-curve signal. Takes a steepness parameter. 2 is a good default.
+<span class="lineno">   88 </span>--
+<span class="lineno">   89 </span>--   Example:
+<span class="lineno">   90 </span>--
+<span class="lineno">   91 </span>--   &gt; signalA (bellS 2) drawProgress
+<span class="lineno">   92 </span>--
+<span class="lineno">   93 </span>--   &lt;&lt;docs/gifs/doc_bellS.gif&gt;&gt;
+<span class="lineno">   94 </span>bellS :: Double -&gt; Signal
+<span class="lineno">   95 </span><span class="decl"><span class="istickedoff">bellS steepness = curveS steepness . oscillateS</span></span>
 <span class="lineno">   96 </span>
-<span class="lineno">   97 </span>-- | Bell-curve signal. Takes a steepness parameter. 2 is a good default.
-<span class="lineno">   98 </span>--
-<span class="lineno">   99 </span>--   Example:
-<span class="lineno">  100 </span>--
-<span class="lineno">  101 </span>--   &gt; signalA (bellS 2) drawProgress
-<span class="lineno">  102 </span>--
-<span class="lineno">  103 </span>--   &lt;&lt;docs/gifs/doc_bellS.gif&gt;&gt;
-<span class="lineno">  104 </span>bellS :: Double -&gt; Signal
-<span class="lineno">  105 </span><span class="decl"><span class="istickedoff">bellS steepness = curveS steepness . oscillateS</span></span>
-<span class="lineno">  106 </span>
-<span class="lineno">  107 </span>-- | Cubic Bezier signal. Gives you a fair amount of control over how the
-<span class="lineno">  108 </span>--   signal will 'curve'.
-<span class="lineno">  109 </span>--
-<span class="lineno">  110 </span>--   Example:
-<span class="lineno">  111 </span>--
-<span class="lineno">  112 </span>--   &gt; signalA (cubicBezierS (0.0, 0.8, 0.9, 1.0)) drawProgress
-<span class="lineno">  113 </span>--   
-<span class="lineno">  114 </span>--   &lt;&lt;docs/gifs/doc_cubicBezierS.gif&gt;&gt;
-<span class="lineno">  115 </span>cubicBezierS :: (Double, Double, Double, Double) -&gt; Signal
-<span class="lineno">  116 </span><span class="decl"><span class="istickedoff">cubicBezierS (x1, x2, x3, x4) s = </span>
-<span class="lineno">  117 </span><span class="spaces">  </span><span class="istickedoff">let ms = 1-s</span>
-<span class="lineno">  118 </span><span class="spaces">  </span><span class="istickedoff">in x1*ms^(3::Int) + 3*x2*ms^(2::Int)*s + 3*x3*ms*s^(2::Int) + x4*s^(3::Int)</span></span>
+<span class="lineno">   97 </span>-- | Cubic Bezier signal. Gives you a fair amount of control over how the
+<span class="lineno">   98 </span>--   signal will 'curve'.
+<span class="lineno">   99 </span>--
+<span class="lineno">  100 </span>--   Example:
+<span class="lineno">  101 </span>--
+<span class="lineno">  102 </span>--   &gt; signalA (cubicBezierS (0.0, 0.8, 0.9, 1.0)) drawProgress
+<span class="lineno">  103 </span>--   
+<span class="lineno">  104 </span>--   &lt;&lt;docs/gifs/doc_cubicBezierS.gif&gt;&gt;
+<span class="lineno">  105 </span>cubicBezierS :: (Double, Double, Double, Double) -&gt; Signal
+<span class="lineno">  106 </span><span class="decl"><span class="istickedoff">cubicBezierS (x1, x2, x3, x4) s = </span>
+<span class="lineno">  107 </span><span class="spaces">  </span><span class="istickedoff">let ms = 1-s</span>
+<span class="lineno">  108 </span><span class="spaces">  </span><span class="istickedoff">in x1*ms^(3::Int) + 3*x2*ms^(2::Int)*s + 3*x3*ms*s^(2::Int) + x4*s^(3::Int)</span></span>
 
 </pre>
 </body>

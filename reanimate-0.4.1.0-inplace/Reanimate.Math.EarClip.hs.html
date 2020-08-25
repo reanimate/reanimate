@@ -54,10 +54,10 @@ span.spaces    { background: white }
 <span class="lineno">   35 </span><span class="spaces">    </span><span class="nottickedoff">lst = [ (x,y) | V2 x y &lt;- V.toList $ V.map (fmap realToFrac) $ ringUnpack p ]</span></span>
 <span class="lineno">   36 </span>
 <span class="lineno">   37 </span>-- Triangulation by ear clipping. O(n^2)
-<span class="lineno">   38 </span>earClip :: (Fractional a, Ord a) =&gt; Ring a -&gt; Triangulation
+<span class="lineno">   38 </span>earClip :: (Fractional a, Ord a, Epsilon a) =&gt; Ring a -&gt; Triangulation
 <span class="lineno">   39 </span><span class="decl"><span class="nottickedoff">earClip = last . earClip'</span></span>
 <span class="lineno">   40 </span>
-<span class="lineno">   41 </span>earClip' :: (Fractional a, Ord a) =&gt; Ring a -&gt; [Triangulation]
+<span class="lineno">   41 </span>earClip' :: (Fractional a, Ord a, Epsilon a) =&gt; Ring a -&gt; [Triangulation]
 <span class="lineno">   42 </span><span class="decl"><span class="nottickedoff">earClip' p = map (edgesToTriangulation $ ringSize p) $ inits $</span>
 <span class="lineno">   43 </span><span class="spaces">  </span><span class="nottickedoff">let ears = Set.fromList [ i</span>
 <span class="lineno">   44 </span><span class="spaces">             </span><span class="nottickedoff">| i &lt;- elts</span>
@@ -125,7 +125,7 @@ span.spaces    { background: white }
 <span class="lineno">  106 </span>-- O(n)
 <span class="lineno">  107 </span>-- Returns true if ac can be cut from polygon. That is, true if 'b' is an ear.
 <span class="lineno">  108 </span>-- isEarCorner polygon a b c = True iff ac can be cut
-<span class="lineno">  109 </span>isEarCorner :: (Fractional a, Ord a) =&gt; Ring a -&gt; [Int] -&gt; Int -&gt; Int -&gt; Int -&gt; Bool
+<span class="lineno">  109 </span>isEarCorner :: (Fractional a, Ord a, Epsilon a) =&gt; Ring a -&gt; [Int] -&gt; Int -&gt; Int -&gt; Int -&gt; Bool
 <span class="lineno">  110 </span><span class="decl"><span class="nottickedoff">isEarCorner p polygon a b c =</span>
 <span class="lineno">  111 </span><span class="spaces">    </span><span class="nottickedoff">isLeftTurn aP bP cP &amp;&amp;</span>
 <span class="lineno">  112 </span><span class="spaces">    </span><span class="nottickedoff">-- If it is a right turn then the line ac will be outside the polygon</span>

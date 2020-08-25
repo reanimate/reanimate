@@ -295,7 +295,7 @@ span.spaces    { background: white }
 <span class="lineno">  276 </span>-- dualRoot (Dual (a,_,_) _ _) = a
 <span class="lineno">  277 </span>
 <span class="lineno">  278 </span>-- O(n*ln n), could be O(n) if I could figure out how to use fingertrees...
-<span class="lineno">  279 </span>sssp :: (Fractional a, Ord a) =&gt; Ring a -&gt; Dual -&gt; SSSP
+<span class="lineno">  279 </span>sssp :: (Fractional a, Ord a, Epsilon a) =&gt; Ring a -&gt; Dual -&gt; SSSP
 <span class="lineno">  280 </span><span class="decl"><span class="nottickedoff">sssp p d = toSSSP $</span>
 <span class="lineno">  281 </span><span class="spaces">    </span><span class="nottickedoff">case d of</span>
 <span class="lineno">  282 </span><span class="spaces">      </span><span class="nottickedoff">Dual (a,b,c) l r -&gt;</span>

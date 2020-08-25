@@ -54,7 +54,7 @@ span.spaces    { background: white }
 <span class="lineno">   35 </span>closestLinearCorrespondence :: PointCorrespondence
 <span class="lineno">   36 </span><span class="decl"><span class="nottickedoff">closestLinearCorrespondence = closestLinearCorrespondenceA</span></span>
 <span class="lineno">   37 </span>
-<span class="lineno">   38 </span>closestLinearCorrespondenceA :: (Real a, Fractional a) =&gt; APolygon a -&gt; APolygon a -&gt; (APolygon a, APolygon a)
+<span class="lineno">   38 </span>closestLinearCorrespondenceA :: (Real a, Fractional a, Epsilon a) =&gt; APolygon a -&gt; APolygon a -&gt; (APolygon a, APolygon a)
 <span class="lineno">   39 </span><span class="decl"><span class="nottickedoff">closestLinearCorrespondenceA src' dst' =</span>
 <span class="lineno">   40 </span><span class="spaces">    </span><span class="nottickedoff">(src, worker dst (score dst) options)</span>
 <span class="lineno">   41 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
