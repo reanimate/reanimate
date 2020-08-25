@@ -1,6 +1,9 @@
 {-# LANGUAGE MultiWayIf        #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Reanimate.Math.Balloon where
+module Reanimate.Math.Balloon
+  ( balloon
+  , balloon'
+  ) where
 
 import           Control.Lens
 import qualified Data.Vector                as V
