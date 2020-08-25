@@ -960,6 +960,9 @@ newObject val = do
           withGroupOpacity _oOpacity $
           _oContext _oSVG
         else None
+  spriteModify sprite $ do
+    ~ObjectData{_oZIndex=z} <- unVar ref
+    pure $ \(img,_) -> (img,z)
   return Object
     { objectSprite = sprite
     , objectData   = ref }
