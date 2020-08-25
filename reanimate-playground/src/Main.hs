@@ -86,7 +86,7 @@ main = do
           "\"title\": " ++ show title ++ "," ++
           "\"url\": " ++ show url ++ "," ++
           "\"code\": " ++ show inp ++
-          "}"
+          "}\n  "
         | (title, url, inp) <- snippets ] ++
         "];"
       putStrLn $ "const playgroundVersion = " ++ show playgroundVersion ++ ";"
