@@ -57,7 +57,6 @@ library
                       Reanimate.Math.Polygon
                       Reanimate.Math.Triangulate
                       Reanimate.Math.EarClip
-                      Reanimate.Math.Visibility
                       Reanimate.Math.SSSP
                       Reanimate.Math.Balloon
                       Reanimate.Morph.Common
@@ -95,6 +94,7 @@ library
                       Reanimate.Driver.Server
                       Reanimate.Driver.Compile
                       Paths_reanimate
+                      Reanimate.Math.Visibility
   build-depends:
     base                 >=4.10 && <5,
     JuicyPixels          >=3.3.3,

@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 module Reanimate.Math.Common
   ( -- * Ring
     Ring(..)
@@ -11,8 +13,6 @@ module Reanimate.Math.Common
     -- * Math
   , area                -- :: Fractional a => V2 a -> V2 a -> V2 a -> a
   , area2X              -- :: Fractional a => V2 a -> V2 a -> V2 a -> a
-  , epsilon             -- :: Fractional a => a
-  , epsEq               -- :: (Ord a, Fractional a) => a -> a -> Bool
   , isLeftTurn          -- :: (Num a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
   , isLeftTurnOrLinear  -- :: (Num a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
   , isRightTurn         -- :: (Num a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
@@ -28,6 +28,7 @@ module Reanimate.Math.Common
   , approxDist          -- :: (Real a, Fractional a) => V2 a -> V2 a -> a
   , distance'           -- :: (Real a, Fractional a) => V2 a -> V2 a -> Double
   , triangleAngles      -- :: V2 Double -> V2 Double -> V2 Double -> (Double, Double, Double)
+  , Epsilon(..)
   ) where
 
 import           Data.Vector    (Vector)
@@ -37,6 +38,10 @@ import           Linear.Metric
 import           Linear.V2
 import           Linear.V3
 import           Linear.Vector
+import           Linear.Epsilon
+
+instance Epsilon Rational where
+  nearZero r = r==0
 
 newtype Ring a = Ring (Vector (V2 a))
 
@@ -72,20 +77,14 @@ area2X (V2 a1 a2) (V2 b1 b2) (V2 c1 c2) =
             (V3 b1 b2 1)
             (V3 c1 c2 1))
 
-epsilon :: Fractional a => a
-epsilon = 1e-13
-
-epsEq :: (Ord a, Fractional a) => a -> a -> Bool
-epsEq a b = abs (a-b) < epsilon
-
-compareEpsZero :: (Ord a, Fractional a) => a -> Ordering
+compareEpsZero :: (Ord a, Fractional a, Epsilon a) => a -> Ordering
 compareEpsZero val
-  | abs val < epsilon = EQ
-  | otherwise         = compare val 0
+  | nearZero val  = EQ
+  | otherwise     = compare val 0
 
 {-# INLINE isLeftTurn #-}
 -- Left turn.
-isLeftTurn :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+isLeftTurn :: (Fractional a, Ord a, Epsilon a) => V2 a -> V2 a -> V2 a -> Bool
 isLeftTurn p1 p2 p3 =
   case compareEpsZero (direction p1 p2 p3) of
     LT -> True
@@ -93,7 +92,7 @@ isLeftTurn p1 p2 p3 =
     GT -> False
 
 {-# INLINE isLeftTurnOrLinear #-}
-isLeftTurnOrLinear :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+isLeftTurnOrLinear :: (Fractional a, Ord a, Epsilon a) => V2 a -> V2 a -> V2 a -> Bool
 isLeftTurnOrLinear p1 p2 p3 =
   case compareEpsZero (direction p1 p2 p3) of
     LT -> True
@@ -101,11 +100,11 @@ isLeftTurnOrLinear p1 p2 p3 =
     GT -> False
 
 {-# INLINE isRightTurn #-}
-isRightTurn :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+isRightTurn :: (Fractional a, Ord a, Epsilon a) => V2 a -> V2 a -> V2 a -> Bool
 isRightTurn a b c = not (isLeftTurnOrLinear a b c)
 
 {-# INLINE isRightTurnOrLinear #-}
-isRightTurnOrLinear :: (Fractional a, Ord a) => V2 a -> V2 a -> V2 a -> Bool
+isRightTurnOrLinear :: (Fractional a, Ord a, Epsilon a) => V2 a -> V2 a -> V2 a -> Bool
 isRightTurnOrLinear a b c = not (isLeftTurn a b c)
 
 {-# INLINE direction #-}

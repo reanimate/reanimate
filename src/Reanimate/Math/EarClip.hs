@@ -35,10 +35,10 @@ earCut' p =
     lst = [ (x,y) | V2 x y <- V.toList $ V.map (fmap realToFrac) $ ringUnpack p ]
 
 -- Triangulation by ear clipping. O(n^2)
-earClip :: (Fractional a, Ord a) => Ring a -> Triangulation
+earClip :: (Fractional a, Ord a, Epsilon a) => Ring a -> Triangulation
 earClip = last . earClip'
 
-earClip' :: (Fractional a, Ord a) => Ring a -> [Triangulation]
+earClip' :: (Fractional a, Ord a, Epsilon a) => Ring a -> [Triangulation]
 earClip' p = map (edgesToTriangulation $ ringSize p) $ inits $
   let ears = Set.fromList [ i
              | i <- elts
@@ -106,7 +106,7 @@ prevQ nth (PolyQueue _ _ _ p) = p!!nth
 -- O(n)
 -- Returns true if ac can be cut from polygon. That is, true if 'b' is an ear.
 -- isEarCorner polygon a b c = True iff ac can be cut
-isEarCorner :: (Fractional a, Ord a) => Ring a -> [Int] -> Int -> Int -> Int -> Bool
+isEarCorner :: (Fractional a, Ord a, Epsilon a) => Ring a -> [Int] -> Int -> Int -> Int -> Bool
 isEarCorner p polygon a b c =
     isLeftTurn aP bP cP &&
     -- If it is a right turn then the line ac will be outside the polygon

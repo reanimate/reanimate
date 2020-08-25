@@ -35,7 +35,7 @@ linearCorrespondence = normalizePolygons
 closestLinearCorrespondence :: PointCorrespondence
 closestLinearCorrespondence = closestLinearCorrespondenceA
 
-closestLinearCorrespondenceA :: (Real a, Fractional a) => APolygon a -> APolygon a -> (APolygon a, APolygon a)
+closestLinearCorrespondenceA :: (Real a, Fractional a, Epsilon a) => APolygon a -> APolygon a -> (APolygon a, APolygon a)
 closestLinearCorrespondenceA src' dst' =
     (src, worker dst (score dst) options)
   where
