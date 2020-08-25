@@ -80,6 +80,17 @@ $ stack ./examples/doc_drawCircle.hs
 This should render the `doc_drawCircle` example in a new browser window. If you then change the
 animation source code, the browser window will automatically reload and show the updated animation.
 
+It's also possible to use cabal instead of stack:
+
+```console
+$ git clone https://github.com/reanimate/reanimate.git
+$ cd reanimate/
+$ cabal v2-build
+$ # Workaround for a cabal bug: https://github.com/haskell/cabal/issues/6235
+$ export reanimate_datadir=`pwd` 
+$ cabal v2-exec -- runhaskell examples/doc_drawCircle.hs --ghc ghc
+```
+
 # Documentation
 
  * API reference: https://hackage.haskell.org/package/reanimate/docs/Reanimate.html
