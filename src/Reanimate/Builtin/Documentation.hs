@@ -1,3 +1,15 @@
+{-|
+Module      : Reanimate.Builtin.Documentation
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+
+This module contains convenience functions used in documention
+GIFs for a consistent look and feel.
+
+-}
 module Reanimate.Builtin.Documentation where
 
 import Reanimate.Animation
@@ -24,11 +36,6 @@ drawBox = mkAnimation 2 $ \t ->
 drawCircle :: Animation
 drawCircle = mkAnimation 2 $ \t ->
   partialSvg t $ pathify $
-  mkCircle (screenHeight/3)
-
-drawBall :: Animation
-drawBall = mkAnimation 2 $ \t ->
-  scale t $ withFillOpacity 1 $ withFillColor "red" $
   mkCircle (screenHeight/3)
 
 -- | <<docs/gifs/doc_drawProgress.gif>>
