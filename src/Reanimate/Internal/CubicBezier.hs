@@ -1,6 +1,17 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE UndecidableInstances   #-}
+{-|
+Module      : Reanimate.Internal.CubicBezier
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+
+Convenience wrapper around 'Geom2D.CubicBezier'
+
+-}
 module Reanimate.Internal.CubicBezier
   ( AnyBezier(..)
   , CubicBezier(..)
@@ -47,8 +58,10 @@ import           Linear.V2
 ------------------------------------------------------------
 -- Data types
 
+-- | A bezier curve of any degree.
 newtype AnyBezier a = AnyBezier (V.Vector (V2 a))
 
+-- | A cubic bezier curve.
 data CubicBezier a = CubicBezier
   { cubicC0 :: !(V2 a)
   , cubicC1 :: !(V2 a)
@@ -56,6 +69,7 @@ data CubicBezier a = CubicBezier
   , cubicC3 :: !(V2 a)
   } deriving (Show, Eq)
 
+-- | A quadratic bezier curve.
 data QuadBezier a = QuadBezier
   { quadC0 :: !(V2 a)
   , quadC1 :: !(V2 a)
@@ -96,63 +110,87 @@ data MetaNodeType a
 ------------------------------------------------------------
 -- Methods
 
+-- | Convert a quadratic bezier to a cubic bezier.
 quadToCubic :: Fractional a => QuadBezier a -> CubicBezier a
 quadToCubic = upCast . C.quadToCubic . downCast
 
+-- | @arcLength c t tol@ finds the arclength of the bezier @c@ at @t@,
+--   within given tolerance @tol@.
 arcLength :: CubicBezier Double -> Double -> Double -> Double
 arcLength bezier t tol = C.arcLength (downCast bezier) t tol
 
+-- | @arcLengthParam c len tol@ finds the parameter where the curve @c@
+--   has the arclength @len@, within tolerance @tol@.
 arcLengthParam :: CubicBezier Double -> Double -> Double -> Double
 arcLengthParam bezier t tol = C.arcLengthParam (downCast bezier) t tol
 
+-- | Return @False@ if some points fall outside a line with a thickness of the given tolerance.
 colinear :: CubicBezier Double -> Double -> Bool
 colinear bezier tol = C.colinear (downCast bezier) tol
 
+-- | Calculate a value on the bezier curve.
 evalBezier :: (C.GenericBezier b, V.Unbox a, Fractional a) => b a -> a -> V2 a
 evalBezier c p = upCast $ C.evalBezier c p
 
+-- | Calculate a value and the first derivative on the curve.
 evalBezierDeriv :: (V.Unbox a, Fractional a,C.GenericBezier b) => b a -> a -> (V2 a, V2 a)
 evalBezierDeriv c p = upCast $ C.evalBezierDeriv c p
 
+-- | Find the parameter where the bezier curve is horizontal.
 bezierHoriz :: CubicBezier Double -> [Double]
 bezierHoriz = C.bezierHoriz . downCast
 
+-- | Find the parameter where the bezier curve is vertical.
 bezierVert :: CubicBezier Double -> [Double]
 bezierVert = C.bezierVert . downCast
 
+-- | Create a normal path from a metapath.
 unmetaOpen :: OpenMetaPath Double -> OpenPath Double
 unmetaOpen = upCast . C.unmetaOpen . downCast
 
 unmetaClosed :: ClosedMetaPath Double -> ClosedPath Double
 unmetaClosed = upCast . C.unmetaClosed . downCast
 
+-- | `O((n+m)*log(n+m))`, for n segments and m intersections.
+--   Union of paths, removing overlap and rounding to the given tolerance.
 union :: [ClosedPath Double] -> C.FillRule -> Double -> [ClosedPath Double]
 union p fill tol = upCast (C.union (downCast p) fill tol)
 
+-- | Find the intersections between two Bezier curves, using the Bezier Clip algorithm.
+--   Returns the parameters for both curves.
 bezierIntersection :: CubicBezier Double -> CubicBezier Double -> Double -> [(Double, Double)]
 bezierIntersection a b t = C.bezierIntersection (downCast a) (downCast b) t
 
+-- | Find the closest value on the bezier to the given point, within tolerance.
+--   Return the first value found.
 closest :: CubicBezier Double -> V2 Double -> Double -> Double
 closest c p t = C.closest (downCast c) (downCast p) t
 
+-- | Return the closed path as a list of curves.
 closedPathCurves :: Fractional a => ClosedPath a -> [CubicBezier a]
 closedPathCurves = upCast . C.closedPathCurves . downCast
 
+-- | Return the open path as a list of curves.
 openPathCurves :: Fractional a => OpenPath a -> [CubicBezier a]
 openPathCurves = upCast . C.openPathCurves . downCast
 
+-- | Make an open path from a list of curves. The last control point of each curve is ignored.
 curvesToClosed :: [CubicBezier a] -> ClosedPath a
 curvesToClosed = upCast . C.curvesToClosed . downCast
 
+-- | Interpolate between two vectors.
 interpolateVector :: Num a => V2 a -> V2 a -> a -> V2 a
 interpolateVector a b p = upCast $ C.interpolateVector (downCast a) (downCast b) p
 
+-- | Distance between two vectors.
 vectorDistance :: Floating a => V2 a -> V2 a -> a
 vectorDistance a b = C.vectorDistance (downCast a) (downCast b)
 
+-- | Find inflection points on the curve.
 findBezierInflection :: CubicBezier Double -> [Double]
 findBezierInflection = C.findBezierInflection . downCast
 
+-- | Find the cusps of a bezier.
 findBezierCusp :: CubicBezier Double -> [Double]
 findBezierCusp = C.findBezierCusp . downCast
 
