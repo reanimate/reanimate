@@ -11,22 +11,12 @@ module Reanimate.Ease
   , powerS
   , bellS
   , oscillateS
-  , fromListS
   , cubicBezierS
   ) where
 
 -- | Signals are time-varying variables. Signals can be composed using function
 --   composition.
 type Signal = Double -> Double
-
-fromListS :: [(Double, Signal)] -> Signal
-fromListS fns t = worker 0 fns
-  where
-    worker _ [] = 0
-    worker now [(len, fn)] = fn (min 1 ((t-now) / min (1-now) len))
-    worker now ((len, fn):rest)
-      | now+len < t = worker (now+len) rest
-      | otherwise = fn ((t-now) / len)
 
 -- | Constant signal.
 --
