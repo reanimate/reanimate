@@ -1,3 +1,14 @@
+{-|
+Module      : Reanimate.Raster
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+
+Tools for generating, manipulating, and embedding raster images.
+
+-}
 module Reanimate.Raster
   ( mkImage           -- :: Double -> Double -> FilePath -> SVG
   , cacheImage        -- :: (PngSavable pixel, Hashable a) => a -> Image pixel -> FilePath

@@ -1,3 +1,15 @@
+{-|
+Module      : Reanimate.Animation
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+
+Declarative animation API based on combinators. For a higher-level interface,
+see 'Reanimate.Scene'.
+
+-}
 module Reanimate.Animation
   ( Duration
   , Time
@@ -27,7 +39,6 @@ module Reanimate.Animation
   , pauseAtEnd
   , pauseAtBeginning
   , pauseAround
-  , pauseUntil
   , repeatA
   , reverseA
   , playThenReverseA
@@ -249,11 +260,6 @@ pauseAtBeginning t a =
 --   <<docs/gifs/doc_pauseAround.gif>>
 pauseAround :: Duration -> Duration -> Animation -> Animation
 pauseAround start end = pauseAtEnd end . pauseAtBeginning start
-
--- XXX: Rename to 'setDurationFreeze'. Add 'setDurationDrop' and
---      'setDurationLoop'.
-pauseUntil :: Duration -> Animation -> Animation
-pauseUntil d a = pauseAtEnd (d-duration a) a
 
 -- Freeze frame at time @t@.
 freezeFrame :: Time -> Animation -> (Time -> SVG)
