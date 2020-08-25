@@ -22,7 +22,7 @@ animation = docEnv $ mapA (withFillOpacity 1) $ sceneAnimation $ do
   cameraAttach cam small
   oModifyS small $ do
     oCenterXY .= boxCenter
-    oScale .= 0.1
+    oScale    .= 0.1
   
   oShow txt
   oShow small
@@ -37,7 +37,5 @@ animation = docEnv $ mapA (withFillOpacity 1) $ sceneAnimation $ do
     fork $ cameraZoom cam 3 15
   
   wait 2
-  waitOn $ do
-    fork $ cameraZoom cam 3 1
-  waitOn $ do
-    fork $ cameraPan cam 1 (0,0)
+  cameraZoom cam 3 1
+  cameraPan cam 1 (0,0)
