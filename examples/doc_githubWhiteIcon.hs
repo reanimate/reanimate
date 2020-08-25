@@ -3,7 +3,6 @@
 module Main (main) where
 
 import           Reanimate
-import           Reanimate.Builtin.Documentation
 import           Reanimate.Builtin.Images
 
 main :: IO ()
