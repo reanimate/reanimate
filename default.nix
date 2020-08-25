@@ -3,7 +3,8 @@ let
     url = "https://github.com/input-output-hk/haskell.nix/tarball/af5998fe8d6b201d2a9be09993f1b9fae74e0082";
     sha256 = "0z5w99wkkpg2disvwjnsyp45w0bhdkrhvnrpz5nbwhhp21c71mbn";
   };
-  haskellNix = import haskellNixSrc {};
+  haskellSrcMaster = builtins.fetchTarball https://github.com/input-output-hk/haskell.nix/archive/master.tar.gz;
+  haskellNix = import haskellSrcMaster {};
 
   all-hies = fetchTarball {
     # Insert the desired all-hies commit here
@@ -18,60 +19,61 @@ let
     ];
   });
 
-  set = pkgs.haskell-nix.stackProject {
+  set = pkgs.haskell-nix.cabalProject' {
+    name = "reanimate";
+    compiler-nix-name = "ghc883";
     src = pkgs.haskell-nix.haskellLib.cleanGit {
       name = "reanimate";
       src = ./.;
     };
-    # ghc = pkgs.haskell-nix.compiler.ghc883;
-    stack-sha256 = "0r678px8xkgxvpsi4rb7ciphzxlzccjxs2n64mq596hk3zhrl9av";
+    # stack-sha256 = "0r678px8xkgxvpsi4rb7ciphzxlzccjxs2n64mq596hk3zhrl9av";
     # checkMaterialization = true;
-    modules = [{
-      nonReinstallablePkgs =
-        [ "rts"
-          "ghc-heap"
-          "ghc-prim"
-          "integer-gmp"
-          "integer-simple"
-          "base"
-          "deepseq"
-          "array"
-          "ghc-boot-th"
-          "pretty"
-          "template-haskell"
-          "ghcjs-prim"
-          "ghcjs-th"
-          "ghc-boot"
-          "ghc"
-          "Cabal"
-          "Win32"
-          "array"
-          "binary"
-          "bytestring"
-          "containers"
-          "directory"
-          "filepath"
-          "ghc-boot"
-          "ghc-compact"
-          "ghc-prim"
-          "ghci"
-          "haskeline"
-          "hpc"
-          "mtl"
-          "parsec"
-          "process"
-          "text"
-          "time"
-          "transformers"
-          "unix"
-          "xhtml"
-          "stm"
-          "terminfo"
-        ];
-    }];
+    # modules = [{
+    #   nonReinstallablePkgs =
+    #     [ "rts"
+    #       "ghc-heap"
+    #       "ghc-prim"
+    #       "integer-gmp"
+    #       "integer-simple"
+    #       "base"
+    #       "deepseq"
+    #       "array"
+    #       "ghc-boot-th"
+    #       "pretty"
+    #       "template-haskell"
+    #       "ghcjs-prim"
+    #       "ghcjs-th"
+    #       "ghc-boot"
+    #       "ghc"
+    #       "Cabal"
+    #       "Win32"
+    #       "array"
+    #       "binary"
+    #       "bytestring"
+    #       "containers"
+    #       "directory"
+    #       "filepath"
+    #       "ghc-boot"
+    #       "ghc-compact"
+    #       "ghc-prim"
+    #       "ghci"
+    #       "haskeline"
+    #       "hpc"
+    #       "mtl"
+    #       "parsec"
+    #       "process"
+    #       "text"
+    #       "time"
+    #       "transformers"
+    #       "unix"
+    #       "xhtml"
+    #       "stm"
+    #       "terminfo"
+    #     ];
+    # }];
   };
-in set.reanimate.components.all // {
-  env = set.shellFor {
+in set.hsPkgs.reanimate.components.library // {
+  env = set.hsPkgs.shellFor {
     packages = p: [ p.reanimate ];
     # exactDeps = true;
     nativeBuildInputs = [ pkgs.stack
