@@ -273,21 +273,29 @@ cacheDir = do
 withHaskellFile :: Module SrcSpanInfo -> (FilePath -> IO a) -> IO a
 withHaskellFile m action = withSystemTempFile "playground.hs" $ \target h -> do
     hClose h
-    T.writeFile target  "{-# LANGUAGE OverloadedStrings #-}\n"
-    T.appendFile target "module Animation where\n"
-    T.appendFile target "import Reanimate\n"
-    T.appendFile target "import Reanimate.Builtin.Documentation\n"
-    T.appendFile target "import Reanimate.Builtin.Images\n"
-    T.appendFile target "import Reanimate.Builtin.CirclePlot\n"
-    T.appendFile target "import Reanimate.Builtin.TernaryPlot\n"
-    T.appendFile target "import Reanimate.Builtin.Slide\n"
-    T.appendFile target "import Reanimate.Transition\n"
-    T.appendFile target "import Reanimate.Morph.Common\n"
-    T.appendFile target "import Reanimate.Morph.Linear\n"
-    T.appendFile target "import Reanimate.Scene\n"
-    T.appendFile target "import Control.Lens\n"
-    T.appendFile target "import Codec.Picture.Types\n"
-    T.appendFile target "{-# LINE 1 \"playground\" #-}\n"
+    T.writeFile target
+      "{-# LANGUAGE OverloadedStrings #-}\n\
+      \module Animation where\n\
+      \import Reanimate\n\
+      \import Reanimate.Builtin.Documentation\n\
+      \import Reanimate.Builtin.Images\n\
+      \import Reanimate.Builtin.CirclePlot\n\
+      \import Reanimate.Builtin.TernaryPlot\n\
+      \import Reanimate.Builtin.Slide\n\
+      \import Reanimate.Internal.CubicBezier\n\
+      \import Reanimate.Transition\n\
+      \import Reanimate.Morph.Common\n\
+      \import Reanimate.Morph.Linear\n\
+      \import Reanimate.Scene\n\
+      \import qualified Graphics.SvgTree as SVG\n\
+      \import Control.Lens\n\
+      \import qualified Data.Text as T\n\
+      \import Linear.V2\n\
+      \import Linear.Metric\n\
+      \import Linear.Vector\n\
+      \import Text.Printf\n\
+      \import Codec.Picture.Types\n\
+      \{-# LINE 1 \"playground\" #-}\n"
     T.appendFile target $ T.pack $ prettyPrint m
     action target
 
