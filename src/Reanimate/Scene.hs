@@ -651,7 +651,22 @@ spriteZ (Sprite born ref) zindex = do
         let (svg', z) = render d t svg in (svg', if t < now - born then z else zindex)
     )
 
--- Destroy all local sprites at the end of a scene.
+-- | Destroy all local sprites at the end of a scene.
+--
+--   Example:
+--
+--   > do -- the rect lives through the entire 3s animation
+--   >    newSpriteSVG_ $ translate (-3) 0 $ mkRect 4 4
+--   >    wait 1
+--   >    spriteScope $ do
+--   >      -- the circle only lives for 1 second.
+--   >      local <- newSpriteSVG $ translate 3 0 $ mkCircle 2
+--   >      spriteE local $ overBeginning 0.3 fadeInE
+--   >      spriteE local $ overEnding 0.3 fadeOutE
+--   >      wait 1
+--   >    wait 1
+--
+--   <<docs/gifs/doc_spriteScope.gif>>
 spriteScope :: Scene s a -> Scene s a
 spriteScope (M action) = M $ \t -> do
   (a, s, p, gens) <- action t

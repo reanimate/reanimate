@@ -116,7 +116,8 @@ module Reanimate
   , spriteTween       -- :: Sprite s -> Duration -> (Double -> SVG -> SVG) -> Scene s ()
   , spriteVar         -- :: Sprite s -> a -> (a -> SVG -> SVG) -> Scene s (Var s a)
   , spriteE           -- :: Sprite s -> Effect -> Scene s ()
-  , spriteZ,          -- :: Sprite s -> ZIndex -> Scene s ()
+  , spriteZ           -- :: Sprite s -> ZIndex -> Scene s ()
+  , spriteScope,      -- :: Scene s a -> Scene s a
 
     -- ** Effects
     Effect,
