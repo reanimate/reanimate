@@ -1078,6 +1078,22 @@ data Camera = Camera
 instance Renderable Camera where
   toSVG Camera = None
 
+-- | Connect an object to a camera such that
+--   camera settings (position, zoom, and rotation) is
+--   applied to the object.
+--
+--   Example
+--
+--   > do cam <- newObject Camera
+--   >    circ <- newObject $ Circle 2
+--   >    oModifyS circ $
+--   >      oContext .= withFillOpacity 1 . withFillColor "blue"
+--   >    oShow circ
+--   >    cameraAttach cam circ
+--   >    cameraZoom cam 1 2
+--   >    cameraZoom cam 1 1
+--
+--   <<docs/gifs/doc_cameraAttach.gif>>
 cameraAttach :: Object s Camera -> Object s a -> Scene s ()
 cameraAttach cam obj =
   spriteModify (objectSprite obj) $ do
@@ -1091,6 +1107,25 @@ cameraAttach cam obj =
             uncurry translate (camData^.oScaleOrigin & both %~ negate)
       in (ctx svg, zindex)
 
+-- |
+--
+--   Example
+--
+--   > do cam <- newObject Camera
+--   >    circ <- newObject $ Circle 2; oShow circ
+--   >    oModify circ $ oTranslate .~ (-3,0)
+--   >    box <- newObject $ Rectangle 4 4; oShow box
+--   >    oModify box $ oTranslate .~ (3,0)
+--   >    cameraAttach cam circ
+--   >    cameraAttach cam box
+--   >    cameraFocus cam (-3,0)
+--   >    cameraZoom cam 2 2      -- Zoom in
+--   >    cameraZoom cam 2 1      -- Zoom out
+--   >    cameraFocus cam (3,0)
+--   >    cameraZoom cam 2 2      -- Zoom in
+--   >    cameraZoom cam 2 1      -- Zoom out
+--
+--   <<docs/gifs/doc_cameraFocus.gif>>
 cameraFocus :: Object s Camera -> (Double, Double) -> Scene s ()
 cameraFocus cam (x,y) = do
   (ox, oy) <- oRead cam oScaleOrigin
@@ -1101,21 +1136,25 @@ cameraFocus cam (x,y) = do
     oTranslate .= newLocation
     oScaleOrigin .= (x,y)
 
+-- | Instantaneously set camera zoom level.
 cameraSetZoom :: Object s Camera -> Double -> Scene s ()
 cameraSetZoom cam s =
   oModifyS cam $
     oScale .= s
 
+-- | Change camera zoom level over a set duration.
 cameraZoom :: Object s Camera -> Duration -> Double -> Scene s ()
 cameraZoom cam d s =
   oTweenS cam d $ \t ->
     oScale %= \v -> fromToS v s t
 
+-- | Instantaneously set camera location.
 cameraSetPan :: Object s Camera -> (Double, Double) -> Scene s ()
 cameraSetPan cam location =
   oModifyS cam $ do
     oTranslate .= location
 
+-- | Change camera location over a set duration.
 cameraPan :: Object s Camera -> Duration -> (Double, Double) -> Scene s ()
 cameraPan cam d (x,y) =
   oTweenS cam d $ \t -> do
