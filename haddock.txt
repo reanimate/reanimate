@@ -1,4 +1,5 @@
  100% ( 55 / 55) in 'Reanimate.Svg.Constructors'
+ 100% ( 40 / 40) in 'Reanimate.GeoProjection'
  100% ( 22 / 22) in 'Reanimate.Effect'
  100% ( 17 / 17) in 'Reanimate.Parameters'
  100% ( 13 / 13) in 'Reanimate.ColorMap'
@@ -21,7 +22,6 @@
   56% ( 10 / 18) in 'Reanimate.Svg'
   50% (  1 /  2) in 'Reanimate.Builtin.CirclePlot'
   44% (  4 /  9) in 'Reanimate.LaTeX'
-  42% ( 17 / 40) in 'Reanimate.GeoProjection'
   31% (  4 / 13) in 'Reanimate.Render'
   25% (  1 /  4) in 'Reanimate.Builtin.Slide'
   12% (  2 / 17) in 'Reanimate.Math.SSSP'
