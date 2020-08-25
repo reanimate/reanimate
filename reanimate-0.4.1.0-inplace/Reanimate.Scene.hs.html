@@ -1097,49 +1097,88 @@ span.spaces    { background: white }
 <span class="lineno"> 1078 </span>instance Renderable Camera where
 <span class="lineno"> 1079 </span>  <span class="decl"><span class="nottickedoff">toSVG Camera = None</span></span>
 <span class="lineno"> 1080 </span>
-<span class="lineno"> 1081 </span>cameraAttach :: Object s Camera -&gt; Object s a -&gt; Scene s ()
-<span class="lineno"> 1082 </span><span class="decl"><span class="nottickedoff">cameraAttach cam obj =</span>
-<span class="lineno"> 1083 </span><span class="spaces">  </span><span class="nottickedoff">spriteModify (objectSprite obj) $ do</span>
-<span class="lineno"> 1084 </span><span class="spaces">    </span><span class="nottickedoff">camData &lt;- unVar (objectData cam)</span>
-<span class="lineno"> 1085 </span><span class="spaces">    </span><span class="nottickedoff">return $ \(svg,zindex) -&gt;</span>
-<span class="lineno"> 1086 </span><span class="spaces">      </span><span class="nottickedoff">let (x,y) = camData^.oTranslate</span>
-<span class="lineno"> 1087 </span><span class="spaces">          </span><span class="nottickedoff">ctx =</span>
-<span class="lineno"> 1088 </span><span class="spaces">            </span><span class="nottickedoff">translate (-x) (-y) .</span>
-<span class="lineno"> 1089 </span><span class="spaces">            </span><span class="nottickedoff">uncurry translate (camData^.oScaleOrigin) .</span>
-<span class="lineno"> 1090 </span><span class="spaces">            </span><span class="nottickedoff">scale (camData^.oScale) .</span>
-<span class="lineno"> 1091 </span><span class="spaces">            </span><span class="nottickedoff">uncurry translate (camData^.oScaleOrigin &amp; both %~ negate)</span>
-<span class="lineno"> 1092 </span><span class="spaces">      </span><span class="nottickedoff">in (ctx svg, zindex)</span></span>
-<span class="lineno"> 1093 </span>
-<span class="lineno"> 1094 </span>cameraFocus :: Object s Camera -&gt; (Double, Double) -&gt; Scene s ()
-<span class="lineno"> 1095 </span><span class="decl"><span class="nottickedoff">cameraFocus cam (x,y) = do</span>
-<span class="lineno"> 1096 </span><span class="spaces">  </span><span class="nottickedoff">(ox, oy) &lt;- oRead cam oScaleOrigin</span>
-<span class="lineno"> 1097 </span><span class="spaces">  </span><span class="nottickedoff">(tx, ty) &lt;- oRead cam oTranslate</span>
-<span class="lineno"> 1098 </span><span class="spaces">  </span><span class="nottickedoff">s &lt;- oRead cam oScale</span>
-<span class="lineno"> 1099 </span><span class="spaces">  </span><span class="nottickedoff">let newLocation = (x-((x-ox)*s+ox-tx), y-((y-oy)*s+oy-ty))</span>
-<span class="lineno"> 1100 </span><span class="spaces">  </span><span class="nottickedoff">oModifyS cam $ do</span>
-<span class="lineno"> 1101 </span><span class="spaces">    </span><span class="nottickedoff">oTranslate .= newLocation</span>
-<span class="lineno"> 1102 </span><span class="spaces">    </span><span class="nottickedoff">oScaleOrigin .= (x,y)</span></span>
-<span class="lineno"> 1103 </span>
-<span class="lineno"> 1104 </span>cameraSetZoom :: Object s Camera -&gt; Double -&gt; Scene s ()
-<span class="lineno"> 1105 </span><span class="decl"><span class="nottickedoff">cameraSetZoom cam s =</span>
-<span class="lineno"> 1106 </span><span class="spaces">  </span><span class="nottickedoff">oModifyS cam $</span>
-<span class="lineno"> 1107 </span><span class="spaces">    </span><span class="nottickedoff">oScale .= s</span></span>
-<span class="lineno"> 1108 </span>
-<span class="lineno"> 1109 </span>cameraZoom :: Object s Camera -&gt; Duration -&gt; Double -&gt; Scene s ()
-<span class="lineno"> 1110 </span><span class="decl"><span class="nottickedoff">cameraZoom cam d s =</span>
-<span class="lineno"> 1111 </span><span class="spaces">  </span><span class="nottickedoff">oTweenS cam d $ \t -&gt;</span>
-<span class="lineno"> 1112 </span><span class="spaces">    </span><span class="nottickedoff">oScale %= \v -&gt; fromToS v s t</span></span>
-<span class="lineno"> 1113 </span>
-<span class="lineno"> 1114 </span>cameraSetPan :: Object s Camera -&gt; (Double, Double) -&gt; Scene s ()
-<span class="lineno"> 1115 </span><span class="decl"><span class="nottickedoff">cameraSetPan cam location =</span>
-<span class="lineno"> 1116 </span><span class="spaces">  </span><span class="nottickedoff">oModifyS cam $ do</span>
-<span class="lineno"> 1117 </span><span class="spaces">    </span><span class="nottickedoff">oTranslate .= location</span></span>
-<span class="lineno"> 1118 </span>
-<span class="lineno"> 1119 </span>cameraPan :: Object s Camera -&gt; Duration -&gt; (Double, Double) -&gt; Scene s ()
-<span class="lineno"> 1120 </span><span class="decl"><span class="nottickedoff">cameraPan cam d (x,y) =</span>
-<span class="lineno"> 1121 </span><span class="spaces">  </span><span class="nottickedoff">oTweenS cam d $ \t -&gt; do</span>
-<span class="lineno"> 1122 </span><span class="spaces">    </span><span class="nottickedoff">oTranslate._1 %= \v -&gt; fromToS v x t</span>
-<span class="lineno"> 1123 </span><span class="spaces">    </span><span class="nottickedoff">oTranslate._2 %= \v -&gt; fromToS v y t</span></span>
+<span class="lineno"> 1081 </span>-- | Connect an object to a camera such that
+<span class="lineno"> 1082 </span>--   camera settings (position, zoom, and rotation) is
+<span class="lineno"> 1083 </span>--   applied to the object.
+<span class="lineno"> 1084 </span>--
+<span class="lineno"> 1085 </span>--   Example
+<span class="lineno"> 1086 </span>--
+<span class="lineno"> 1087 </span>--   &gt; do cam &lt;- newObject Camera
+<span class="lineno"> 1088 </span>--   &gt;    circ &lt;- newObject $ Circle 2
+<span class="lineno"> 1089 </span>--   &gt;    oModifyS circ $
+<span class="lineno"> 1090 </span>--   &gt;      oContext .= withFillOpacity 1 . withFillColor &quot;blue&quot;
+<span class="lineno"> 1091 </span>--   &gt;    oShow circ
+<span class="lineno"> 1092 </span>--   &gt;    cameraAttach cam circ
+<span class="lineno"> 1093 </span>--   &gt;    cameraZoom cam 1 2
+<span class="lineno"> 1094 </span>--   &gt;    cameraZoom cam 1 1
+<span class="lineno"> 1095 </span>--
+<span class="lineno"> 1096 </span>--   &lt;&lt;docs/gifs/doc_cameraAttach.gif&gt;&gt;
+<span class="lineno"> 1097 </span>cameraAttach :: Object s Camera -&gt; Object s a -&gt; Scene s ()
+<span class="lineno"> 1098 </span><span class="decl"><span class="nottickedoff">cameraAttach cam obj =</span>
+<span class="lineno"> 1099 </span><span class="spaces">  </span><span class="nottickedoff">spriteModify (objectSprite obj) $ do</span>
+<span class="lineno"> 1100 </span><span class="spaces">    </span><span class="nottickedoff">camData &lt;- unVar (objectData cam)</span>
+<span class="lineno"> 1101 </span><span class="spaces">    </span><span class="nottickedoff">return $ \(svg,zindex) -&gt;</span>
+<span class="lineno"> 1102 </span><span class="spaces">      </span><span class="nottickedoff">let (x,y) = camData^.oTranslate</span>
+<span class="lineno"> 1103 </span><span class="spaces">          </span><span class="nottickedoff">ctx =</span>
+<span class="lineno"> 1104 </span><span class="spaces">            </span><span class="nottickedoff">translate (-x) (-y) .</span>
+<span class="lineno"> 1105 </span><span class="spaces">            </span><span class="nottickedoff">uncurry translate (camData^.oScaleOrigin) .</span>
+<span class="lineno"> 1106 </span><span class="spaces">            </span><span class="nottickedoff">scale (camData^.oScale) .</span>
+<span class="lineno"> 1107 </span><span class="spaces">            </span><span class="nottickedoff">uncurry translate (camData^.oScaleOrigin &amp; both %~ negate)</span>
+<span class="lineno"> 1108 </span><span class="spaces">      </span><span class="nottickedoff">in (ctx svg, zindex)</span></span>
+<span class="lineno"> 1109 </span>
+<span class="lineno"> 1110 </span>-- |
+<span class="lineno"> 1111 </span>--
+<span class="lineno"> 1112 </span>--   Example
+<span class="lineno"> 1113 </span>--
+<span class="lineno"> 1114 </span>--   &gt; do cam &lt;- newObject Camera
+<span class="lineno"> 1115 </span>--   &gt;    circ &lt;- newObject $ Circle 2; oShow circ
+<span class="lineno"> 1116 </span>--   &gt;    oModify circ $ oTranslate .~ (-3,0)
+<span class="lineno"> 1117 </span>--   &gt;    box &lt;- newObject $ Rectangle 4 4; oShow box
+<span class="lineno"> 1118 </span>--   &gt;    oModify box $ oTranslate .~ (3,0)
+<span class="lineno"> 1119 </span>--   &gt;    cameraAttach cam circ
+<span class="lineno"> 1120 </span>--   &gt;    cameraAttach cam box
+<span class="lineno"> 1121 </span>--   &gt;    cameraFocus cam (-3,0)
+<span class="lineno"> 1122 </span>--   &gt;    cameraZoom cam 2 2      -- Zoom in
+<span class="lineno"> 1123 </span>--   &gt;    cameraZoom cam 2 1      -- Zoom out
+<span class="lineno"> 1124 </span>--   &gt;    cameraFocus cam (3,0)
+<span class="lineno"> 1125 </span>--   &gt;    cameraZoom cam 2 2      -- Zoom in
+<span class="lineno"> 1126 </span>--   &gt;    cameraZoom cam 2 1      -- Zoom out
+<span class="lineno"> 1127 </span>--
+<span class="lineno"> 1128 </span>--   &lt;&lt;docs/gifs/doc_cameraFocus.gif&gt;&gt;
+<span class="lineno"> 1129 </span>cameraFocus :: Object s Camera -&gt; (Double, Double) -&gt; Scene s ()
+<span class="lineno"> 1130 </span><span class="decl"><span class="nottickedoff">cameraFocus cam (x,y) = do</span>
+<span class="lineno"> 1131 </span><span class="spaces">  </span><span class="nottickedoff">(ox, oy) &lt;- oRead cam oScaleOrigin</span>
+<span class="lineno"> 1132 </span><span class="spaces">  </span><span class="nottickedoff">(tx, ty) &lt;- oRead cam oTranslate</span>
+<span class="lineno"> 1133 </span><span class="spaces">  </span><span class="nottickedoff">s &lt;- oRead cam oScale</span>
+<span class="lineno"> 1134 </span><span class="spaces">  </span><span class="nottickedoff">let newLocation = (x-((x-ox)*s+ox-tx), y-((y-oy)*s+oy-ty))</span>
+<span class="lineno"> 1135 </span><span class="spaces">  </span><span class="nottickedoff">oModifyS cam $ do</span>
+<span class="lineno"> 1136 </span><span class="spaces">    </span><span class="nottickedoff">oTranslate .= newLocation</span>
+<span class="lineno"> 1137 </span><span class="spaces">    </span><span class="nottickedoff">oScaleOrigin .= (x,y)</span></span>
+<span class="lineno"> 1138 </span>
+<span class="lineno"> 1139 </span>-- | Instantaneously set camera zoom level.
+<span class="lineno"> 1140 </span>cameraSetZoom :: Object s Camera -&gt; Double -&gt; Scene s ()
+<span class="lineno"> 1141 </span><span class="decl"><span class="nottickedoff">cameraSetZoom cam s =</span>
+<span class="lineno"> 1142 </span><span class="spaces">  </span><span class="nottickedoff">oModifyS cam $</span>
+<span class="lineno"> 1143 </span><span class="spaces">    </span><span class="nottickedoff">oScale .= s</span></span>
+<span class="lineno"> 1144 </span>
+<span class="lineno"> 1145 </span>-- | Change camera zoom level over a set duration.
+<span class="lineno"> 1146 </span>cameraZoom :: Object s Camera -&gt; Duration -&gt; Double -&gt; Scene s ()
+<span class="lineno"> 1147 </span><span class="decl"><span class="nottickedoff">cameraZoom cam d s =</span>
+<span class="lineno"> 1148 </span><span class="spaces">  </span><span class="nottickedoff">oTweenS cam d $ \t -&gt;</span>
+<span class="lineno"> 1149 </span><span class="spaces">    </span><span class="nottickedoff">oScale %= \v -&gt; fromToS v s t</span></span>
+<span class="lineno"> 1150 </span>
+<span class="lineno"> 1151 </span>-- | Instantaneously set camera location.
+<span class="lineno"> 1152 </span>cameraSetPan :: Object s Camera -&gt; (Double, Double) -&gt; Scene s ()
+<span class="lineno"> 1153 </span><span class="decl"><span class="nottickedoff">cameraSetPan cam location =</span>
+<span class="lineno"> 1154 </span><span class="spaces">  </span><span class="nottickedoff">oModifyS cam $ do</span>
+<span class="lineno"> 1155 </span><span class="spaces">    </span><span class="nottickedoff">oTranslate .= location</span></span>
+<span class="lineno"> 1156 </span>
+<span class="lineno"> 1157 </span>-- | Change camera location over a set duration.
+<span class="lineno"> 1158 </span>cameraPan :: Object s Camera -&gt; Duration -&gt; (Double, Double) -&gt; Scene s ()
+<span class="lineno"> 1159 </span><span class="decl"><span class="nottickedoff">cameraPan cam d (x,y) =</span>
+<span class="lineno"> 1160 </span><span class="spaces">  </span><span class="nottickedoff">oTweenS cam d $ \t -&gt; do</span>
+<span class="lineno"> 1161 </span><span class="spaces">    </span><span class="nottickedoff">oTranslate._1 %= \v -&gt; fromToS v x t</span>
+<span class="lineno"> 1162 </span><span class="spaces">    </span><span class="nottickedoff">oTranslate._2 %= \v -&gt; fromToS v y t</span></span>
 
 </pre>
 </body>

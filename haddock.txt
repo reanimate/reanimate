@@ -18,7 +18,7 @@
   99% (155 /156) in 'Reanimate'
   91% ( 10 / 11) in 'Reanimate.Ease'
   88% (  7 /  8) in 'Reanimate.Transition'
-  81% ( 92 /114) in 'Reanimate.Scene'
+  86% ( 98 /114) in 'Reanimate.Scene'
   75% (  3 /  4) in 'Reanimate.Svg.Unuse'
   62% ( 23 / 37) in 'Reanimate.Internal.CubicBezier'
   56% ( 10 / 18) in 'Reanimate.Svg'
