@@ -1,3 +1,14 @@
+{-|
+Module      : Reanimate.Builtin.Images
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+
+Collection of built-in images.
+
+-}
 module Reanimate.Builtin.Images
   ( svgLogo
   , haskellLogo
@@ -46,6 +57,7 @@ githubIcon :: SVG
 githubIcon = unsafePerformIO $ embedImage "data/github-icon.svg"
 
 {-# NOINLINE githubWhiteIcon #-}
+-- | <<docs/gifs/doc_githubWhiteIcon.gif>>
 githubWhiteIcon :: SVG
 githubWhiteIcon = unsafePerformIO $ embedImage "data/github-icon-white.svg"
 

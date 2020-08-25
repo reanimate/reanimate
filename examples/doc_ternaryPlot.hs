@@ -2,13 +2,15 @@
 -- stack runghc --package reanimate
 module Main(main) where
 
-import Reanimate hiding (raster)
-import Reanimate.Builtin.Documentation
-import Reanimate.Builtin.TernaryPlot
-import Reanimate.ColorComponents
-import Data.Colour.CIE
-import Codec.Picture.Types
+import           Codec.Picture.Types
+import           Reanimate
+import           Reanimate.Builtin.Documentation
+import           Reanimate.Builtin.TernaryPlot
 
 main :: IO ()
-main = reanimate $ docEnv $ animate $ const $
-  ternaryPlot 1024 (\a b c -> promotePixel $ toRGB8 $ cieXYZ a b c)
+main = reanimate $ docEnv $ staticFrame 1 $
+  ternaryPlot 100 $ \aCoord bCoord cCoord -> promotePixel $
+    let red   = round $ aCoord*255
+        green = round $ bCoord*255
+        blue  = round $ cCoord*255
+    in PixelRGB8 red green blue

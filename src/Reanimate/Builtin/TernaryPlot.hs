@@ -1,19 +1,56 @@
-module Reanimate.Builtin.TernaryPlot where
+{-|
+Module      : Reanimate.Builtin.TernaryPlot
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+
+Implementation of ternary plots: <https://en.wikipedia.org/wiki/Ternary_plot>
+
+-}
+module Reanimate.Builtin.TernaryPlot
+  ( ACoord
+  , BCoord
+  , CCoord
+  , ternaryPlot
+  -- , atCenter
+  -- , radius
+  , toCartesianCoords
+  , toOffsetCartesianCoords
+  , fromCartesianCoords
+  ) where
 
 import           Codec.Picture
 import           Graphics.SvgTree (Tree)
 import           Reanimate.Raster
 import           Reanimate.Svg
 
--- (top, left, right)
 -- a+b+c=1
+-- | Left-most coordinate.
 type ACoord = Double
+-- | Top-most coordinate.
 type BCoord = Double
+-- | Right-most coordinate.
 type CCoord = Double
 
--- Creates a centered ternary plot with a width of 5.
-ternaryPlot :: Int -- ^ Pixels in the X-axis.
-            -> (ACoord -> BCoord -> CCoord -> PixelRGBA8) -> Tree
+-- | Creates a centered ternary plot with a width of 5.
+--
+--   Example:
+--
+--   > ternaryPlot 100 $ \aCoord bCoord cCoord -> promotePixel $
+--   >   let red   = round $ aCoord*255
+--   >       green = round $ bCoord*255
+--   >       blue  = round $ cCoord*255
+--   >   in PixelRGB8 red green blue
+--
+--   <<docs/gifs/doc_ternaryPlot.gif>>
+ternaryPlot :: Int -- ^ Pixels in the X-axis. More pixels => higher quality.
+            -> (ACoord -> BCoord -> CCoord -> PixelRGBA8)
+            -- ^ a+b+c=1. A=1 is the left-most position,
+            --   B=1 is the top-most position, and
+            --   C=1 is the right-most position.
+            -> Tree
 ternaryPlot density fn =
     scaleToWidth stdWidth $
     translate (-cX) (-cY) $
@@ -36,22 +73,27 @@ ternaryPlot density fn =
         then PixelRGBA8 0 0 0 0
         else fn aCoord bCoord cCoord
 
-atCenter :: Double -> Tree -> Tree
-atCenter stdWidth = translate (-cX*stdWidth) (-cY*stdWidth)
-  where
-    (cX, cY) = toCartesianCoords (1/3) (1/3)
+-- atCenter :: Double -> Tree -> Tree
+-- atCenter stdWidth = translate (-cX*stdWidth) (-cY*stdWidth)
+--   where
+--     (cX, cY) = toCartesianCoords (1/3) (1/3)
 
-radius :: Double
-radius = sqrt (cX*cX + cY*cY)
-  where
-    (cX, cY) = toCartesianCoords (1/3) (1/3)
+-- radius :: Double
+-- radius = sqrt (cX*cX + cY*cY)
+--   where
+--     (cX, cY) = toCartesianCoords (1/3) (1/3)
 
+-- | Compute the XY coordinates from ternary coordinates.
+--   Note that @CCoord@ is given because @a+b+c=1@.
 toCartesianCoords :: ACoord -> BCoord -> (Double, Double)
 toCartesianCoords a b = (x, y)
   where
     x = (a+2*b)/2
     y = (sqrt 3 / 2) * a
 
+-- | Compute the XY coordinates relative from the center of the
+--   ternary plot.
+--   Note that @CCoord@ is given because @a+b+c=1@.
 toOffsetCartesianCoords :: ACoord -> BCoord -> (Double, Double)
 toOffsetCartesianCoords a b =
     (tx-zx, ty-zy)
@@ -59,6 +101,7 @@ toOffsetCartesianCoords a b =
     (zx,zy) = toCartesianCoords (1/3) (1/3)
     (tx,ty) = toCartesianCoords a b
 
+-- | Compute ternary coordinates from XY coordinates.
 fromCartesianCoords :: Double -> Double -> (ACoord, BCoord, CCoord)
 fromCartesianCoords x y = (a,b,1-a-b)
   where
