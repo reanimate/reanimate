@@ -53,6 +53,7 @@ library
                       Reanimate.Svg.LineCommand
                       Reanimate.Transform
                       Reanimate.Misc
+                      Reanimate.Math.Triangulate
                       Reanimate.Math.Common
                       Reanimate.Math.Polygon
                       Reanimate.Math.SSSP
@@ -84,7 +85,6 @@ library
                       Reanimate.Voice
                       Geom2D.CubicBezier.Linear
   other-modules:      Reanimate.Cache
-                      Reanimate.Math.Triangulate
                       Reanimate.Morph.Cache
                       Reanimate.Driver
                       Reanimate.Driver.Check
@@ -154,7 +154,8 @@ test-suite spec
     directory,
     filepath,
     bytestring, process,
-    reanimate, vector, linear,
+    reanimate,
+    vector, linear,
     QuickCheck >= 2.1.0, text,
     tasty, tasty-golden, tasty-hunit,
     tasty-quickcheck, tasty-rerun >= 1.1.17
