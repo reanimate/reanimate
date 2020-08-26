@@ -117,7 +117,7 @@ span.spaces    { background: white }
 <span class="lineno">   98 </span>import           Linear.V2
 <span class="lineno">   99 </span>import           Linear.Vector
 <span class="lineno">  100 </span>import           Reanimate.Math.Common
-<span class="lineno">  101 </span>import           Reanimate.Math.EarClip
+<span class="lineno">  101 </span>-- import           Reanimate.Math.EarClip
 <span class="lineno">  102 </span>import           Reanimate.Math.SSSP
 <span class="lineno">  103 </span>import           Reanimate.Math.Triangulate
 <span class="lineno">  104 </span>
@@ -164,7 +164,7 @@ span.spaces    { background: white }
 <span class="lineno">  145 </span><span class="spaces">  </span><span class="istickedoff">where</span>
 <span class="lineno">  146 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">n = length points</span></span>
 <span class="lineno">  147 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">ring = ringPack points</span></span>
-<span class="lineno">  148 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">trig = earCut ring</span></span></span>
+<span class="lineno">  148 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">trig = triangulate ring</span></span></span>
 <span class="lineno">  149 </span>      -- earClip ring
 <span class="lineno">  150 </span>
 <span class="lineno">  151 </span>castPolygon :: (PolyCtx a, PolyCtx b) =&gt; APolygon a -&gt; APolygon b
