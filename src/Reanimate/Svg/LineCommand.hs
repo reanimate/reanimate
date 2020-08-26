@@ -5,7 +5,7 @@ import           Control.Monad.Fix
 import           Control.Monad.State
 import           Data.Functor
 import qualified Data.Vector.Unboxed as V
-import qualified Reanimate.Internal.CubicBezier as Bezier
+import qualified Geom2D.CubicBezier.Linear as Bezier
 import           Graphics.SvgTree    hiding (height, line, path, use, width)
 import           Linear.Metric
 import           Linear.V2           hiding (angle)

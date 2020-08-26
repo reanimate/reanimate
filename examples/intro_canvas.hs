@@ -14,7 +14,7 @@ import           Linear.V2
 import           Linear.Vector
 import           Reanimate
 import           Reanimate.Builtin.Documentation
-import           Reanimate.Internal.CubicBezier
+import           Geom2D.CubicBezier.Linear
 import           Text.Printf
 
 main :: IO ()

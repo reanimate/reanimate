@@ -2,7 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE UndecidableInstances   #-}
 {-|
-Module      : Reanimate.Internal.CubicBezier
+Module      : Geom2D.CubicBezier.Linear
 Copyright   : Written by David Himmelstrup
 License     : Unlicense
 Maintainer  : lemmih@gmail.com
@@ -12,7 +12,7 @@ Portability : POSIX
 Convenience wrapper around 'Geom2D.CubicBezier'
 
 -}
-module Reanimate.Internal.CubicBezier
+module Geom2D.CubicBezier.Linear
   ( AnyBezier(..)
   , CubicBezier(..)
   , QuadBezier(..)

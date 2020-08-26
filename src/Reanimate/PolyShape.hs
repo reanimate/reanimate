@@ -56,33 +56,22 @@ import           Graphics.SvgTree                                     (PathComma
 import           Linear.V2
 import           Reanimate.Animation
 import           Reanimate.Constants
-import           Reanimate.Internal.CubicBezier                       (ClosedPath (..),
-                                                                       CubicBezier (..),
-                                                                       FillRule (..),
-                                                                       PathJoin (..),
-                                                                       QuadBezier (..),
-                                                                       arcLength,
-                                                                       arcLengthParam,
-                                                                       bezierIntersection,
-                                                                       bezierSubsegment,
-                                                                       closedPathCurves,
-                                                                       closest,
-                                                                       colinear,
-                                                                       curvesToClosed,
-                                                                       evalBezier,
-                                                                       interpolateVector,
-                                                                       quadToCubic,
-                                                                       reorient,
-                                                                       splitBezier,
-                                                                       union,
-                                                                       vectorDistance)
-import           Reanimate.Math.Polygon                               (Polygon,
-                                                                       mkPolygon,
-                                                                       pArea,
-                                                                       pIsCCW,
-                                                                       pRing,
-                                                                       pdualPolygons,
-                                                                       polygonPoints)
+import           Geom2D.CubicBezier.Linear (ClosedPath (..),
+                                                 CubicBezier (..),
+                                                 FillRule (..), PathJoin (..),
+                                                 QuadBezier (..), arcLength,
+                                                 arcLengthParam,
+                                                 bezierIntersection,
+                                                 bezierSubsegment,
+                                                 closedPathCurves, closest,
+                                                 colinear, curvesToClosed,
+                                                 evalBezier, interpolateVector,
+                                                 quadToCubic, reorient,
+                                                 splitBezier, union,
+                                                 vectorDistance)
+import           Reanimate.Math.Polygon         (Polygon, mkPolygon, pArea,
+                                                 pIsCCW, pRing, pdualPolygons,
+                                                 polygonPoints)
 import           Reanimate.Math.SSSP
 import           Reanimate.Math.Triangulate
 import           Reanimate.Svg
