@@ -2,6 +2,7 @@
 -- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE PackageImports    #-}
 module Main (main) where
 
 import           Codec.Picture
@@ -13,7 +14,7 @@ import           Data.Vector.Unboxed         (Vector)
 import qualified Data.Vector.Unboxed         as V
 import           Reanimate
 import           System.Random
-import           System.Random.Shuffle
+import "random-shuffle" System.Random.Shuffle
 
 main :: IO ()
 main = reanimate $

@@ -2,6 +2,7 @@
 -- stack --resolver lts-13.14 runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE PackageImports    #-}
 module Main (main) where
 
 import           Control.Lens          ()
@@ -24,7 +25,7 @@ import           Reanimate.Svg
 import           Reanimate.Constants
 import           Reanimate.Scene
 import           System.Random
-import           System.Random.Shuffle
+import "random-shuffle" System.Random.Shuffle
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as V
 

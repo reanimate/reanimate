@@ -98,7 +98,7 @@ import qualified Data.Vector                as V
 import           Linear.V2
 import           Linear.Vector
 import           Reanimate.Math.Common
-import           Reanimate.Math.EarClip
+-- import           Reanimate.Math.EarClip
 import           Reanimate.Math.SSSP
 import           Reanimate.Math.Triangulate
 
@@ -145,7 +145,7 @@ mkPolygon points = Polygon
   where
     n = length points
     ring = ringPack points
-    trig = earCut ring
+    trig = triangulate ring
       -- earClip ring
 
 castPolygon :: (PolyCtx a, PolyCtx b) => APolygon a -> APolygon b

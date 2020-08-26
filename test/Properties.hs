@@ -13,8 +13,8 @@ import           Test.Tasty.QuickCheck
 
 import           Reanimate.Math.Common
 import           Reanimate.Math.Polygon
-import           Reanimate.Math.EarClip
 import           Reanimate.Math.SSSP
+import           Reanimate.Math.Triangulate
 import           Helpers
 
 import Debug.Trace
@@ -47,9 +47,11 @@ prop_rev_ccw p = not $ pIsCCW (mkPolygon $ V.reverse $ polygonPoints p)
 prop_pCycle p = forAll (choose (0,1)) $ \t ->
   pIsSimple (pCycle p t)
 
-prop_validEarClip p = isValidTriangulation p (earClip $ pRing p)
+-- prop_validEarClip p = isValidTriangulation p (earClip $ pRing p)
 
-prop_validEarCut p = isValidTriangulation p (earCut $ pRing p)
+-- prop_validEarCut p = isValidTriangulation p (earCut $ pRing p)
+
+prop_validMonotone p = isValidTriangulation p (triangulate $ pRing p)
 
 -- dualToTrangulation . dual = id
 prop_dualInv p =
