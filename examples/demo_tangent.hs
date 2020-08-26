@@ -13,7 +13,7 @@ import           Linear.V2                       (V2 (..))
 import           Linear.Vector
 import           Reanimate
 import           Reanimate.Builtin.Documentation
-import           Reanimate.Internal.CubicBezier
+import           Geom2D.CubicBezier.Linear
 
 piSvg :: SVG
 piSvg = pathify $ lowerTransformations $ center $ scale 10 $ latex "s"

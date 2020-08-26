@@ -7,7 +7,7 @@ import           Control.Lens                   ()
 import           Data.List
 import           Linear.V2
 import           Reanimate
-import           Reanimate.Internal.CubicBezier
+import           Geom2D.CubicBezier.Linear
 import           Reanimate.PolyShape
 
 

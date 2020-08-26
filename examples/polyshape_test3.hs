@@ -5,7 +5,7 @@ module Main (main) where
 
 import           Linear.V2
 import           Reanimate
-import           Reanimate.Internal.CubicBezier
+import           Geom2D.CubicBezier.Linear
 import           Reanimate.PolyShape
 
 polygonTest :: Animation
