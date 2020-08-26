@@ -76,21 +76,31 @@ data QuadBezier a = QuadBezier
   , quadC2 :: !(V2 a)
   } deriving (Show, Eq)
 
+-- | Open cubicbezier path.
 data OpenPath a = OpenPath [(V2 a, PathJoin a)] (V2 a)
   deriving (Show, Eq)
+
+-- | Closed cubicbezier path.
 data ClosedPath a = ClosedPath [(V2 a, PathJoin a)]
   deriving (Show, Eq)
 
+-- | Join two points with either a straight line or a bezier
+--   curve with two control points.
 data PathJoin a
   = JoinLine
   | JoinCurve (V2 a) (V2 a)
   deriving (Show, Eq)
 
+-- | Closed meta path.
 data ClosedMetaPath a = ClosedMetaPath [(V2 a, MetaJoin a)]
   deriving (Show, Eq)
+
+-- | Open meta path
 data OpenMetaPath a = OpenMetaPath [(V2 a, MetaJoin a)] (V2 a)
   deriving (Show, Eq)
 
+-- | Join two meta points with either a bezier curve or tension
+--   contraints.
 data MetaJoin a
   = MetaJoin
   { metaTypeL :: MetaNodeType a
@@ -101,6 +111,7 @@ data MetaJoin a
   | Controls (V2 a) (V2 a)
   deriving (Show, Eq)
 
+-- | Node constraint type.
 data MetaNodeType a
   = Open
   | Curl { curlgamma :: a }
@@ -148,6 +159,7 @@ bezierVert = C.bezierVert . downCast
 unmetaOpen :: OpenMetaPath Double -> OpenPath Double
 unmetaOpen = upCast . C.unmetaOpen . downCast
 
+-- | Create a normal path from a metapath.
 unmetaClosed :: ClosedMetaPath Double -> ClosedPath Double
 unmetaClosed = upCast . C.unmetaClosed . downCast
 

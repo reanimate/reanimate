@@ -52,7 +52,6 @@ library
                       Reanimate.Svg.BoundingBox
                       Reanimate.Svg.LineCommand
                       Reanimate.Transform
-                      Reanimate.Misc
                       Reanimate.Math.Triangulate
                       Reanimate.Math.Common
                       Reanimate.Math.Polygon
@@ -92,6 +91,7 @@ library
                       Reanimate.Driver.Magick
                       Reanimate.Driver.Server
                       Reanimate.Driver.Compile
+                      Reanimate.Misc
                       Paths_reanimate
                       Reanimate.Math.Visibility
   build-depends:
@@ -157,5 +157,6 @@ test-suite spec
     reanimate,
     vector, linear,
     QuickCheck >= 2.1.0, text,
+    temporary,
     tasty, tasty-golden, tasty-hunit,
     tasty-quickcheck, tasty-rerun >= 1.1.17

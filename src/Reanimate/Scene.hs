@@ -128,7 +128,6 @@ module Reanimate.Scene
 
   -- * ST internals
   , liftST
-  , asAnimation       -- :: (forall s. Scene s a) -> Scene s Animation
   , transitionO
   , evalScene
   )
@@ -186,9 +185,11 @@ instance Monad (Scene s) where
 instance MonadFix (Scene s) where
   mfix fn = M $ \t -> mfix (\v -> let (a, _s, _p, _gens) = v in unM (fn a) t)
 
+-- | Lift an ST action into the Scene monad.
 liftST :: ST s a -> Scene s a
 liftST action = M $ \_ -> action >>= \a -> return (a, 0, 0, [])
 
+-- | Evaluate the value of a scene.
 evalScene :: (forall s . Scene s a) -> a
 evalScene action = runST $ do
   (val, _, _ , _) <- unM action 0
@@ -932,6 +933,7 @@ oTweenVS o d fn = oTween o d (\t -> oValue %~ execState (fn t))
 oNew :: Renderable a => a -> Scene s (Object s a)
 oNew = newObject
 
+-- | Create new object.
 newObject :: Renderable a => a -> Scene s (Object s a)
 newObject val = do
   ref <- newVar ObjectData
