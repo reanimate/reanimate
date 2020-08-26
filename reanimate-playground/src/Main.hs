@@ -282,7 +282,7 @@ withHaskellFile m action = withSystemTempFile "playground.hs" $ \target h -> do
       \import Reanimate.Builtin.CirclePlot\n\
       \import Reanimate.Builtin.TernaryPlot\n\
       \import Reanimate.Builtin.Slide\n\
-      \import Reanimate.Internal.CubicBezier\n\
+      \import Geom2D.CubicBezier.Linear\n\
       \import Reanimate.Transition\n\
       \import Reanimate.Morph.Common\n\
       \import Reanimate.Morph.Linear\n\
