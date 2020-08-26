@@ -1,3 +1,14 @@
+{-|
+Module      : Reanimate.Builtin.CirclePlot
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+
+Convenience module for rendering circle plots.
+
+-}
 module Reanimate.Builtin.CirclePlot where
 
 import           Codec.Picture
