@@ -44,7 +44,7 @@ import           Graphics.SvgTree               (PathCommand (..), RPoint,
 import           Linear.V2
 import           Reanimate.Animation
 import           Reanimate.Constants
-import           Reanimate.Internal.CubicBezier (ClosedPath (..),
+import           Geom2D.CubicBezier.Linear (ClosedPath (..),
                                                  CubicBezier (..),
                                                  FillRule (..), PathJoin (..),
                                                  QuadBezier (..), arcLength,

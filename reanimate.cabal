@@ -55,14 +55,12 @@ library
                       Reanimate.Misc
                       Reanimate.Math.Common
                       Reanimate.Math.Polygon
-                      Reanimate.Math.Triangulate
                       Reanimate.Math.EarClip
                       Reanimate.Math.SSSP
                       Reanimate.Math.Balloon
                       Reanimate.Morph.Common
                       Reanimate.Morph.Linear
                       Reanimate.Morph.Rotational
-                      Reanimate.Morph.Cache
                       Reanimate.Raster
                       Reanimate.ColorComponents
                       Reanimate.ColorMap
@@ -85,8 +83,10 @@ library
                       Reanimate.Builtin.Images
                       Reanimate.Debug
                       Reanimate.Voice
-                      Reanimate.Internal.CubicBezier
+                      Geom2D.CubicBezier.Linear
   other-modules:      Reanimate.Cache
+                      Reanimate.Math.Triangulate
+                      Reanimate.Morph.Cache
                       Reanimate.Driver
                       Reanimate.Driver.Check
                       Reanimate.Driver.CLI
