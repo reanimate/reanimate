@@ -2,6 +2,7 @@
 -- stack runghc --package reanimate
 {-# LANGUAGE ApplicativeDo     #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PackageImports    #-}
 module Main (main) where
 
 import           Reanimate
@@ -13,7 +14,7 @@ import           Control.Monad
 import           Data.Monoid
 import           Graphics.SvgTree
 import           System.Random
-import           System.Random.Shuffle
+import "random-shuffle" System.Random.Shuffle
 
 main :: IO ()
 main = reanimate $ parA bg latexExample

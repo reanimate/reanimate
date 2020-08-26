@@ -3,6 +3,7 @@
 {-# LANGUAGE ApplicativeDo     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE PackageImports    #-}
 module Main (main) where
 
 import           Reanimate
@@ -16,7 +17,7 @@ import qualified Data.Text                       as T
 import           Graphics.SvgTree                hiding (text)
 import           NeatInterpolation
 import           System.Random
-import           System.Random.Shuffle
+import "random-shuffle" System.Random.Shuffle
 
 -- spritePercent = (/) <$> spriteT <*> spriteDur
 

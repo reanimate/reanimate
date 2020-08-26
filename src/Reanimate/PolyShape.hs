@@ -32,15 +32,27 @@ module Reanimate.PolyShape
   , plGroupTouching
   ) where
 
-import           Control.Lens                   ((&), (.~))
-import           Data.List                      (minimumBy, nub, partition,
-                                                 sortOn)
+import           Algorithms.Geometry.PolygonTriangulation.Triangulate (triangulate')
+import           Control.Lens                                         ((&),
+                                                                       (.~),
+                                                                       (^.))
+import           Data.Ext
+import           Data.Geometry.PlanarSubdivision                      (PolygonFaceData (..))
+import qualified Data.Geometry.Point as Geo
+import qualified Data.Geometry.Polygon                                as Geo
+import           Data.List                                            (minimumBy,
+                                                                       nub,
+                                                                       partition,
+                                                                       sortOn)
 import           Data.Ord
-import qualified Data.Vector                    as V
-import           Geometry.Earcut
-import           Graphics.SvgTree               (PathCommand (..), RPoint,
-                                                 Tree (..), defaultSvg,
-                                                 pathDefinition)
+import qualified Data.PlaneGraph                                      as Geo
+import           Data.Proxy
+import qualified Data.Vector                                          as V
+import           Graphics.SvgTree                                     (PathCommand (..),
+                                                                       RPoint,
+                                                                       Tree (..),
+                                                                       defaultSvg,
+                                                                       pathDefinition)
 import           Linear.V2
 import           Reanimate.Animation
 import           Reanimate.Constants
@@ -57,11 +69,11 @@ import           Geom2D.CubicBezier.Linear (ClosedPath (..),
                                                  quadToCubic, reorient,
                                                  splitBezier, union,
                                                  vectorDistance)
-import           Reanimate.Math.EarClip
 import           Reanimate.Math.Polygon         (Polygon, mkPolygon, pArea,
                                                  pIsCCW, pRing, pdualPolygons,
                                                  polygonPoints)
 import           Reanimate.Math.SSSP
+import           Reanimate.Math.Triangulate
 import           Reanimate.Svg
 
 -- | Shape drawn by continuous line. May have overlap, may be convex.
@@ -139,7 +151,7 @@ plPartial delta pl = PolyShape $ curvesToClosed (lineOut ++ [joinB] ++ lineIn)
 splitPolyShape :: Double -> Int -> PolyShape -> [PolyShape]
 splitPolyShape tol n poly =
     let polygon = toPolygon (plPolygonify tol poly)
-        trig = earClip $ pRing polygon
+        trig = triangulate $ pRing polygon
         d = dual 0 trig
         pd = toPDual (pRing polygon) d
         reduced = pdualReduce (pRing polygon) pd n
@@ -211,9 +223,16 @@ plDecompose' tol =
 
 decomposePolygon :: [RPoint] -> [[RPoint]]
 decomposePolygon poly =
-  map toPoly $ V.toList $ earcut [ (a,b) | V2 a b <- poly ]
+  [ [ V2 x y
+    | v <- V.toList (Geo.boundaryVertices f pg)
+    , let Geo.Point2 x y =(pg^.Geo.vertexDataOf v) ^. Geo.location ]
+  | (f, Inside) <- V.toList (Geo.internalFaces pg) ]
+
   where
-    toPoly (a,b,c) = [poly!!a, poly!!b, poly!!c]
+    pg = triangulate' Proxy p
+    p = Geo.fromPoints $
+      [ Geo.Point2 x y :+ ()
+      | V2 x y <- poly ]
 
 plPolygonify :: Double -> PolyShape -> [RPoint]
 plPolygonify tol shape =

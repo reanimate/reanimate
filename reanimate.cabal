@@ -53,9 +53,9 @@ library
                       Reanimate.Svg.LineCommand
                       Reanimate.Transform
                       Reanimate.Misc
+                      Reanimate.Math.Triangulate
                       Reanimate.Math.Common
                       Reanimate.Math.Polygon
-                      Reanimate.Math.EarClip
                       Reanimate.Math.SSSP
                       Reanimate.Math.Balloon
                       Reanimate.Morph.Common
@@ -85,7 +85,6 @@ library
                       Reanimate.Voice
                       Geom2D.CubicBezier.Linear
   other-modules:      Reanimate.Cache
-                      Reanimate.Math.Triangulate
                       Reanimate.Morph.Cache
                       Reanimate.Driver
                       Reanimate.Driver.Check
@@ -110,13 +109,14 @@ library
     containers           >=0.5.11.0,
     cubicbezier          >=0.6.0.5,
     directory            >=1.3.1.0,
-    earcut               >=0.1.0.4,
     filelock             >=0.1.1.2,
     filepath             >=1.4.2,
     fsnotify             >=0.3.0.1,
     geojson              >=3.0.4,
     ghcid                >=0.7,
     hashable             >=1.2.7.0,
+    hgeometry            >=0.11.0.0,
+    hgeometry-combinatorial >=0.11.0.0,
     lens                 >=4.16.1,
     linear               >=1.20.8,
     matrix               >=0.3.6.1,
@@ -154,7 +154,8 @@ test-suite spec
     directory,
     filepath,
     bytestring, process,
-    reanimate, vector, linear,
+    reanimate,
+    vector, linear,
     QuickCheck >= 2.1.0, text,
     tasty, tasty-golden, tasty-hunit,
     tasty-quickcheck, tasty-rerun >= 1.1.17
