@@ -685,6 +685,9 @@ asAnimation s = do
   now <- queryNow
   return $ dropA now (sceneAnimation (wait now >> s))
 
+-- | Apply a transformation with a given overlap. This makes sure
+--   to keep timestamps intact such that events can still be timed
+--   by transcripts.
 transitionO :: Transition -> Double -> (forall s'. Scene s' a) -> (forall s'. Scene s' b) -> Scene s ()
 transitionO t o a b = do
   aA <- asAnimation a
@@ -699,6 +702,7 @@ transitionO t o a b = do
 -------------------------------------------------------
 -- Objects
 
+-- | Objects can be any Haskell structure as long as it can be rendered to SVG.
 class Renderable a where
   toSVG :: a -> SVG
 
@@ -1043,39 +1047,51 @@ oTransform src dst d = do
 -------------------------------------------------------------------------------
 -- Built-in objects
 
+-- | Basic object mapping to \<circle\/\> in SVG.
 newtype Circle = Circle {_circleRadius :: Double}
 
-circleRadius :: Iso' Circle Double
+-- | Circle radius in local units.
+circleRadius :: Lens' Circle Double
 circleRadius = iso _circleRadius Circle
 
 instance Renderable Circle where
   toSVG (Circle r) = mkCircle r
 
+-- | Basic object mapping to \<rect\/\> in SVG.
 data Rectangle = Rectangle { _rectWidth :: Double, _rectHeight :: Double }
 
+-- | Rectangle width in local units.
 rectWidth :: Lens' Rectangle Double
 rectWidth = lens _rectWidth $ \obj val -> obj{_rectWidth=val}
 
+-- | Rectangle height in local units.
 rectHeight :: Lens' Rectangle Double
 rectHeight = lens _rectHeight $ \obj val -> obj{_rectHeight=val}
 
 instance Renderable Rectangle where
   toSVG (Rectangle w h) = mkRect w h
 
+-- | Object representing an interpolation between SVG nodes.
 data Morph = Morph { _morphDelta :: Double, _morphSrc :: SVG, _morphDst :: SVG }
 
+-- | Control variable for the interpolation. A value of 0 gives the
+--   source SVG and 1 gives the target svg.
 morphDelta :: Lens' Morph Double
 morphDelta = lens _morphDelta $ \obj val -> obj{_morphDelta = val}
 
+-- | Source shape.
 morphSrc :: Lens' Morph SVG
 morphSrc = lens _morphSrc $ \obj val -> obj{_morphSrc = val}
 
+-- | Target shape.
 morphDst :: Lens' Morph SVG
 morphDst = lens _morphDst $ \obj val -> obj{_morphDst = val}
 
 instance Renderable Morph where
   toSVG (Morph t src dst) = morph linear src dst t
 
+-- | Cameras can take control of objects and manipulate them
+--   with convenient pan and zoom operations.
 data Camera = Camera
 instance Renderable Camera where
   toSVG Camera = None
