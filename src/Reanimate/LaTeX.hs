@@ -47,6 +47,7 @@ import           System.IO.Unsafe                         ( unsafePerformIO )
 latex :: T.Text -> Tree
 latex = latexWithHeaders []
 
+-- | Invoke latex with extra script headers.
 latexWithHeaders :: [T.Text] -> T.Text -> Tree
 latexWithHeaders = someTexWithHeaders "latex" "dvi" []
 
@@ -58,6 +59,7 @@ someTexWithHeaders exec dvi args headers tex =
  where
   script = mkTexScript exec args headers tex
 
+-- | Invoke latex and separate results.
 latexChunks :: [T.Text] -> [Tree]
 latexChunks chunks | pNoExternals = map mkText chunks
 latexChunks chunks                = worker (svgGlyphs $ latex $ T.concat chunks) chunks
@@ -74,6 +76,7 @@ latexChunks chunks                = worker (svgGlyphs $ latex $ T.concat chunks)
 xelatex :: Text -> Tree
 xelatex = xelatexWithHeaders []
 
+-- | Invoke xelatex with extra script headers.
 xelatexWithHeaders :: [T.Text] -> T.Text -> Tree
 xelatexWithHeaders = someTexWithHeaders "xelatex" "xdv" ["-no-pdf"]
 
@@ -89,6 +92,7 @@ xelatexWithHeaders = someTexWithHeaders "xelatex" "xdv" ["-no-pdf"]
 ctex :: T.Text -> Tree
 ctex = ctexWithHeaders []
 
+-- | Invoke xelatex with extra script headers + ctex headers.
 ctexWithHeaders :: [T.Text] -> T.Text -> Tree
 ctexWithHeaders headers = xelatexWithHeaders ("\\usepackage[UTF8]{ctex}" : headers)
 

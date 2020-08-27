@@ -27,16 +27,19 @@ traceBuffer :: IORef [Animation]
 traceBuffer = unsafePerformIO (newIORef [])
 
 {-# NOINLINE traceSVG #-}
+-- | Add SVG image to trace stack.
 traceSVG :: SVG -> a -> a
 traceSVG = traceA . staticFrame (recip 60)
 
 {-# NOINLINE traceA #-}
+-- | Add animation to trace stack.
 traceA :: Animation -> a -> a
 traceA a v = unsafePerformIO $ do
   modifyIORef' traceBuffer (a :)
   evaluate v
 
 {-# NOINLINE playTraces #-}
+-- | Evaluate argument and play back the trace stack.
 playTraces :: a -> Animation
 playTraces v = unsafePerformIO $ do
   _   <- evaluate v

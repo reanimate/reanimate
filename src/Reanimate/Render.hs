@@ -5,6 +5,10 @@ License     : Unlicense
 Maintainer  : lemmih@gmail.com
 Stability   : experimental
 Portability : POSIX
+
+Internal tools for rastering SVGs and rendering videos. You are unlikely
+to ever directly use the functions in this module.
+
 -}
 module Reanimate.Render
   ( render
@@ -54,6 +58,7 @@ idempotentFile path action = do
   where
     lockFile = path <.> "lock"
 
+-- | Generate SVGs at 60fps and put them in a folder.
 renderSvgs :: FilePath -> Int -> Bool -> Animation -> IO ()
 renderSvgs folder offset _prettyPrint ani = do
   print frameCount
@@ -77,6 +82,8 @@ renderSvgs folder offset _prettyPrint ani = do
     hPutStrLn stderr msg
     exitWith (ExitFailure 1)
 
+-- | Select a single frame that doesn't already exist in the output
+--   folder and render it. If all frames have been rendered, print "Done".
 renderOneFrame :: FilePath -> Int -> Bool -> Int -> Animation -> IO ()
 renderOneFrame folder offset _prettyPrint rate ani =
     worker (frameOrder rate frameCount)
@@ -99,6 +106,9 @@ renderOneFrame folder offset _prettyPrint rate ani =
     frameCount = round (duration ani * fromIntegral rate) :: Int
 
 -- XXX: Merge with 'renderSvgs'
+-- | Render 10 frames and print them to stdout. Used for testing.
+--
+--   XXX: Not related to the snippets in the playground.
 renderSnippets :: Animation -> IO ()
 renderSnippets ani = forM_ [0 .. frameCount - 1] $ \nth -> do
   let now   = (duration ani / (fromIntegral frameCount - 1)) * fromIntegral nth
@@ -120,6 +130,7 @@ filterFrameList seen nthFrame nFrames = filter (not . isSeen)
                                                [0, nthFrame .. nFrames - 1]
   where isSeen x = any (\y -> x `mod` y == 0) seen
 
+-- | Video formats supported by reanimate.
 data Format = RenderMp4 | RenderGif | RenderWebm
   deriving (Show)
 
@@ -150,6 +161,7 @@ mp4Arguments fps progress template target =
 -- gifArguments :: FPS -> FilePath -> FilePath -> FilePath -> [String]
 -- gifArguments fps progress template target =
 
+-- | Render animation to a video file with given parameters.
 render
   :: Animation
   -> FilePath
@@ -334,6 +346,8 @@ rasterTemplate RasterNone = "render-%05d.svg"
 rasterTemplate RasterAuto = "render-%05d.svg"
 rasterTemplate _          = "render-%05d.png"
 
+-- | Resolve RasterNone and RasterAuto. If no valid raster can
+--   be found, exit with an error message.
 requireRaster :: Raster -> IO Raster
 requireRaster raster = do
   raster' <- selectRaster (if raster == RasterNone then RasterAuto else raster)
@@ -346,6 +360,8 @@ requireRaster raster = do
       exitWith (ExitFailure 1)
     _ -> pure raster'
 
+-- | Resolve RasterNone and RasterAuto. If no valid raster can
+--   be found, return RasterNone.
 selectRaster :: Raster -> IO Raster
 selectRaster RasterAuto = do
   rsvg   <- hasRSvg
@@ -358,6 +374,8 @@ selectRaster RasterAuto = do
     | otherwise      -> pure RasterNone
 selectRaster r = pure r
 
+-- | Convert SVG file to a PNG file with selected raster engine. If
+--   raster engine is RasterAuto or RasterNone, do nothing.
 applyRaster :: Raster -> FilePath -> IO ()
 applyRaster RasterNone     _    = return ()
 applyRaster RasterAuto     _    = return ()

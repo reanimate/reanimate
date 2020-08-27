@@ -10,6 +10,7 @@
 module Reanimate.Voice
   ( Transcript(..)
   , TWord(..)
+  , Phone(..)
   , findWord                -- :: Transcript -> [Text] -> Text -> TWord
   , findWords               -- :: Transcript -> [Text] -> Text -> [TWord]
   , loadTranscript          -- :: FilePath -> Transcript
@@ -90,6 +91,7 @@ instance FromJSON TWord where
       <*> o
       .:  "word"
 
+-- | Phoneme type
 data Phone = Phone
   { phoneDuration :: Double
   , phoneType     :: Text

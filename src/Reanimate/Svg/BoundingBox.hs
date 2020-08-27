@@ -11,18 +11,18 @@ module Reanimate.Svg.BoundingBox
   , svgWidth
   ) where
 
-import           Control.Arrow             ((***))
-import           Control.Lens              ((^.))
+import           Control.Arrow ((***))
+import           Control.Lens ((^.))
 import           Data.List
-import           Data.Maybe                (mapMaybe)
-import           Graphics.SvgTree          hiding (height, line, path, use,
-                                            width)
-import           Linear.V2                 hiding (angle)
+import           Data.Maybe (mapMaybe)
+import qualified Data.Vector.Unboxed as V
+import qualified Geom2D.CubicBezier.Linear as Bezier
+import           Graphics.SvgTree hiding (height, line, path, use, width)
+import           Linear.V2 hiding (angle)
 import           Linear.Vector
 import           Reanimate.Constants
 import           Reanimate.Svg.LineCommand
-import qualified Reanimate.Transform       as Transform
--- import qualified Geom2D.CubicBezier           as Bezier
+import qualified Reanimate.Transform as Transform
 
 -- | Return bounding box of SVG tree.
 --  The four numbers returned are (minimal X-coordinate, minimal Y-coordinate, width, height)
@@ -67,7 +67,8 @@ linePoints = worker zero
         LineBezier [p] ->
           p : worker p xs
         LineBezier ctrl -> -- approximation
-          [ last (partialBezierPoints (from:ctrl) 0 (recip chunks*i)) | i <- [0..chunks]] ++
+          let bezier = Bezier.AnyBezier (V.fromList (from:ctrl))
+          in [ Bezier.evalBezier bezier (recip chunks*i) | i <- [0..chunks]] ++
           worker (last ctrl) xs
         LineEnd p -> p : worker p xs
     chunks = 10
@@ -106,7 +107,7 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
     pointToRPoint p =
       case mapTuple (toUserUnit defaultDPI) p of
         (Num x, Num y) -> V2 x y
-        _ -> error "Reanimate.Svg.svgBoundingPoints: Unrecognized number format."
+        _              -> error "Reanimate.Svg.svgBoundingPoints: Unrecognized number format."
 
     circleBoundingPoints circ =
       let (xnum, ynum) = circ ^. circleCenter

@@ -81,7 +81,7 @@ steps:
       #   >                                           init, last, length)
       #
       # Default: true
-      pad_module_names: false
+      pad_module_names: true
 
       # Long list align style takes effect when import is too long. This is
       # determined by 'columns' setting.

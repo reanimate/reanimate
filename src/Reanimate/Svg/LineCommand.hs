@@ -1,18 +1,33 @@
-module Reanimate.Svg.LineCommand where
+{-|
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+-}
+module Reanimate.Svg.LineCommand
+  ( LineCommand(..)
+  , lineLength
+  , toLineCommands
+  , lineToPath
+  , lineToPoints
+  , partialSvg
+  ) where
 
-import           Control.Lens        ((%~), (&), (.~))
+import           Control.Lens              ((%~), (&), (.~))
 import           Control.Monad.Fix
 import           Control.Monad.State
 import           Data.Functor
-import qualified Data.Vector.Unboxed as V
+import qualified Data.Vector.Unboxed       as V
 import qualified Geom2D.CubicBezier.Linear as Bezier
-import           Graphics.SvgTree    hiding (height, line, path, use, width)
+import           Graphics.SvgTree          hiding (height, line, path, use, width)
 import           Linear.Metric
-import           Linear.V2           hiding (angle)
+import           Linear.V2                 hiding (angle)
 import           Linear.Vector
 
 type CmdM a = State RPoint a
 
+-- | Simplified version of a PathCommand where all points are absolute.
 data LineCommand
   = LineMove RPoint
   -- | LineDraw RPoint
@@ -20,6 +35,7 @@ data LineCommand
   | LineEnd RPoint
   deriving (Show)
 
+-- | Convert from line commands to path commands.
 lineToPath :: [LineCommand] -> [PathCommand]
 lineToPath = map worker
   where
@@ -31,6 +47,7 @@ lineToPath = map worker
     worker LineBezier{}         = error "Reanimate.Svg.lineToPath: invalid bezier curve"
     worker LineEnd{}            = EndPath
 
+-- | Using @n@ control points, approximate the path of the curves.
 lineToPoints :: Int -> [LineCommand] -> [RPoint]
 lineToPoints nPoints cmds =
     map lineEnd lineSegments
@@ -58,10 +75,11 @@ adjustLineLength :: Double -> RPoint -> LineCommand -> LineCommand
 adjustLineLength alpha from cmd =
   case cmd of
     LineBezier points -> LineBezier $ drop 1 $ partialBezierPoints (from:points) 0 alpha
-    LineMove p -> LineMove p
+    LineMove p        -> LineMove p
     -- LineDraw t -> LineDraw (lerp alpha t from)
-    LineEnd p -> LineBezier [lerp alpha p from]
+    LineEnd p         -> LineBezier [lerp alpha p from]
 
+-- | Estimated length of all segments in a line.
 lineLength :: LineCommand -> CmdM Double
 lineLength cmd =
   case cmd of
@@ -80,11 +98,12 @@ lineLength cmd =
 rpointsToBezier :: [RPoint] -> Bezier.CubicBezier Double
 rpointsToBezier lst =
   case lst of
-    [a,b] -> Bezier.CubicBezier a a b b
-    [a,b,c] -> Bezier.quadToCubic (Bezier.QuadBezier a b c)
+    [a,b]     -> Bezier.CubicBezier a a b b
+    [a,b,c]   -> Bezier.quadToCubic (Bezier.QuadBezier a b c)
     [a,b,c,d] -> Bezier.CubicBezier a b c d
-    _ -> error $ "rpointsToBezier: Invalid list of points: " ++ show lst
+    _         -> error $ "rpointsToBezier: Invalid list of points: " ++ show lst
 
+-- | Convert from path commands to line commands.
 toLineCommands :: [PathCommand] -> [LineCommand]
 toLineCommands ps = evalState (worker zero Nothing ps) zero
   where
@@ -238,9 +257,6 @@ partialBezierPoints ps a b =
   let c1 = Bezier.AnyBezier (V.fromList ps)
       Bezier.AnyBezier os = Bezier.bezierSubsegment c1 a b
   in V.toList os
-
-interpolatePathCommands :: Double -> [PathCommand] -> [PathCommand]
-interpolatePathCommands alpha = lineToPath . partialLine alpha . toLineCommands
 
 {- | Create an image showing portion of a path.
      Note that this only affects paths (see 'Reanimate.Svg.Constructors.mkPath').

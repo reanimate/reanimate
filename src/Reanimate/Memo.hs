@@ -1,6 +1,23 @@
 {-# LANGUAGE BangPatterns              #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE RankNTypes                #-}
+{-|
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+
+With animations defined as SVG images over time, it is unfortunately
+quite easy to write inefficient code where expensive expressions are
+re-evaluated for every frame even if nothing has changed. This get
+around this issue, this module defines a global key-value table that
+can store expensive expressions such that they are evaluated only once.
+
+There is currently no way to clear values from the table and it is your
+own responsibility to not consume all available memory.
+
+-}
 module Reanimate.Memo
   ( Key(..)
   , memo
@@ -57,15 +74,20 @@ cacheMapInsert (k:ks) v (CacheMap sub vals) =
     fn = Just . cacheMapInsert ks v . fromMaybe emptyCacheMap
 
 {-# NOINLINE cacheMap #-}
+-- FIXME: There should be a way to clear the cache.
 cacheMap :: IORef CacheMap
 cacheMap = unsafePerformIO (newIORef emptyCacheMap)
 
+-- | Keys can either by any boxed object with identity (to be compared with
+--   StableNames) or a primitive type with an Eq instance.
 data Key = forall a. Key !a | forall a. (Typeable a, Eq a, Ord a) => KeyPrim !a
 
 fromKey :: Key -> IO DynamicName
 fromKey (Key val)     = DynamicName <$> makeStableName val
 fromKey (KeyPrim val) = pure (DynamicKey val)
 
+-- | Cache expensive value in global store. You must guarantee that the
+--   key uniquely determines the value.
 memo :: Typeable a => [Key] -> a -> a
 memo !k v = unsafePerformIO $ do
   keys <- mapM fromKey k
