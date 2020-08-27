@@ -1,3 +1,10 @@
+{-|
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+-}
 module Reanimate.Morph.Linear
   ( linear, rawLinear
   , linearCorrespondence

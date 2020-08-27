@@ -1,5 +1,12 @@
 {-# LANGUAGE MultiWayIf        #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-|
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+-}
 module Reanimate.Math.Balloon
   ( balloon
   , balloon'
@@ -18,9 +25,20 @@ import           Reanimate.Svg.Constructors
 
 -- import           Debug.Trace
 
+-- | Inflate SVG shapes like a balloon. This works by hiding corners
+--   that are more than @t@ percent distant from the starting point
+--   relative to the maximum diameter of the shape.
+--
+--   Example:
+--
+--   > animate $ balloon (scale 8 $ center $ latex "X")
+--
+--   <<docs/gifs/doc_balloon.gif>>
 balloon :: SVG -> (Double -> SVG)
 balloon = balloon' 0.01
 
+-- | Same as @balloon'@ but with a given tolerance for converting
+--   SVG shapes to polygons.
 balloon' :: Double -> SVG -> (Double -> SVG)
 balloon' tol svg = \t ->
     mkGroup

@@ -98,8 +98,8 @@ pNoExternalsRef = unsafePerformIO (newIORef False)
 
 {-# NOINLINE pNoExternals #-}
 -- | This parameter determined whether or not external tools are allowed.
---   If this flag is True then tools such as 'latex' and 'blender' will not
---   be invoked.
+--   If this flag is True then tools such as 'Reanimate.LaTeX.latex' and
+--   'Reanimate.Blender.blender' will not be invoked.
 pNoExternals :: Bool
 pNoExternals = unsafePerformIO (readIORef pNoExternalsRef)
 

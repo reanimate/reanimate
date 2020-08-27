@@ -1,4 +1,11 @@
 {-# LANGUAGE LambdaCase #-}
+{-|
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+-}
 module Reanimate.Svg
   ( module Reanimate.Svg
   , module Reanimate.Svg.Constructors

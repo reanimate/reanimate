@@ -95,7 +95,7 @@ bellS :: Double -> Signal
 bellS steepness = curveS steepness . oscillateS
 
 -- | Cubic Bezier signal. Gives you a fair amount of control over how the
---   signal will 'curve'.
+--   signal will curve.
 --
 --   Example:
 --

@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns    #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# OPTIONS_HADDOCK hide #-}
 module Reanimate.Math.Polygon
   ( APolygon(..)
   , Polygon

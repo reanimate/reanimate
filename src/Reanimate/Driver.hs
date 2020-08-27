@@ -87,7 +87,7 @@ following command-line arguments:
 >   view                     Play animation in browser window.
 >   render                   Render animation to file.
 
-Neither the 'check' nor the 'view' command take any additional arguments.
+Neither the \'check\' nor the \'view\' command take any additional arguments.
 Rendering animation can be controlled with these arguments:
 
 > Usage: PROG render [-o|--target FILE] [--fps FPS] [-w|--width PIXELS]

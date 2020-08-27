@@ -252,11 +252,11 @@ rasterSized w h svg = unsafePerformIO $ do
     Left{}    -> error "bad image"
     Right img -> return img
 
--- | Use 'potrace' to trace edges in a raster image and convert them to SVG polygons.
+-- | Use \'potrace\' to trace edges in a raster image and convert them to SVG polygons.
 vectorize :: FilePath -> SVG
 vectorize = vectorize_ []
 
--- | Same as 'vectorize' but takes a list of arguments for 'potrace'.
+-- | Same as 'vectorize' but takes a list of arguments for \'potrace\'.
 vectorize_ :: [String] -> FilePath -> SVG
 vectorize_ _ path | pNoExternals = mkText $ T.pack path
 vectorize_ args path             = unsafePerformIO $ do

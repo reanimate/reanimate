@@ -8,8 +8,8 @@ Stability   : experimental
 Portability : POSIX
 
 Reanimate is an animation library based on SVGs. It is designed to act like glue
-between external components such as 'latex', 'ffmpeg', 'gnuplot', 'diagrams',
-and 'povray'.
+between external components such as \'latex\', \'ffmpeg\', \'gnuplot\', \'diagrams\',
+and \'povray\'.
 
 = Canvas
 

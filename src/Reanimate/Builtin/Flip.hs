@@ -3,6 +3,13 @@
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE ApplicativeDo     #-}
 {- HLINT ignore -}
+{-|
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+-}
 module Reanimate.Builtin.Flip
   ( FlipSprite(..)
   , flipSprite
