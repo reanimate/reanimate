@@ -7,7 +7,6 @@ Portability : POSIX
 -}
 module Reanimate.Morph.Linear
   ( linear, rawLinear
-  , linearCorrespondence
   , closestLinearCorrespondence
   , closestLinearCorrespondenceA
   , linearTrajectory
@@ -22,26 +21,51 @@ import           Reanimate.Math.Polygon
 import           Reanimate.Morph.Cache
 import           Reanimate.Morph.Common
 
+-- | Linear interpolation strategy.
+--
+--   Example:
+--
+--   > playThenReverseA $ pauseAround 0.5 0.5 $ mkAnimation 3 $ \t ->
+--   >   withStrokeLineJoin JoinRound $
+--   >   let src = scale 8 $ center $ latex "X"
+--   >       dst = scale 8 $ center $ latex "H"
+--   >   in morph linear src dst t
+--
+--   <<docs/gifs/doc_linear.gif>>
 linear :: Morph
 linear = rawLinear
   { morphPointCorrespondence  =
       cachePointCorrespondence (hash ("closest"::String))
         closestLinearCorrespondence }
 
+-- | Linear interpolation strategy without realigning corners.
+--   May give better results if the polygons are already aligned.
+--   Usually gives worse results.
+--
+--   Example:
+--
+--   > playThenReverseA $ pauseAround 0.5 0.5 $ mkAnimation 3 $ \t ->
+--   >   withStrokeLineJoin JoinRound $
+--   >   let src = scale 8 $ center $ latex "X"
+--   >       dst = scale 8 $ center $ latex "H"
+--   >   in morph rawLinear src dst t
+--
+--   <<docs/gifs/doc_rawLinear.gif>>
 rawLinear :: Morph
 rawLinear = Morph
   { morphTolerance            = 0.001
   , morphColorComponents      = labComponents
-  , morphPointCorrespondence  = linearCorrespondence
+  , morphPointCorrespondence  = normalizePolygons
   , morphTrajectory           = linearTrajectory
   , morphObjectCorrespondence = splitObjectCorrespondence }
 
-linearCorrespondence :: PointCorrespondence
-linearCorrespondence = normalizePolygons
-
+-- | Cycle polygons until the sum of the point trajectory path lengths
+--   is smallest.
 closestLinearCorrespondence :: PointCorrespondence
 closestLinearCorrespondence = closestLinearCorrespondenceA
 
+-- | Cycle polygons until the sum of the point trajectory path lengths
+--   is smallest.
 closestLinearCorrespondenceA :: (Real a, Fractional a, Epsilon a) => APolygon a -> APolygon a -> (APolygon a, APolygon a)
 closestLinearCorrespondenceA src' dst' =
     (src, worker dst (score dst) options)
@@ -59,6 +83,7 @@ closestLinearCorrespondenceA src' dst' =
         distSquared (pAccess src n) (pAccess p n)
       | n <- [0 .. pSize src-1] ]
 
+-- | Strategy for moving points in a linear (straight-line) trajectory.
 linearTrajectory :: Trajectory
 linearTrajectory (src,dst)
   | pSize src == pSize dst = \t -> mkPolygon $
