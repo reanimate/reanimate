@@ -69,7 +69,10 @@ jobs:
 
     - name: Haddock Badge
       run: |
-        cabal v2-haddock --enable-coverage | grep " in " | sort -hr > hpc/haddock.txt
+        # Stack is required because cabal doesn't build docs for dependencies.
+        # Without those, coverage will not reach 100%
+        stack build
+        stack haddock 2>&1 | grep " in " | sort -hr > hpc/haddock.txt
         COVERAGE=$(awk '{good += $3; total += $5} END {printf "%.0f", good/total*100}' hpc/haddock.txt)
         echo "\
           { \"schemaVersion\": 1, \
