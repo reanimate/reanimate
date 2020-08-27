@@ -4,6 +4,12 @@
 
 * Web-viewer: Use GHCi to reload code, reducing latency by ~100x.
 * Improve caching for blender and povray.
+* Hide many internal modules.
+* Move hmatrix dependency to a separate package.
+* Use hgeometry instead of broken C++ code.
+* Introduce the basics for a new graphical object system.
+* Introduce online playground.
+* Introduce interactive embedded player.
 
 ## 0.4.1.0 -- 2020-07-30
 
