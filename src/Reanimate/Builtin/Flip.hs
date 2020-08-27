@@ -14,7 +14,6 @@ module Reanimate.Builtin.Flip
   ( FlipSprite(..)
   , flipSprite
   , flipTransition
-  , flipTransitionOpts
   ) where
 
 import           Reanimate.Animation
@@ -28,6 +27,7 @@ import           Reanimate.Svg.Constructors
 import           NeatInterpolation (text)
 import qualified Data.Text           as T
 
+-- | Control structure with parameters for the blender script.
 data FlipSprite s = FlipSprite
   { fsSprite :: Sprite s
   , fsBend   :: Var s Double
@@ -35,6 +35,8 @@ data FlipSprite s = FlipSprite
   , fsWobble :: Var s Double
   }
 
+-- | Project two animations on each side of a plane and flip the plane
+--   upside down.
 flipSprite :: Animation -> Animation -> Scene s (FlipSprite s)
 flipSprite front back = do
     bend <- newVar 0
@@ -68,6 +70,7 @@ flipTransitionOpts bend zoom wobble a b = sceneAnimation $ do
   where
     dur = max (duration a) (duration b)
 
+-- | 3D flip transition.
 flipTransition :: Transition
 flipTransition = flipTransitionOpts bend zoom wobble
   where

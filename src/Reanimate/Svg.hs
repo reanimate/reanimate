@@ -140,6 +140,10 @@ extractPath = worker . simplify . lowerTransformations . pathify
     worker (PathTree p)  = p^.pathDefinition
     worker _             = []
 
+-- | Map over indexed symbols.
+--
+--   @withSubglyphs [0,2] (scale 2) (mkGroup [mkCircle 1, mkRect 2, mkEllipse 1 2])
+--      = mkGroup [scale 2 (mkCircle 1), mkRect 2, scale 2 (mkEllipse 1 2)]@
 withSubglyphs :: [Int] -> (Tree -> Tree) -> Tree -> Tree
 withSubglyphs target fn = \t -> evalState (worker t) 0
   where
@@ -164,6 +168,10 @@ withSubglyphs target fn = \t -> evalState (worker t) 0
         then return $ fn svg
         else return svg
 
+-- | Split symbols.
+--
+--   @splitGlyphs [0,2] (mkGroup [mkCircle 1, mkRect 2, mkEllipse 1 2])
+--      = ([mkRect 2], [mkCircle 1, mkEllipse 1 2])@
 splitGlyphs :: [Int] -> Tree -> (Tree, Tree)
 splitGlyphs target = \t ->
     let (_, l, r) = execState (worker id t) (0, [], [])
@@ -204,6 +212,7 @@ splitGlyphs target = \t ->
 [ (\svg -> <g transform="translate(10,10)"><g transform="scale(2)">svg</g></g>, <circle/>)
 , (\svg -> <g transform="translate(10,10)"><g transform="scale(0.5)">svg</g></g>, <rect/>)]
 -}
+-- | Split symbols and include their context and drawing attributes.
 svgGlyphs :: Tree -> [(Tree -> Tree, DrawAttributes, Tree)]
 svgGlyphs = worker id defaultSvg
   where
@@ -309,6 +318,7 @@ pathify = mapTree worker
         Num d -> Just d
         _     -> Nothing
 
+-- | Map over all recursively-found path commands.
 mapSvgPaths :: ([PathCommand] -> [PathCommand]) -> SVG -> SVG
 mapSvgPaths fn = mapTree worker
   where
@@ -318,10 +328,12 @@ mapSvgPaths fn = mapTree worker
           path & pathDefinition %~ fn
         t -> t
 
+-- | Map over all recursively-found line commands.
 mapSvgLines :: ([LineCommand] -> [LineCommand]) -> SVG -> SVG
 mapSvgLines fn = mapSvgPaths (lineToPath . fn . toLineCommands)
 
 -- Only maps points in paths
+-- | Map over all line command control points.
 mapSvgPoints :: (RPoint -> RPoint) -> SVG -> SVG
 mapSvgPoints fn = mapSvgLines (map worker)
   where
@@ -329,6 +341,7 @@ mapSvgPoints fn = mapSvgLines (map worker)
     worker (LineBezier ps) = LineBezier (map fn ps)
     worker (LineEnd p) = LineEnd (fn p)
 
+-- | Convert coordinate system from degrees to radians.
 svgPointsToRadians :: SVG -> SVG
 svgPointsToRadians = mapSvgPoints worker
   where

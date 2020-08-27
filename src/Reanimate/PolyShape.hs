@@ -314,13 +314,13 @@ cmdsToPolyShapes cmds =
 unionPolyShapes :: [PolyShape] -> [PolyShape]
 unionPolyShapes shapes =
     map PolyShape $
-    union (map unPolyShape shapes) NonZero (polyShapeTolerance/10000)
+    union (map unPolyShape shapes) FillNonZero (polyShapeTolerance/10000)
 
 -- | Merge overlapping shapes to within given tolerance.
 unionPolyShapes' :: Double -> [PolyShape] -> [PolyShape]
 unionPolyShapes' tol shapes =
     map PolyShape $
-    union (map unPolyShape shapes) NonZero tol
+    union (map unPolyShape shapes) FillNonZero tol
 
 -- | True iff lhs is inside of rhs.
 --   lhs and rhs may not overlap.

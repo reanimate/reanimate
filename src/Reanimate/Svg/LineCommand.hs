@@ -6,7 +6,8 @@ Stability   : experimental
 Portability : POSIX
 -}
 module Reanimate.Svg.LineCommand
-  ( LineCommand(..)
+  ( CmdM
+  , LineCommand(..)
   , lineLength
   , toLineCommands
   , lineToPath
@@ -25,6 +26,7 @@ import           Linear.Metric
 import           Linear.V2                 hiding (angle)
 import           Linear.Vector
 
+-- | Line command monad used for keeping track of the current location.
 type CmdM a = State RPoint a
 
 -- | Simplified version of a PathCommand where all points are absolute.

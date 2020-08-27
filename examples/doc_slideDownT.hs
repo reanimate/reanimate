@@ -8,7 +8,7 @@ import Reanimate.Builtin.Slide
 import Reanimate.Transition
 
 main :: IO ()
-main = reanimate $ docEnv $ pauseAtEnd 1 $ signalT (curveS 2) slideLeftT left right
+main = reanimate $ docEnv $ pauseAtEnd 1 $ signalT (curveS 2) slideDownT left right
   where
     left = drawCircle
     right = staticFrame 1 (withFillOpacity 1 $ mkBackground "black") `parA`

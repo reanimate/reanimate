@@ -1,3 +1,6 @@
+{-# LANGUAGE DeriveFoldable         #-}
+{-# LANGUAGE DeriveFunctor          #-}
+{-# LANGUAGE DeriveTraversable      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE UndecidableInstances   #-}
@@ -23,9 +26,8 @@ module Geom2D.CubicBezier.Linear
   , OpenMetaPath(..)
   , MetaJoin(..)
   , MetaNodeType(..)
-  , C.GenericBezier(..)
-  , C.FillRule(..)
-  , C.Tension(..)
+  , FillRule(..)
+  , Tension(..)
   , quadToCubic
   , arcLength
   , arcLengthParam
@@ -53,6 +55,7 @@ module Geom2D.CubicBezier.Linear
 
 import qualified Data.Vector.Unboxed as V
 import qualified Geom2D.CubicBezier  as C
+import           Graphics.SvgTree    (FillRule (..))
 import           Linear.V2
 
 ------------------------------------------------------------
@@ -99,13 +102,26 @@ data ClosedMetaPath a = ClosedMetaPath [(V2 a, MetaJoin a)]
 data OpenMetaPath a = OpenMetaPath [(V2 a, MetaJoin a)] (V2 a)
   deriving (Show, Eq)
 
+-- | The tension value specifies how /tense/ the curve is.
+--   A higher value means the curve approaches a line segment,
+--   while a lower value means the curve is more round. Metafont
+--   doesn't allow values below 3/4.
+data Tension a
+  = Tension
+  { tensionValue :: a }
+  | TensionAtLeast -- ^ Like Tension, but keep the segment inside the
+                   --   bounding triangle defined by the control points,
+                   --   if there is one.
+  { tensionValue :: a }
+  deriving (Functor, Foldable, Traversable, Eq, Show)
+
 -- | Join two meta points with either a bezier curve or tension
 --   contraints.
 data MetaJoin a
   = MetaJoin
   { metaTypeL :: MetaNodeType a
-  , tensionL  :: C.Tension a
-  , tensionR  :: C.Tension a
+  , tensionL  :: Tension a
+  , tensionR  :: Tension a
   , metaTypeR :: MetaNodeType a
   }
   | Controls (V2 a) (V2 a)
@@ -165,8 +181,8 @@ unmetaClosed = upCast . C.unmetaClosed . downCast
 
 -- | `O((n+m)*log(n+m))`, for n segments and m intersections.
 --   Union of paths, removing overlap and rounding to the given tolerance.
-union :: [ClosedPath Double] -> C.FillRule -> Double -> [ClosedPath Double]
-union p fill tol = upCast (C.union (downCast p) fill tol)
+union :: [ClosedPath Double] -> FillRule -> Double -> [ClosedPath Double]
+union p fill tol = upCast (C.union (downCast p) (downCast fill) tol)
 
 -- | Find the intersections between two Bezier curves, using the Bezier Clip algorithm.
 --   Returns the parameters for both curves.
@@ -243,6 +259,12 @@ instance Cast (V2 a) (C.Point a) where
   downCast (V2 a b) = C.Point a b
   upCast (C.Point a b) = V2 a b
 
+instance Cast FillRule C.FillRule where
+  downCast FillEvenOdd = C.EvenOdd
+  downCast FillNonZero = C.NonZero
+  upCast C.EvenOdd = FillEvenOdd
+  upCast C.NonZero = FillNonZero
+
 instance Cast (CubicBezier a) (C.CubicBezier a) where
   downCast (CubicBezier a b c d) = C.CubicBezier
     (downCast a) (downCast b) (downCast c) (downCast d)
@@ -269,10 +291,18 @@ instance Cast (MetaNodeType a) (C.MetaNodeType a) where
   upCast (C.Curl gamma)    = Curl gamma
   upCast (C.Direction dir) = Direction (upCast dir)
 
+instance Cast (Tension a) (C.Tension a) where
+  downCast (Tension v)        = C.Tension v
+  downCast (TensionAtLeast v) = C.TensionAtLeast v
+  upCast (C.Tension v)        = Tension v
+  upCast (C.TensionAtLeast v) = TensionAtLeast v
+
 instance Cast (MetaJoin a) (C.MetaJoin a) where
-  downCast (MetaJoin tyL tL tR tyR) = C.MetaJoin (downCast tyL) tL tR (downCast tyR)
+  downCast (MetaJoin tyL tL tR tyR) =
+    C.MetaJoin (downCast tyL) (downCast tL) (downCast tR) (downCast tyR)
   downCast (Controls p1 p2) = C.Controls (downCast p1) (downCast p2)
-  upCast (C.MetaJoin tyL tL tR tyR) = MetaJoin (upCast tyL) tL tR (upCast tyR)
+  upCast (C.MetaJoin tyL tL tR tyR) =
+    MetaJoin (upCast tyL) (upCast tL) (upCast tR) (upCast tyR)
   upCast (C.Controls p1 p2)         = Controls (upCast p1) (upCast p2)
 
 instance Cast (PathJoin a) (C.PathJoin a) where
