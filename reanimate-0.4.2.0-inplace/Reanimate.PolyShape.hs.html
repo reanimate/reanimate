@@ -1,0 +1,483 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>{-|
+<span class="lineno">    2 </span>Module      : Reanimate.PolyShape
+<span class="lineno">    3 </span>Copyright   : Written by David Himmelstrup
+<span class="lineno">    4 </span>License     : Unlicense
+<span class="lineno">    5 </span>Maintainer  : lemmih@gmail.com
+<span class="lineno">    6 </span>Stability   : experimental
+<span class="lineno">    7 </span>Portability : POSIX
+<span class="lineno">    8 </span>
+<span class="lineno">    9 </span>A PolyShape is a closed set of curves.
+<span class="lineno">   10 </span>
+<span class="lineno">   11 </span>-}
+<span class="lineno">   12 </span>module Reanimate.PolyShape
+<span class="lineno">   13 </span>  ( PolyShape(..)
+<span class="lineno">   14 </span>  , PolyShapeWithHoles
+<span class="lineno">   15 </span>  , svgToPolyShapes     -- :: Tree -&gt; [PolyShape]
+<span class="lineno">   16 </span>  , svgToPolygons       -- :: Double -&gt; Svg -&gt; [Polygon]
+<span class="lineno">   17 </span>
+<span class="lineno">   18 </span>  , renderPolyShape     -- :: PolyShape -&gt; Tree
+<span class="lineno">   19 </span>  , renderPolyShapes    -- :: [PolyShape] -&gt; Tree
+<span class="lineno">   20 </span>  , renderPolyShapePoints -- :: PolyShape -&gt; Tree
+<span class="lineno">   21 </span>
+<span class="lineno">   22 </span>  , plPathCommands      -- :: PolyShape -&gt; [PathCommand]
+<span class="lineno">   23 </span>  , plLineCommands      -- :: PolyShape -&gt; [LineCommand]
+<span class="lineno">   24 </span>
+<span class="lineno">   25 </span>  , plLength            -- :: PolyShape -&gt; Double
+<span class="lineno">   26 </span>  , plArea
+<span class="lineno">   27 </span>  , plCurves            -- :: PolyShape -&gt; [CubicBezier Double]
+<span class="lineno">   28 </span>  , isInsideOf          -- :: PolyShape -&gt; PolyShape -&gt; Bool
+<span class="lineno">   29 </span>
+<span class="lineno">   30 </span>  , plFromPolygon       -- :: [RPoint] -&gt; PolyShape
+<span class="lineno">   31 </span>  , plToPolygon         -- :: Double -&gt; PolyShape -&gt; Polygon
+<span class="lineno">   32 </span>  , plDecompose         -- :: [PolyShape] -&gt; [[RPoint]]
+<span class="lineno">   33 </span>  , unionPolyShapes     -- :: [PolyShape] -&gt; [PolyShape]
+<span class="lineno">   34 </span>  , unionPolyShapes'    -- :: Double -&gt; [PolyShape] -&gt; [PolyShape]
+<span class="lineno">   35 </span>  , plDecompose'        -- :: Double -&gt; [PolyShape] -&gt; [[RPoint]]
+<span class="lineno">   36 </span>  , decomposePolygon    -- :: [Point Double] -&gt; [[RPoint]]
+<span class="lineno">   37 </span>  , plGroupShapes       -- :: [PolyShape] -&gt; [PolyShapeWithHoles]
+<span class="lineno">   38 </span>  , mergePolyShapeHoles -- :: PolyShapeWithHoles -&gt; PolyShape
+<span class="lineno">   39 </span>  , plPartial
+<span class="lineno">   40 </span>  , plGroupTouching
+<span class="lineno">   41 </span>  ) where
+<span class="lineno">   42 </span>
+<span class="lineno">   43 </span>import           Algorithms.Geometry.PolygonTriangulation.Triangulate (triangulate')
+<span class="lineno">   44 </span>import           Control.Lens ((&amp;), (.~), (^.))
+<span class="lineno">   45 </span>import           Data.Ext
+<span class="lineno">   46 </span>import           Data.Geometry.PlanarSubdivision (PolygonFaceData (..))
+<span class="lineno">   47 </span>import qualified Data.Geometry.Point as Geo
+<span class="lineno">   48 </span>import qualified Data.Geometry.Polygon as Geo
+<span class="lineno">   49 </span>import           Data.List (nub, partition, sortOn)
+<span class="lineno">   50 </span>import qualified Data.PlaneGraph as Geo
+<span class="lineno">   51 </span>import           Data.Proxy
+<span class="lineno">   52 </span>import qualified Data.Vector as V
+<span class="lineno">   53 </span>import           Geom2D.CubicBezier.Linear (ClosedPath (..), CubicBezier (..), FillRule (..),
+<span class="lineno">   54 </span>                                            PathJoin (..), QuadBezier (..), arcLength,
+<span class="lineno">   55 </span>                                            arcLengthParam, bezierIntersection, bezierSubsegment,
+<span class="lineno">   56 </span>                                            closedPathCurves, closest, colinear, curvesToClosed,
+<span class="lineno">   57 </span>                                            evalBezier, quadToCubic, reorient, splitBezier, union,
+<span class="lineno">   58 </span>                                            vectorDistance)
+<span class="lineno">   59 </span>import           Graphics.SvgTree (PathCommand (..), RPoint, Tree (..), defaultSvg, pathDefinition)
+<span class="lineno">   60 </span>import           Linear.V2
+<span class="lineno">   61 </span>import           Reanimate.Animation
+<span class="lineno">   62 </span>import           Reanimate.Constants
+<span class="lineno">   63 </span>import           Reanimate.Math.Polygon (Polygon, mkPolygon, pArea, pIsCCW)
+<span class="lineno">   64 </span>import           Reanimate.Svg
+<span class="lineno">   65 </span>
+<span class="lineno">   66 </span>-- | Shape drawn by continuous line. May have overlap, may be convex.
+<span class="lineno">   67 </span>newtype PolyShape = PolyShape { <span class="istickedoff"><span class="decl"><span class="istickedoff">unPolyShape</span></span></span> :: ClosedPath Double }
+<span class="lineno">   68 </span>  deriving (<span class="decl"><span class="nottickedoff">Show</span></span>)
+<span class="lineno">   69 </span>
+<span class="lineno">   70 </span>-- | Polyshape with smaller, fully-enclosed holes.
+<span class="lineno">   71 </span>data PolyShapeWithHoles = PolyShapeWithHoles
+<span class="lineno">   72 </span>  { <span class="nottickedoff"><span class="decl"><span class="nottickedoff">polyShapeParent</span></span></span> :: PolyShape
+<span class="lineno">   73 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">polyShapeHoles</span></span></span>  :: [PolyShape]
+<span class="lineno">   74 </span>  }
+<span class="lineno">   75 </span>
+<span class="lineno">   76 </span>
+<span class="lineno">   77 </span>-- | Render a set of polyshapes as a single SVG path.
+<span class="lineno">   78 </span>renderPolyShapes :: [PolyShape] -&gt; Tree
+<span class="lineno">   79 </span><span class="decl"><span class="nottickedoff">renderPolyShapes pls =</span>
+<span class="lineno">   80 </span><span class="spaces">  </span><span class="nottickedoff">PathTree $ defaultSvg &amp; pathDefinition .~ concatMap plPathCommands pls</span></span>
+<span class="lineno">   81 </span>
+<span class="lineno">   82 </span>-- | Render a polyshape as a single SVG path.
+<span class="lineno">   83 </span>renderPolyShape :: PolyShape -&gt; Tree
+<span class="lineno">   84 </span><span class="decl"><span class="nottickedoff">renderPolyShape pl =</span>
+<span class="lineno">   85 </span><span class="spaces">    </span><span class="nottickedoff">PathTree $ defaultSvg &amp; pathDefinition .~ plPathCommands pl</span></span>
+<span class="lineno">   86 </span>
+<span class="lineno">   87 </span>-- | Render control-points of a polyshape as circles.
+<span class="lineno">   88 </span>renderPolyShapePoints :: PolyShape -&gt; Tree
+<span class="lineno">   89 </span><span class="decl"><span class="nottickedoff">renderPolyShapePoints = mkGroup . map renderPoint . plCurves</span>
+<span class="lineno">   90 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">   91 </span><span class="spaces">    </span><span class="nottickedoff">renderPoint (CubicBezier (V2 x y) _ _ _) =</span>
+<span class="lineno">   92 </span><span class="spaces">      </span><span class="nottickedoff">translate x y $ mkCircle 0.02</span></span>
+<span class="lineno">   93 </span>
+<span class="lineno">   94 </span>-- | Length of polyshape circumference.
+<span class="lineno">   95 </span>plLength :: PolyShape -&gt; Double
+<span class="lineno">   96 </span><span class="decl"><span class="nottickedoff">plLength = sum . map cubicLength . plCurves</span>
+<span class="lineno">   97 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">   98 </span><span class="spaces">    </span><span class="nottickedoff">cubicLength c = arcLength c 1 polyShapeTolerance</span></span>
+<span class="lineno">   99 </span>
+<span class="lineno">  100 </span>-- | Area of polyshape.
+<span class="lineno">  101 </span>plArea :: PolyShape -&gt; Double
+<span class="lineno">  102 </span><span class="decl"><span class="nottickedoff">plArea pl = realToFrac $ pArea $ plToPolygon polyShapeTolerance pl</span></span>
+<span class="lineno">  103 </span>
+<span class="lineno">  104 </span>-- 1/10th of a pixel if rendered at 2560x1440
+<span class="lineno">  105 </span>polyShapeTolerance :: Double
+<span class="lineno">  106 </span><span class="decl"><span class="nottickedoff">polyShapeTolerance = screenWidth/25600</span></span>
+<span class="lineno">  107 </span>
+<span class="lineno">  108 </span>-- | Construct a polyshape from the vertices in a polygon.
+<span class="lineno">  109 </span>plFromPolygon :: [RPoint] -&gt; PolyShape
+<span class="lineno">  110 </span><span class="decl"><span class="nottickedoff">plFromPolygon = PolyShape . ClosedPath . map worker</span>
+<span class="lineno">  111 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  112 </span><span class="spaces">    </span><span class="nottickedoff">worker val = (val, JoinLine)</span></span>
+<span class="lineno">  113 </span>
+<span class="lineno">  114 </span>-- | Approximate a polyshape as a polygon within the given tolerance.
+<span class="lineno">  115 </span>plToPolygon :: Double -&gt; PolyShape -&gt; Polygon
+<span class="lineno">  116 </span><span class="decl"><span class="istickedoff">plToPolygon tol pl =</span>
+<span class="lineno">  117 </span><span class="spaces">  </span><span class="istickedoff">let p = V.init . V.fromList . map (fmap realToFrac) .</span>
+<span class="lineno">  118 </span><span class="spaces">          </span><span class="istickedoff">plPolygonify tol $ pl</span>
+<span class="lineno">  119 </span><span class="spaces">  </span><span class="istickedoff">in if <span class="tickonlyfalse">pIsCCW (mkPolygon p)</span> then <span class="nottickedoff">mkPolygon p</span> else mkPolygon (V.reverse p)</span></span>
+<span class="lineno">  120 </span>
+<span class="lineno">  121 </span>-- | Partially draw polyshape.
+<span class="lineno">  122 </span>plPartial :: Double -&gt; PolyShape -&gt; PolyShape
+<span class="lineno">  123 </span><span class="decl"><span class="nottickedoff">plPartial delta pl | delta &gt;= 1 = pl</span>
+<span class="lineno">  124 </span><span class="spaces"></span><span class="nottickedoff">plPartial delta pl = PolyShape $ curvesToClosed (lineOut ++ [joinB] ++ lineIn)</span>
+<span class="lineno">  125 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  126 </span><span class="spaces">    </span><span class="nottickedoff">lineOutEnd = cubicC3 (last lineOut)</span>
+<span class="lineno">  127 </span><span class="spaces">    </span><span class="nottickedoff">lineInBegin = cubicC0 (head lineIn)</span>
+<span class="lineno">  128 </span><span class="spaces">    </span><span class="nottickedoff">joinB = CubicBezier lineOutEnd lineOutEnd lineOutEnd lineInBegin</span>
+<span class="lineno">  129 </span><span class="spaces">    </span><span class="nottickedoff">lineOut = takeLen (len*delta/2) $ plCurves pl</span>
+<span class="lineno">  130 </span><span class="spaces">    </span><span class="nottickedoff">lineIn =</span>
+<span class="lineno">  131 </span><span class="spaces">      </span><span class="nottickedoff">reverse $ map reorient $</span>
+<span class="lineno">  132 </span><span class="spaces">      </span><span class="nottickedoff">takeLen (len*delta/2) $ reverse $ map reorient $ plCurves pl</span>
+<span class="lineno">  133 </span><span class="spaces">    </span><span class="nottickedoff">len = plLength pl</span>
+<span class="lineno">  134 </span><span class="spaces">    </span><span class="nottickedoff">takeLen _ [] = []</span>
+<span class="lineno">  135 </span><span class="spaces">    </span><span class="nottickedoff">takeLen l (c:cs) =</span>
+<span class="lineno">  136 </span><span class="spaces">      </span><span class="nottickedoff">let cLen = arcLength c 1 polyShapeTolerance in</span>
+<span class="lineno">  137 </span><span class="spaces">      </span><span class="nottickedoff">if l &lt; cLen</span>
+<span class="lineno">  138 </span><span class="spaces">        </span><span class="nottickedoff">then [bezierSubsegment c 0 (arcLengthParam c l polyShapeTolerance)]</span>
+<span class="lineno">  139 </span><span class="spaces">        </span><span class="nottickedoff">else c : takeLen (l-cLen) cs</span></span>
+<span class="lineno">  140 </span>
+<span class="lineno">  141 </span>-- earClip :: Polygon -&gt; Triangulation
+<span class="lineno">  142 </span>-- dual :: Triangulation -&gt; Dual
+<span class="lineno">  143 </span>-- toPDual :: Polygon -&gt; Dual -&gt; PDual
+<span class="lineno">  144 </span>-- pdualReduce :: Polygon -&gt; PDual -&gt; Int -&gt; PDual
+<span class="lineno">  145 </span>-- pdualPolygons :: Polygon -&gt; PDual -&gt; [Polygon]
+<span class="lineno">  146 </span>-- splitPolyShape :: Double -&gt; Int -&gt; PolyShape -&gt; [PolyShape]
+<span class="lineno">  147 </span>-- splitPolyShape tol n poly =
+<span class="lineno">  148 </span>--     let polygon = toPolygon (plPolygonify tol poly)
+<span class="lineno">  149 </span>--         trig = triangulate $ pRing polygon
+<span class="lineno">  150 </span>--         d = dual 0 trig
+<span class="lineno">  151 </span>--         pd = toPDual (pRing polygon) d
+<span class="lineno">  152 </span>--         reduced = pdualReduce (pRing polygon) pd n
+<span class="lineno">  153 </span>--         polygons = pdualPolygons polygon reduced
+<span class="lineno">  154 </span>--     in map toPolyShape polygons
+<span class="lineno">  155 </span>--   where
+<span class="lineno">  156 </span>--     toPolygon :: [RPoint] -&gt; Polygon
+<span class="lineno">  157 </span>--     toPolygon = mkPolygon . V.fromList . nub . map (fmap realToFrac)
+<span class="lineno">  158 </span>--     toPolyShape :: Polygon -&gt; PolyShape
+<span class="lineno">  159 </span>--     toPolyShape = plFromPolygon . map (fmap realToFrac) . V.toList . polygonPoints
+<span class="lineno">  160 </span>
+<span class="lineno">  161 </span>-- plPartial' :: Double -&gt; ([RPoint], PolyShape) -&gt; PolyShape
+<span class="lineno">  162 </span>-- plPartial' delta (seen', PolyShape (ClosedPath lst)) =
+<span class="lineno">  163 </span>--   case lst of
+<span class="lineno">  164 </span>--     []                         -&gt; PolyShape (ClosedPath [])
+<span class="lineno">  165 </span>--     (startP, startJoin) : rest -&gt; PolyShape $ ClosedPath $
+<span class="lineno">  166 </span>--       (startP, startJoin) : worker startP rest
+<span class="lineno">  167 </span>--   where
+<span class="lineno">  168 </span>--     seen = filter (`elem` plPoints) seen'
+<span class="lineno">  169 </span>--     closestSeen pt = minimumBy (comparing (vectorDistance pt)) seen
+<span class="lineno">  170 </span>--     worker _ [] = []
+<span class="lineno">  171 </span>--     worker _ ((newP, newJoin) : rest)
+<span class="lineno">  172 </span>--       | newP `elem` seen = (newP, newJoin) : worker newP rest
+<span class="lineno">  173 </span>--       | otherwise =
+<span class="lineno">  174 </span>--         let newAt = interpolateVector (closestSeen newP) newP delta
+<span class="lineno">  175 </span>--         in (newAt, newJoin) : worker newAt rest
+<span class="lineno">  176 </span>--     plPoints =
+<span class="lineno">  177 </span>--       [ p | (p,_) &lt;- lst ]
+<span class="lineno">  178 </span>
+<span class="lineno">  179 </span>-- | Find intersection points.
+<span class="lineno">  180 </span>plGroupTouching :: [PolyShape] -&gt; [[([RPoint],PolyShape)]]
+<span class="lineno">  181 </span><span class="decl"><span class="nottickedoff">plGroupTouching [] = []</span>
+<span class="lineno">  182 </span><span class="spaces"></span><span class="nottickedoff">plGroupTouching pls = worker [polyShapeOrigin (head pls)] pls</span>
+<span class="lineno">  183 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  184 </span><span class="spaces">    </span><span class="nottickedoff">worker _ [] = []</span>
+<span class="lineno">  185 </span><span class="spaces">    </span><span class="nottickedoff">worker seen shapes =</span>
+<span class="lineno">  186 </span><span class="spaces">      </span><span class="nottickedoff">let (touching, notTouching) = partition (isTouching seen) shapes</span>
+<span class="lineno">  187 </span><span class="spaces">      </span><span class="nottickedoff">in if null touching</span>
+<span class="lineno">  188 </span><span class="spaces">        </span><span class="nottickedoff">then plGroupTouching notTouching</span>
+<span class="lineno">  189 </span><span class="spaces">        </span><span class="nottickedoff">else map ((,) seen . changeOrigin seen) touching   :</span>
+<span class="lineno">  190 </span><span class="spaces">             </span><span class="nottickedoff">worker (seen ++ concatMap plPoints touching) notTouching</span>
+<span class="lineno">  191 </span><span class="spaces">    </span><span class="nottickedoff">isTouching pts = any (`elem` pts) . plPoints</span>
+<span class="lineno">  192 </span><span class="spaces">    </span><span class="nottickedoff">changeOrigin seen (PolyShape (ClosedPath segments)) = PolyShape $ ClosedPath $ helper [] segments</span>
+<span class="lineno">  193 </span><span class="spaces">      </span><span class="nottickedoff">where</span>
+<span class="lineno">  194 </span><span class="spaces">        </span><span class="nottickedoff">helper acc [] = reverse acc</span>
+<span class="lineno">  195 </span><span class="spaces">        </span><span class="nottickedoff">helper acc lst@((startP,startJ):rest)</span>
+<span class="lineno">  196 </span><span class="spaces">          </span><span class="nottickedoff">| startP `elem` seen = lst ++ reverse acc</span>
+<span class="lineno">  197 </span><span class="spaces">          </span><span class="nottickedoff">| otherwise = helper ((startP, startJ):acc) rest</span>
+<span class="lineno">  198 </span><span class="spaces">    </span><span class="nottickedoff">plPoints :: PolyShape -&gt; [RPoint]</span>
+<span class="lineno">  199 </span><span class="spaces">    </span><span class="nottickedoff">plPoints (PolyShape (ClosedPath lst)) =</span>
+<span class="lineno">  200 </span><span class="spaces">      </span><span class="nottickedoff">[ p | (p,_) &lt;- lst ]</span></span>
+<span class="lineno">  201 </span>
+<span class="lineno">  202 </span>-- | Deconstruct a polyshape into non-intersecting, convex polygons.
+<span class="lineno">  203 </span>plDecompose :: [PolyShape] -&gt; [[RPoint]]
+<span class="lineno">  204 </span><span class="decl"><span class="nottickedoff">plDecompose = plDecompose' 0.001</span></span>
+<span class="lineno">  205 </span>
+<span class="lineno">  206 </span>-- | Deconstruct a polyshape into non-intersecting, convex polygons.
+<span class="lineno">  207 </span>plDecompose' :: Double -&gt; [PolyShape] -&gt; [[RPoint]]
+<span class="lineno">  208 </span><span class="decl"><span class="nottickedoff">plDecompose' tol =</span>
+<span class="lineno">  209 </span><span class="spaces">  </span><span class="nottickedoff">concatMap (decomposePolygon . plPolygonify tol . mergePolyShapeHoles) .</span>
+<span class="lineno">  210 </span><span class="spaces">  </span><span class="nottickedoff">plGroupShapes .</span>
+<span class="lineno">  211 </span><span class="spaces">  </span><span class="nottickedoff">unionPolyShapes</span></span>
+<span class="lineno">  212 </span>
+<span class="lineno">  213 </span>-- | Split polygon into smaller, convex polygons.
+<span class="lineno">  214 </span>decomposePolygon :: [RPoint] -&gt; [[RPoint]]
+<span class="lineno">  215 </span><span class="decl"><span class="nottickedoff">decomposePolygon poly =</span>
+<span class="lineno">  216 </span><span class="spaces">  </span><span class="nottickedoff">[ [ V2 x y</span>
+<span class="lineno">  217 </span><span class="spaces">    </span><span class="nottickedoff">| v &lt;- V.toList (Geo.boundaryVertices f pg)</span>
+<span class="lineno">  218 </span><span class="spaces">    </span><span class="nottickedoff">, let Geo.Point2 x y =(pg^.Geo.vertexDataOf v) ^. Geo.location ]</span>
+<span class="lineno">  219 </span><span class="spaces">  </span><span class="nottickedoff">| (f, Inside) &lt;- V.toList (Geo.internalFaces pg) ]</span>
+<span class="lineno">  220 </span><span class="spaces"></span><span class="nottickedoff"></span>
+<span class="lineno">  221 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  222 </span><span class="spaces">    </span><span class="nottickedoff">pg = triangulate' Proxy p</span>
+<span class="lineno">  223 </span><span class="spaces">    </span><span class="nottickedoff">p = Geo.fromPoints $</span>
+<span class="lineno">  224 </span><span class="spaces">      </span><span class="nottickedoff">[ Geo.Point2 x y :+ ()</span>
+<span class="lineno">  225 </span><span class="spaces">      </span><span class="nottickedoff">| V2 x y &lt;- poly ]</span></span>
+<span class="lineno">  226 </span>
+<span class="lineno">  227 </span>plPolygonify :: Double -&gt; PolyShape -&gt; [RPoint]
+<span class="lineno">  228 </span><span class="decl"><span class="istickedoff">plPolygonify tol shape =</span>
+<span class="lineno">  229 </span><span class="spaces">    </span><span class="istickedoff">startPoint (head curves) : concatMap worker curves</span>
+<span class="lineno">  230 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  231 </span><span class="spaces">    </span><span class="istickedoff">curves = plCurves shape</span>
+<span class="lineno">  232 </span><span class="spaces">    </span><span class="istickedoff">worker c | <span class="tickonlyfalse">endPoint c == startPoint c</span> =</span>
+<span class="lineno">  233 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">[]</span> -- error $ &quot;Bad bezier: &quot; ++ show c</span>
+<span class="lineno">  234 </span><span class="spaces">    </span><span class="istickedoff">worker c =</span>
+<span class="lineno">  235 </span><span class="spaces">      </span><span class="istickedoff">if colinear c tol -- &amp;&amp; arcLength c 1 tol &lt; 1</span>
+<span class="lineno">  236 </span><span class="spaces">        </span><span class="istickedoff">then [endPoint c]</span>
+<span class="lineno">  237 </span><span class="spaces">        </span><span class="istickedoff">else</span>
+<span class="lineno">  238 </span><span class="spaces">          </span><span class="istickedoff">let (lhs,rhs) = splitBezier c 0.5</span>
+<span class="lineno">  239 </span><span class="spaces">          </span><span class="istickedoff">in worker lhs ++ worker rhs</span>
+<span class="lineno">  240 </span><span class="spaces">    </span><span class="istickedoff">endPoint (CubicBezier _ _ _ d) = d</span>
+<span class="lineno">  241 </span><span class="spaces">    </span><span class="istickedoff">startPoint (CubicBezier a _ _ _) = a</span></span>
+<span class="lineno">  242 </span>
+<span class="lineno">  243 </span>-- | Convert a polyshape to a list of SVG path commands.
+<span class="lineno">  244 </span>plPathCommands :: PolyShape -&gt; [PathCommand]
+<span class="lineno">  245 </span><span class="decl"><span class="nottickedoff">plPathCommands = lineToPath . plLineCommands</span></span>
+<span class="lineno">  246 </span>
+<span class="lineno">  247 </span>-- | Convert a polyshape to a list of line commands.
+<span class="lineno">  248 </span>plLineCommands :: PolyShape -&gt; [LineCommand]
+<span class="lineno">  249 </span><span class="decl"><span class="nottickedoff">plLineCommands pl =</span>
+<span class="lineno">  250 </span><span class="spaces">  </span><span class="nottickedoff">case curves of</span>
+<span class="lineno">  251 </span><span class="spaces">    </span><span class="nottickedoff">[]                  -&gt; []</span>
+<span class="lineno">  252 </span><span class="spaces">    </span><span class="nottickedoff">(CubicBezier start _ _ _:_) -&gt;</span>
+<span class="lineno">  253 </span><span class="spaces">      </span><span class="nottickedoff">LineMove start :</span>
+<span class="lineno">  254 </span><span class="spaces">      </span><span class="nottickedoff">zipWith worker (drop 1 dstList ++ [start]) joinList ++</span>
+<span class="lineno">  255 </span><span class="spaces">      </span><span class="nottickedoff">[LineEnd start]</span>
+<span class="lineno">  256 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  257 </span><span class="spaces">    </span><span class="nottickedoff">ClosedPath closedPath = unPolyShape pl</span>
+<span class="lineno">  258 </span><span class="spaces">    </span><span class="nottickedoff">(dstList, joinList) = unzip closedPath</span>
+<span class="lineno">  259 </span><span class="spaces">    </span><span class="nottickedoff">curves = plCurves pl</span>
+<span class="lineno">  260 </span><span class="spaces">    </span><span class="nottickedoff">worker dst JoinLine =</span>
+<span class="lineno">  261 </span><span class="spaces">      </span><span class="nottickedoff">LineBezier [dst]</span>
+<span class="lineno">  262 </span><span class="spaces">    </span><span class="nottickedoff">worker dst (JoinCurve a b) =</span>
+<span class="lineno">  263 </span><span class="spaces">      </span><span class="nottickedoff">LineBezier [a,b,dst]</span></span>
+<span class="lineno">  264 </span>
+<span class="lineno">  265 </span>-- | Extract all shapes from SVG nodes. Drawing attributes such
+<span class="lineno">  266 </span>--   as stroke and fill color are discarded.
+<span class="lineno">  267 </span>svgToPolyShapes :: Tree -&gt; [PolyShape]
+<span class="lineno">  268 </span><span class="decl"><span class="istickedoff">svgToPolyShapes = cmdsToPolyShapes . toLineCommands . extractPath</span></span>
+<span class="lineno">  269 </span>
+<span class="lineno">  270 </span>-- | Extract all polygons from SVG nodes. Curves are approximated to
+<span class="lineno">  271 </span>--   within the given tolerance.
+<span class="lineno">  272 </span>svgToPolygons :: Double -&gt; SVG -&gt; [Polygon]
+<span class="lineno">  273 </span><span class="decl"><span class="nottickedoff">svgToPolygons tol = map (toPolygon . plPolygonify tol) . svgToPolyShapes</span>
+<span class="lineno">  274 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  275 </span><span class="spaces">    </span><span class="nottickedoff">toPolygon :: [RPoint] -&gt; Polygon</span>
+<span class="lineno">  276 </span><span class="spaces">    </span><span class="nottickedoff">toPolygon = mkPolygon .</span>
+<span class="lineno">  277 </span><span class="spaces">      </span><span class="nottickedoff">V.fromList . nub . map (fmap realToFrac)</span></span>
+<span class="lineno">  278 </span>
+<span class="lineno">  279 </span>cmdsToPolyShapes :: [LineCommand] -&gt; [PolyShape]
+<span class="lineno">  280 </span><span class="decl"><span class="istickedoff">cmdsToPolyShapes [] = <span class="nottickedoff">[]</span></span>
+<span class="lineno">  281 </span><span class="spaces"></span><span class="istickedoff">cmdsToPolyShapes cmds =</span>
+<span class="lineno">  282 </span><span class="spaces">    </span><span class="istickedoff">case cmds of</span>
+<span class="lineno">  283 </span><span class="spaces">      </span><span class="istickedoff">(LineMove dst:cont) -&gt; map PolyShape $ worker dst [] cont</span>
+<span class="lineno">  284 </span><span class="spaces">      </span><span class="istickedoff">_                   -&gt; <span class="nottickedoff">bad</span></span>
+<span class="lineno">  285 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  286 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">bad = error $ &quot;Reanimate.PolyShape: Invalid commands: &quot; ++ show cmds</span></span>
+<span class="lineno">  287 </span><span class="spaces">    </span><span class="istickedoff">finalize [] rest  = <span class="nottickedoff">rest</span></span>
+<span class="lineno">  288 </span><span class="spaces">    </span><span class="istickedoff">finalize acc rest = ClosedPath (reverse acc) : rest</span>
+<span class="lineno">  289 </span><span class="spaces">    </span><span class="istickedoff">worker _from acc [] = <span class="nottickedoff">finalize acc []</span></span>
+<span class="lineno">  290 </span><span class="spaces">    </span><span class="istickedoff">worker _from acc (LineMove newStart : xs) =</span>
+<span class="lineno">  291 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">finalize acc $</span></span>
+<span class="lineno">  292 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">worker newStart [] xs</span></span>
+<span class="lineno">  293 </span><span class="spaces">    </span><span class="istickedoff">worker from acc (LineEnd orig:LineMove dst:xs) | <span class="nottickedoff">from /= orig</span> =</span>
+<span class="lineno">  294 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">finalize ((from, JoinLine):acc) $</span></span>
+<span class="lineno">  295 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">worker dst [] xs</span></span>
+<span class="lineno">  296 </span><span class="spaces">    </span><span class="istickedoff">worker _from acc (LineEnd{}:LineMove dst:xs) =</span>
+<span class="lineno">  297 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">finalize acc $</span></span>
+<span class="lineno">  298 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">worker dst [] xs</span></span>
+<span class="lineno">  299 </span><span class="spaces">    </span><span class="istickedoff">worker from acc [LineEnd orig] | <span class="tickonlytrue">from /= orig</span> =</span>
+<span class="lineno">  300 </span><span class="spaces">      </span><span class="istickedoff">finalize ((from, JoinLine):acc) []</span>
+<span class="lineno">  301 </span><span class="spaces">    </span><span class="istickedoff">worker _from acc [LineEnd{}] =</span>
+<span class="lineno">  302 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">finalize acc []</span></span>
+<span class="lineno">  303 </span><span class="spaces">    </span><span class="istickedoff">worker from acc (LineBezier [x]:xs) =</span>
+<span class="lineno">  304 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">worker x ((from, JoinLine) : acc) xs</span></span>
+<span class="lineno">  305 </span><span class="spaces">    </span><span class="istickedoff">worker from acc (LineBezier [a,b]:xs) =</span>
+<span class="lineno">  306 </span><span class="spaces">      </span><span class="istickedoff">let quad = QuadBezier from a b</span>
+<span class="lineno">  307 </span><span class="spaces">          </span><span class="istickedoff">CubicBezier _ a' b' c' = quadToCubic quad</span>
+<span class="lineno">  308 </span><span class="spaces">      </span><span class="istickedoff">in worker from acc (LineBezier [a',b',c']:xs)</span>
+<span class="lineno">  309 </span><span class="spaces">    </span><span class="istickedoff">worker from acc (LineBezier [a,b,c]:xs) =</span>
+<span class="lineno">  310 </span><span class="spaces">      </span><span class="istickedoff">worker c ((from, JoinCurve a b) : acc) xs</span>
+<span class="lineno">  311 </span><span class="spaces">    </span><span class="istickedoff">worker _ _ _ = <span class="nottickedoff">bad</span></span></span>
+<span class="lineno">  312 </span>
+<span class="lineno">  313 </span>-- | Merge overlapping shapes.
+<span class="lineno">  314 </span>unionPolyShapes :: [PolyShape] -&gt; [PolyShape]
+<span class="lineno">  315 </span><span class="decl"><span class="nottickedoff">unionPolyShapes shapes =</span>
+<span class="lineno">  316 </span><span class="spaces">    </span><span class="nottickedoff">map PolyShape $</span>
+<span class="lineno">  317 </span><span class="spaces">    </span><span class="nottickedoff">union (map unPolyShape shapes) FillNonZero (polyShapeTolerance/10000)</span></span>
+<span class="lineno">  318 </span>
+<span class="lineno">  319 </span>-- | Merge overlapping shapes to within given tolerance.
+<span class="lineno">  320 </span>unionPolyShapes' :: Double -&gt; [PolyShape] -&gt; [PolyShape]
+<span class="lineno">  321 </span><span class="decl"><span class="nottickedoff">unionPolyShapes' tol shapes =</span>
+<span class="lineno">  322 </span><span class="spaces">    </span><span class="nottickedoff">map PolyShape $</span>
+<span class="lineno">  323 </span><span class="spaces">    </span><span class="nottickedoff">union (map unPolyShape shapes) FillNonZero tol</span></span>
+<span class="lineno">  324 </span>
+<span class="lineno">  325 </span>-- | True iff lhs is inside of rhs.
+<span class="lineno">  326 </span>--   lhs and rhs may not overlap.
+<span class="lineno">  327 </span>--   Implementation: Trace a vertical line through the origin of A and check
+<span class="lineno">  328 </span>--   of this line intersects and odd number of times on both sides of A.
+<span class="lineno">  329 </span>isInsideOf :: PolyShape -&gt; PolyShape -&gt; Bool
+<span class="lineno">  330 </span><span class="decl"><span class="nottickedoff">lhs `isInsideOf` rhs =</span>
+<span class="lineno">  331 </span><span class="spaces">    </span><span class="nottickedoff">odd (length upHits) &amp;&amp; odd (length downHits)</span>
+<span class="lineno">  332 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  333 </span><span class="spaces">    </span><span class="nottickedoff">(upHits, downHits) = polyIntersections origin rhs</span>
+<span class="lineno">  334 </span><span class="spaces">    </span><span class="nottickedoff">origin = polyShapeOrigin lhs</span></span>
+<span class="lineno">  335 </span>
+<span class="lineno">  336 </span>polyIntersections :: RPoint -&gt; PolyShape -&gt; ([RPoint],[RPoint])
+<span class="lineno">  337 </span><span class="decl"><span class="nottickedoff">polyIntersections origin rhs =</span>
+<span class="lineno">  338 </span><span class="spaces">    </span><span class="nottickedoff">(nub $ concatMap (intersections rayUp) curves</span>
+<span class="lineno">  339 </span><span class="spaces">    </span><span class="nottickedoff">,nub $ concatMap (intersections rayDown) curves)</span>
+<span class="lineno">  340 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  341 </span><span class="spaces">    </span><span class="nottickedoff">curves = plCurves rhs</span>
+<span class="lineno">  342 </span><span class="spaces"></span><span class="nottickedoff"></span>
+<span class="lineno">  343 </span><span class="spaces">    </span><span class="nottickedoff">intersections line bs =</span>
+<span class="lineno">  344 </span><span class="spaces">      </span><span class="nottickedoff">map (evalBezier bs . fst) (bezierIntersection bs line polyShapeTolerance)</span>
+<span class="lineno">  345 </span><span class="spaces">    </span><span class="nottickedoff">limit = 1000</span>
+<span class="lineno">  346 </span><span class="spaces">    </span><span class="nottickedoff">rayUp = CubicBezier origin origin origin (V2 limit limit)</span>
+<span class="lineno">  347 </span><span class="spaces">    </span><span class="nottickedoff">rayDown = CubicBezier origin origin origin (V2 (-limit) (-limit))</span></span>
+<span class="lineno">  348 </span>
+<span class="lineno">  349 </span>polyShapeOrigin :: PolyShape -&gt; V2 Double
+<span class="lineno">  350 </span><span class="decl"><span class="nottickedoff">polyShapeOrigin (PolyShape closedPath) =</span>
+<span class="lineno">  351 </span><span class="spaces">  </span><span class="nottickedoff">case closedPath of</span>
+<span class="lineno">  352 </span><span class="spaces">    </span><span class="nottickedoff">ClosedPath []            -&gt; V2 0 0</span>
+<span class="lineno">  353 </span><span class="spaces">    </span><span class="nottickedoff">ClosedPath ((start,_):_) -&gt; start</span></span>
+<span class="lineno">  354 </span>
+<span class="lineno">  355 </span>-- | Find holes and group them with their parent.
+<span class="lineno">  356 </span>plGroupShapes :: [PolyShape] -&gt; [PolyShapeWithHoles]
+<span class="lineno">  357 </span><span class="decl"><span class="istickedoff">plGroupShapes = worker</span>
+<span class="lineno">  358 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  359 </span><span class="spaces">    </span><span class="istickedoff">worker (s:rest)</span>
+<span class="lineno">  360 </span><span class="spaces">      </span><span class="istickedoff">| <span class="tickonlytrue">null (parents <span class="nottickedoff">s</span> rest)</span> =</span>
+<span class="lineno">  361 </span><span class="spaces">        </span><span class="istickedoff">let <span class="nottickedoff">isOnlyChild x = parents x (s:rest) == [s]</span></span>
+<span class="lineno">  362 </span><span class="spaces">            </span><span class="istickedoff">(holes, nonHoles) = partition <span class="nottickedoff">isOnlyChild</span> rest</span>
+<span class="lineno">  363 </span><span class="spaces">            </span><span class="istickedoff">prime = PolyShapeWithHoles</span>
+<span class="lineno">  364 </span><span class="spaces">              </span><span class="istickedoff">{ polyShapeParent = s</span>
+<span class="lineno">  365 </span><span class="spaces">              </span><span class="istickedoff">, polyShapeHoles  = holes }</span>
+<span class="lineno">  366 </span><span class="spaces">        </span><span class="istickedoff">in prime : worker nonHoles</span>
+<span class="lineno">  367 </span><span class="spaces">      </span><span class="istickedoff">| <span class="nottickedoff">otherwise</span> = <span class="nottickedoff">worker (rest ++ [s])</span></span>
+<span class="lineno">  368 </span><span class="spaces">    </span><span class="istickedoff">worker [] = []</span>
+<span class="lineno">  369 </span><span class="spaces"></span><span class="istickedoff"></span>
+<span class="lineno">  370 </span><span class="spaces">    </span><span class="istickedoff">parents :: PolyShape -&gt; [PolyShape] -&gt; [PolyShape]</span>
+<span class="lineno">  371 </span><span class="spaces">    </span><span class="istickedoff">parents self = filter <span class="nottickedoff">(self `isInsideOf`)</span> . filter <span class="nottickedoff">(/=self)</span></span></span>
+<span class="lineno">  372 </span>
+<span class="lineno">  373 </span>instance Eq PolyShape where
+<span class="lineno">  374 </span>  <span class="decl"><span class="nottickedoff">a == b = plCurves a == plCurves b</span></span>
+<span class="lineno">  375 </span>
+<span class="lineno">  376 </span>-- | Cut out holes.
+<span class="lineno">  377 </span>mergePolyShapeHoles :: PolyShapeWithHoles -&gt; PolyShape
+<span class="lineno">  378 </span><span class="decl"><span class="istickedoff">mergePolyShapeHoles (PolyShapeWithHoles parent []) = parent</span>
+<span class="lineno">  379 </span><span class="spaces"></span><span class="istickedoff">mergePolyShapeHoles (PolyShapeWithHoles parent (child:children)) =</span>
+<span class="lineno">  380 </span><span class="spaces">  </span><span class="istickedoff"><span class="nottickedoff">mergePolyShapeHoles $</span></span>
+<span class="lineno">  381 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">PolyShapeWithHoles (mergePolyShapeHole parent child) children</span></span></span>
+<span class="lineno">  382 </span>
+<span class="lineno">  383 </span>-- Merge
+<span class="lineno">  384 </span>mergePolyShapeHole :: PolyShape -&gt; PolyShape -&gt; PolyShape
+<span class="lineno">  385 </span><span class="decl"><span class="nottickedoff">mergePolyShapeHole parent child =</span>
+<span class="lineno">  386 </span><span class="spaces">  </span><span class="nottickedoff">snd $ head $</span>
+<span class="lineno">  387 </span><span class="spaces">  </span><span class="nottickedoff">sortOn fst</span>
+<span class="lineno">  388 </span><span class="spaces">  </span><span class="nottickedoff">[ cutSingleHole newParent child</span>
+<span class="lineno">  389 </span><span class="spaces">  </span><span class="nottickedoff">| newParent &lt;- polyShapePermutations parent ]</span></span>
+<span class="lineno">  390 </span>
+<span class="lineno">  391 </span>{-
+<span class="lineno">  392 </span>parent:
+<span class="lineno">  393 </span>  (a,b)
+<span class="lineno">  394 </span>  (b,c)
+<span class="lineno">  395 </span>  (c,a)
+<span class="lineno">  396 </span>
+<span class="lineno">  397 </span>child:
+<span class="lineno">  398 </span>  (x,y)
+<span class="lineno">  399 </span>  (y,z)
+<span class="lineno">  400 </span>  (z,x)
+<span class="lineno">  401 </span>
+<span class="lineno">  402 </span>P = split (a,b)
+<span class="lineno">  403 </span>new:
+<span class="lineno">  404 </span>  (P,b) p2b
+<span class="lineno">  405 </span>  (b,c) pTail
+<span class="lineno">  406 </span>  (c,a) pTail
+<span class="lineno">  407 </span>  (a,P) a2p
+<span class="lineno">  408 </span>
+<span class="lineno">  409 </span>  (P,x) p2x
+<span class="lineno">  410 </span>
+<span class="lineno">  411 </span>  (x,y) childCurves
+<span class="lineno">  412 </span>  (y,z) childCurves
+<span class="lineno">  413 </span>  (z,x) childCurves
+<span class="lineno">  414 </span>
+<span class="lineno">  415 </span>  (x,P) x2p
+<span class="lineno">  416 </span>
+<span class="lineno">  417 </span>-}
+<span class="lineno">  418 </span>cutSingleHole :: PolyShape -&gt; PolyShape -&gt; (Double, PolyShape)
+<span class="lineno">  419 </span><span class="decl"><span class="nottickedoff">cutSingleHole parent child =</span>
+<span class="lineno">  420 </span><span class="spaces">    </span><span class="nottickedoff">(score, PolyShape $ curvesToClosed $</span>
+<span class="lineno">  421 </span><span class="spaces">      </span><span class="nottickedoff">p2b:pTail ++ [a2p] ++</span>
+<span class="lineno">  422 </span><span class="spaces">      </span><span class="nottickedoff">[p2x] ++ childCurves ++</span>
+<span class="lineno">  423 </span><span class="spaces">      </span><span class="nottickedoff">[x2p]</span>
+<span class="lineno">  424 </span><span class="spaces">    </span><span class="nottickedoff">)</span>
+<span class="lineno">  425 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  426 </span><span class="spaces">    </span><span class="nottickedoff">-- vect = (childOrigin - p) * 0 -- 0.0001</span>
+<span class="lineno">  427 </span><span class="spaces">    </span><span class="nottickedoff">vectL = 0 -- rotate90L $* vect</span>
+<span class="lineno">  428 </span><span class="spaces">    </span><span class="nottickedoff">vectR = 0 -- rotate90R $* vect</span>
+<span class="lineno">  429 </span><span class="spaces">    </span><span class="nottickedoff">score = vectorDistance childOrigin p</span>
+<span class="lineno">  430 </span><span class="spaces">    </span><span class="nottickedoff">childOrigin = polyShapeOrigin child</span>
+<span class="lineno">  431 </span><span class="spaces">    </span><span class="nottickedoff">childOrigin' = childOrigin - vectL</span>
+<span class="lineno">  432 </span><span class="spaces">    </span><span class="nottickedoff">(pHead:pTail) = plCurves parent</span>
+<span class="lineno">  433 </span><span class="spaces">    </span><span class="nottickedoff">childCurves = plCurves child</span>
+<span class="lineno">  434 </span><span class="spaces"></span><span class="nottickedoff"></span>
+<span class="lineno">  435 </span><span class="spaces">    </span><span class="nottickedoff">pParam = closest pHead childOrigin polyShapeTolerance</span>
+<span class="lineno">  436 </span><span class="spaces"></span><span class="nottickedoff"></span>
+<span class="lineno">  437 </span><span class="spaces">    </span><span class="nottickedoff">(a2p, p2b') = splitBezier pHead pParam</span>
+<span class="lineno">  438 </span><span class="spaces">    </span><span class="nottickedoff">p2b = case p2b' of</span>
+<span class="lineno">  439 </span><span class="spaces">      </span><span class="nottickedoff">CubicBezier a b c d -&gt; CubicBezier (a - vectL) b c d</span>
+<span class="lineno">  440 </span><span class="spaces"></span><span class="nottickedoff"></span>
+<span class="lineno">  441 </span><span class="spaces">    </span><span class="nottickedoff">p = evalBezier pHead pParam</span>
+<span class="lineno">  442 </span><span class="spaces">    </span><span class="nottickedoff">-- straight line to child origin</span>
+<span class="lineno">  443 </span><span class="spaces">    </span><span class="nottickedoff">p2x = lineBetween (p - vectR) childOrigin</span>
+<span class="lineno">  444 </span><span class="spaces">    </span><span class="nottickedoff">-- straight line from child origin</span>
+<span class="lineno">  445 </span><span class="spaces">    </span><span class="nottickedoff">x2p = lineBetween childOrigin' p</span>
+<span class="lineno">  446 </span><span class="spaces"></span><span class="nottickedoff"></span>
+<span class="lineno">  447 </span><span class="spaces">    </span><span class="nottickedoff">lineBetween a = CubicBezier a a a</span></span>
+<span class="lineno">  448 </span>
+<span class="lineno">  449 </span>-- | Destruct a polyshape into constituent curves.
+<span class="lineno">  450 </span>plCurves :: PolyShape -&gt; [CubicBezier Double]
+<span class="lineno">  451 </span><span class="decl"><span class="istickedoff">plCurves = closedPathCurves . unPolyShape</span></span>
+<span class="lineno">  452 </span>
+<span class="lineno">  453 </span>polyShapePermutations :: PolyShape -&gt; [PolyShape]
+<span class="lineno">  454 </span><span class="decl"><span class="nottickedoff">polyShapePermutations =</span>
+<span class="lineno">  455 </span><span class="spaces">    </span><span class="nottickedoff">map (PolyShape . curvesToClosed) . cycleList . plCurves</span>
+<span class="lineno">  456 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  457 </span><span class="spaces">    </span><span class="nottickedoff">cycleList lst =</span>
+<span class="lineno">  458 </span><span class="spaces">      </span><span class="nottickedoff">let n = length lst in</span>
+<span class="lineno">  459 </span><span class="spaces">      </span><span class="nottickedoff">[ take n $ drop i $ cycle lst</span>
+<span class="lineno">  460 </span><span class="spaces">      </span><span class="nottickedoff">| i &lt;- [0.. n-1] ]</span></span>
+
+</pre>
+</body>
+</html>

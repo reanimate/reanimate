@@ -1,0 +1,246 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>module Reanimate.Driver.CLI
+<span class="lineno">    2 </span>  ( getDriverOptions
+<span class="lineno">    3 </span>  , Options(..)
+<span class="lineno">    4 </span>  , Command(..)
+<span class="lineno">    5 </span>  , Preset(..)
+<span class="lineno">    6 </span>  , Format(..)
+<span class="lineno">    7 </span>  , Raster(..)
+<span class="lineno">    8 </span>  , showFormat
+<span class="lineno">    9 </span>  , showRaster
+<span class="lineno">   10 </span>  ) where
+<span class="lineno">   11 </span>
+<span class="lineno">   12 </span>import           Data.Char
+<span class="lineno">   13 </span>import           Data.Monoid
+<span class="lineno">   14 </span>import           Options.Applicative
+<span class="lineno">   15 </span>import           Prelude
+<span class="lineno">   16 </span>import           Reanimate.Render    (FPS, Format (..), Height, Raster (..),
+<span class="lineno">   17 </span>                                      Width)
+<span class="lineno">   18 </span>
+<span class="lineno">   19 </span>newtype Options = Options
+<span class="lineno">   20 </span>  { <span class="nottickedoff"><span class="decl"><span class="nottickedoff">optsCommand</span></span></span> :: Command
+<span class="lineno">   21 </span>  } deriving (<span class="decl"><span class="nottickedoff">Show</span></span>)
+<span class="lineno">   22 </span>
+<span class="lineno">   23 </span>data Command
+<span class="lineno">   24 </span>  = Raw
+<span class="lineno">   25 </span>    { <span class="nottickedoff"><span class="decl"><span class="nottickedoff">rawOutputFolder</span></span></span> :: FilePath
+<span class="lineno">   26 </span>    , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">rawFrameOffset</span></span></span>  :: Int
+<span class="lineno">   27 </span>    , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">rawPrettyPrint</span></span></span>  :: Bool
+<span class="lineno">   28 </span>    }
+<span class="lineno">   29 </span>  | Test
+<span class="lineno">   30 </span>  | Check
+<span class="lineno">   31 </span>  | View
+<span class="lineno">   32 </span>    { <span class="nottickedoff"><span class="decl"><span class="nottickedoff">viewVerbose</span></span></span>   :: Bool
+<span class="lineno">   33 </span>    , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">viewGHCPath</span></span></span>   :: Maybe FilePath
+<span class="lineno">   34 </span>    , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">viewGHCOpts</span></span></span>   :: [String]
+<span class="lineno">   35 </span>    , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">viewOrigin</span></span></span>    :: Maybe FilePath
+<span class="lineno">   36 </span>    }
+<span class="lineno">   37 </span>  | Render
+<span class="lineno">   38 </span>    { <span class="nottickedoff"><span class="decl"><span class="nottickedoff">renderTarget</span></span></span>  :: Maybe String
+<span class="lineno">   39 </span>    , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">renderFPS</span></span></span>     :: Maybe FPS
+<span class="lineno">   40 </span>    , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">renderWidth</span></span></span>   :: Maybe Width
+<span class="lineno">   41 </span>    , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">renderHeight</span></span></span>  :: Maybe Height
+<span class="lineno">   42 </span>    , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">renderCompile</span></span></span> :: Bool
+<span class="lineno">   43 </span>    , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">renderFormat</span></span></span>  :: Maybe Format
+<span class="lineno">   44 </span>    , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">renderPreset</span></span></span>  :: Maybe Preset
+<span class="lineno">   45 </span>    , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">renderRaster</span></span></span>  :: Raster
+<span class="lineno">   46 </span>    , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">renderPartial</span></span></span> :: Bool
+<span class="lineno">   47 </span>    }
+<span class="lineno">   48 </span>   deriving (<span class="decl"><span class="nottickedoff">Show</span></span>)
+<span class="lineno">   49 </span>
+<span class="lineno">   50 </span>data Preset = Youtube | ExampleGif | Quick | MediumQ | HighQ | LowFPS
+<span class="lineno">   51 </span>  deriving (<span class="decl"><span class="nottickedoff">Show</span></span>)
+<span class="lineno">   52 </span>
+<span class="lineno">   53 </span>readRaster :: String -&gt; Maybe Raster
+<span class="lineno">   54 </span><span class="decl"><span class="nottickedoff">readRaster raster =</span>
+<span class="lineno">   55 </span><span class="spaces">  </span><span class="nottickedoff">case map toLower raster of</span>
+<span class="lineno">   56 </span><span class="spaces">    </span><span class="nottickedoff">&quot;none&quot;          -&gt; Just RasterNone</span>
+<span class="lineno">   57 </span><span class="spaces">    </span><span class="nottickedoff">&quot;auto&quot;          -&gt; Just RasterAuto</span>
+<span class="lineno">   58 </span><span class="spaces">    </span><span class="nottickedoff">&quot;inkscape&quot;      -&gt; Just RasterInkscape</span>
+<span class="lineno">   59 </span><span class="spaces">    </span><span class="nottickedoff">&quot;rsvg&quot;          -&gt; Just RasterRSvg</span>
+<span class="lineno">   60 </span><span class="spaces">    </span><span class="nottickedoff">&quot;imagemagick&quot;   -&gt; Just RasterMagick</span>
+<span class="lineno">   61 </span><span class="spaces">    </span><span class="nottickedoff">_               -&gt; Nothing</span></span>
+<span class="lineno">   62 </span>
+<span class="lineno">   63 </span>showRaster :: Raster -&gt; String
+<span class="lineno">   64 </span><span class="decl"><span class="nottickedoff">showRaster RasterNone     = &quot;none&quot;</span>
+<span class="lineno">   65 </span><span class="spaces"></span><span class="nottickedoff">showRaster RasterAuto     = &quot;auto&quot;</span>
+<span class="lineno">   66 </span><span class="spaces"></span><span class="nottickedoff">showRaster RasterInkscape = &quot;inkscape&quot;</span>
+<span class="lineno">   67 </span><span class="spaces"></span><span class="nottickedoff">showRaster RasterRSvg     = &quot;rsvg&quot;</span>
+<span class="lineno">   68 </span><span class="spaces"></span><span class="nottickedoff">showRaster RasterMagick   = &quot;imagemagick&quot;</span></span>
+<span class="lineno">   69 </span>
+<span class="lineno">   70 </span>readFormat :: String -&gt; Maybe Format
+<span class="lineno">   71 </span><span class="decl"><span class="nottickedoff">readFormat fmt =</span>
+<span class="lineno">   72 </span><span class="spaces">  </span><span class="nottickedoff">case map toLower fmt of</span>
+<span class="lineno">   73 </span><span class="spaces">    </span><span class="nottickedoff">&quot;mp4&quot;  -&gt; Just RenderMp4</span>
+<span class="lineno">   74 </span><span class="spaces">    </span><span class="nottickedoff">&quot;gif&quot;  -&gt; Just RenderGif</span>
+<span class="lineno">   75 </span><span class="spaces">    </span><span class="nottickedoff">&quot;webm&quot; -&gt; Just RenderWebm</span>
+<span class="lineno">   76 </span><span class="spaces">    </span><span class="nottickedoff">_      -&gt; Nothing</span></span>
+<span class="lineno">   77 </span>
+<span class="lineno">   78 </span>showFormat :: Format -&gt; String
+<span class="lineno">   79 </span><span class="decl"><span class="nottickedoff">showFormat RenderMp4  = &quot;mp4&quot;</span>
+<span class="lineno">   80 </span><span class="spaces"></span><span class="nottickedoff">showFormat RenderGif  = &quot;gif&quot;</span>
+<span class="lineno">   81 </span><span class="spaces"></span><span class="nottickedoff">showFormat RenderWebm = &quot;webm&quot;</span></span>
+<span class="lineno">   82 </span>
+<span class="lineno">   83 </span>readPreset :: String -&gt; Maybe Preset
+<span class="lineno">   84 </span><span class="decl"><span class="nottickedoff">readPreset preset =</span>
+<span class="lineno">   85 </span><span class="spaces">  </span><span class="nottickedoff">case map toLower preset of</span>
+<span class="lineno">   86 </span><span class="spaces">    </span><span class="nottickedoff">&quot;youtube&quot; -&gt; Just Youtube</span>
+<span class="lineno">   87 </span><span class="spaces">    </span><span class="nottickedoff">&quot;gif&quot;     -&gt; Just ExampleGif</span>
+<span class="lineno">   88 </span><span class="spaces">    </span><span class="nottickedoff">&quot;quick&quot;   -&gt; Just Quick</span>
+<span class="lineno">   89 </span><span class="spaces">    </span><span class="nottickedoff">&quot;medium&quot;  -&gt; Just MediumQ</span>
+<span class="lineno">   90 </span><span class="spaces">    </span><span class="nottickedoff">&quot;high&quot;    -&gt; Just HighQ</span>
+<span class="lineno">   91 </span><span class="spaces">    </span><span class="nottickedoff">&quot;lowfps&quot;  -&gt; Just LowFPS</span>
+<span class="lineno">   92 </span><span class="spaces">    </span><span class="nottickedoff">_         -&gt; Nothing</span></span>
+<span class="lineno">   93 </span>
+<span class="lineno">   94 </span>showPreset :: Preset -&gt; String
+<span class="lineno">   95 </span><span class="decl"><span class="nottickedoff">showPreset Youtube    = &quot;youtube&quot;</span>
+<span class="lineno">   96 </span><span class="spaces"></span><span class="nottickedoff">showPreset ExampleGif = &quot;gif&quot;</span>
+<span class="lineno">   97 </span><span class="spaces"></span><span class="nottickedoff">showPreset Quick      = &quot;quick&quot;</span>
+<span class="lineno">   98 </span><span class="spaces"></span><span class="nottickedoff">showPreset MediumQ    = &quot;medium&quot;</span>
+<span class="lineno">   99 </span><span class="spaces"></span><span class="nottickedoff">showPreset HighQ      = &quot;high&quot;</span>
+<span class="lineno">  100 </span><span class="spaces"></span><span class="nottickedoff">showPreset LowFPS     = &quot;lowfps&quot;</span></span>
+<span class="lineno">  101 </span>
+<span class="lineno">  102 </span>options :: Parser Options
+<span class="lineno">  103 </span><span class="decl"><span class="istickedoff">options = Options &lt;$&gt; commandP</span></span>
+<span class="lineno">  104 </span>
+<span class="lineno">  105 </span>commandP :: Parser Command
+<span class="lineno">  106 </span><span class="decl"><span class="istickedoff">commandP = subparser(</span>
+<span class="lineno">  107 </span><span class="spaces">     </span><span class="istickedoff">command &quot;test&quot; testCommand</span>
+<span class="lineno">  108 </span><span class="spaces">  </span><span class="istickedoff">&lt;&gt; commandGroup <span class="nottickedoff">&quot;Internal commands&quot;</span></span>
+<span class="lineno">  109 </span><span class="spaces">  </span><span class="istickedoff">&lt;&gt; internal )</span>
+<span class="lineno">  110 </span><span class="spaces">  </span><span class="istickedoff">&lt;|&gt; <span class="nottickedoff">hsubparser</span></span>
+<span class="lineno">  111 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">( command &quot;check&quot; checkCommand</span></span>
+<span class="lineno">  112 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">&lt;&gt; command &quot;view&quot; viewCommand</span></span>
+<span class="lineno">  113 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">&lt;&gt; command &quot;render&quot; renderCommand</span></span>
+<span class="lineno">  114 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">&lt;&gt; command &quot;raw&quot; rawCommand</span></span>
+<span class="lineno">  115 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">)</span></span>
+<span class="lineno">  116 </span><span class="spaces">  </span><span class="istickedoff">&lt;|&gt; <span class="nottickedoff">infoParser viewCommand</span></span></span>
+<span class="lineno">  117 </span>
+<span class="lineno">  118 </span>rawCommand :: ParserInfo Command
+<span class="lineno">  119 </span><span class="decl"><span class="nottickedoff">rawCommand = info parse</span>
+<span class="lineno">  120 </span><span class="spaces">    </span><span class="nottickedoff">(progDesc &quot;Output raw SVGs for animation at 60 fps. Used internally by viewer.&quot;)</span>
+<span class="lineno">  121 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  122 </span><span class="spaces">    </span><span class="nottickedoff">parse = Raw</span>
+<span class="lineno">  123 </span><span class="spaces">      </span><span class="nottickedoff">&lt;$&gt; strOption</span>
+<span class="lineno">  124 </span><span class="spaces">        </span><span class="nottickedoff">( long &quot;output&quot; &lt;&gt;</span>
+<span class="lineno">  125 </span><span class="spaces">          </span><span class="nottickedoff">short 'o' &lt;&gt;</span>
+<span class="lineno">  126 </span><span class="spaces">          </span><span class="nottickedoff">metavar &quot;PATH&quot; &lt;&gt;</span>
+<span class="lineno">  127 </span><span class="spaces">          </span><span class="nottickedoff">help &quot;Output folder&quot; &lt;&gt;</span>
+<span class="lineno">  128 </span><span class="spaces">          </span><span class="nottickedoff">value &quot;.&quot;)</span>
+<span class="lineno">  129 </span><span class="spaces">      </span><span class="nottickedoff">&lt;*&gt; option auto</span>
+<span class="lineno">  130 </span><span class="spaces">        </span><span class="nottickedoff">( long &quot;offset&quot; &lt;&gt;</span>
+<span class="lineno">  131 </span><span class="spaces">          </span><span class="nottickedoff">metavar &quot;NUMBER&quot; &lt;&gt;</span>
+<span class="lineno">  132 </span><span class="spaces">          </span><span class="nottickedoff">help &quot;Frame offset&quot; &lt;&gt;</span>
+<span class="lineno">  133 </span><span class="spaces">          </span><span class="nottickedoff">value 0)</span>
+<span class="lineno">  134 </span><span class="spaces">      </span><span class="nottickedoff">&lt;*&gt; switch</span>
+<span class="lineno">  135 </span><span class="spaces">        </span><span class="nottickedoff">( long &quot;pretty-print&quot; &lt;&gt;</span>
+<span class="lineno">  136 </span><span class="spaces">          </span><span class="nottickedoff">short 'p' &lt;&gt;</span>
+<span class="lineno">  137 </span><span class="spaces">          </span><span class="nottickedoff">help &quot;Pretty print svg&quot;)</span></span>
+<span class="lineno">  138 </span>
+<span class="lineno">  139 </span>testCommand :: ParserInfo Command
+<span class="lineno">  140 </span><span class="decl"><span class="istickedoff">testCommand = info (parse &lt;**&gt; helper)</span>
+<span class="lineno">  141 </span><span class="spaces">    </span><span class="istickedoff">(progDesc <span class="nottickedoff">&quot;Generate 10 frames spread out evenly across the animation. Used \</span></span>
+<span class="lineno">  142 </span><span class="spaces">              </span><span class="istickedoff"><span class="nottickedoff">\internally by the test-suite.&quot;</span>)</span>
+<span class="lineno">  143 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  144 </span><span class="spaces">    </span><span class="istickedoff">parse = pure Test</span></span>
+<span class="lineno">  145 </span>
+<span class="lineno">  146 </span>checkCommand :: ParserInfo Command
+<span class="lineno">  147 </span><span class="decl"><span class="nottickedoff">checkCommand = info parse</span>
+<span class="lineno">  148 </span><span class="spaces">    </span><span class="nottickedoff">(progDesc &quot;Run a system's diagnostic and report any missing external dependencies.&quot;)</span>
+<span class="lineno">  149 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  150 </span><span class="spaces">    </span><span class="nottickedoff">parse = pure Check</span></span>
+<span class="lineno">  151 </span>
+<span class="lineno">  152 </span>viewCommand :: ParserInfo Command
+<span class="lineno">  153 </span><span class="decl"><span class="nottickedoff">viewCommand = info parse</span>
+<span class="lineno">  154 </span><span class="spaces">    </span><span class="nottickedoff">(progDesc &quot;Play animation in browser window.&quot;)</span>
+<span class="lineno">  155 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  156 </span><span class="spaces">    </span><span class="nottickedoff">parse = View</span>
+<span class="lineno">  157 </span><span class="spaces">      </span><span class="nottickedoff">&lt;$&gt; switch</span>
+<span class="lineno">  158 </span><span class="spaces">        </span><span class="nottickedoff">(long &quot;verbose&quot; &lt;&gt; short 'v')</span>
+<span class="lineno">  159 </span><span class="spaces">      </span><span class="nottickedoff">&lt;*&gt; optional (strOption (long &quot;ghc&quot;</span>
+<span class="lineno">  160 </span><span class="spaces">                    </span><span class="nottickedoff">&lt;&gt; metavar &quot;PATH&quot;</span>
+<span class="lineno">  161 </span><span class="spaces">                    </span><span class="nottickedoff">&lt;&gt; help &quot;Path to GHC binary&quot;))</span>
+<span class="lineno">  162 </span><span class="spaces">      </span><span class="nottickedoff">&lt;*&gt; many (strOption (long &quot;ghc-opt&quot;</span>
+<span class="lineno">  163 </span><span class="spaces">                </span><span class="nottickedoff">&lt;&gt; short 'G'</span>
+<span class="lineno">  164 </span><span class="spaces">                </span><span class="nottickedoff">&lt;&gt; help &quot;Additional option to pass to ghc&quot;))</span>
+<span class="lineno">  165 </span><span class="spaces">      </span><span class="nottickedoff">&lt;*&gt; optional (strOption (long &quot;self&quot;</span>
+<span class="lineno">  166 </span><span class="spaces">                    </span><span class="nottickedoff">&lt;&gt; metavar &quot;PATH&quot;</span>
+<span class="lineno">  167 </span><span class="spaces">                    </span><span class="nottickedoff">&lt;&gt; help &quot;Source file used for live-reloading&quot;))</span></span>
+<span class="lineno">  168 </span>
+<span class="lineno">  169 </span>renderCommand :: ParserInfo Command
+<span class="lineno">  170 </span><span class="decl"><span class="nottickedoff">renderCommand = info parse</span>
+<span class="lineno">  171 </span><span class="spaces">    </span><span class="nottickedoff">(progDesc &quot;Render animation to file.&quot;)</span>
+<span class="lineno">  172 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  173 </span><span class="spaces">    </span><span class="nottickedoff">-- fromPreset :: (Maybe Preset -&gt; (Command -&gt; Command))</span>
+<span class="lineno">  174 </span><span class="spaces">    </span><span class="nottickedoff">-- fromPreset Nothing = id</span>
+<span class="lineno">  175 </span><span class="spaces">    </span><span class="nottickedoff">-- fromPreset (Just ExampleGif) = \cmd -&gt; cmd{renderFPS=24}</span>
+<span class="lineno">  176 </span><span class="spaces">    </span><span class="nottickedoff">-- modParser :: Parser (Command -&gt; Command)</span>
+<span class="lineno">  177 </span><span class="spaces">    </span><span class="nottickedoff">-- modParser = fmap fromPreset $</span>
+<span class="lineno">  178 </span><span class="spaces">    </span><span class="nottickedoff">--   optional (option (maybeReader readPreset)</span>
+<span class="lineno">  179 </span><span class="spaces">    </span><span class="nottickedoff">--       (long &quot;preset&quot; &lt;&gt; showDefaultWith showPreset</span>
+<span class="lineno">  180 </span><span class="spaces">    </span><span class="nottickedoff">--       &lt;&gt; metavar &quot;TYPE&quot;</span>
+<span class="lineno">  181 </span><span class="spaces">    </span><span class="nottickedoff">--       &lt;&gt; help &quot;Parameter presets: youtube, gif, quick&quot;))</span>
+<span class="lineno">  182 </span><span class="spaces">    </span><span class="nottickedoff">parse = Render</span>
+<span class="lineno">  183 </span><span class="spaces">      </span><span class="nottickedoff">&lt;$&gt; optional (strOption (long &quot;target&quot;</span>
+<span class="lineno">  184 </span><span class="spaces">                    </span><span class="nottickedoff">&lt;&gt; short 'o'</span>
+<span class="lineno">  185 </span><span class="spaces">                    </span><span class="nottickedoff">&lt;&gt; metavar &quot;FILE&quot;</span>
+<span class="lineno">  186 </span><span class="spaces">                    </span><span class="nottickedoff">&lt;&gt; help &quot;Write output to FILE&quot;))</span>
+<span class="lineno">  187 </span><span class="spaces">      </span><span class="nottickedoff">&lt;*&gt; optional (option auto</span>
+<span class="lineno">  188 </span><span class="spaces">          </span><span class="nottickedoff">(long &quot;fps&quot; &lt;&gt; metavar &quot;FPS&quot;</span>
+<span class="lineno">  189 </span><span class="spaces">          </span><span class="nottickedoff">&lt;&gt; help &quot;Set frames per second.&quot;))</span>
+<span class="lineno">  190 </span><span class="spaces">      </span><span class="nottickedoff">&lt;*&gt; optional (option auto</span>
+<span class="lineno">  191 </span><span class="spaces">          </span><span class="nottickedoff">(long &quot;width&quot; &lt;&gt; short 'w' &lt;&gt; metavar &quot;PIXELS&quot;</span>
+<span class="lineno">  192 </span><span class="spaces">          </span><span class="nottickedoff">&lt;&gt; help &quot;Set video width.&quot;))</span>
+<span class="lineno">  193 </span><span class="spaces">      </span><span class="nottickedoff">&lt;*&gt; optional (option auto</span>
+<span class="lineno">  194 </span><span class="spaces">          </span><span class="nottickedoff">(long &quot;height&quot; &lt;&gt; short 'h'</span>
+<span class="lineno">  195 </span><span class="spaces">          </span><span class="nottickedoff">&lt;&gt; metavar &quot;PIXELS&quot; &lt;&gt; help &quot;Set video height.&quot;))</span>
+<span class="lineno">  196 </span><span class="spaces">      </span><span class="nottickedoff">&lt;*&gt; switch (long &quot;compile&quot;</span>
+<span class="lineno">  197 </span><span class="spaces">                  </span><span class="nottickedoff">&lt;&gt; help &quot;Compile source code before rendering.&quot;)</span>
+<span class="lineno">  198 </span><span class="spaces">      </span><span class="nottickedoff">&lt;*&gt; optional (option (maybeReader readFormat)</span>
+<span class="lineno">  199 </span><span class="spaces">          </span><span class="nottickedoff">(long &quot;format&quot; &lt;&gt; metavar &quot;FMT&quot;</span>
+<span class="lineno">  200 </span><span class="spaces">          </span><span class="nottickedoff">&lt;&gt; help &quot;Video format: mp4, gif, webm&quot;))</span>
+<span class="lineno">  201 </span><span class="spaces">      </span><span class="nottickedoff">&lt;*&gt; optional (option (maybeReader readPreset)</span>
+<span class="lineno">  202 </span><span class="spaces">          </span><span class="nottickedoff">(long &quot;preset&quot; &lt;&gt; showDefaultWith showPreset</span>
+<span class="lineno">  203 </span><span class="spaces">          </span><span class="nottickedoff">&lt;&gt; metavar &quot;TYPE&quot;</span>
+<span class="lineno">  204 </span><span class="spaces">          </span><span class="nottickedoff">&lt;&gt; help &quot;Parameter presets: youtube, gif, quick, medium, high&quot;))</span>
+<span class="lineno">  205 </span><span class="spaces">      </span><span class="nottickedoff">&lt;*&gt; option (maybeReader readRaster)</span>
+<span class="lineno">  206 </span><span class="spaces">          </span><span class="nottickedoff">(long &quot;raster&quot; &lt;&gt; showDefaultWith showRaster</span>
+<span class="lineno">  207 </span><span class="spaces">          </span><span class="nottickedoff">&lt;&gt; metavar &quot;RASTER&quot;</span>
+<span class="lineno">  208 </span><span class="spaces">          </span><span class="nottickedoff">&lt;&gt; value RasterNone</span>
+<span class="lineno">  209 </span><span class="spaces">          </span><span class="nottickedoff">&lt;&gt; help &quot;Raster engine: none, auto, inkscape, rsvg, imagemagick&quot;)</span>
+<span class="lineno">  210 </span><span class="spaces">      </span><span class="nottickedoff">&lt;*&gt; switch</span>
+<span class="lineno">  211 </span><span class="spaces">        </span><span class="nottickedoff">(long &quot;partial&quot;</span>
+<span class="lineno">  212 </span><span class="spaces">        </span><span class="nottickedoff">&lt;&gt; help &quot;Produce partial animation even if frame generation was \</span>
+<span class="lineno">  213 </span><span class="spaces">                </span><span class="nottickedoff">\interrupted by ctrl-c&quot;)</span></span>
+<span class="lineno">  214 </span>
+<span class="lineno">  215 </span>opts :: ParserInfo Options
+<span class="lineno">  216 </span><span class="decl"><span class="istickedoff">opts = info (options &lt;**&gt; helper )</span>
+<span class="lineno">  217 </span><span class="spaces">  </span><span class="istickedoff">( fullDesc</span>
+<span class="lineno">  218 </span><span class="spaces">  </span><span class="istickedoff">&lt;&gt; progDesc <span class="nottickedoff">&quot;This program contains an animation which can either be viewed \</span></span>
+<span class="lineno">  219 </span><span class="spaces">              </span><span class="istickedoff"><span class="nottickedoff">\in a web-browser or rendered to disk.&quot;</span></span>
+<span class="lineno">  220 </span><span class="spaces">  </span><span class="istickedoff">)</span></span>
+<span class="lineno">  221 </span>
+<span class="lineno">  222 </span>getDriverOptions :: IO Options
+<span class="lineno">  223 </span><span class="decl"><span class="istickedoff">getDriverOptions = customExecParser (prefs showHelpOnError) opts</span></span>
+
+</pre>
+</body>
+</html>

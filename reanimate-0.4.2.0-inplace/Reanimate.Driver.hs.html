@@ -1,0 +1,246 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>{-# LANGUAGE MultiWayIf      #-}
+<span class="lineno">    2 </span>{-# LANGUAGE RecordWildCards #-}
+<span class="lineno">    3 </span>module Reanimate.Driver
+<span class="lineno">    4 </span>  ( reanimate
+<span class="lineno">    5 </span>  )
+<span class="lineno">    6 </span>where
+<span class="lineno">    7 </span>
+<span class="lineno">    8 </span>import           Control.Applicative      ((&lt;|&gt;))
+<span class="lineno">    9 </span>import           Control.Monad
+<span class="lineno">   10 </span>import           Data.Maybe
+<span class="lineno">   11 </span>import           Data.Either
+<span class="lineno">   12 </span>import           Reanimate.Animation      (Animation)
+<span class="lineno">   13 </span>import           Reanimate.Driver.Check
+<span class="lineno">   14 </span>import           Reanimate.Driver.CLI
+<span class="lineno">   15 </span>import           Reanimate.Driver.Compile
+<span class="lineno">   16 </span>import           Reanimate.Driver.Server
+<span class="lineno">   17 </span>import           Reanimate.Parameters
+<span class="lineno">   18 </span>import           Reanimate.Render         (render, renderSnippets, renderSvgs,
+<span class="lineno">   19 </span>                                           selectRaster)
+<span class="lineno">   20 </span>import           System.Directory
+<span class="lineno">   21 </span>import           System.Exit
+<span class="lineno">   22 </span>import           System.FilePath
+<span class="lineno">   23 </span>import           System.IO
+<span class="lineno">   24 </span>import           Text.Printf
+<span class="lineno">   25 </span>
+<span class="lineno">   26 </span>presetFormat :: Preset -&gt; Format
+<span class="lineno">   27 </span><span class="decl"><span class="nottickedoff">presetFormat Youtube    = RenderMp4</span>
+<span class="lineno">   28 </span><span class="spaces"></span><span class="nottickedoff">presetFormat ExampleGif = RenderGif</span>
+<span class="lineno">   29 </span><span class="spaces"></span><span class="nottickedoff">presetFormat Quick      = RenderMp4</span>
+<span class="lineno">   30 </span><span class="spaces"></span><span class="nottickedoff">presetFormat MediumQ    = RenderMp4</span>
+<span class="lineno">   31 </span><span class="spaces"></span><span class="nottickedoff">presetFormat HighQ      = RenderMp4</span>
+<span class="lineno">   32 </span><span class="spaces"></span><span class="nottickedoff">presetFormat LowFPS     = RenderMp4</span></span>
+<span class="lineno">   33 </span>
+<span class="lineno">   34 </span>presetFPS :: Preset -&gt; FPS
+<span class="lineno">   35 </span><span class="decl"><span class="nottickedoff">presetFPS Youtube    = 60</span>
+<span class="lineno">   36 </span><span class="spaces"></span><span class="nottickedoff">presetFPS ExampleGif = 25</span>
+<span class="lineno">   37 </span><span class="spaces"></span><span class="nottickedoff">presetFPS Quick      = 15</span>
+<span class="lineno">   38 </span><span class="spaces"></span><span class="nottickedoff">presetFPS MediumQ    = 30</span>
+<span class="lineno">   39 </span><span class="spaces"></span><span class="nottickedoff">presetFPS HighQ      = 30</span>
+<span class="lineno">   40 </span><span class="spaces"></span><span class="nottickedoff">presetFPS LowFPS     = 10</span></span>
+<span class="lineno">   41 </span>
+<span class="lineno">   42 </span>presetWidth :: Preset -&gt; Width
+<span class="lineno">   43 </span><span class="decl"><span class="nottickedoff">presetWidth Youtube    = 2560</span>
+<span class="lineno">   44 </span><span class="spaces"></span><span class="nottickedoff">presetWidth ExampleGif = 320</span>
+<span class="lineno">   45 </span><span class="spaces"></span><span class="nottickedoff">presetWidth Quick      = 320</span>
+<span class="lineno">   46 </span><span class="spaces"></span><span class="nottickedoff">presetWidth MediumQ    = 800</span>
+<span class="lineno">   47 </span><span class="spaces"></span><span class="nottickedoff">presetWidth HighQ      = 1920</span>
+<span class="lineno">   48 </span><span class="spaces"></span><span class="nottickedoff">presetWidth LowFPS     = presetWidth HighQ</span></span>
+<span class="lineno">   49 </span>
+<span class="lineno">   50 </span>presetHeight :: Preset -&gt; Height
+<span class="lineno">   51 </span><span class="decl"><span class="nottickedoff">presetHeight preset = presetWidth preset * 9 `div` 16</span></span>
+<span class="lineno">   52 </span>
+<span class="lineno">   53 </span>formatFPS :: Format -&gt; FPS
+<span class="lineno">   54 </span><span class="decl"><span class="nottickedoff">formatFPS RenderMp4  = 60</span>
+<span class="lineno">   55 </span><span class="spaces"></span><span class="nottickedoff">formatFPS RenderGif  = 25</span>
+<span class="lineno">   56 </span><span class="spaces"></span><span class="nottickedoff">formatFPS RenderWebm = 60</span></span>
+<span class="lineno">   57 </span>
+<span class="lineno">   58 </span>formatWidth :: Format -&gt; Width
+<span class="lineno">   59 </span><span class="decl"><span class="nottickedoff">formatWidth RenderMp4  = 2560</span>
+<span class="lineno">   60 </span><span class="spaces"></span><span class="nottickedoff">formatWidth RenderGif  = 320</span>
+<span class="lineno">   61 </span><span class="spaces"></span><span class="nottickedoff">formatWidth RenderWebm = 2560</span></span>
+<span class="lineno">   62 </span>
+<span class="lineno">   63 </span>formatHeight :: Format -&gt; Height
+<span class="lineno">   64 </span><span class="decl"><span class="nottickedoff">formatHeight RenderMp4  = 1440</span>
+<span class="lineno">   65 </span><span class="spaces"></span><span class="nottickedoff">formatHeight RenderGif  = 180</span>
+<span class="lineno">   66 </span><span class="spaces"></span><span class="nottickedoff">formatHeight RenderWebm = 1440</span></span>
+<span class="lineno">   67 </span>
+<span class="lineno">   68 </span>formatExtension :: Format -&gt; String
+<span class="lineno">   69 </span><span class="decl"><span class="nottickedoff">formatExtension RenderMp4  = &quot;mp4&quot;</span>
+<span class="lineno">   70 </span><span class="spaces"></span><span class="nottickedoff">formatExtension RenderGif  = &quot;gif&quot;</span>
+<span class="lineno">   71 </span><span class="spaces"></span><span class="nottickedoff">formatExtension RenderWebm = &quot;webm&quot;</span></span>
+<span class="lineno">   72 </span>
+<span class="lineno">   73 </span>{-|
+<span class="lineno">   74 </span>Main entry-point for accessing an animation. Creates a program that takes the
+<span class="lineno">   75 </span>following command-line arguments:
+<span class="lineno">   76 </span>
+<span class="lineno">   77 </span>&gt; Usage: PROG [COMMAND]
+<span class="lineno">   78 </span>&gt;   This program contains an animation which can either be viewed in a web-browser
+<span class="lineno">   79 </span>&gt;   or rendered to disk.
+<span class="lineno">   80 </span>&gt;
+<span class="lineno">   81 </span>&gt; Available options:
+<span class="lineno">   82 </span>&gt;   -h,--help                Show this help text
+<span class="lineno">   83 </span>&gt;
+<span class="lineno">   84 </span>&gt; Available commands:
+<span class="lineno">   85 </span>&gt;   check                    Run a system's diagnostic and report any missing
+<span class="lineno">   86 </span>&gt;                            external dependencies.
+<span class="lineno">   87 </span>&gt;   view                     Play animation in browser window.
+<span class="lineno">   88 </span>&gt;   render                   Render animation to file.
+<span class="lineno">   89 </span>
+<span class="lineno">   90 </span>Neither the \'check\' nor the \'view\' command take any additional arguments.
+<span class="lineno">   91 </span>Rendering animation can be controlled with these arguments:
+<span class="lineno">   92 </span>
+<span class="lineno">   93 </span>&gt; Usage: PROG render [-o|--target FILE] [--fps FPS] [-w|--width PIXELS]
+<span class="lineno">   94 </span>&gt;                    [-h|--height PIXELS] [--compile] [--format FMT]
+<span class="lineno">   95 </span>&gt;                    [--preset TYPE]
+<span class="lineno">   96 </span>&gt;   Render animation to file.
+<span class="lineno">   97 </span>&gt;
+<span class="lineno">   98 </span>&gt; Available options:
+<span class="lineno">   99 </span>&gt;   -o,--target FILE         Write output to FILE
+<span class="lineno">  100 </span>&gt;   --fps FPS                Set frames per second.
+<span class="lineno">  101 </span>&gt;   -w,--width PIXELS        Set video width.
+<span class="lineno">  102 </span>&gt;   -h,--height PIXELS       Set video height.
+<span class="lineno">  103 </span>&gt;   --compile                Compile source code before rendering.
+<span class="lineno">  104 </span>&gt;   --format FMT             Video format: mp4, gif, webm
+<span class="lineno">  105 </span>&gt;   --preset TYPE            Parameter presets: youtube, gif, quick
+<span class="lineno">  106 </span>&gt;   -h,--help                Show this help text
+<span class="lineno">  107 </span>-}
+<span class="lineno">  108 </span>reanimate :: Animation -&gt; IO ()
+<span class="lineno">  109 </span><span class="decl"><span class="istickedoff">reanimate animation = do</span>
+<span class="lineno">  110 </span><span class="spaces">  </span><span class="istickedoff">Options {..} &lt;- getDriverOptions</span>
+<span class="lineno">  111 </span><span class="spaces">  </span><span class="istickedoff">case optsCommand of</span>
+<span class="lineno">  112 </span><span class="spaces">    </span><span class="istickedoff">Raw {..} -&gt; <span class="nottickedoff">do</span></span>
+<span class="lineno">  113 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">setFPS 60</span></span>
+<span class="lineno">  114 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">renderSvgs rawOutputFolder rawFrameOffset rawPrettyPrint animation</span></span>
+<span class="lineno">  115 </span><span class="spaces">    </span><span class="istickedoff">Test -&gt; do</span>
+<span class="lineno">  116 </span><span class="spaces">      </span><span class="istickedoff">setNoExternals True</span>
+<span class="lineno">  117 </span><span class="spaces">      </span><span class="istickedoff">-- hSetBinaryMode stdout True</span>
+<span class="lineno">  118 </span><span class="spaces">      </span><span class="istickedoff">renderSnippets animation</span>
+<span class="lineno">  119 </span><span class="spaces">    </span><span class="istickedoff">Check       -&gt; <span class="nottickedoff">checkEnvironment</span></span>
+<span class="lineno">  120 </span><span class="spaces">    </span><span class="istickedoff">View {..}   -&gt; <span class="nottickedoff">serve viewVerbose viewGHCPath viewGHCOpts viewOrigin</span></span>
+<span class="lineno">  121 </span><span class="spaces">    </span><span class="istickedoff">Render {..} -&gt; <span class="nottickedoff">do</span></span>
+<span class="lineno">  122 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">let fmt =</span></span>
+<span class="lineno">  123 </span><span class="spaces">            </span><span class="istickedoff"><span class="nottickedoff">guessParameter renderFormat (fmap presetFormat renderPreset)</span></span>
+<span class="lineno">  124 </span><span class="spaces">              </span><span class="istickedoff"><span class="nottickedoff">$ case renderTarget of</span></span>
+<span class="lineno">  125 </span><span class="spaces">                  </span><span class="istickedoff"><span class="nottickedoff">-- Format guessed from output</span></span>
+<span class="lineno">  126 </span><span class="spaces">                  </span><span class="istickedoff"><span class="nottickedoff">Just target -&gt; case takeExtension target of</span></span>
+<span class="lineno">  127 </span><span class="spaces">                    </span><span class="istickedoff"><span class="nottickedoff">&quot;.mp4&quot;  -&gt; RenderMp4</span></span>
+<span class="lineno">  128 </span><span class="spaces">                    </span><span class="istickedoff"><span class="nottickedoff">&quot;.gif&quot;  -&gt; RenderGif</span></span>
+<span class="lineno">  129 </span><span class="spaces">                    </span><span class="istickedoff"><span class="nottickedoff">&quot;.webm&quot; -&gt; RenderWebm</span></span>
+<span class="lineno">  130 </span><span class="spaces">                    </span><span class="istickedoff"><span class="nottickedoff">_       -&gt; RenderMp4</span></span>
+<span class="lineno">  131 </span><span class="spaces">                  </span><span class="istickedoff"><span class="nottickedoff">-- Default to mp4 rendering.</span></span>
+<span class="lineno">  132 </span><span class="spaces">                  </span><span class="istickedoff"><span class="nottickedoff">Nothing -&gt; RenderMp4</span></span>
+<span class="lineno">  133 </span><span class="spaces"></span><span class="istickedoff"><span class="nottickedoff"></span></span>
+<span class="lineno">  134 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">target &lt;- case renderTarget of</span></span>
+<span class="lineno">  135 </span><span class="spaces">        </span><span class="istickedoff"><span class="nottickedoff">Nothing -&gt; do</span></span>
+<span class="lineno">  136 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">mbSelf &lt;- findOwnSource</span></span>
+<span class="lineno">  137 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">let ext = formatExtension fmt</span></span>
+<span class="lineno">  138 </span><span class="spaces">              </span><span class="istickedoff"><span class="nottickedoff">self = fromMaybe &quot;output&quot; mbSelf</span></span>
+<span class="lineno">  139 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">pure $ replaceExtension self ext</span></span>
+<span class="lineno">  140 </span><span class="spaces">        </span><span class="istickedoff"><span class="nottickedoff">Just target -&gt; makeAbsolute target</span></span>
+<span class="lineno">  141 </span><span class="spaces"></span><span class="istickedoff"><span class="nottickedoff"></span></span>
+<span class="lineno">  142 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">let</span></span>
+<span class="lineno">  143 </span><span class="spaces">        </span><span class="istickedoff"><span class="nottickedoff">fps =</span></span>
+<span class="lineno">  144 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">guessParameter renderFPS (fmap presetFPS renderPreset) $ formatFPS fmt</span></span>
+<span class="lineno">  145 </span><span class="spaces">        </span><span class="istickedoff"><span class="nottickedoff">(width, height) = fromMaybe</span></span>
+<span class="lineno">  146 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">( maybe (formatWidth fmt)  presetWidth  renderPreset</span></span>
+<span class="lineno">  147 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">, maybe (formatHeight fmt) presetHeight renderPreset</span></span>
+<span class="lineno">  148 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">)</span></span>
+<span class="lineno">  149 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">(userPreferredDimensions renderWidth renderHeight)</span></span>
+<span class="lineno">  150 </span><span class="spaces"></span><span class="istickedoff"><span class="nottickedoff"></span></span>
+<span class="lineno">  151 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">raster &lt;-</span></span>
+<span class="lineno">  152 </span><span class="spaces">        </span><span class="istickedoff"><span class="nottickedoff">if renderRaster == RasterNone || renderRaster == RasterAuto  then do</span></span>
+<span class="lineno">  153 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">svgSupport &lt;- hasFFmpegRSvg</span></span>
+<span class="lineno">  154 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">if isRight svgSupport</span></span>
+<span class="lineno">  155 </span><span class="spaces">            </span><span class="istickedoff"><span class="nottickedoff">then selectRaster renderRaster</span></span>
+<span class="lineno">  156 </span><span class="spaces">            </span><span class="istickedoff"><span class="nottickedoff">else do</span></span>
+<span class="lineno">  157 </span><span class="spaces">              </span><span class="istickedoff"><span class="nottickedoff">raster &lt;- selectRaster RasterAuto</span></span>
+<span class="lineno">  158 </span><span class="spaces">              </span><span class="istickedoff"><span class="nottickedoff">when (raster == RasterNone) $ do</span></span>
+<span class="lineno">  159 </span><span class="spaces">                </span><span class="istickedoff"><span class="nottickedoff">hPutStrLn stderr $</span></span>
+<span class="lineno">  160 </span><span class="spaces">                  </span><span class="istickedoff"><span class="nottickedoff">&quot;Error: your FFmpeg was built without SVG support and no raster engines \</span></span>
+<span class="lineno">  161 </span><span class="spaces">                  </span><span class="istickedoff"><span class="nottickedoff">\are available. Please install either inkscape, imagemagick, or rsvg.&quot;</span></span>
+<span class="lineno">  162 </span><span class="spaces">                </span><span class="istickedoff"><span class="nottickedoff">exitWith (ExitFailure 1)</span></span>
+<span class="lineno">  163 </span><span class="spaces">              </span><span class="istickedoff"><span class="nottickedoff">return raster</span></span>
+<span class="lineno">  164 </span><span class="spaces">        </span><span class="istickedoff"><span class="nottickedoff">else selectRaster renderRaster</span></span>
+<span class="lineno">  165 </span><span class="spaces"></span><span class="istickedoff"><span class="nottickedoff"></span></span>
+<span class="lineno">  166 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">if renderCompile</span></span>
+<span class="lineno">  167 </span><span class="spaces">        </span><span class="istickedoff"><span class="nottickedoff">then compile $</span></span>
+<span class="lineno">  168 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">[ &quot;render&quot;</span></span>
+<span class="lineno">  169 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">, &quot;--fps&quot;</span></span>
+<span class="lineno">  170 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">, show fps</span></span>
+<span class="lineno">  171 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">, &quot;--width&quot;</span></span>
+<span class="lineno">  172 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">, show width</span></span>
+<span class="lineno">  173 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">, &quot;--height&quot;</span></span>
+<span class="lineno">  174 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">, show height</span></span>
+<span class="lineno">  175 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">, &quot;--format&quot;</span></span>
+<span class="lineno">  176 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">, showFormat fmt</span></span>
+<span class="lineno">  177 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">, &quot;--raster&quot;</span></span>
+<span class="lineno">  178 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">, showRaster raster</span></span>
+<span class="lineno">  179 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">, &quot;--target&quot;</span></span>
+<span class="lineno">  180 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">, target</span></span>
+<span class="lineno">  181 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">, &quot;+RTS&quot;</span></span>
+<span class="lineno">  182 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">, &quot;-N&quot;</span></span>
+<span class="lineno">  183 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">, &quot;-RTS&quot;</span></span>
+<span class="lineno">  184 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">] ++ [ &quot;--partial&quot; | renderPartial ]</span></span>
+<span class="lineno">  185 </span><span class="spaces">        </span><span class="istickedoff"><span class="nottickedoff">else do</span></span>
+<span class="lineno">  186 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">setRaster raster</span></span>
+<span class="lineno">  187 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">setFPS fps</span></span>
+<span class="lineno">  188 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">setWidth width</span></span>
+<span class="lineno">  189 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">setHeight height</span></span>
+<span class="lineno">  190 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">printf</span></span>
+<span class="lineno">  191 </span><span class="spaces">            </span><span class="istickedoff"><span class="nottickedoff">&quot;Animation options:\n\</span></span>
+<span class="lineno">  192 </span><span class="spaces">                 </span><span class="istickedoff"><span class="nottickedoff">\  fps:    %d\n\</span></span>
+<span class="lineno">  193 </span><span class="spaces">                 </span><span class="istickedoff"><span class="nottickedoff">\  width:  %d\n\</span></span>
+<span class="lineno">  194 </span><span class="spaces">                 </span><span class="istickedoff"><span class="nottickedoff">\  height: %d\n\</span></span>
+<span class="lineno">  195 </span><span class="spaces">                 </span><span class="istickedoff"><span class="nottickedoff">\  fmt:    %s\n\</span></span>
+<span class="lineno">  196 </span><span class="spaces">                 </span><span class="istickedoff"><span class="nottickedoff">\  target: %s\n\</span></span>
+<span class="lineno">  197 </span><span class="spaces">                 </span><span class="istickedoff"><span class="nottickedoff">\  raster: %s\n&quot;</span></span>
+<span class="lineno">  198 </span><span class="spaces">            </span><span class="istickedoff"><span class="nottickedoff">fps</span></span>
+<span class="lineno">  199 </span><span class="spaces">            </span><span class="istickedoff"><span class="nottickedoff">width</span></span>
+<span class="lineno">  200 </span><span class="spaces">            </span><span class="istickedoff"><span class="nottickedoff">height</span></span>
+<span class="lineno">  201 </span><span class="spaces">            </span><span class="istickedoff"><span class="nottickedoff">(showFormat fmt)</span></span>
+<span class="lineno">  202 </span><span class="spaces">            </span><span class="istickedoff"><span class="nottickedoff">target</span></span>
+<span class="lineno">  203 </span><span class="spaces">            </span><span class="istickedoff"><span class="nottickedoff">(show raster)</span></span>
+<span class="lineno">  204 </span><span class="spaces"></span><span class="istickedoff"><span class="nottickedoff"></span></span>
+<span class="lineno">  205 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">render animation target raster fmt width height fps renderPartial</span></span></span>
+<span class="lineno">  206 </span>
+<span class="lineno">  207 </span>guessParameter :: Maybe a -&gt; Maybe a -&gt; a -&gt; a
+<span class="lineno">  208 </span><span class="decl"><span class="nottickedoff">guessParameter a b def = fromMaybe def (a &lt;|&gt; b)</span></span>
+<span class="lineno">  209 </span>
+<span class="lineno">  210 </span>
+<span class="lineno">  211 </span>-- If user specifies exactly one dimension explicitly, calculate the other
+<span class="lineno">  212 </span>userPreferredDimensions :: Maybe Width -&gt; Maybe Height -&gt; Maybe (Width, Height)
+<span class="lineno">  213 </span><span class="decl"><span class="nottickedoff">userPreferredDimensions (Just width) (Just height) = Just (width, height)</span>
+<span class="lineno">  214 </span><span class="spaces"></span><span class="nottickedoff">userPreferredDimensions (Just width) Nothing =</span>
+<span class="lineno">  215 </span><span class="spaces">  </span><span class="nottickedoff">Just (width, makeEven $ width * 9 `div` 16)</span>
+<span class="lineno">  216 </span><span class="spaces"></span><span class="nottickedoff">userPreferredDimensions Nothing (Just height) =</span>
+<span class="lineno">  217 </span><span class="spaces">  </span><span class="nottickedoff">Just (makeEven $ height * 16 `div` 9, height)</span>
+<span class="lineno">  218 </span><span class="spaces"></span><span class="nottickedoff">userPreferredDimensions Nothing Nothing = Nothing</span></span>
+<span class="lineno">  219 </span>
+<span class="lineno">  220 </span>-- Avoid ffmpeg failures &quot;height not divisible by 2&quot;
+<span class="lineno">  221 </span>makeEven :: Int -&gt; Int
+<span class="lineno">  222 </span><span class="decl"><span class="nottickedoff">makeEven x | even x    = x</span>
+<span class="lineno">  223 </span><span class="spaces">           </span><span class="nottickedoff">| otherwise = x - 1</span></span>
+
+</pre>
+</body>
+</html>

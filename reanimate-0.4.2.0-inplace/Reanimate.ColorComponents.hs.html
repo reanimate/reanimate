@@ -1,0 +1,152 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>{-# LANGUAGE RecordWildCards #-}
+<span class="lineno">    2 </span>{- |
+<span class="lineno">    3 </span>  Colors are three dimensional and can be projected into many color spaces
+<span class="lineno">    4 </span>  with different properties.
+<span class="lineno">    5 </span>
+<span class="lineno">    6 </span>  Interpolating directly in the RGB color space is unintuitive and rarely useful.
+<span class="lineno">    7 </span>  If you want to transition through color, you most likely want either the XYZ space
+<span class="lineno">    8 </span>  (for physically accurate color transitions) or the LAB space (for esthetically
+<span class="lineno">    9 </span>  pleasing colors).
+<span class="lineno">   10 </span>-}
+<span class="lineno">   11 </span>module Reanimate.ColorComponents
+<span class="lineno">   12 </span>  ( ColorComponents(..)
+<span class="lineno">   13 </span>  , rgbComponents
+<span class="lineno">   14 </span>  , hsvComponents
+<span class="lineno">   15 </span>  , labComponents
+<span class="lineno">   16 </span>  , xyzComponents
+<span class="lineno">   17 </span>  , lchComponents
+<span class="lineno">   18 </span>  , interpolate
+<span class="lineno">   19 </span>  , interpolateRGB8
+<span class="lineno">   20 </span>  , interpolateRGBA8
+<span class="lineno">   21 </span>  , toRGB8
+<span class="lineno">   22 </span>  , fromRGB8
+<span class="lineno">   23 </span>  ) where
+<span class="lineno">   24 </span>
+<span class="lineno">   25 </span>import           Codec.Picture
+<span class="lineno">   26 </span>import           Codec.Picture.Types
+<span class="lineno">   27 </span>import           Data.Colour
+<span class="lineno">   28 </span>import           Data.Colour.CIE
+<span class="lineno">   29 </span>import           Data.Colour.CIE.Illuminant (d65)
+<span class="lineno">   30 </span>import           Data.Colour.RGBSpace
+<span class="lineno">   31 </span>import           Data.Colour.RGBSpace.HSV
+<span class="lineno">   32 </span>import           Data.Colour.SRGB
+<span class="lineno">   33 </span>import           Data.Fixed
+<span class="lineno">   34 </span>import           Reanimate.Ease
+<span class="lineno">   35 </span>
+<span class="lineno">   36 </span>-- | Constructor and destructor for color's three components.
+<span class="lineno">   37 </span>data ColorComponents = ColorComponents
+<span class="lineno">   38 </span>  { <span class="nottickedoff"><span class="decl"><span class="nottickedoff">colorUnpack</span></span></span> :: Colour Double -&gt; (Double, Double, Double)
+<span class="lineno">   39 </span>    -- ^ Unpack a color into its three components.
+<span class="lineno">   40 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">colorPack</span></span></span>   :: Double -&gt; Double -&gt; Double -&gt; Colour Double
+<span class="lineno">   41 </span>    -- ^ Restore a color from three coordinates.
+<span class="lineno">   42 </span>  }
+<span class="lineno">   43 </span>
+<span class="lineno">   44 </span>-- | &gt; interpolate rgbComponents yellow blue
+<span class="lineno">   45 </span>--
+<span class="lineno">   46 </span>--   &lt;&lt;docs/gifs/doc_rgbComponents.gif&gt;&gt;
+<span class="lineno">   47 </span>rgbComponents :: ColorComponents
+<span class="lineno">   48 </span><span class="decl"><span class="istickedoff">rgbComponents = ColorComponents rgbUnpack sRGB</span>
+<span class="lineno">   49 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">   50 </span><span class="spaces">    </span><span class="istickedoff">rgbUnpack :: Colour Double -&gt; (Double, Double, Double)</span>
+<span class="lineno">   51 </span><span class="spaces">    </span><span class="istickedoff">rgbUnpack c =</span>
+<span class="lineno">   52 </span><span class="spaces">      </span><span class="istickedoff">case toSRGB c of</span>
+<span class="lineno">   53 </span><span class="spaces">        </span><span class="istickedoff">RGB r g b -&gt; (r,g,b)</span></span>
+<span class="lineno">   54 </span>
+<span class="lineno">   55 </span>-- | &gt; interpolate hsvComponents yellow blue
+<span class="lineno">   56 </span>--
+<span class="lineno">   57 </span>--   &lt;&lt;docs/gifs/doc_hsvComponents.gif&gt;&gt;
+<span class="lineno">   58 </span>hsvComponents :: ColorComponents
+<span class="lineno">   59 </span><span class="decl"><span class="istickedoff">hsvComponents = ColorComponents unpack pack</span>
+<span class="lineno">   60 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">   61 </span><span class="spaces">    </span><span class="istickedoff">unpack = hsvView.toSRGB</span>
+<span class="lineno">   62 </span><span class="spaces">    </span><span class="istickedoff">pack a b c = uncurryRGB sRGB $ hsv a b c</span></span>
+<span class="lineno">   63 </span>
+<span class="lineno">   64 </span>-- | &gt; interpolate labComponents yellow blue
+<span class="lineno">   65 </span>--
+<span class="lineno">   66 </span>--   &lt;&lt;docs/gifs/doc_labComponents.gif&gt;&gt;
+<span class="lineno">   67 </span>labComponents :: ColorComponents
+<span class="lineno">   68 </span><span class="decl"><span class="istickedoff">labComponents = ColorComponents unpack pack</span>
+<span class="lineno">   69 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">   70 </span><span class="spaces">    </span><span class="istickedoff">unpack = cieLABView d65</span>
+<span class="lineno">   71 </span><span class="spaces">    </span><span class="istickedoff">pack = cieLAB d65</span></span>
+<span class="lineno">   72 </span>
+<span class="lineno">   73 </span>-- | &gt; interpolate xyzComponents yellow blue
+<span class="lineno">   74 </span>--
+<span class="lineno">   75 </span>--   &lt;&lt;docs/gifs/doc_xyzComponents.gif&gt;&gt;
+<span class="lineno">   76 </span>xyzComponents :: ColorComponents
+<span class="lineno">   77 </span><span class="decl"><span class="istickedoff">xyzComponents = ColorComponents cieXYZView cieXYZ</span></span>
+<span class="lineno">   78 </span>
+<span class="lineno">   79 </span>-- | &gt; interpolate lchComponents yellow blue
+<span class="lineno">   80 </span>--
+<span class="lineno">   81 </span>--   &lt;&lt;docs/gifs/doc_lchComponents.gif&gt;&gt;
+<span class="lineno">   82 </span>lchComponents :: ColorComponents
+<span class="lineno">   83 </span><span class="decl"><span class="istickedoff">lchComponents = ColorComponents unpack pack</span>
+<span class="lineno">   84 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">   85 </span><span class="spaces">    </span><span class="istickedoff">toDeg,toRad :: Double -&gt; Double</span>
+<span class="lineno">   86 </span><span class="spaces">    </span><span class="istickedoff">toRad deg = deg/180 * pi</span>
+<span class="lineno">   87 </span><span class="spaces">    </span><span class="istickedoff">toDeg rad = rad/pi * 180</span>
+<span class="lineno">   88 </span><span class="spaces">    </span><span class="istickedoff">unpack :: Colour Double -&gt; (Double, Double, Double)</span>
+<span class="lineno">   89 </span><span class="spaces">    </span><span class="istickedoff">unpack color =</span>
+<span class="lineno">   90 </span><span class="spaces">      </span><span class="istickedoff">let (l,a,b) = cieLABView d65 color</span>
+<span class="lineno">   91 </span><span class="spaces">          </span><span class="istickedoff">c = sqrt (a*a + b*b)</span>
+<span class="lineno">   92 </span><span class="spaces">          </span><span class="istickedoff">h :: Double</span>
+<span class="lineno">   93 </span><span class="spaces">          </span><span class="istickedoff">h = (toDeg(atan2 b a) + 360) `mod'` 360</span>
+<span class="lineno">   94 </span><span class="spaces">          </span><span class="istickedoff">isZero = round (c*10000) == (0::Integer)</span>
+<span class="lineno">   95 </span><span class="spaces">      </span><span class="istickedoff">in (l, c, if <span class="tickonlyfalse">isZero</span> then <span class="nottickedoff">0/0</span> else h)</span>
+<span class="lineno">   96 </span><span class="spaces">    </span><span class="istickedoff">pack l c h =</span>
+<span class="lineno">   97 </span><span class="spaces">      </span><span class="istickedoff">cieLAB d65 l (cos (toRad h) * c) (sin (toRad h) * c)</span></span>
+<span class="lineno">   98 </span>
+<span class="lineno">   99 </span>-- | Smoothly interpolate between two colors using the given color components.
+<span class="lineno">  100 </span>interpolate :: ColorComponents -&gt; Colour Double -&gt; Colour Double -&gt; (Double -&gt; Colour Double)
+<span class="lineno">  101 </span><span class="decl"><span class="istickedoff">interpolate ColorComponents{..} from to = \d -&gt;</span>
+<span class="lineno">  102 </span><span class="spaces">    </span><span class="istickedoff">colorPack (a1 + (a2-a1)*d) (b1 + (b2-b1)*d) (c1 + (c2-c1)*d)</span>
+<span class="lineno">  103 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  104 </span><span class="spaces">    </span><span class="istickedoff">(a1,b1,c1) = colorUnpack from</span>
+<span class="lineno">  105 </span><span class="spaces">    </span><span class="istickedoff">(a2,b2,c2) = colorUnpack to</span></span>
+<span class="lineno">  106 </span>
+<span class="lineno">  107 </span>-- | Convenience interpolation function for RGB8 values.
+<span class="lineno">  108 </span>interpolateRGB8 :: ColorComponents -&gt; PixelRGB8 -&gt; PixelRGB8 -&gt; (Double -&gt; PixelRGB8)
+<span class="lineno">  109 </span><span class="decl"><span class="istickedoff">interpolateRGB8 comps from to = toRGB8 . interpolate comps (fromRGB8 from) (fromRGB8 to)</span></span>
+<span class="lineno">  110 </span>
+<span class="lineno">  111 </span>-- | Convenience interpolation function for RGBA8 values.
+<span class="lineno">  112 </span>interpolateRGBA8 :: ColorComponents -&gt; PixelRGBA8 -&gt; PixelRGBA8 -&gt; (Double -&gt; PixelRGBA8)
+<span class="lineno">  113 </span><span class="decl"><span class="nottickedoff">interpolateRGBA8 comps from to = \t -&gt;</span>
+<span class="lineno">  114 </span><span class="spaces">  </span><span class="nottickedoff">case interp t of</span>
+<span class="lineno">  115 </span><span class="spaces">    </span><span class="nottickedoff">PixelRGB8 r g b -&gt;</span>
+<span class="lineno">  116 </span><span class="spaces">      </span><span class="nottickedoff">let alpha = fromToS (fromIntegral $ pixelOpacity from) (fromIntegral $ pixelOpacity to) t</span>
+<span class="lineno">  117 </span><span class="spaces">      </span><span class="nottickedoff">in PixelRGBA8 r g b (round alpha)</span>
+<span class="lineno">  118 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  119 </span><span class="spaces">    </span><span class="nottickedoff">interp = interpolateRGB8 comps (dropTransparency from) (dropTransparency to)</span></span>
+<span class="lineno">  120 </span>
+<span class="lineno">  121 </span>-- | Convenience function for expressing a color as an RGB8 value.
+<span class="lineno">  122 </span>toRGB8 :: Colour Double -&gt; PixelRGB8
+<span class="lineno">  123 </span><span class="decl"><span class="istickedoff">toRGB8 c = PixelRGB8 r g b</span>
+<span class="lineno">  124 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  125 </span><span class="spaces">    </span><span class="istickedoff">RGB r g b = toSRGBBounded c</span></span>
+<span class="lineno">  126 </span>
+<span class="lineno">  127 </span>-- | Convenience function for expressing an RGB8 value as a color.
+<span class="lineno">  128 </span>fromRGB8 :: PixelRGB8 -&gt; Colour Double
+<span class="lineno">  129 </span><span class="decl"><span class="istickedoff">fromRGB8 (PixelRGB8 r g b) = sRGB24 r g b</span></span>
+
+</pre>
+</body>
+</html>

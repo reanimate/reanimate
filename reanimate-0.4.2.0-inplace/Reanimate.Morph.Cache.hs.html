@@ -1,0 +1,66 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>module Reanimate.Morph.Cache
+<span class="lineno">    2 </span>  ( cachePointCorrespondence -- :: Int -&gt; PointCorrespondence -&gt; PointCorrespondence
+<span class="lineno">    3 </span>  ) where
+<span class="lineno">    4 </span>
+<span class="lineno">    5 </span>import           Control.Exception
+<span class="lineno">    6 </span>import qualified Data.ByteString        as B
+<span class="lineno">    7 </span>import           Data.Hashable
+<span class="lineno">    8 </span>import           Data.Serialize
+<span class="lineno">    9 </span>import           Reanimate.Cache        (encodeInt)
+<span class="lineno">   10 </span>import           Reanimate.Misc         (renameOrCopyFile)
+<span class="lineno">   11 </span>import           Reanimate.Morph.Common
+<span class="lineno">   12 </span>import           System.Directory
+<span class="lineno">   13 </span>import           System.FilePath
+<span class="lineno">   14 </span>import           System.IO
+<span class="lineno">   15 </span>import           System.IO.Temp
+<span class="lineno">   16 </span>import           System.IO.Unsafe
+<span class="lineno">   17 </span>
+<span class="lineno">   18 </span>-- type PointCorrespondence = Polygon → Polygon → (Polygon, Polygon)
+<span class="lineno">   19 </span>cachePointCorrespondence :: Int -&gt; PointCorrespondence -&gt; PointCorrespondence
+<span class="lineno">   20 </span><span class="decl"><span class="nottickedoff">cachePointCorrespondence ident fn src dst = unsafePerformIO $ do</span>
+<span class="lineno">   21 </span><span class="spaces">    </span><span class="nottickedoff">root &lt;- getXdgDirectory XdgCache &quot;reanimate&quot;</span>
+<span class="lineno">   22 </span><span class="spaces">    </span><span class="nottickedoff">createDirectoryIfMissing True root</span>
+<span class="lineno">   23 </span><span class="spaces">    </span><span class="nottickedoff">let path = root &lt;/&gt; template</span>
+<span class="lineno">   24 </span><span class="spaces">    </span><span class="nottickedoff">hit &lt;- doesFileExist path</span>
+<span class="lineno">   25 </span><span class="spaces">    </span><span class="nottickedoff">if hit</span>
+<span class="lineno">   26 </span><span class="spaces">      </span><span class="nottickedoff">then do</span>
+<span class="lineno">   27 </span><span class="spaces">        </span><span class="nottickedoff">inp &lt;- B.readFile path</span>
+<span class="lineno">   28 </span><span class="spaces">        </span><span class="nottickedoff">case decode inp of</span>
+<span class="lineno">   29 </span><span class="spaces">          </span><span class="nottickedoff">Left{} -&gt; do</span>
+<span class="lineno">   30 </span><span class="spaces">            </span><span class="nottickedoff">removeFile path</span>
+<span class="lineno">   31 </span><span class="spaces">            </span><span class="nottickedoff">gen path</span>
+<span class="lineno">   32 </span><span class="spaces">          </span><span class="nottickedoff">Right out -&gt; return out</span>
+<span class="lineno">   33 </span><span class="spaces">      </span><span class="nottickedoff">else gen path</span>
+<span class="lineno">   34 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">   35 </span><span class="spaces">    </span><span class="nottickedoff">gen path = do</span>
+<span class="lineno">   36 </span><span class="spaces">      </span><span class="nottickedoff">correspondence &lt;- evaluate (fn src dst)</span>
+<span class="lineno">   37 </span><span class="spaces">      </span><span class="nottickedoff">withSystemTempFile template $ \tmp h -&gt; do</span>
+<span class="lineno">   38 </span><span class="spaces">        </span><span class="nottickedoff">hClose h</span>
+<span class="lineno">   39 </span><span class="spaces">        </span><span class="nottickedoff">B.writeFile tmp (encode correspondence)</span>
+<span class="lineno">   40 </span><span class="spaces">        </span><span class="nottickedoff">renameOrCopyFile tmp path</span>
+<span class="lineno">   41 </span><span class="spaces">      </span><span class="nottickedoff">return correspondence</span>
+<span class="lineno">   42 </span><span class="spaces">    </span><span class="nottickedoff">template = encodeInt key &lt;.&gt; &quot;morph&quot;</span>
+<span class="lineno">   43 </span><span class="spaces">    </span><span class="nottickedoff">key = hashWithSalt ident (src,dst)</span></span>
+
+</pre>
+</body>
+</html>

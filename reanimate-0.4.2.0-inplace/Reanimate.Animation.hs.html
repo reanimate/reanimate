@@ -1,0 +1,417 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>{-|
+<span class="lineno">    2 </span>Module      : Reanimate.Animation
+<span class="lineno">    3 </span>Copyright   : Written by David Himmelstrup
+<span class="lineno">    4 </span>License     : Unlicense
+<span class="lineno">    5 </span>Maintainer  : lemmih@gmail.com
+<span class="lineno">    6 </span>Stability   : experimental
+<span class="lineno">    7 </span>Portability : POSIX
+<span class="lineno">    8 </span>
+<span class="lineno">    9 </span>Declarative animation API based on combinators. For a higher-level interface,
+<span class="lineno">   10 </span>see 'Reanimate.Scene'.
+<span class="lineno">   11 </span>
+<span class="lineno">   12 </span>-}
+<span class="lineno">   13 </span>module Reanimate.Animation
+<span class="lineno">   14 </span>  ( Duration
+<span class="lineno">   15 </span>  , Time
+<span class="lineno">   16 </span>  , SVG
+<span class="lineno">   17 </span>  , Animation
+<span class="lineno">   18 </span>  -- * Creating animations
+<span class="lineno">   19 </span>  , mkAnimation
+<span class="lineno">   20 </span>  , animate
+<span class="lineno">   21 </span>  , staticFrame
+<span class="lineno">   22 </span>  , pause
+<span class="lineno">   23 </span>  -- * Querying animations
+<span class="lineno">   24 </span>  , duration
+<span class="lineno">   25 </span>  , frameAt
+<span class="lineno">   26 </span>  -- * Composing animations
+<span class="lineno">   27 </span>  , seqA
+<span class="lineno">   28 </span>  , andThen
+<span class="lineno">   29 </span>  , parA
+<span class="lineno">   30 </span>  , parLoopA
+<span class="lineno">   31 </span>  , parDropA
+<span class="lineno">   32 </span>  -- * Modifying animations
+<span class="lineno">   33 </span>  , setDuration
+<span class="lineno">   34 </span>  , adjustDuration
+<span class="lineno">   35 </span>  , mapA
+<span class="lineno">   36 </span>  , takeA
+<span class="lineno">   37 </span>  , dropA
+<span class="lineno">   38 </span>  , lastA
+<span class="lineno">   39 </span>  , pauseAtEnd
+<span class="lineno">   40 </span>  , pauseAtBeginning
+<span class="lineno">   41 </span>  , pauseAround
+<span class="lineno">   42 </span>  , repeatA
+<span class="lineno">   43 </span>  , reverseA
+<span class="lineno">   44 </span>  , playThenReverseA
+<span class="lineno">   45 </span>  , signalA
+<span class="lineno">   46 </span>  , freezeAtPercentage
+<span class="lineno">   47 </span>  , addStatic
+<span class="lineno">   48 </span>  -- * Misc
+<span class="lineno">   49 </span>  , getAnimationFrame
+<span class="lineno">   50 </span>  , Sync(..)
+<span class="lineno">   51 </span>  -- * Rendering
+<span class="lineno">   52 </span>  , renderTree
+<span class="lineno">   53 </span>  , renderSvg
+<span class="lineno">   54 </span>  ) where
+<span class="lineno">   55 </span>
+<span class="lineno">   56 </span>import           Control.Arrow              ()
+<span class="lineno">   57 </span>import           Data.Fixed                 (mod')
+<span class="lineno">   58 </span>import           Graphics.SvgTree           (Alignment (..), Document (..),
+<span class="lineno">   59 </span>                                             Number (..),
+<span class="lineno">   60 </span>                                             PreserveAspectRatio (..),
+<span class="lineno">   61 </span>                                             Tree (..), xmlOfTree)
+<span class="lineno">   62 </span>import           Graphics.SvgTree.Printer
+<span class="lineno">   63 </span>import           Reanimate.Constants
+<span class="lineno">   64 </span>import           Reanimate.Ease
+<span class="lineno">   65 </span>import           Reanimate.Svg.Constructors
+<span class="lineno">   66 </span>import           Text.XML.Light.Output
+<span class="lineno">   67 </span>
+<span class="lineno">   68 </span>-- | Duration of an animation or effect. Usually measured in seconds.
+<span class="lineno">   69 </span>type Duration = Double
+<span class="lineno">   70 </span>-- | Time signal. Goes from 0 to 1, inclusive.
+<span class="lineno">   71 </span>type Time = Double
+<span class="lineno">   72 </span>
+<span class="lineno">   73 </span>-- | SVG node.
+<span class="lineno">   74 </span>type SVG = Tree
+<span class="lineno">   75 </span>
+<span class="lineno">   76 </span>-- | Animations are SVGs over a finite time.
+<span class="lineno">   77 </span>data Animation = Animation Duration (Time -&gt; SVG)
+<span class="lineno">   78 </span>
+<span class="lineno">   79 </span>-- | Construct an animation with a given duration.
+<span class="lineno">   80 </span>mkAnimation :: Duration -&gt; (Time -&gt; SVG) -&gt; Animation
+<span class="lineno">   81 </span><span class="decl"><span class="istickedoff">mkAnimation = Animation</span></span>
+<span class="lineno">   82 </span>
+<span class="lineno">   83 </span>-- | Construct an animation with a duration of @1@.
+<span class="lineno">   84 </span>animate :: (Time -&gt; SVG) -&gt; Animation
+<span class="lineno">   85 </span><span class="decl"><span class="istickedoff">animate = Animation 1</span></span>
+<span class="lineno">   86 </span>
+<span class="lineno">   87 </span>-- | Create an animation with provided @duration@, which consists of stationary frame displayed for its entire duration.
+<span class="lineno">   88 </span>staticFrame :: Duration -&gt; SVG -&gt; Animation
+<span class="lineno">   89 </span><span class="decl"><span class="istickedoff">staticFrame d svg = Animation d (const svg)</span></span>
+<span class="lineno">   90 </span>
+<span class="lineno">   91 </span>-- | Query the duration of an animation.
+<span class="lineno">   92 </span>duration :: Animation -&gt; Duration
+<span class="lineno">   93 </span><span class="decl"><span class="istickedoff">duration (Animation d _) = d</span></span>
+<span class="lineno">   94 </span>
+<span class="lineno">   95 </span>-- | Play animations in sequence. The @lhs@ animation is removed after it has
+<span class="lineno">   96 </span>--   completed. New animation duration is '@duration lhs + duration rhs@'.
+<span class="lineno">   97 </span>--
+<span class="lineno">   98 </span>--   Example:
+<span class="lineno">   99 </span>--
+<span class="lineno">  100 </span>--   &gt; drawBox `seqA` drawCircle
+<span class="lineno">  101 </span>--
+<span class="lineno">  102 </span>--   &lt;&lt;docs/gifs/doc_seqA.gif&gt;&gt;
+<span class="lineno">  103 </span>seqA :: Animation -&gt; Animation -&gt; Animation
+<span class="lineno">  104 </span><span class="decl"><span class="istickedoff">seqA (Animation d1 f1) (Animation d2 f2) =</span>
+<span class="lineno">  105 </span><span class="spaces">  </span><span class="istickedoff">Animation totalD $ \t -&gt;</span>
+<span class="lineno">  106 </span><span class="spaces">    </span><span class="istickedoff">if t &lt; d1/totalD</span>
+<span class="lineno">  107 </span><span class="spaces">      </span><span class="istickedoff">then f1 (t * totalD/d1)</span>
+<span class="lineno">  108 </span><span class="spaces">      </span><span class="istickedoff">else f2 ((t-d1/totalD) * totalD/d2)</span>
+<span class="lineno">  109 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  110 </span><span class="spaces">    </span><span class="istickedoff">totalD = d1+d2</span></span>
+<span class="lineno">  111 </span>
+<span class="lineno">  112 </span>-- | Play two animation concurrently. Shortest animation freezes on last frame.
+<span class="lineno">  113 </span>--   New animation duration is '@max (duration lhs) (duration rhs)@'.
+<span class="lineno">  114 </span>--
+<span class="lineno">  115 </span>--   Example:
+<span class="lineno">  116 </span>--
+<span class="lineno">  117 </span>--   &gt; drawBox `parA` adjustDuration (*2) drawCircle
+<span class="lineno">  118 </span>--
+<span class="lineno">  119 </span>--   &lt;&lt;docs/gifs/doc_parA.gif&gt;&gt;
+<span class="lineno">  120 </span>parA :: Animation -&gt; Animation -&gt; Animation
+<span class="lineno">  121 </span><span class="decl"><span class="istickedoff">parA (Animation d1 f1) (Animation d2 f2) =</span>
+<span class="lineno">  122 </span><span class="spaces">  </span><span class="istickedoff">Animation (max d1 d2) $ \t -&gt;</span>
+<span class="lineno">  123 </span><span class="spaces">    </span><span class="istickedoff">let t1 = t * totalD/d1</span>
+<span class="lineno">  124 </span><span class="spaces">        </span><span class="istickedoff">t2 = t * totalD/d2 in</span>
+<span class="lineno">  125 </span><span class="spaces">    </span><span class="istickedoff">mkGroup</span>
+<span class="lineno">  126 </span><span class="spaces">    </span><span class="istickedoff">[ f1 (min 1 t1)</span>
+<span class="lineno">  127 </span><span class="spaces">    </span><span class="istickedoff">, f2 (min 1 t2) ]</span>
+<span class="lineno">  128 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  129 </span><span class="spaces">    </span><span class="istickedoff">totalD = max d1 d2</span></span>
+<span class="lineno">  130 </span>
+<span class="lineno">  131 </span>-- | Play two animation concurrently. Shortest animation loops.
+<span class="lineno">  132 </span>--   New animation duration is '@max (duration lhs) (duration rhs)@'.
+<span class="lineno">  133 </span>--
+<span class="lineno">  134 </span>--   Example:
+<span class="lineno">  135 </span>--
+<span class="lineno">  136 </span>--   &gt; drawBox `parLoopA` adjustDuration (*2) drawCircle
+<span class="lineno">  137 </span>--
+<span class="lineno">  138 </span>--   &lt;&lt;docs/gifs/doc_parLoopA.gif&gt;&gt;
+<span class="lineno">  139 </span>parLoopA :: Animation -&gt; Animation -&gt; Animation
+<span class="lineno">  140 </span><span class="decl"><span class="istickedoff">parLoopA (Animation d1 f1) (Animation d2 f2) =</span>
+<span class="lineno">  141 </span><span class="spaces">  </span><span class="istickedoff">Animation totalD $ \t -&gt;</span>
+<span class="lineno">  142 </span><span class="spaces">    </span><span class="istickedoff">let t1 = t * totalD/d1</span>
+<span class="lineno">  143 </span><span class="spaces">        </span><span class="istickedoff">t2 = t * totalD/d2 in</span>
+<span class="lineno">  144 </span><span class="spaces">    </span><span class="istickedoff">mkGroup</span>
+<span class="lineno">  145 </span><span class="spaces">    </span><span class="istickedoff">[ f1 (t1 `mod'` 1)</span>
+<span class="lineno">  146 </span><span class="spaces">    </span><span class="istickedoff">, f2 (t2 `mod'` 1) ]</span>
+<span class="lineno">  147 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  148 </span><span class="spaces">    </span><span class="istickedoff">totalD = max d1 d2</span></span>
+<span class="lineno">  149 </span>
+<span class="lineno">  150 </span>-- | Play two animation concurrently. Animations disappear after playing once.
+<span class="lineno">  151 </span>--   New animation duration is '@max (duration lhs) (duration rhs)@'.
+<span class="lineno">  152 </span>--
+<span class="lineno">  153 </span>--   Example:
+<span class="lineno">  154 </span>--
+<span class="lineno">  155 </span>--   &gt; drawBox `parLoopA` adjustDuration (*2) drawCircle
+<span class="lineno">  156 </span>--
+<span class="lineno">  157 </span>--   &lt;&lt;docs/gifs/doc_parDropA.gif&gt;&gt;
+<span class="lineno">  158 </span>parDropA :: Animation -&gt; Animation -&gt; Animation
+<span class="lineno">  159 </span><span class="decl"><span class="istickedoff">parDropA (Animation d1 f1) (Animation d2 f2) =</span>
+<span class="lineno">  160 </span><span class="spaces">  </span><span class="istickedoff">Animation totalD $ \t -&gt;</span>
+<span class="lineno">  161 </span><span class="spaces">    </span><span class="istickedoff">let t1 = t * totalD/d1</span>
+<span class="lineno">  162 </span><span class="spaces">        </span><span class="istickedoff">t2 = t * totalD/d2 in</span>
+<span class="lineno">  163 </span><span class="spaces">    </span><span class="istickedoff">mkGroup</span>
+<span class="lineno">  164 </span><span class="spaces">    </span><span class="istickedoff">[ if t1&gt;1 then None else f1 t1</span>
+<span class="lineno">  165 </span><span class="spaces">    </span><span class="istickedoff">, if <span class="tickonlyfalse">t2&gt;1</span> then <span class="nottickedoff">None</span> else f2 t2 ]</span>
+<span class="lineno">  166 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  167 </span><span class="spaces">    </span><span class="istickedoff">totalD = max d1 d2</span></span>
+<span class="lineno">  168 </span>
+<span class="lineno">  169 </span>-- | Empty animation (no SVG output) with a fixed duration.
+<span class="lineno">  170 </span>--
+<span class="lineno">  171 </span>--   Example:
+<span class="lineno">  172 </span>--
+<span class="lineno">  173 </span>--   &gt; pause 1 `seqA` drawProgress
+<span class="lineno">  174 </span>--
+<span class="lineno">  175 </span>--   &lt;&lt;docs/gifs/doc_pause.gif&gt;&gt;
+<span class="lineno">  176 </span>pause :: Duration -&gt; Animation
+<span class="lineno">  177 </span><span class="decl"><span class="istickedoff">pause d = Animation d (const None)</span></span>
+<span class="lineno">  178 </span>
+<span class="lineno">  179 </span>-- | Play left animation and freeze on the last frame, then play the right
+<span class="lineno">  180 </span>--   animation. New duration is '@duration lhs + duration rhs@'.
+<span class="lineno">  181 </span>--
+<span class="lineno">  182 </span>--   Example:
+<span class="lineno">  183 </span>--
+<span class="lineno">  184 </span>--   &gt; drawBox `andThen` drawCircle
+<span class="lineno">  185 </span>--
+<span class="lineno">  186 </span>--   &lt;&lt;docs/gifs/doc_andThen.gif&gt;&gt;
+<span class="lineno">  187 </span>andThen :: Animation -&gt; Animation -&gt; Animation
+<span class="lineno">  188 </span><span class="decl"><span class="istickedoff">andThen a b = a `parA` (pause (duration a) `seqA` b)</span></span>
+<span class="lineno">  189 </span>
+<span class="lineno">  190 </span>-- | Calculate the frame that would be displayed at given point in @time@ of running @animation@.
+<span class="lineno">  191 </span>--
+<span class="lineno">  192 </span>-- The provided time parameter is clamped between 0 and animation duration.
+<span class="lineno">  193 </span>frameAt :: Time -&gt; Animation -&gt; SVG
+<span class="lineno">  194 </span><span class="decl"><span class="istickedoff">frameAt t (Animation d f) = f t'</span>
+<span class="lineno">  195 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  196 </span><span class="spaces">    </span><span class="istickedoff">t' = clamp 0 1 (t/d)</span></span>
+<span class="lineno">  197 </span>
+<span class="lineno">  198 </span>-- | Helper function for pretty-printing SVG nodes.
+<span class="lineno">  199 </span>renderTree :: SVG -&gt; String
+<span class="lineno">  200 </span><span class="decl"><span class="nottickedoff">renderTree t = maybe &quot;&quot; ppElement $ xmlOfTree t</span></span>
+<span class="lineno">  201 </span>
+<span class="lineno">  202 </span>-- | Helper function for pretty-printing SVG nodes as SVG documents.
+<span class="lineno">  203 </span>renderSvg :: Maybe Number -- ^ The number to use as value of the @width@ attribute of the resulting top-level svg element. If @Nothing@, the width attribute won't be rendered.
+<span class="lineno">  204 </span>          -&gt; Maybe Number -- ^ Similar to previous argument, but for @height@ attribute.
+<span class="lineno">  205 </span>          -&gt; SVG          -- ^ SVG to render
+<span class="lineno">  206 </span>          -&gt; String       -- ^ String representation of SVG XML markup
+<span class="lineno">  207 </span><span class="decl"><span class="istickedoff">renderSvg w h t = ppDocument doc</span>
+<span class="lineno">  208 </span><span class="spaces"></span><span class="istickedoff">-- renderSvg w h t = ppFastElement (xmlOfDocument doc)</span>
+<span class="lineno">  209 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  210 </span><span class="spaces">    </span><span class="istickedoff">width = 16</span>
+<span class="lineno">  211 </span><span class="spaces">    </span><span class="istickedoff">height = 9</span>
+<span class="lineno">  212 </span><span class="spaces">    </span><span class="istickedoff">doc = Document</span>
+<span class="lineno">  213 </span><span class="spaces">      </span><span class="istickedoff">{ _viewBox = Just (-width/2, -height/2, width, height)</span>
+<span class="lineno">  214 </span><span class="spaces">      </span><span class="istickedoff">, _width = w</span>
+<span class="lineno">  215 </span><span class="spaces">      </span><span class="istickedoff">, _height = h</span>
+<span class="lineno">  216 </span><span class="spaces">      </span><span class="istickedoff">, _elements = [withStrokeWidth defaultStrokeWidth $ scaleXY 1 (-1) t]</span>
+<span class="lineno">  217 </span><span class="spaces">      </span><span class="istickedoff">, _description = <span class="nottickedoff">&quot;&quot;</span></span>
+<span class="lineno">  218 </span><span class="spaces">      </span><span class="istickedoff">, _documentLocation = <span class="nottickedoff">&quot;&quot;</span></span>
+<span class="lineno">  219 </span><span class="spaces">      </span><span class="istickedoff">, _documentAspectRatio = PreserveAspectRatio False AlignNone Nothing</span>
+<span class="lineno">  220 </span><span class="spaces">      </span><span class="istickedoff">}</span></span>
+<span class="lineno">  221 </span>
+<span class="lineno">  222 </span>-- | Map over the SVG produced by an animation at every frame.
+<span class="lineno">  223 </span>--
+<span class="lineno">  224 </span>--   Example:
+<span class="lineno">  225 </span>--
+<span class="lineno">  226 </span>--   &gt; mapA (scale 0.5) drawCircle
+<span class="lineno">  227 </span>--
+<span class="lineno">  228 </span>--   &lt;&lt;docs/gifs/doc_mapA.gif&gt;&gt;
+<span class="lineno">  229 </span>
+<span class="lineno">  230 </span>mapA :: (SVG -&gt; SVG) -&gt; Animation -&gt; Animation
+<span class="lineno">  231 </span><span class="decl"><span class="istickedoff">mapA fn (Animation d f) = Animation d (fn . f)</span></span>
+<span class="lineno">  232 </span>
+<span class="lineno">  233 </span>-- | Freeze the last frame for @t@ seconds at the end of the animation.
+<span class="lineno">  234 </span>--
+<span class="lineno">  235 </span>--   Example:
+<span class="lineno">  236 </span>--
+<span class="lineno">  237 </span>--   &gt; pauseAtEnd 1 drawProgress
+<span class="lineno">  238 </span>--
+<span class="lineno">  239 </span>--   &lt;&lt;docs/gifs/doc_pauseAtEnd.gif&gt;&gt;
+<span class="lineno">  240 </span>pauseAtEnd :: Duration -&gt; Animation -&gt; Animation
+<span class="lineno">  241 </span><span class="decl"><span class="istickedoff">pauseAtEnd t a = a `andThen` pause t</span></span>
+<span class="lineno">  242 </span>
+<span class="lineno">  243 </span>-- | Freeze the first frame for @t@ seconds at the beginning of the animation.
+<span class="lineno">  244 </span>--
+<span class="lineno">  245 </span>--   Example:
+<span class="lineno">  246 </span>--
+<span class="lineno">  247 </span>--   &gt; pauseAtBeginning 1 drawProgress
+<span class="lineno">  248 </span>--
+<span class="lineno">  249 </span>--   &lt;&lt;docs/gifs/doc_pauseAtBeginning.gif&gt;&gt;
+<span class="lineno">  250 </span>pauseAtBeginning :: Duration -&gt; Animation -&gt; Animation
+<span class="lineno">  251 </span><span class="decl"><span class="istickedoff">pauseAtBeginning t a =</span>
+<span class="lineno">  252 </span><span class="spaces">    </span><span class="istickedoff">Animation t (freezeFrame 0 a) `seqA` a</span></span>
+<span class="lineno">  253 </span>
+<span class="lineno">  254 </span>-- | Freeze the first and the last frame of the animation for a specified duration.
+<span class="lineno">  255 </span>--
+<span class="lineno">  256 </span>--   Example:
+<span class="lineno">  257 </span>--
+<span class="lineno">  258 </span>--   &gt; pauseAround 1 1 drawProgress
+<span class="lineno">  259 </span>--
+<span class="lineno">  260 </span>--   &lt;&lt;docs/gifs/doc_pauseAround.gif&gt;&gt;
+<span class="lineno">  261 </span>pauseAround :: Duration -&gt; Duration -&gt; Animation -&gt; Animation
+<span class="lineno">  262 </span><span class="decl"><span class="istickedoff">pauseAround start end = pauseAtEnd end . pauseAtBeginning start</span></span>
+<span class="lineno">  263 </span>
+<span class="lineno">  264 </span>-- Freeze frame at time @t@.
+<span class="lineno">  265 </span>freezeFrame :: Time -&gt; Animation -&gt; (Time -&gt; SVG)
+<span class="lineno">  266 </span><span class="decl"><span class="istickedoff">freezeFrame t (Animation d f) = const $ f (t/d)</span></span>
+<span class="lineno">  267 </span>
+<span class="lineno">  268 </span>-- | Change the duration of an animation. Animates are stretched or squished
+<span class="lineno">  269 </span>--   (rather than truncated) to fit the new duration.
+<span class="lineno">  270 </span>adjustDuration :: (Duration -&gt; Duration) -&gt; Animation -&gt; Animation
+<span class="lineno">  271 </span><span class="decl"><span class="istickedoff">adjustDuration fn (Animation d gen) =</span>
+<span class="lineno">  272 </span><span class="spaces">  </span><span class="istickedoff">Animation (fn d) gen</span></span>
+<span class="lineno">  273 </span>
+<span class="lineno">  274 </span>-- | Set the duration of an animation by adjusting its playback rate. The
+<span class="lineno">  275 </span>--   animation is still played from start to finish without being cropped.
+<span class="lineno">  276 </span>setDuration :: Duration -&gt; Animation -&gt; Animation
+<span class="lineno">  277 </span><span class="decl"><span class="nottickedoff">setDuration newD = adjustDuration (const newD)</span></span>
+<span class="lineno">  278 </span>
+<span class="lineno">  279 </span>-- | Play an animation in reverse. Duration remains unchanged. Shorthand for:
+<span class="lineno">  280 </span>--   @'signalA' 'reverseS'@.
+<span class="lineno">  281 </span>--
+<span class="lineno">  282 </span>--   Example:
+<span class="lineno">  283 </span>--
+<span class="lineno">  284 </span>--   &gt; reverseA drawCircle
+<span class="lineno">  285 </span>--
+<span class="lineno">  286 </span>--   &lt;&lt;docs/gifs/doc_reverseA.gif&gt;&gt;
+<span class="lineno">  287 </span>reverseA :: Animation -&gt; Animation
+<span class="lineno">  288 </span><span class="decl"><span class="istickedoff">reverseA = signalA reverseS</span></span>
+<span class="lineno">  289 </span>
+<span class="lineno">  290 </span>-- | Play animation before playing it again in reverse. Duration is twice
+<span class="lineno">  291 </span>--   the duration of the input.
+<span class="lineno">  292 </span>--
+<span class="lineno">  293 </span>--   Example:
+<span class="lineno">  294 </span>--
+<span class="lineno">  295 </span>--   &gt; playThenReverseA drawCircle
+<span class="lineno">  296 </span>--
+<span class="lineno">  297 </span>--   &lt;&lt;docs/gifs/doc_playThenReverseA.gif&gt;&gt;
+<span class="lineno">  298 </span>playThenReverseA :: Animation -&gt; Animation
+<span class="lineno">  299 </span><span class="decl"><span class="istickedoff">playThenReverseA a = a `seqA` reverseA a</span></span>
+<span class="lineno">  300 </span>
+<span class="lineno">  301 </span>-- | Loop animation @n@ number of times. This number may be fractional and it
+<span class="lineno">  302 </span>--   may be less than 1. It must be greater than or equal to 0, though.
+<span class="lineno">  303 </span>--   New duration is @n*duration input@.
+<span class="lineno">  304 </span>--
+<span class="lineno">  305 </span>--   Example:
+<span class="lineno">  306 </span>--
+<span class="lineno">  307 </span>--   &gt; repeatA 1.5 drawCircle
+<span class="lineno">  308 </span>--
+<span class="lineno">  309 </span>--   &lt;&lt;docs/gifs/doc_repeatA.gif&gt;&gt;
+<span class="lineno">  310 </span>repeatA :: Double -&gt; Animation -&gt; Animation
+<span class="lineno">  311 </span><span class="decl"><span class="istickedoff">repeatA n (Animation d f) = Animation (d*n) $ \t -&gt;</span>
+<span class="lineno">  312 </span><span class="spaces">  </span><span class="istickedoff">f ((t*n) `mod'` 1)</span></span>
+<span class="lineno">  313 </span>
+<span class="lineno">  314 </span>
+<span class="lineno">  315 </span>-- | @freezeAtPercentage time animation@ creates an animation consisting of stationary frame,
+<span class="lineno">  316 </span>-- that would be displayed in the provided @animation@ at given @time@.
+<span class="lineno">  317 </span>-- The duration of the new animation is the same as the duration of provided @animation@.
+<span class="lineno">  318 </span>freezeAtPercentage :: Time  -- ^ value between 0 and 1. The frame displayed at this point in the original animation will be displayed for the duration of the new animation
+<span class="lineno">  319 </span>                   -&gt; Animation -- ^ original animation, from which the frame will be taken
+<span class="lineno">  320 </span>                   -&gt; Animation -- ^ new animation consisting of static frame displayed for the duration of the original animation
+<span class="lineno">  321 </span><span class="decl"><span class="nottickedoff">freezeAtPercentage frac (Animation d genFrame) =</span>
+<span class="lineno">  322 </span><span class="spaces">  </span><span class="nottickedoff">Animation d $ const $ genFrame frac</span></span>
+<span class="lineno">  323 </span>
+<span class="lineno">  324 </span>-- | Overlay animation on top of static SVG image.
+<span class="lineno">  325 </span>--
+<span class="lineno">  326 </span>--  Example:
+<span class="lineno">  327 </span>--
+<span class="lineno">  328 </span>--  &gt; addStatic (mkBackground &quot;lightblue&quot;) drawCircle
+<span class="lineno">  329 </span>--
+<span class="lineno">  330 </span>--  &lt;&lt;docs/gifs/doc_addStatic.gif&gt;&gt;
+<span class="lineno">  331 </span>addStatic :: SVG -&gt; Animation -&gt; Animation
+<span class="lineno">  332 </span><span class="decl"><span class="istickedoff">addStatic static = mapA (\frame -&gt; mkGroup [static, frame])</span></span>
+<span class="lineno">  333 </span>
+<span class="lineno">  334 </span>-- | Modify the time component of an animation. Animation duration is unchanged.
+<span class="lineno">  335 </span>--
+<span class="lineno">  336 </span>--   Example:
+<span class="lineno">  337 </span>--
+<span class="lineno">  338 </span>--   &gt; signalA (fromToS 0.25 0.75) drawCircle
+<span class="lineno">  339 </span>--
+<span class="lineno">  340 </span>--   &lt;&lt;docs/gifs/doc_signalA.gif&gt;&gt;
+<span class="lineno">  341 </span>signalA :: Signal -&gt; Animation -&gt; Animation
+<span class="lineno">  342 </span><span class="decl"><span class="istickedoff">signalA fn (Animation d gen) = Animation d $ gen . fn</span></span>
+<span class="lineno">  343 </span>
+<span class="lineno">  344 </span>-- | @takeA duration animation@ creates a new animation consisting of initial segment of
+<span class="lineno">  345 </span>--   @animation@ of given @duration@, played at the same rate as the original animation.
+<span class="lineno">  346 </span>--
+<span class="lineno">  347 </span>--  The @duration@ parameter is clamped to be between 0 and @animation@'s duration.
+<span class="lineno">  348 </span>--  New animation duration is equal to (eventually clamped) @duration@.
+<span class="lineno">  349 </span>takeA :: Duration -&gt; Animation -&gt; Animation
+<span class="lineno">  350 </span><span class="decl"><span class="istickedoff">takeA len (Animation d gen) = Animation len' $ \t -&gt;</span>
+<span class="lineno">  351 </span><span class="spaces">    </span><span class="istickedoff">gen (t * len'/d)</span>
+<span class="lineno">  352 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  353 </span><span class="spaces">    </span><span class="istickedoff">len' = clamp 0 d len</span></span>
+<span class="lineno">  354 </span>
+<span class="lineno">  355 </span>-- | @dropA duration animation@ creates a new animation by dropping initial segment
+<span class="lineno">  356 </span>--   of length @duration@ from the provided @animation@, played at the same rate as the original animation.
+<span class="lineno">  357 </span>--
+<span class="lineno">  358 </span>--  The @duration@ parameter is clamped to be between 0 and @animation@'s duration.
+<span class="lineno">  359 </span>--  The duration of the resulting animation is duration of provided @animation@ minus (eventually clamped) @duration@.
+<span class="lineno">  360 </span>dropA :: Duration -&gt; Animation -&gt; Animation
+<span class="lineno">  361 </span><span class="decl"><span class="istickedoff">dropA len (Animation d gen) = Animation len' $ \t -&gt;</span>
+<span class="lineno">  362 </span><span class="spaces">    </span><span class="istickedoff">gen (t * len'/d + len/d)</span>
+<span class="lineno">  363 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  364 </span><span class="spaces">    </span><span class="istickedoff">len' = d - clamp 0 d len</span></span>
+<span class="lineno">  365 </span>
+<span class="lineno">  366 </span>-- | @lastA duration animation@ return the last @duration@ seconds of the animation.
+<span class="lineno">  367 </span>lastA :: Duration -&gt; Animation -&gt; Animation
+<span class="lineno">  368 </span><span class="decl"><span class="istickedoff">lastA len a = dropA (duration a - len) a</span></span>
+<span class="lineno">  369 </span>
+<span class="lineno">  370 </span>clamp :: Double -&gt; Double -&gt; Double -&gt; Double
+<span class="lineno">  371 </span><span class="decl"><span class="istickedoff">clamp a b number</span>
+<span class="lineno">  372 </span><span class="spaces">  </span><span class="istickedoff">| <span class="tickonlytrue">a &lt; b</span>     = max a (min b number)</span>
+<span class="lineno">  373 </span><span class="spaces">  </span><span class="istickedoff">| <span class="nottickedoff">otherwise</span> = <span class="nottickedoff">max b (min a number)</span></span></span>
+<span class="lineno">  374 </span>
+<span class="lineno">  375 </span>-- (#) :: a -&gt; (a -&gt; b) -&gt; b
+<span class="lineno">  376 </span>-- o # f = f o
+<span class="lineno">  377 </span>
+<span class="lineno">  378 </span>-- | Ask for an animation frame using a given synchronization policy.
+<span class="lineno">  379 </span>getAnimationFrame :: Sync -&gt; Animation -&gt; Time -&gt; Duration -&gt; SVG
+<span class="lineno">  380 </span><span class="decl"><span class="istickedoff">getAnimationFrame sync (Animation aDur aGen) t d =</span>
+<span class="lineno">  381 </span><span class="spaces">  </span><span class="istickedoff">case sync of</span>
+<span class="lineno">  382 </span><span class="spaces">    </span><span class="istickedoff">SyncStretch -&gt; aGen (t/d)</span>
+<span class="lineno">  383 </span><span class="spaces">    </span><span class="istickedoff">SyncLoop    -&gt; <span class="nottickedoff">aGen (takeFrac $ t/aDur)</span></span>
+<span class="lineno">  384 </span><span class="spaces">    </span><span class="istickedoff">SyncDrop    -&gt; <span class="nottickedoff">if t &gt; aDur then None else aGen (t/aDur)</span></span>
+<span class="lineno">  385 </span><span class="spaces">    </span><span class="istickedoff">SyncFreeze  -&gt; aGen (min 1 $ t/aDur)</span>
+<span class="lineno">  386 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  387 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">takeFrac f = snd (properFraction f :: (Int, Double))</span></span></span>
+<span class="lineno">  388 </span>
+<span class="lineno">  389 </span>-- | Animation synchronization policies.
+<span class="lineno">  390 </span>data Sync
+<span class="lineno">  391 </span>  = SyncStretch
+<span class="lineno">  392 </span>  | SyncLoop
+<span class="lineno">  393 </span>  | SyncDrop
+<span class="lineno">  394 </span>  | SyncFreeze
+
+</pre>
+</body>
+</html>

@@ -1,0 +1,444 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>{-| Functions for creating basic SVG elements and applying transformations to them. -}
+<span class="lineno">    2 </span>module Reanimate.Svg.Constructors
+<span class="lineno">    3 </span>  ( -- * Primitive shapes
+<span class="lineno">    4 </span>    mkCircle
+<span class="lineno">    5 </span>  , mkEllipse
+<span class="lineno">    6 </span>  , mkRect
+<span class="lineno">    7 </span>  , mkLine
+<span class="lineno">    8 </span>  , mkPath
+<span class="lineno">    9 </span>  , mkPathString
+<span class="lineno">   10 </span>  , mkPathText
+<span class="lineno">   11 </span>  , mkLinePath
+<span class="lineno">   12 </span>  , mkLinePathClosed
+<span class="lineno">   13 </span>  , mkClipPath
+<span class="lineno">   14 </span>  , mkText
+<span class="lineno">   15 </span>  -- * Grouping shapes and definitions
+<span class="lineno">   16 </span>  , mkGroup
+<span class="lineno">   17 </span>  , mkDefinitions
+<span class="lineno">   18 </span>  , mkUse
+<span class="lineno">   19 </span>  -- * Attributes
+<span class="lineno">   20 </span>  , withId
+<span class="lineno">   21 </span>  , withStrokeColor
+<span class="lineno">   22 </span>  , withStrokeColorPixel
+<span class="lineno">   23 </span>  , withStrokeDashArray
+<span class="lineno">   24 </span>  , withStrokeLineJoin
+<span class="lineno">   25 </span>  , withFillColor
+<span class="lineno">   26 </span>  , withFillColorPixel
+<span class="lineno">   27 </span>  , withFillOpacity
+<span class="lineno">   28 </span>  , withGroupOpacity
+<span class="lineno">   29 </span>  , withStrokeWidth
+<span class="lineno">   30 </span>  , withClipPathRef
+<span class="lineno">   31 </span>  -- * Transformations
+<span class="lineno">   32 </span>  , center
+<span class="lineno">   33 </span>  , centerX
+<span class="lineno">   34 </span>  , centerY
+<span class="lineno">   35 </span>  , centerUsing
+<span class="lineno">   36 </span>  , translate
+<span class="lineno">   37 </span>  , rotate
+<span class="lineno">   38 </span>  , rotateAroundCenter
+<span class="lineno">   39 </span>  , rotateAround
+<span class="lineno">   40 </span>  , scale
+<span class="lineno">   41 </span>  , scaleToSize
+<span class="lineno">   42 </span>  , scaleToWidth
+<span class="lineno">   43 </span>  , scaleToHeight
+<span class="lineno">   44 </span>  , scaleXY
+<span class="lineno">   45 </span>  , flipXAxis
+<span class="lineno">   46 </span>  , flipYAxis
+<span class="lineno">   47 </span>  , aroundCenter
+<span class="lineno">   48 </span>  , aroundCenterX
+<span class="lineno">   49 </span>  , aroundCenterY
+<span class="lineno">   50 </span>  , withTransformations
+<span class="lineno">   51 </span>  , withViewBox
+<span class="lineno">   52 </span>  -- * Other
+<span class="lineno">   53 </span>  , mkColor
+<span class="lineno">   54 </span>  , mkBackground
+<span class="lineno">   55 </span>  , mkBackgroundPixel
+<span class="lineno">   56 </span>  , gridLayout
+<span class="lineno">   57 </span>
+<span class="lineno">   58 </span>  ) where
+<span class="lineno">   59 </span>
+<span class="lineno">   60 </span>import           Codec.Picture                (PixelRGBA8 (..))
+<span class="lineno">   61 </span>import           Control.Lens                 ((&amp;), (.~), (?~))
+<span class="lineno">   62 </span>import           Data.Attoparsec.Text         (parseOnly)
+<span class="lineno">   63 </span>import qualified Data.Map                     as Map
+<span class="lineno">   64 </span>import qualified Data.Text                    as T
+<span class="lineno">   65 </span>import           Graphics.SvgTree             hiding (height, line, path, use,
+<span class="lineno">   66 </span>                                               width)
+<span class="lineno">   67 </span>import           Graphics.SvgTree.NamedColors
+<span class="lineno">   68 </span>import           Graphics.SvgTree.PathParser
+<span class="lineno">   69 </span>import           Linear.V2                    hiding (angle)
+<span class="lineno">   70 </span>import           Reanimate.Constants
+<span class="lineno">   71 </span>import           Reanimate.Svg.BoundingBox
+<span class="lineno">   72 </span>
+<span class="lineno">   73 </span>-- | Apply list of transformations to given image.
+<span class="lineno">   74 </span>withTransformations :: [Transformation] -&gt; Tree -&gt; Tree
+<span class="lineno">   75 </span><span class="decl"><span class="istickedoff">withTransformations transformations t =</span>
+<span class="lineno">   76 </span><span class="spaces">  </span><span class="istickedoff">mkGroup [t] &amp; transform ?~ transformations</span></span>
+<span class="lineno">   77 </span>
+<span class="lineno">   78 </span>-- | @translate x y image@ moves the @image@ by @x@ along X-axis and by @y@ along Y-axis.
+<span class="lineno">   79 </span>translate :: Double -&gt; Double -&gt; Tree -&gt; Tree
+<span class="lineno">   80 </span><span class="decl"><span class="istickedoff">translate x y = withTransformations [Translate x y]</span></span>
+<span class="lineno">   81 </span>
+<span class="lineno">   82 </span>-- | @rotate angle image@ rotates the @image@ around origin @(0,0)@ counterclockwise by @angle@
+<span class="lineno">   83 </span>--   given in degrees.
+<span class="lineno">   84 </span>rotate :: Double -&gt; Tree -&gt; Tree
+<span class="lineno">   85 </span><span class="decl"><span class="istickedoff">rotate a = withTransformations [Rotate a Nothing]</span></span>
+<span class="lineno">   86 </span>
+<span class="lineno">   87 </span>-- | @rotate angle point image@ rotates the @image@ around given @point@ counterclockwise by
+<span class="lineno">   88 </span>--   @angle@ given in degrees.
+<span class="lineno">   89 </span>rotateAround :: Double -&gt; RPoint -&gt; Tree -&gt; Tree
+<span class="lineno">   90 </span><span class="decl"><span class="nottickedoff">rotateAround a (V2 x y) = withTransformations [Rotate a (Just (x,y))]</span></span>
+<span class="lineno">   91 </span>
+<span class="lineno">   92 </span>-- | @rotate angle image@ rotates the @image@ around the center of its bounding box counterclockwise
+<span class="lineno">   93 </span>--   by @angle@ given in degrees.
+<span class="lineno">   94 </span>rotateAroundCenter :: Double -&gt; Tree -&gt; Tree
+<span class="lineno">   95 </span><span class="decl"><span class="nottickedoff">rotateAroundCenter a t =</span>
+<span class="lineno">   96 </span><span class="spaces">    </span><span class="nottickedoff">rotateAround a (V2 (x+w/2) (y+h/2)) t</span>
+<span class="lineno">   97 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">   98 </span><span class="spaces">    </span><span class="nottickedoff">(x,y,w,h) = boundingBox t</span></span>
+<span class="lineno">   99 </span>
+<span class="lineno">  100 </span>-- | @aroundCenter f image@ first moves the image so the center of its bounding box is at the origin
+<span class="lineno">  101 </span>--   @(0, 0)@, applies transformation @f@ to it and then moves the transformed image back to its
+<span class="lineno">  102 </span>--   original position.
+<span class="lineno">  103 </span>aroundCenter :: (Tree -&gt; Tree) -&gt; Tree -&gt; Tree
+<span class="lineno">  104 </span><span class="decl"><span class="nottickedoff">aroundCenter fn t =</span>
+<span class="lineno">  105 </span><span class="spaces">    </span><span class="nottickedoff">translate (-offsetX) (-offsetY) $ fn $ translate offsetX offsetY t</span>
+<span class="lineno">  106 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  107 </span><span class="spaces">    </span><span class="nottickedoff">offsetX = -x-w/2</span>
+<span class="lineno">  108 </span><span class="spaces">    </span><span class="nottickedoff">offsetY = -y-h/2</span>
+<span class="lineno">  109 </span><span class="spaces">    </span><span class="nottickedoff">(x,y,w,h) = boundingBox t</span></span>
+<span class="lineno">  110 </span>
+<span class="lineno">  111 </span>-- | Same as 'aroundCenter' but only for the Y-axis.
+<span class="lineno">  112 </span>aroundCenterY :: (Tree -&gt; Tree) -&gt; Tree -&gt; Tree
+<span class="lineno">  113 </span><span class="decl"><span class="nottickedoff">aroundCenterY fn t =</span>
+<span class="lineno">  114 </span><span class="spaces">    </span><span class="nottickedoff">translate 0 (-offsetY) $ fn $ translate 0 offsetY t</span>
+<span class="lineno">  115 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  116 </span><span class="spaces">    </span><span class="nottickedoff">offsetY = -y-h/2</span>
+<span class="lineno">  117 </span><span class="spaces">    </span><span class="nottickedoff">(_x,y,_w,h) = boundingBox t</span></span>
+<span class="lineno">  118 </span>
+<span class="lineno">  119 </span>-- | Same as 'aroundCenter' but only for the X-axis.
+<span class="lineno">  120 </span>aroundCenterX :: (Tree -&gt; Tree) -&gt; Tree -&gt; Tree
+<span class="lineno">  121 </span><span class="decl"><span class="nottickedoff">aroundCenterX fn t =</span>
+<span class="lineno">  122 </span><span class="spaces">    </span><span class="nottickedoff">translate (-offsetX) 0 $ fn $ translate offsetX 0 t</span>
+<span class="lineno">  123 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  124 </span><span class="spaces">    </span><span class="nottickedoff">offsetX = -x-w/2</span>
+<span class="lineno">  125 </span><span class="spaces">    </span><span class="nottickedoff">(x,_y,w,_h) = boundingBox t</span></span>
+<span class="lineno">  126 </span>
+<span class="lineno">  127 </span>-- | Scale the image uniformly by given factor along both X and Y axes.
+<span class="lineno">  128 </span>-- For example @scale 2 image@  makes the image twice as large, while @scale 0.5 image@ makes it
+<span class="lineno">  129 </span>-- half the original size. Negative values are also allowed, and lead to flipping the image along
+<span class="lineno">  130 </span>-- both X and Y axes.
+<span class="lineno">  131 </span>scale :: Double -&gt; Tree -&gt; Tree
+<span class="lineno">  132 </span><span class="decl"><span class="istickedoff">scale a = withTransformations [Scale a Nothing]</span></span>
+<span class="lineno">  133 </span>
+<span class="lineno">  134 </span>-- | @scaleToSize width height@ resizes the image so that its bounding box has corresponding @width@
+<span class="lineno">  135 </span>--   and @height@.
+<span class="lineno">  136 </span>scaleToSize :: Double -&gt; Double -&gt; Tree -&gt; Tree
+<span class="lineno">  137 </span><span class="decl"><span class="istickedoff">scaleToSize w h t =</span>
+<span class="lineno">  138 </span><span class="spaces">    </span><span class="istickedoff">scaleXY (w/w') (h/h') t</span>
+<span class="lineno">  139 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  140 </span><span class="spaces">    </span><span class="istickedoff">(_x, _y, w', h') = boundingBox t</span></span>
+<span class="lineno">  141 </span>
+<span class="lineno">  142 </span>-- | @scaleToWidth width@ scales the image so that the width of its bounding box ends up having
+<span class="lineno">  143 </span>--   given @width@.
+<span class="lineno">  144 </span>scaleToWidth :: Double -&gt; Tree -&gt; Tree
+<span class="lineno">  145 </span><span class="decl"><span class="istickedoff">scaleToWidth w t =</span>
+<span class="lineno">  146 </span><span class="spaces">    </span><span class="istickedoff">scale (w/w') t</span>
+<span class="lineno">  147 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  148 </span><span class="spaces">    </span><span class="istickedoff">(_x, _y, w', _h') = boundingBox t</span></span>
+<span class="lineno">  149 </span>
+<span class="lineno">  150 </span>-- | @scaleToHeight height@ scales the image so that the height of its bounding box ends up having
+<span class="lineno">  151 </span>--   given @height@.
+<span class="lineno">  152 </span>scaleToHeight :: Double -&gt; Tree -&gt; Tree
+<span class="lineno">  153 </span><span class="decl"><span class="nottickedoff">scaleToHeight h t =</span>
+<span class="lineno">  154 </span><span class="spaces">    </span><span class="nottickedoff">scale (h/h') t</span>
+<span class="lineno">  155 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  156 </span><span class="spaces">    </span><span class="nottickedoff">(_x, _y, _w', h') = boundingBox t</span></span>
+<span class="lineno">  157 </span>
+<span class="lineno">  158 </span>-- | Similar to 'scale', except scale factors for X and Y axes are specified separately.
+<span class="lineno">  159 </span>scaleXY :: Double -&gt; Double -&gt; Tree -&gt; Tree
+<span class="lineno">  160 </span><span class="decl"><span class="istickedoff">scaleXY x y = withTransformations [Scale x (Just y)]</span></span>
+<span class="lineno">  161 </span>
+<span class="lineno">  162 </span>
+<span class="lineno">  163 </span>-- | Flip the image along vertical axis so that what was on the right will end up on left and vice
+<span class="lineno">  164 </span>--   versa.
+<span class="lineno">  165 </span>flipXAxis :: Tree -&gt; Tree
+<span class="lineno">  166 </span><span class="decl"><span class="istickedoff">flipXAxis = scaleXY (-1) 1</span></span>
+<span class="lineno">  167 </span>
+<span class="lineno">  168 </span>-- | Flip the image along horizontal so that what was on the top will end up in the bottom and vice
+<span class="lineno">  169 </span>--   versa.
+<span class="lineno">  170 </span>flipYAxis :: Tree -&gt; Tree
+<span class="lineno">  171 </span><span class="decl"><span class="istickedoff">flipYAxis = scaleXY 1 (-1)</span></span>
+<span class="lineno">  172 </span>
+<span class="lineno">  173 </span>-- | Translate given image so that the center of its bouding box coincides with coordinates
+<span class="lineno">  174 </span>--   @(0, 0)@.
+<span class="lineno">  175 </span>center :: Tree -&gt; Tree
+<span class="lineno">  176 </span><span class="decl"><span class="istickedoff">center t = centerUsing t t</span></span>
+<span class="lineno">  177 </span>
+<span class="lineno">  178 </span>-- | Translate given image so that the X-coordinate of the center of its bouding box is 0.
+<span class="lineno">  179 </span>centerX :: Tree -&gt; Tree
+<span class="lineno">  180 </span><span class="decl"><span class="nottickedoff">centerX t = translate (-x-w/2) 0 t</span>
+<span class="lineno">  181 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  182 </span><span class="spaces">    </span><span class="nottickedoff">(x, _y, w, _h) = boundingBox t</span></span>
+<span class="lineno">  183 </span>
+<span class="lineno">  184 </span>-- | Translate given image so that the Y-coordinate of the center of its bouding box is 0.
+<span class="lineno">  185 </span>centerY :: Tree -&gt; Tree
+<span class="lineno">  186 </span><span class="decl"><span class="nottickedoff">centerY t = translate 0 (-y-h/2) t</span>
+<span class="lineno">  187 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  188 </span><span class="spaces">    </span><span class="nottickedoff">(_x, y, _w, h) = boundingBox t</span></span>
+<span class="lineno">  189 </span>
+<span class="lineno">  190 </span>-- | Center the second argument using the bounding-box of the first.
+<span class="lineno">  191 </span>centerUsing :: Tree -&gt; Tree -&gt; Tree
+<span class="lineno">  192 </span><span class="decl"><span class="istickedoff">centerUsing a = translate (-x-w/2) (-y-h/2)</span>
+<span class="lineno">  193 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  194 </span><span class="spaces">    </span><span class="istickedoff">(x, y, w, h) = boundingBox a</span></span>
+<span class="lineno">  195 </span>
+<span class="lineno">  196 </span>-- | Create 'Texture' based on SVG color name.
+<span class="lineno">  197 </span>--   See &lt;https://en.wikipedia.org/wiki/Web_colors#X11_color_names&gt; for the list of available names.
+<span class="lineno">  198 </span>--   If the provided name doesn't correspond to valid SVG color name, white-ish color is used.
+<span class="lineno">  199 </span>mkColor :: String -&gt; Texture
+<span class="lineno">  200 </span><span class="decl"><span class="istickedoff">mkColor name =</span>
+<span class="lineno">  201 </span><span class="spaces">  </span><span class="istickedoff">case Map.lookup (T.pack name) svgNamedColors of</span>
+<span class="lineno">  202 </span><span class="spaces">    </span><span class="istickedoff">Nothing -&gt; <span class="nottickedoff">ColorRef (PixelRGBA8 240 248 255 255)</span></span>
+<span class="lineno">  203 </span><span class="spaces">    </span><span class="istickedoff">Just c  -&gt; ColorRef c</span></span>
+<span class="lineno">  204 </span>
+<span class="lineno">  205 </span>-- | See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke&gt;
+<span class="lineno">  206 </span>withStrokeColor :: String -&gt; Tree -&gt; Tree
+<span class="lineno">  207 </span><span class="decl"><span class="istickedoff">withStrokeColor color = strokeColor .~ pure (mkColor color)</span></span>
+<span class="lineno">  208 </span>
+<span class="lineno">  209 </span>-- | See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke&gt;
+<span class="lineno">  210 </span>withStrokeColorPixel :: PixelRGBA8 -&gt; Tree -&gt; Tree
+<span class="lineno">  211 </span><span class="decl"><span class="istickedoff">withStrokeColorPixel color = strokeColor .~ pure (ColorRef color)</span></span>
+<span class="lineno">  212 </span>
+<span class="lineno">  213 </span>-- | See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke-dasharray&gt;
+<span class="lineno">  214 </span>withStrokeDashArray :: [Double] -&gt; Tree -&gt; Tree
+<span class="lineno">  215 </span><span class="decl"><span class="nottickedoff">withStrokeDashArray arr = strokeDashArray .~ pure (map Num arr)</span></span>
+<span class="lineno">  216 </span>
+<span class="lineno">  217 </span>-- | See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke-linejoin&gt;
+<span class="lineno">  218 </span>withStrokeLineJoin :: LineJoin -&gt; Tree -&gt; Tree
+<span class="lineno">  219 </span><span class="decl"><span class="nottickedoff">withStrokeLineJoin ljoin = strokeLineJoin .~ pure ljoin</span></span>
+<span class="lineno">  220 </span>
+<span class="lineno">  221 </span>-- | See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/fill&gt;
+<span class="lineno">  222 </span>withFillColor :: String -&gt; Tree -&gt; Tree
+<span class="lineno">  223 </span><span class="decl"><span class="istickedoff">withFillColor color = fillColor .~ pure (mkColor color)</span></span>
+<span class="lineno">  224 </span>
+<span class="lineno">  225 </span>-- | See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/fill&gt;
+<span class="lineno">  226 </span>withFillColorPixel :: PixelRGBA8 -&gt; Tree -&gt; Tree
+<span class="lineno">  227 </span><span class="decl"><span class="istickedoff">withFillColorPixel color = fillColor .~ pure (ColorRef color)</span></span>
+<span class="lineno">  228 </span>
+<span class="lineno">  229 </span>-- | See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/fill-opacity&gt;
+<span class="lineno">  230 </span>withFillOpacity :: Double -&gt; Tree -&gt; Tree
+<span class="lineno">  231 </span><span class="decl"><span class="istickedoff">withFillOpacity opacity = fillOpacity ?~ realToFrac opacity</span></span>
+<span class="lineno">  232 </span>
+<span class="lineno">  233 </span>-- | See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/opacity&gt;
+<span class="lineno">  234 </span>withGroupOpacity :: Double -&gt; Tree -&gt; Tree
+<span class="lineno">  235 </span><span class="decl"><span class="istickedoff">withGroupOpacity opacity = groupOpacity ?~ realToFrac opacity</span></span>
+<span class="lineno">  236 </span>
+<span class="lineno">  237 </span>-- | See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke-width&gt;
+<span class="lineno">  238 </span>withStrokeWidth :: Double -&gt; Tree -&gt; Tree
+<span class="lineno">  239 </span><span class="decl"><span class="istickedoff">withStrokeWidth width = strokeWidth .~ pure (Num width)</span></span>
+<span class="lineno">  240 </span>
+<span class="lineno">  241 </span>-- | See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/clip-path&gt;
+<span class="lineno">  242 </span>withClipPathRef :: ElementRef -- ^ Reference to clip path defined previously (e.g. by 'mkClipPath')
+<span class="lineno">  243 </span>                -&gt; Tree -- ^ Image that will be clipped by the referenced clip path
+<span class="lineno">  244 </span>                -&gt; Tree
+<span class="lineno">  245 </span><span class="decl"><span class="nottickedoff">withClipPathRef ref sub = mkGroup [sub] &amp; clipPathRef .~ pure ref</span></span>
+<span class="lineno">  246 </span>
+<span class="lineno">  247 </span>-- | Assigns ID attribute to given image.
+<span class="lineno">  248 </span>withId :: String -&gt; Tree -&gt; Tree
+<span class="lineno">  249 </span><span class="decl"><span class="nottickedoff">withId idTag = attrId ?~ idTag</span></span>
+<span class="lineno">  250 </span>
+<span class="lineno">  251 </span>-- | @mkRect width height@ creates a rectangle with given @with@ and @height@, centered at @(0, 0)@.
+<span class="lineno">  252 </span>-- See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Element/rect&gt;
+<span class="lineno">  253 </span>mkRect :: Double -&gt; Double -&gt; Tree
+<span class="lineno">  254 </span><span class="decl"><span class="istickedoff">mkRect width height = translate (-width/2) (-height/2) $ RectangleTree $ defaultSvg</span>
+<span class="lineno">  255 </span><span class="spaces">  </span><span class="istickedoff">&amp; rectUpperLeftCorner .~ (Num 0, Num 0)</span>
+<span class="lineno">  256 </span><span class="spaces">  </span><span class="istickedoff">&amp; rectWidth ?~ Num width</span>
+<span class="lineno">  257 </span><span class="spaces">  </span><span class="istickedoff">&amp; rectHeight ?~ Num height</span></span>
+<span class="lineno">  258 </span>
+<span class="lineno">  259 </span>-- | Create a circle with given radius, centered at @(0, 0)@.
+<span class="lineno">  260 </span>-- See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Element/circle&gt;
+<span class="lineno">  261 </span>mkCircle :: Double -&gt; Tree
+<span class="lineno">  262 </span><span class="decl"><span class="istickedoff">mkCircle radius = CircleTree $ defaultSvg</span>
+<span class="lineno">  263 </span><span class="spaces">  </span><span class="istickedoff">&amp; circleCenter .~ (Num 0, Num 0)</span>
+<span class="lineno">  264 </span><span class="spaces">  </span><span class="istickedoff">&amp; circleRadius .~ Num radius</span></span>
+<span class="lineno">  265 </span>
+<span class="lineno">  266 </span>-- | Create an ellipse given X-axis radius, and Y-axis radius, with center at @(0, 0)@.
+<span class="lineno">  267 </span>-- See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Element/ellipse&gt;
+<span class="lineno">  268 </span>mkEllipse :: Double -&gt; Double -&gt; Tree
+<span class="lineno">  269 </span><span class="decl"><span class="istickedoff">mkEllipse rx ry = EllipseTree $ defaultSvg</span>
+<span class="lineno">  270 </span><span class="spaces">  </span><span class="istickedoff">&amp; ellipseCenter .~ (Num 0, Num 0)</span>
+<span class="lineno">  271 </span><span class="spaces">  </span><span class="istickedoff">&amp; ellipseXRadius .~ Num rx</span>
+<span class="lineno">  272 </span><span class="spaces">  </span><span class="istickedoff">&amp; ellipseYRadius .~ Num ry</span></span>
+<span class="lineno">  273 </span>
+<span class="lineno">  274 </span>-- | Create a line segment between two points given by their @(x, y)@ coordinates.
+<span class="lineno">  275 </span>-- See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Element/line&gt;
+<span class="lineno">  276 </span>mkLine :: (Double,Double) -&gt; (Double, Double) -&gt; Tree
+<span class="lineno">  277 </span><span class="decl"><span class="istickedoff">mkLine (x1,y1) (x2,y2) = LineTree $ defaultSvg</span>
+<span class="lineno">  278 </span><span class="spaces">  </span><span class="istickedoff">&amp; linePoint1 .~ (Num x1, Num y1)</span>
+<span class="lineno">  279 </span><span class="spaces">  </span><span class="istickedoff">&amp; linePoint2 .~ (Num x2, Num y2)</span></span>
+<span class="lineno">  280 </span>
+<span class="lineno">  281 </span>-- | Merges multiple images into one.
+<span class="lineno">  282 </span>-- See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Element/g&gt;
+<span class="lineno">  283 </span>mkGroup :: [Tree] -&gt; Tree
+<span class="lineno">  284 </span><span class="decl"><span class="istickedoff">mkGroup forest = GroupTree $ defaultSvg</span>
+<span class="lineno">  285 </span><span class="spaces">  </span><span class="istickedoff">&amp; groupChildren .~ forest</span></span>
+<span class="lineno">  286 </span>
+<span class="lineno">  287 </span>-- | Create definition of graphical objects that can be used at later time.
+<span class="lineno">  288 </span>--   See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Element/defs&gt;
+<span class="lineno">  289 </span>mkDefinitions :: [Tree] -&gt; Tree
+<span class="lineno">  290 </span><span class="decl"><span class="nottickedoff">mkDefinitions forest = DefinitionTree $ defaultSvg</span>
+<span class="lineno">  291 </span><span class="spaces">  </span><span class="nottickedoff">&amp; groupChildren .~ forest</span></span>
+<span class="lineno">  292 </span>
+<span class="lineno">  293 </span>-- | Create an element by referring to existing element defined previously.
+<span class="lineno">  294 </span>-- For example you can create a graphical element, assign ID to it using 'withId', wrap it in
+<span class="lineno">  295 </span>-- 'mkDefinitions' and then use it via @use &quot;myId&quot;@.
+<span class="lineno">  296 </span>-- See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Element/use&gt;
+<span class="lineno">  297 </span>mkUse :: String -&gt; Tree
+<span class="lineno">  298 </span><span class="decl"><span class="nottickedoff">mkUse name = UseTree (defaultSvg &amp; useName .~ name) Nothing</span></span>
+<span class="lineno">  299 </span>
+<span class="lineno">  300 </span>-- | A clip path restricts the region to which paint can be applied.
+<span class="lineno">  301 </span>-- See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Element/clipPath&gt;
+<span class="lineno">  302 </span>mkClipPath :: String  -- ^ ID of the clip path, which can then be referred to by other elements
+<span class="lineno">  303 </span>                      --   using 'withClipPathRef'.
+<span class="lineno">  304 </span>           -&gt; [Tree] -- ^ List of shapes that will determine the final shape of the clipping region
+<span class="lineno">  305 </span>           -&gt; Tree
+<span class="lineno">  306 </span><span class="decl"><span class="nottickedoff">mkClipPath idTag forest = withId idTag $ ClipPathTree $ defaultSvg</span>
+<span class="lineno">  307 </span><span class="spaces">  </span><span class="nottickedoff">&amp; clipPathContent .~ forest</span></span>
+<span class="lineno">  308 </span>
+<span class="lineno">  309 </span>-- | Create a path from the list of path commands.
+<span class="lineno">  310 </span>--   See &lt;https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/d#Path_commands&gt;
+<span class="lineno">  311 </span>mkPath :: [PathCommand] -&gt; Tree
+<span class="lineno">  312 </span><span class="decl"><span class="istickedoff">mkPath cmds = PathTree $ defaultSvg &amp; pathDefinition .~ cmds</span></span>
+<span class="lineno">  313 </span>
+<span class="lineno">  314 </span>-- | Similar to 'mkPathText', but taking SVG path command as a String.
+<span class="lineno">  315 </span>mkPathString :: String -&gt; Tree
+<span class="lineno">  316 </span><span class="decl"><span class="istickedoff">mkPathString = mkPathText . T.pack</span></span>
+<span class="lineno">  317 </span>
+<span class="lineno">  318 </span>-- | Create path from textual representation of SVG path command.
+<span class="lineno">  319 </span>--   If the text doesn't represent valid path command, this function fails with 'Prelude.error'.
+<span class="lineno">  320 </span>--   Use 'mkPath' for type safe way of creating paths.
+<span class="lineno">  321 </span>mkPathText :: T.Text -&gt; Tree
+<span class="lineno">  322 </span><span class="decl"><span class="istickedoff">mkPathText str =</span>
+<span class="lineno">  323 </span><span class="spaces">  </span><span class="istickedoff">case parseOnly pathParser str of</span>
+<span class="lineno">  324 </span><span class="spaces">    </span><span class="istickedoff">Left err   -&gt; <span class="nottickedoff">error err</span></span>
+<span class="lineno">  325 </span><span class="spaces">    </span><span class="istickedoff">Right cmds -&gt; mkPath cmds</span></span>
+<span class="lineno">  326 </span>
+<span class="lineno">  327 </span>-- | Create a path from a list of @(x, y)@ coordinates of points along the path.
+<span class="lineno">  328 </span>mkLinePath :: [(Double, Double)] -&gt; Tree
+<span class="lineno">  329 </span><span class="decl"><span class="nottickedoff">mkLinePath [] = mkGroup []</span>
+<span class="lineno">  330 </span><span class="spaces"></span><span class="nottickedoff">mkLinePath ((startX, startY):rest) =</span>
+<span class="lineno">  331 </span><span class="spaces">    </span><span class="nottickedoff">PathTree $ defaultSvg &amp; pathDefinition .~ cmds</span>
+<span class="lineno">  332 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  333 </span><span class="spaces">    </span><span class="nottickedoff">cmds = [ MoveTo OriginAbsolute [V2 startX startY]</span>
+<span class="lineno">  334 </span><span class="spaces">           </span><span class="nottickedoff">, LineTo OriginAbsolute [ V2 x y | (x, y) &lt;- rest ] ]</span></span>
+<span class="lineno">  335 </span>
+<span class="lineno">  336 </span>-- | Create a path from a list of @(x, y)@ coordinates of points along the path.
+<span class="lineno">  337 </span>mkLinePathClosed :: [(Double, Double)] -&gt; Tree
+<span class="lineno">  338 </span><span class="decl"><span class="istickedoff">mkLinePathClosed [] = <span class="nottickedoff">mkGroup []</span></span>
+<span class="lineno">  339 </span><span class="spaces"></span><span class="istickedoff">mkLinePathClosed ((startX, startY):rest) =</span>
+<span class="lineno">  340 </span><span class="spaces">    </span><span class="istickedoff">PathTree $ defaultSvg &amp; pathDefinition .~ cmds</span>
+<span class="lineno">  341 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  342 </span><span class="spaces">    </span><span class="istickedoff">cmds = [ MoveTo OriginAbsolute [V2 startX startY]</span>
+<span class="lineno">  343 </span><span class="spaces">           </span><span class="istickedoff">, LineTo OriginAbsolute [ V2 x y | (x, y) &lt;- rest ]</span>
+<span class="lineno">  344 </span><span class="spaces">           </span><span class="istickedoff">, EndPath ]</span></span>
+<span class="lineno">  345 </span>
+<span class="lineno">  346 </span>-- | Rectangle with a uniform color and the same size as the screen.
+<span class="lineno">  347 </span>--
+<span class="lineno">  348 </span>--   Example:
+<span class="lineno">  349 </span>--
+<span class="lineno">  350 </span>--   &gt; animate $ const $ mkBackground &quot;yellow&quot;
+<span class="lineno">  351 </span>--
+<span class="lineno">  352 </span>--   &lt;&lt;docs/gifs/doc_mkBackground.gif&gt;&gt;
+<span class="lineno">  353 </span>mkBackground :: String -&gt; Tree
+<span class="lineno">  354 </span><span class="decl"><span class="istickedoff">mkBackground color = withFillOpacity 1 $  withStrokeWidth 0 $</span>
+<span class="lineno">  355 </span><span class="spaces">  </span><span class="istickedoff">withFillColor color $ mkRect screenWidth screenHeight</span></span>
+<span class="lineno">  356 </span>
+<span class="lineno">  357 </span>-- | Rectangle with a uniform color and the same size as the screen.
+<span class="lineno">  358 </span>mkBackgroundPixel :: PixelRGBA8 -&gt; Tree
+<span class="lineno">  359 </span><span class="decl"><span class="istickedoff">mkBackgroundPixel pixel =</span>
+<span class="lineno">  360 </span><span class="spaces">    </span><span class="istickedoff">withFillOpacity 1 $ withStrokeWidth 0 $</span>
+<span class="lineno">  361 </span><span class="spaces">    </span><span class="istickedoff">withFillColorPixel pixel $ mkRect screenWidth screenHeight</span></span>
+<span class="lineno">  362 </span>
+<span class="lineno">  363 </span>-- | Take list of rows, where each row consists of number of images and display them in regular
+<span class="lineno">  364 </span>--   grid structure.
+<span class="lineno">  365 </span>--   All rows will get equal amount of vertical space.
+<span class="lineno">  366 </span>--   The images within each row will get equal amount of horizontal space, independent of the other
+<span class="lineno">  367 </span>--   rows. Each row can contain different number of cells.
+<span class="lineno">  368 </span>gridLayout :: [[Tree]] -&gt; Tree
+<span class="lineno">  369 </span><span class="decl"><span class="istickedoff">gridLayout rows = mkGroup</span>
+<span class="lineno">  370 </span><span class="spaces">    </span><span class="istickedoff">[ translate (-screenWidth/2+colSep*nCol + colSep*0.5)</span>
+<span class="lineno">  371 </span><span class="spaces">                </span><span class="istickedoff">(screenHeight/2-rowSep*nRow - rowSep*0.5)</span>
+<span class="lineno">  372 </span><span class="spaces">      </span><span class="istickedoff">elt</span>
+<span class="lineno">  373 </span><span class="spaces">    </span><span class="istickedoff">| (nRow, row) &lt;- zip [0..] rows</span>
+<span class="lineno">  374 </span><span class="spaces">    </span><span class="istickedoff">, let nCols = length row</span>
+<span class="lineno">  375 </span><span class="spaces">          </span><span class="istickedoff">colSep = screenWidth / fromIntegral nCols</span>
+<span class="lineno">  376 </span><span class="spaces">    </span><span class="istickedoff">, (nCol, elt) &lt;- zip [0..] row ]</span>
+<span class="lineno">  377 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  378 </span><span class="spaces">    </span><span class="istickedoff">rowSep = screenHeight / fromIntegral nRows</span>
+<span class="lineno">  379 </span><span class="spaces">    </span><span class="istickedoff">nRows = length rows</span></span>
+<span class="lineno">  380 </span>
+<span class="lineno">  381 </span>-- | Insert a native text object anchored at the middle.
+<span class="lineno">  382 </span>--
+<span class="lineno">  383 </span>--   Example:
+<span class="lineno">  384 </span>--
+<span class="lineno">  385 </span>--   &gt; mkAnimation 2 $ \t -&gt; scale 2 $ withStrokeWidth 0.05 $ mkText (T.take (round $ t*15) &quot;text&quot;)
+<span class="lineno">  386 </span>--
+<span class="lineno">  387 </span>--   &lt;&lt;docs/gifs/doc_mkText.gif&gt;&gt;
+<span class="lineno">  388 </span>mkText :: T.Text -&gt; Tree
+<span class="lineno">  389 </span><span class="decl"><span class="istickedoff">mkText str =</span>
+<span class="lineno">  390 </span><span class="spaces">  </span><span class="istickedoff">flipYAxis</span>
+<span class="lineno">  391 </span><span class="spaces">  </span><span class="istickedoff">(TextTree Nothing $ defaultSvg</span>
+<span class="lineno">  392 </span><span class="spaces">    </span><span class="istickedoff">&amp; textRoot .~ span_</span>
+<span class="lineno">  393 </span><span class="spaces">    </span><span class="istickedoff">&amp; fontSize .~ pure (Num 2))</span>
+<span class="lineno">  394 </span><span class="spaces">    </span><span class="istickedoff">&amp; textAnchor .~ pure TextAnchorMiddle</span>
+<span class="lineno">  395 </span><span class="spaces">    </span><span class="istickedoff">-- Note: TextAnchorMiddle is placed on the 'flipYAxis' group such that it can easily</span>
+<span class="lineno">  396 </span><span class="spaces">    </span><span class="istickedoff">-- be overwritten by the user.</span>
+<span class="lineno">  397 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  398 </span><span class="spaces">    </span><span class="istickedoff">span_ = defaultSvg &amp; spanContent .~ [SpanText str]</span></span>
+<span class="lineno">  399 </span>
+<span class="lineno">  400 </span>-- | Switch from the default viewbox to a custom viewbox. Nesting custom viewboxes is
+<span class="lineno">  401 </span>--   unlikely to give good results. If you need nested custom viewboxes, you will have
+<span class="lineno">  402 </span>--   to configure them by hand.
+<span class="lineno">  403 </span>--
+<span class="lineno">  404 </span>--   The viewbox argument is (min-x, min-y, width, height).
+<span class="lineno">  405 </span>--
+<span class="lineno">  406 </span>--   Example:
+<span class="lineno">  407 </span>--
+<span class="lineno">  408 </span>--   &gt; withViewBox (0,0,1,1) $ mkBackground &quot;yellow&quot;
+<span class="lineno">  409 </span>--
+<span class="lineno">  410 </span>--   &lt;&lt;docs/gifs/doc_withViewBox.gif&gt;&gt;
+<span class="lineno">  411 </span>withViewBox :: (Double, Double, Double, Double) -&gt; Tree -&gt; Tree
+<span class="lineno">  412 </span><span class="decl"><span class="istickedoff">withViewBox vbox child = translate (-screenWidth/2) (-screenHeight/2) $</span>
+<span class="lineno">  413 </span><span class="spaces">  </span><span class="istickedoff">SvgTree $ Document</span>
+<span class="lineno">  414 </span><span class="spaces">  </span><span class="istickedoff">{ _viewBox = Just vbox</span>
+<span class="lineno">  415 </span><span class="spaces">  </span><span class="istickedoff">, _width = Just (Num screenWidth)</span>
+<span class="lineno">  416 </span><span class="spaces">  </span><span class="istickedoff">, _height = Just (Num screenHeight)</span>
+<span class="lineno">  417 </span><span class="spaces">  </span><span class="istickedoff">, _elements = [child]</span>
+<span class="lineno">  418 </span><span class="spaces">  </span><span class="istickedoff">, _description = &quot;&quot;</span>
+<span class="lineno">  419 </span><span class="spaces">  </span><span class="istickedoff">, _documentLocation = <span class="nottickedoff">&quot;&quot;</span></span>
+<span class="lineno">  420 </span><span class="spaces">  </span><span class="istickedoff">, _documentAspectRatio = PreserveAspectRatio False AlignNone Nothing</span>
+<span class="lineno">  421 </span><span class="spaces">  </span><span class="istickedoff">}</span></span>
+
+</pre>
+</body>
+</html>

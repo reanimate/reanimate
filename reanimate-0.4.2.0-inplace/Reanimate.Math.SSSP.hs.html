@@ -1,0 +1,366 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>{-# LANGUAGE FlexibleInstances     #-}
+<span class="lineno">    2 </span>{-# LANGUAGE MultiParamTypeClasses #-}
+<span class="lineno">    3 </span>{-# OPTIONS_GHC -fno-warn-orphans #-}
+<span class="lineno">    4 </span>{-# OPTIONS_HADDOCK hide #-}
+<span class="lineno">    5 </span>module Reanimate.Math.SSSP
+<span class="lineno">    6 </span>  ( -- * Single-Source-Shortest-Path
+<span class="lineno">    7 </span>    SSSP
+<span class="lineno">    8 </span>  , sssp                -- :: (Fractional a, Ord a) =&gt; Ring a -&gt; Dual -&gt; SSSP
+<span class="lineno">    9 </span>  , dual                -- :: Int -&gt; Triangulation -&gt; Dual
+<span class="lineno">   10 </span>  , Dual(..)
+<span class="lineno">   11 </span>  , DualTree(..)
+<span class="lineno">   12 </span>  , PDual
+<span class="lineno">   13 </span>  , toPDual             -- :: Ring Rational -&gt; Dual -&gt; PDual
+<span class="lineno">   14 </span>  , pdualRings          -- :: Ring Rational -&gt; PDual -&gt; [Ring Rational]
+<span class="lineno">   15 </span>    -- * Misc
+<span class="lineno">   16 </span>  , dualToTriangulation -- :: Ring Rational -&gt; Dual -&gt; Triangulation
+<span class="lineno">   17 </span>  , pdualReduce         -- :: Ring Rational -&gt; PDual -&gt; Int -&gt; PDual
+<span class="lineno">   18 </span>  , visibilityArray     -- :: Ring Rational -&gt; V.Vector [Int]
+<span class="lineno">   19 </span>  , naive               -- :: Ring Rational -&gt; SSSP
+<span class="lineno">   20 </span>  , naive2              -- :: Ring Rational -&gt; SSSP
+<span class="lineno">   21 </span>  , drawDual            -- :: Dual -&gt; String
+<span class="lineno">   22 </span>  ) where
+<span class="lineno">   23 </span>
+<span class="lineno">   24 </span>import           Control.Monad
+<span class="lineno">   25 </span>-- import           Control.Exception
+<span class="lineno">   26 </span>import           Control.Monad.ST
+<span class="lineno">   27 </span>-- import           Data.FingerTree            (SearchResult (..), (|&gt;))
+<span class="lineno">   28 </span>-- import qualified Data.FingerTree            as F
+<span class="lineno">   29 </span>import           Data.Foldable
+<span class="lineno">   30 </span>import           Data.List
+<span class="lineno">   31 </span>import qualified Data.Map                   as Map
+<span class="lineno">   32 </span>import           Data.Maybe
+<span class="lineno">   33 </span>import           Data.Ord
+<span class="lineno">   34 </span>import           Data.STRef
+<span class="lineno">   35 </span>import           Data.Tree
+<span class="lineno">   36 </span>import qualified Data.Vector                as V
+<span class="lineno">   37 </span>import qualified Data.Vector.Mutable        as MV
+<span class="lineno">   38 </span>import           Reanimate.Math.Common
+<span class="lineno">   39 </span>import           Reanimate.Math.Triangulate
+<span class="lineno">   40 </span>
+<span class="lineno">   41 </span>-- import           Debug.Trace
+<span class="lineno">   42 </span>
+<span class="lineno">   43 </span>type SSSP = V.Vector Int
+<span class="lineno">   44 </span>
+<span class="lineno">   45 </span>
+<span class="lineno">   46 </span>-- ssspParent :: Polygon -&gt; SSSP -&gt; Int -&gt; Int
+<span class="lineno">   47 </span>-- ssspParent p sTree x =
+<span class="lineno">   48 </span>--     (sTree V.! ((x - polygonOffset p) `mod` n) + polygonOffset p) `mod` n
+<span class="lineno">   49 </span>--   where
+<span class="lineno">   50 </span>--     n = polygonSize p
+<span class="lineno">   51 </span>
+<span class="lineno">   52 </span>visibilityArray :: Ring Rational -&gt; V.Vector [Int]
+<span class="lineno">   53 </span><span class="decl"><span class="nottickedoff">visibilityArray p = arr</span>
+<span class="lineno">   54 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">   55 </span><span class="spaces">    </span><span class="nottickedoff">n = ringSize p</span>
+<span class="lineno">   56 </span><span class="spaces">    </span><span class="nottickedoff">arr = V.fromList</span>
+<span class="lineno">   57 </span><span class="spaces">        </span><span class="nottickedoff">[ visibility y</span>
+<span class="lineno">   58 </span><span class="spaces">        </span><span class="nottickedoff">| y &lt;- [0..n-1]</span>
+<span class="lineno">   59 </span><span class="spaces">        </span><span class="nottickedoff">]</span>
+<span class="lineno">   60 </span><span class="spaces">    </span><span class="nottickedoff">visibility y =</span>
+<span class="lineno">   61 </span><span class="spaces">      </span><span class="nottickedoff">[ i</span>
+<span class="lineno">   62 </span><span class="spaces">      </span><span class="nottickedoff">| i &lt;- [0..y-1]</span>
+<span class="lineno">   63 </span><span class="spaces">      </span><span class="nottickedoff">, y `elem` arr V.! i ] ++</span>
+<span class="lineno">   64 </span><span class="spaces">      </span><span class="nottickedoff">[ i</span>
+<span class="lineno">   65 </span><span class="spaces">      </span><span class="nottickedoff">| i &lt;- [y+1 .. n-1]</span>
+<span class="lineno">   66 </span><span class="spaces">      </span><span class="nottickedoff">, let pI = ringAccess p i</span>
+<span class="lineno">   67 </span><span class="spaces">            </span><span class="nottickedoff">isOpen = isRightTurn pYp pY pYn</span>
+<span class="lineno">   68 </span><span class="spaces">      </span><span class="nottickedoff">, ringClamp p (y+1) == i || ringClamp p (y-1) == i || if isOpen</span>
+<span class="lineno">   69 </span><span class="spaces">        </span><span class="nottickedoff">then isLeftTurnOrLinear pY pYn pI ||</span>
+<span class="lineno">   70 </span><span class="spaces">             </span><span class="nottickedoff">isLeftTurnOrLinear pYp pY pI</span>
+<span class="lineno">   71 </span><span class="spaces">        </span><span class="nottickedoff">else not $ isRightTurn pY pYn pI ||</span>
+<span class="lineno">   72 </span><span class="spaces">                   </span><span class="nottickedoff">isRightTurn pYp pY pI</span>
+<span class="lineno">   73 </span><span class="spaces">      </span><span class="nottickedoff">, let myEdges = [(e1,e2) | (e1,e2) &lt;- edges, e1/=y, e1/=i, e2/=y,e2/=i]</span>
+<span class="lineno">   74 </span><span class="spaces">      </span><span class="nottickedoff">, all (isNothing . lineIntersect (pY,pI))</span>
+<span class="lineno">   75 </span><span class="spaces">              </span><span class="nottickedoff">[ (ringAccess p e1, ringAccess p e2) | (e1,e2) &lt;- myEdges ]]</span>
+<span class="lineno">   76 </span><span class="spaces">      </span><span class="nottickedoff">where</span>
+<span class="lineno">   77 </span><span class="spaces">        </span><span class="nottickedoff">pY = ringAccess p y</span>
+<span class="lineno">   78 </span><span class="spaces">        </span><span class="nottickedoff">pYn = ringAccess p $ y+1</span>
+<span class="lineno">   79 </span><span class="spaces">        </span><span class="nottickedoff">pYp = ringAccess p $ y-1</span>
+<span class="lineno">   80 </span><span class="spaces">        </span><span class="nottickedoff">edges = zip [0..n-1] (tail [0..n-1] ++ [0])</span></span>
+<span class="lineno">   81 </span>
+<span class="lineno">   82 </span>
+<span class="lineno">   83 </span>
+<span class="lineno">   84 </span>-- Iterative Single Source Shortest Path solver. Quite slow.
+<span class="lineno">   85 </span>naive :: Ring Rational -&gt; SSSP
+<span class="lineno">   86 </span><span class="decl"><span class="nottickedoff">naive p =</span>
+<span class="lineno">   87 </span><span class="spaces">    </span><span class="nottickedoff">V.fromList $ Map.elems $</span>
+<span class="lineno">   88 </span><span class="spaces">    </span><span class="nottickedoff">Map.map snd $</span>
+<span class="lineno">   89 </span><span class="spaces">    </span><span class="nottickedoff">worker initial</span>
+<span class="lineno">   90 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">   91 </span><span class="spaces">    </span><span class="nottickedoff">initial = Map.singleton 0 (0,0)</span>
+<span class="lineno">   92 </span><span class="spaces">    </span><span class="nottickedoff">visibility = visibilityArray p</span>
+<span class="lineno">   93 </span><span class="spaces">    </span><span class="nottickedoff">worker :: Map.Map Int (Rational, Int) -&gt; Map.Map Int (Rational, Int)</span>
+<span class="lineno">   94 </span><span class="spaces">    </span><span class="nottickedoff">worker m</span>
+<span class="lineno">   95 </span><span class="spaces">        </span><span class="nottickedoff">| m==newM   = newM</span>
+<span class="lineno">   96 </span><span class="spaces">        </span><span class="nottickedoff">| otherwise = worker newM</span>
+<span class="lineno">   97 </span><span class="spaces">      </span><span class="nottickedoff">where</span>
+<span class="lineno">   98 </span><span class="spaces">        </span><span class="nottickedoff">ms' = [ Map.fromList</span>
+<span class="lineno">   99 </span><span class="spaces">                    </span><span class="nottickedoff">[ case Map.lookup v m of</span>
+<span class="lineno">  100 </span><span class="spaces">                        </span><span class="nottickedoff">Nothing -&gt; (v, (distThroughI, i))</span>
+<span class="lineno">  101 </span><span class="spaces">                        </span><span class="nottickedoff">Just (otherDist,parent)</span>
+<span class="lineno">  102 </span><span class="spaces">                          </span><span class="nottickedoff">| otherDist &gt; distThroughI -&gt; (v, (distThroughI, i))</span>
+<span class="lineno">  103 </span><span class="spaces">                          </span><span class="nottickedoff">| otherwise -&gt; (v, (otherDist, parent))</span>
+<span class="lineno">  104 </span><span class="spaces">                    </span><span class="nottickedoff">| v &lt;- visibility V.! i</span>
+<span class="lineno">  105 </span><span class="spaces">                    </span><span class="nottickedoff">, let distThroughI = dist + approxDist (ringAccess p i) (ringAccess p v) ]</span>
+<span class="lineno">  106 </span><span class="spaces">              </span><span class="nottickedoff">| (i,(dist,_)) &lt;- Map.toList m</span>
+<span class="lineno">  107 </span><span class="spaces">              </span><span class="nottickedoff">]</span>
+<span class="lineno">  108 </span><span class="spaces">        </span><span class="nottickedoff">newM = Map.unionsWith g (m:ms') :: Map.Map Int (Rational,Int)</span>
+<span class="lineno">  109 </span><span class="spaces">    </span><span class="nottickedoff">g a b = if fst a &lt; fst b then a else b</span></span>
+<span class="lineno">  110 </span>
+<span class="lineno">  111 </span>naive2 :: Ring Rational -&gt; SSSP
+<span class="lineno">  112 </span><span class="decl"><span class="nottickedoff">naive2 p = runST $ do</span>
+<span class="lineno">  113 </span><span class="spaces">    </span><span class="nottickedoff">parents &lt;- MV.replicate (ringSize p) (-1)</span>
+<span class="lineno">  114 </span><span class="spaces">    </span><span class="nottickedoff">costs &lt;- MV.replicate (ringSize p) (-1)</span>
+<span class="lineno">  115 </span><span class="spaces">    </span><span class="nottickedoff">MV.write parents 0 0</span>
+<span class="lineno">  116 </span><span class="spaces">    </span><span class="nottickedoff">MV.write costs 0 0</span>
+<span class="lineno">  117 </span><span class="spaces">    </span><span class="nottickedoff">changedRef &lt;- newSTRef False</span>
+<span class="lineno">  118 </span><span class="spaces">    </span><span class="nottickedoff">let loop i</span>
+<span class="lineno">  119 </span><span class="spaces">          </span><span class="nottickedoff">| i == ringSize p = do</span>
+<span class="lineno">  120 </span><span class="spaces">            </span><span class="nottickedoff">changed &lt;- readSTRef changedRef</span>
+<span class="lineno">  121 </span><span class="spaces">            </span><span class="nottickedoff">when changed $ do</span>
+<span class="lineno">  122 </span><span class="spaces">              </span><span class="nottickedoff">writeSTRef changedRef False</span>
+<span class="lineno">  123 </span><span class="spaces">              </span><span class="nottickedoff">loop 0</span>
+<span class="lineno">  124 </span><span class="spaces">          </span><span class="nottickedoff">| otherwise = do</span>
+<span class="lineno">  125 </span><span class="spaces">            </span><span class="nottickedoff">myCost &lt;- MV.read costs i</span>
+<span class="lineno">  126 </span><span class="spaces">            </span><span class="nottickedoff">unless (myCost &lt; 0) $</span>
+<span class="lineno">  127 </span><span class="spaces">              </span><span class="nottickedoff">forM_ (visibility V.! i) $ \n -&gt; do</span>
+<span class="lineno">  128 </span><span class="spaces">                </span><span class="nottickedoff">-- n is visible from i.</span>
+<span class="lineno">  129 </span><span class="spaces">                </span><span class="nottickedoff">theirCost &lt;- MV.read costs n</span>
+<span class="lineno">  130 </span><span class="spaces">                </span><span class="nottickedoff">let throughCost = myCost + approxDist (ringAccess p i) (ringAccess p n)</span>
+<span class="lineno">  131 </span><span class="spaces">                </span><span class="nottickedoff">when (throughCost &lt; theirCost || theirCost &lt; 0) $ do</span>
+<span class="lineno">  132 </span><span class="spaces">                    </span><span class="nottickedoff">MV.write parents n i</span>
+<span class="lineno">  133 </span><span class="spaces">                    </span><span class="nottickedoff">MV.write costs n throughCost</span>
+<span class="lineno">  134 </span><span class="spaces">                    </span><span class="nottickedoff">writeSTRef changedRef True</span>
+<span class="lineno">  135 </span><span class="spaces">            </span><span class="nottickedoff">loop (i+1)</span>
+<span class="lineno">  136 </span><span class="spaces">    </span><span class="nottickedoff">loop 0</span>
+<span class="lineno">  137 </span><span class="spaces">    </span><span class="nottickedoff">V.unsafeFreeze parents</span>
+<span class="lineno">  138 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  139 </span><span class="spaces">    </span><span class="nottickedoff">visibility = visibilityArray p</span></span>
+<span class="lineno">  140 </span>
+<span class="lineno">  141 </span>data PDual = PDual (V.Vector Int) Rational [PDual]
+<span class="lineno">  142 </span>  deriving (<span class="decl"><span class="nottickedoff">Show</span></span>)
+<span class="lineno">  143 </span>
+<span class="lineno">  144 </span>toPDual :: Ring Rational -&gt; Dual -&gt; PDual
+<span class="lineno">  145 </span><span class="decl"><span class="nottickedoff">toPDual p d =</span>
+<span class="lineno">  146 </span><span class="spaces">  </span><span class="nottickedoff">case d of</span>
+<span class="lineno">  147 </span><span class="spaces">    </span><span class="nottickedoff">Dual (a,b,c) l r -&gt;</span>
+<span class="lineno">  148 </span><span class="spaces">      </span><span class="nottickedoff">PDual (V.fromList [a,b,c])</span>
+<span class="lineno">  149 </span><span class="spaces">        </span><span class="nottickedoff">(area2X (ringAccess p a) (ringAccess p b) (ringAccess p c))</span>
+<span class="lineno">  150 </span><span class="spaces">        </span><span class="nottickedoff">(catMaybes [ worker c a l, worker b c r])</span>
+<span class="lineno">  151 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  152 </span><span class="spaces">    </span><span class="nottickedoff">worker _ _ EmptyDual = Nothing</span>
+<span class="lineno">  153 </span><span class="spaces">    </span><span class="nottickedoff">worker a b (NodeDual x l r) = Just $</span>
+<span class="lineno">  154 </span><span class="spaces">      </span><span class="nottickedoff">PDual (V.fromList [a,x,b])</span>
+<span class="lineno">  155 </span><span class="spaces">        </span><span class="nottickedoff">(area2X (ringAccess p a) (ringAccess p x) (ringAccess p b))</span>
+<span class="lineno">  156 </span><span class="spaces">        </span><span class="nottickedoff">(catMaybes [ worker x b l, worker a x r])</span></span>
+<span class="lineno">  157 </span>
+<span class="lineno">  158 </span>pdualSize :: PDual -&gt; Int
+<span class="lineno">  159 </span><span class="decl"><span class="nottickedoff">pdualSize (PDual _ _ children) = 1 + sum (map pdualSize children)</span></span>
+<span class="lineno">  160 </span>
+<span class="lineno">  161 </span>pdualArea :: PDual -&gt; Rational
+<span class="lineno">  162 </span><span class="decl"><span class="nottickedoff">pdualArea (PDual _ faceArea _) = faceArea</span></span>
+<span class="lineno">  163 </span>
+<span class="lineno">  164 </span>-- FIXME: 'origin' isn't used. Remove.
+<span class="lineno">  165 </span>pdualReduce :: Ring Rational -&gt; PDual -&gt; Int -&gt; PDual
+<span class="lineno">  166 </span><span class="decl"><span class="nottickedoff">pdualReduce origin pdual n</span>
+<span class="lineno">  167 </span><span class="spaces">  </span><span class="nottickedoff">| pdualSize pdual &lt;= n = pdual</span>
+<span class="lineno">  168 </span><span class="spaces">  </span><span class="nottickedoff">| otherwise =</span>
+<span class="lineno">  169 </span><span class="spaces">    </span><span class="nottickedoff">let smallest = minimum $ pAreas pdual</span>
+<span class="lineno">  170 </span><span class="spaces">    </span><span class="nottickedoff">in pdualReduce origin (merge smallest pdual) n</span>
+<span class="lineno">  171 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  172 </span><span class="spaces">    </span><span class="nottickedoff">merge _s (PDual p faceArea []) = PDual p faceArea []</span>
+<span class="lineno">  173 </span><span class="spaces">    </span><span class="nottickedoff">merge s (PDual p faceArea children)</span>
+<span class="lineno">  174 </span><span class="spaces">      </span><span class="nottickedoff">| faceArea == s =</span>
+<span class="lineno">  175 </span><span class="spaces">        </span><span class="nottickedoff">let (PDual p2 area2 children2:xs) = sortBy (comparing pdualArea) children</span>
+<span class="lineno">  176 </span><span class="spaces">        </span><span class="nottickedoff">in PDual (joinP p p2) (faceArea+area2) (children2++xs)</span>
+<span class="lineno">  177 </span><span class="spaces">      </span><span class="nottickedoff">| otherwise =</span>
+<span class="lineno">  178 </span><span class="spaces">        </span><span class="nottickedoff">let (PDual p2 area2 children2:xs) = sortBy (comparing pdualArea) children</span>
+<span class="lineno">  179 </span><span class="spaces">        </span><span class="nottickedoff">in if area2 == s</span>
+<span class="lineno">  180 </span><span class="spaces">            </span><span class="nottickedoff">then PDual (joinP p p2) (faceArea+area2) (children2++xs)</span>
+<span class="lineno">  181 </span><span class="spaces">            </span><span class="nottickedoff">else PDual p faceArea (map (merge s) children)</span>
+<span class="lineno">  182 </span><span class="spaces">    </span><span class="nottickedoff">pAreas (PDual _ faceArea children) = faceArea : concatMap pAreas children</span>
+<span class="lineno">  183 </span><span class="spaces">    </span><span class="nottickedoff">joinP a b = V.fromList (sort (V.toList a ++ V.toList b))</span></span>
+<span class="lineno">  184 </span>
+<span class="lineno">  185 </span>pdualRings :: Ring Rational -&gt; PDual -&gt; [Ring Rational]
+<span class="lineno">  186 </span><span class="decl"><span class="nottickedoff">pdualRings p (PDual pts _area children) =</span>
+<span class="lineno">  187 </span><span class="spaces">  </span><span class="nottickedoff">ringPack (V.map (ringAccess p) pts) : concatMap (pdualRings p) children</span></span>
+<span class="lineno">  188 </span>
+<span class="lineno">  189 </span>-- Dual of triangulated polygon
+<span class="lineno">  190 </span>data Dual = Dual (Int,Int,Int) -- (a,b,c)
+<span class="lineno">  191 </span>                  DualTree -- borders ca
+<span class="lineno">  192 </span>                  DualTree -- borders bc
+<span class="lineno">  193 </span>  deriving (<span class="decl"><span class="nottickedoff">Show</span></span>)
+<span class="lineno">  194 </span>
+<span class="lineno">  195 </span>data DualTree
+<span class="lineno">  196 </span>  = EmptyDual
+<span class="lineno">  197 </span>  | NodeDual Int -- axb triangle, a and b are from parent.
+<span class="lineno">  198 </span>      DualTree -- borders xb
+<span class="lineno">  199 </span>      DualTree -- borders ax
+<span class="lineno">  200 </span>  deriving (<span class="decl"><span class="nottickedoff">Show</span></span>)
+<span class="lineno">  201 </span>
+<span class="lineno">  202 </span>drawDual :: Dual -&gt; String
+<span class="lineno">  203 </span><span class="decl"><span class="nottickedoff">drawDual d = drawTree $</span>
+<span class="lineno">  204 </span><span class="spaces">  </span><span class="nottickedoff">case d of</span>
+<span class="lineno">  205 </span><span class="spaces">    </span><span class="nottickedoff">Dual (a,b,c) l r -&gt; Node (show (a,b,c)) [worker c a l, worker b c r]</span>
+<span class="lineno">  206 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  207 </span><span class="spaces">    </span><span class="nottickedoff">worker _a _b EmptyDual = Node &quot;Leaf&quot; []</span>
+<span class="lineno">  208 </span><span class="spaces">    </span><span class="nottickedoff">worker a b (NodeDual x l r) =</span>
+<span class="lineno">  209 </span><span class="spaces">      </span><span class="nottickedoff">Node (show (b,a,x)) [worker x b l, worker a x r]</span></span>
+<span class="lineno">  210 </span>
+<span class="lineno">  211 </span>dualToTriangulation :: Ring Rational -&gt; Dual -&gt; Triangulation
+<span class="lineno">  212 </span><span class="decl"><span class="nottickedoff">dualToTriangulation p d = edgesToTriangulation (ringSize p) $ filter goodEdge $</span>
+<span class="lineno">  213 </span><span class="spaces">    </span><span class="nottickedoff">case d of</span>
+<span class="lineno">  214 </span><span class="spaces">      </span><span class="nottickedoff">Dual (a,b,c) l r -&gt;</span>
+<span class="lineno">  215 </span><span class="spaces">        </span><span class="nottickedoff">(a,b):(a,c):(b,c):worker c a l ++ worker b c r</span>
+<span class="lineno">  216 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  217 </span><span class="spaces">    </span><span class="nottickedoff">goodEdge (a,b)</span>
+<span class="lineno">  218 </span><span class="spaces">      </span><span class="nottickedoff">= a /= ringClamp p (b+1) &amp;&amp; a /= ringClamp p (b-1)</span>
+<span class="lineno">  219 </span><span class="spaces">    </span><span class="nottickedoff">worker _a _b EmptyDual = []</span>
+<span class="lineno">  220 </span><span class="spaces">    </span><span class="nottickedoff">worker a b (NodeDual x l r) =</span>
+<span class="lineno">  221 </span><span class="spaces">      </span><span class="nottickedoff">(a,x) : (x, b) : worker x b l ++ worker a x r</span></span>
+<span class="lineno">  222 </span>
+<span class="lineno">  223 </span>-- Dual path:
+<span class="lineno">  224 </span>-- (Int,Int,Int) + V.Vector Int + V.Vector LeftOrRight
+<span class="lineno">  225 </span>
+<span class="lineno">  226 </span>-- simplifyDual :: DualTree -&gt; DualTree
+<span class="lineno">  227 </span>-- -- simplifyDual (NodeDual x EmptyDual EmptyDual) = NodeLeaf x
+<span class="lineno">  228 </span>-- -- simplifyDual (NodeDual x l EmptyDual) = NodeDualL x l
+<span class="lineno">  229 </span>-- -- simplifyDual (NodeDual x EmptyDual r) = NodeDualR x r
+<span class="lineno">  230 </span>-- simplifyDual d = d
+<span class="lineno">  231 </span>
+<span class="lineno">  232 </span>dual :: Int -&gt; Triangulation -&gt; Dual
+<span class="lineno">  233 </span><span class="decl"><span class="nottickedoff">dual root t =</span>
+<span class="lineno">  234 </span><span class="spaces">  </span><span class="nottickedoff">case hasTriangle of</span>
+<span class="lineno">  235 </span><span class="spaces">    </span><span class="nottickedoff">[]    -&gt; error &quot;weird triangulation&quot;</span>
+<span class="lineno">  236 </span><span class="spaces">    </span><span class="nottickedoff">-- [] -&gt; Dual (0,1,V.length t-1) EmptyDual (dualTree t (1, (V.length t-1)) 0)</span>
+<span class="lineno">  237 </span><span class="spaces">    </span><span class="nottickedoff">(x:_) -&gt; Dual (root,rootNext,x) (dualTree t (x,root) rootNext) (dualTree t (rootNext,x) root)</span>
+<span class="lineno">  238 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  239 </span><span class="spaces">    </span><span class="nottickedoff">rootNext = idx (root+1)</span>
+<span class="lineno">  240 </span><span class="spaces">    </span><span class="nottickedoff">rootPrev = idx (root-1)</span>
+<span class="lineno">  241 </span><span class="spaces">    </span><span class="nottickedoff">rootNNext = idx (root+2)</span>
+<span class="lineno">  242 </span><span class="spaces">    </span><span class="nottickedoff">idx i = i `mod` n</span>
+<span class="lineno">  243 </span><span class="spaces">    </span><span class="nottickedoff">hasTriangle = (rootPrev : t V.! root) `intersect` (rootNNext : t V.! rootNext)</span>
+<span class="lineno">  244 </span><span class="spaces">    </span><span class="nottickedoff">n = V.length t</span></span>
+<span class="lineno">  245 </span>
+<span class="lineno">  246 </span>-- a=6, b=0, e=1
+<span class="lineno">  247 </span>dualTree :: Triangulation -&gt; (Int,Int) -&gt; Int -&gt; DualTree
+<span class="lineno">  248 </span><span class="decl"><span class="nottickedoff">dualTree t (a,b) e = -- simplifyDual $</span>
+<span class="lineno">  249 </span><span class="spaces">    </span><span class="nottickedoff">case hasTriangle of</span>
+<span class="lineno">  250 </span><span class="spaces">      </span><span class="nottickedoff">[] -&gt; EmptyDual</span>
+<span class="lineno">  251 </span><span class="spaces">      </span><span class="nottickedoff">[(ab)] -&gt;</span>
+<span class="lineno">  252 </span><span class="spaces">        </span><span class="nottickedoff">NodeDual ab</span>
+<span class="lineno">  253 </span><span class="spaces">          </span><span class="nottickedoff">(dualTree t (ab,b) a)</span>
+<span class="lineno">  254 </span><span class="spaces">          </span><span class="nottickedoff">(dualTree t (a,ab) b)</span>
+<span class="lineno">  255 </span><span class="spaces">      </span><span class="nottickedoff">_ -&gt; error $ &quot;Invalid triangulation: &quot; ++ show (a,b,e,hasTriangle)</span>
+<span class="lineno">  256 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  257 </span><span class="spaces">    </span><span class="nottickedoff">hasTriangle = (prev a : next a : t V.! a) `intersect` (prev b : next b : t V.! b)</span>
+<span class="lineno">  258 </span><span class="spaces">      </span><span class="nottickedoff">\\ [e]</span>
+<span class="lineno">  259 </span><span class="spaces">    </span><span class="nottickedoff">n = V.length t</span>
+<span class="lineno">  260 </span><span class="spaces">    </span><span class="nottickedoff">next x = (x+1) `mod` n</span>
+<span class="lineno">  261 </span><span class="spaces">    </span><span class="nottickedoff">prev x = (x-1) `mod` n</span></span>
+<span class="lineno">  262 </span>
+<span class="lineno">  263 </span>-- data MinMax = MinMax Int Int | MinMaxEmpty deriving (Show)
+<span class="lineno">  264 </span>-- instance Semigroup MinMax where
+<span class="lineno">  265 </span>--   MinMaxEmpty &lt;&gt; b = b
+<span class="lineno">  266 </span>--   a &lt;&gt; MinMaxEmpty = a
+<span class="lineno">  267 </span>--   MinMax a b &lt;&gt; MinMax c d
+<span class="lineno">  268 </span>--     = MinMax (min a c) (max b d)
+<span class="lineno">  269 </span>--     -- = MinMax c b
+<span class="lineno">  270 </span>-- instance Monoid MinMax where
+<span class="lineno">  271 </span>--   mempty = MinMaxEmpty
+<span class="lineno">  272 </span>--
+<span class="lineno">  273 </span>-- instance F.Measured MinMax Int where
+<span class="lineno">  274 </span>--   measure i = MinMax i i
+<span class="lineno">  275 </span>
+<span class="lineno">  276 </span>-- dualRoot :: Dual -&gt; Int
+<span class="lineno">  277 </span>-- dualRoot (Dual (a,_,_) _ _) = a
+<span class="lineno">  278 </span>
+<span class="lineno">  279 </span>-- O(n*ln n), could be O(n) if I could figure out how to use fingertrees...
+<span class="lineno">  280 </span>sssp :: (Fractional a, Ord a, Epsilon a) =&gt; Ring a -&gt; Dual -&gt; SSSP
+<span class="lineno">  281 </span><span class="decl"><span class="nottickedoff">sssp p d = toSSSP $</span>
+<span class="lineno">  282 </span><span class="spaces">    </span><span class="nottickedoff">case d of</span>
+<span class="lineno">  283 </span><span class="spaces">      </span><span class="nottickedoff">Dual (a,b,c) l r -&gt;</span>
+<span class="lineno">  284 </span><span class="spaces">        </span><span class="nottickedoff">(a, a) :</span>
+<span class="lineno">  285 </span><span class="spaces">        </span><span class="nottickedoff">(b, a) :</span>
+<span class="lineno">  286 </span><span class="spaces">        </span><span class="nottickedoff">(c, a) :</span>
+<span class="lineno">  287 </span><span class="spaces">        </span><span class="nottickedoff">worker [c] [b] a r ++</span>
+<span class="lineno">  288 </span><span class="spaces">        </span><span class="nottickedoff">loopLeft a c l</span>
+<span class="lineno">  289 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  290 </span><span class="spaces">    </span><span class="nottickedoff">toSSSP edges =</span>
+<span class="lineno">  291 </span><span class="spaces">      </span><span class="nottickedoff">(V.fromList . map snd . sortOn fst) edges</span>
+<span class="lineno">  292 </span><span class="spaces">    </span><span class="nottickedoff">loopLeft a outer l =</span>
+<span class="lineno">  293 </span><span class="spaces">      </span><span class="nottickedoff">case l of</span>
+<span class="lineno">  294 </span><span class="spaces">        </span><span class="nottickedoff">EmptyDual -&gt; []</span>
+<span class="lineno">  295 </span><span class="spaces">        </span><span class="nottickedoff">NodeDual x l' r' -&gt;</span>
+<span class="lineno">  296 </span><span class="spaces">          </span><span class="nottickedoff">(x,a) :</span>
+<span class="lineno">  297 </span><span class="spaces">          </span><span class="nottickedoff">worker [x] [outer] a r' ++</span>
+<span class="lineno">  298 </span><span class="spaces">          </span><span class="nottickedoff">loopLeft a x l'</span>
+<span class="lineno">  299 </span><span class="spaces">    </span><span class="nottickedoff">searchFn _checkStep _cusp _x [] = Nothing</span>
+<span class="lineno">  300 </span><span class="spaces">    </span><span class="nottickedoff">searchFn checkStep cusp x (y:ys)</span>
+<span class="lineno">  301 </span><span class="spaces">      </span><span class="nottickedoff">| not (checkStep (ringAccess p cusp) (ringAccess p y) (ringAccess p x))</span>
+<span class="lineno">  302 </span><span class="spaces">        </span><span class="nottickedoff">= Just $ helper [] y ys</span>
+<span class="lineno">  303 </span><span class="spaces">      </span><span class="nottickedoff">| otherwise = Nothing</span>
+<span class="lineno">  304 </span><span class="spaces">      </span><span class="nottickedoff">where</span>
+<span class="lineno">  305 </span><span class="spaces">        </span><span class="nottickedoff">helper acc v [] = (v, [], reverse acc)</span>
+<span class="lineno">  306 </span><span class="spaces">        </span><span class="nottickedoff">helper acc v1 (v2:vs)</span>
+<span class="lineno">  307 </span><span class="spaces">          </span><span class="nottickedoff">| checkStep (ringAccess p v1) (ringAccess p v2) (ringAccess p x) =</span>
+<span class="lineno">  308 </span><span class="spaces">            </span><span class="nottickedoff">(v1, v2:vs, reverse acc)</span>
+<span class="lineno">  309 </span><span class="spaces">          </span><span class="nottickedoff">| otherwise = helper (v1:acc) v2 vs</span>
+<span class="lineno">  310 </span><span class="spaces">    </span><span class="nottickedoff">searchRight = searchFn isLeftTurn</span>
+<span class="lineno">  311 </span><span class="spaces">    </span><span class="nottickedoff">searchLeft = searchFn isRightTurn</span>
+<span class="lineno">  312 </span><span class="spaces">    </span><span class="nottickedoff">-- adj x = x -- ringClamp p (x-dualRoot d)</span>
+<span class="lineno">  313 </span><span class="spaces">    </span><span class="nottickedoff">-- optTrace msg =</span>
+<span class="lineno">  314 </span><span class="spaces">    </span><span class="nottickedoff">--   if False -- dualRoot d == 1 || dualRoot d == 0</span>
+<span class="lineno">  315 </span><span class="spaces">    </span><span class="nottickedoff">--     then trace msg</span>
+<span class="lineno">  316 </span><span class="spaces">    </span><span class="nottickedoff">--     else id</span>
+<span class="lineno">  317 </span><span class="spaces">    </span><span class="nottickedoff">worker _ _ _ EmptyDual = []</span>
+<span class="lineno">  318 </span><span class="spaces">    </span><span class="nottickedoff">worker f1 f2 cusp (NodeDual x l r) =</span>
+<span class="lineno">  319 </span><span class="spaces">        </span><span class="nottickedoff">-- (optTrace (&quot;Funnel: &quot; ++ show</span>
+<span class="lineno">  320 </span><span class="spaces">        </span><span class="nottickedoff">--       (map adj $ toList f1</span>
+<span class="lineno">  321 </span><span class="spaces">        </span><span class="nottickedoff">--       ,adj cusp</span>
+<span class="lineno">  322 </span><span class="spaces">        </span><span class="nottickedoff">--       ,map adj $ toList f2</span>
+<span class="lineno">  323 </span><span class="spaces">        </span><span class="nottickedoff">--       ,adj x</span>
+<span class="lineno">  324 </span><span class="spaces">        </span><span class="nottickedoff">--       , dualRoot d))</span>
+<span class="lineno">  325 </span><span class="spaces">        </span><span class="nottickedoff">--   ) $</span>
+<span class="lineno">  326 </span><span class="spaces">        </span><span class="nottickedoff">case searchLeft cusp x (toList f1) of</span>
+<span class="lineno">  327 </span><span class="spaces">          </span><span class="nottickedoff">Just (v, f1Hi, f1Lo) -&gt;</span>
+<span class="lineno">  328 </span><span class="spaces">                </span><span class="nottickedoff">-- optTrace (&quot;  Visble from left: &quot; ++ show (adj x,adj v)) $</span>
+<span class="lineno">  329 </span><span class="spaces">                </span><span class="nottickedoff">(x, v::Int) :</span>
+<span class="lineno">  330 </span><span class="spaces">                </span><span class="nottickedoff">worker f1Hi [x] v l ++</span>
+<span class="lineno">  331 </span><span class="spaces">                </span><span class="nottickedoff">worker (f1Lo ++ [v, x]) f2 cusp r</span>
+<span class="lineno">  332 </span><span class="spaces">          </span><span class="nottickedoff">Nothing -&gt;</span>
+<span class="lineno">  333 </span><span class="spaces">            </span><span class="nottickedoff">case searchRight cusp x (toList f2) of</span>
+<span class="lineno">  334 </span><span class="spaces">              </span><span class="nottickedoff">Just (v, f2Hi, f2Lo) -&gt;</span>
+<span class="lineno">  335 </span><span class="spaces">                </span><span class="nottickedoff">-- optTrace (&quot;  Visble from right: &quot; ++ show (adj x,adj v)) $</span>
+<span class="lineno">  336 </span><span class="spaces">                </span><span class="nottickedoff">(x, v::Int) :</span>
+<span class="lineno">  337 </span><span class="spaces">                </span><span class="nottickedoff">worker f1 (f2Lo ++ [v, x]) cusp l ++</span>
+<span class="lineno">  338 </span><span class="spaces">                </span><span class="nottickedoff">worker [x] f2Hi v r</span>
+<span class="lineno">  339 </span><span class="spaces">              </span><span class="nottickedoff">Nothing -&gt;</span>
+<span class="lineno">  340 </span><span class="spaces">                </span><span class="nottickedoff">-- optTrace (&quot;  Visble from cusp: &quot; ++ show (adj x,adj cusp)) $</span>
+<span class="lineno">  341 </span><span class="spaces">                </span><span class="nottickedoff">(x, cusp::Int) :</span>
+<span class="lineno">  342 </span><span class="spaces">                </span><span class="nottickedoff">worker f1 [x] cusp l ++</span>
+<span class="lineno">  343 </span><span class="spaces">                </span><span class="nottickedoff">worker [x] f2 cusp r</span></span>
+
+</pre>
+</body>
+</html>
