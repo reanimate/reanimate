@@ -1,7 +1,7 @@
+{-# LANGUAGE ApplicativeDo     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE ApplicativeDo     #-}
 {- HLINT ignore -}
 {-|
 Copyright   : Written by David Himmelstrup
@@ -16,16 +16,17 @@ module Reanimate.Builtin.Flip
   , flipTransition
   ) where
 
-import           Reanimate.Animation
-import           Reanimate.Blender
-import           Reanimate.Raster
-import           Reanimate.Scene
-import           Reanimate.Ease
-import           Reanimate.Transition
-import           Reanimate.Svg.Constructors
+import           Reanimate.Animation        (Animation, duration, frameAt, setDuration)
+import           Reanimate.Blender          (blender)
+import           Reanimate.Ease             (fromToS, oscillateS)
+import           Reanimate.Raster           (svgAsPngFile)
+import           Reanimate.Scene            (Scene, Sprite, Var, fork, newSprite, newVar, scene,
+                                             spriteDuration, spriteT, tweenVar, unVar)
+import           Reanimate.Svg.Constructors (flipXAxis)
+import           Reanimate.Transition       (Transition)
 
-import           NeatInterpolation (text)
-import qualified Data.Text           as T
+import qualified Data.Text                  as T
+import           NeatInterpolation          (text)
 
 -- | Control structure with parameters for the blender script.
 data FlipSprite s = FlipSprite
@@ -62,7 +63,7 @@ flipSprite front back = do
       , fsWobble = rotX }
 
 flipTransitionOpts :: Double -> Double -> Double -> Transition
-flipTransitionOpts bend zoom wobble a b = sceneAnimation $ do
+flipTransitionOpts bend zoom wobble a b = scene $ do
     FlipSprite{..} <- flipSprite a b
     fork $ tweenVar fsZoom dur   $ \v -> fromToS v zoom . oscillateS
     fork $ tweenVar fsBend dur   $ \v -> fromToS v bend . oscillateS

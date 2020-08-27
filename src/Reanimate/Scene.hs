@@ -219,8 +219,10 @@ sceneAnimation action = runST
 --
 --   Example:
 --
---   > do fork $ play drawBox
---   >    play drawCircle
+-- @
+-- do 'fork' $ 'play' 'Reanimate.Builtin.Documentation.drawBox'
+--    'play' 'Reanimate.Builtin.Documentation.drawCircle'
+-- @
 --
 --   <<docs/gifs/doc_fork.gif>>
 fork :: Scene s a -> Scene s a
@@ -233,8 +235,10 @@ fork (M action) = M $ \t -> do
 --
 --   Example:
 --
---   > do play drawBox
---   >    play drawCircle
+-- @
+-- do 'play' 'Reanimate.Builtin.Documentation.drawBox'
+--    'play' 'Reanimate.Builtin.Documentation.drawCircle'
+-- @
 --
 --   <<docs/gifs/doc_play.gif>>
 play :: Animation -> Scene s ()
@@ -244,9 +248,11 @@ play ani = newSpriteA ani >>= destroySprite
 --
 --   Example:
 --
---   > do now <- play drawCircle *> queryNow
---   >    play $ staticFrame 1 $ scale 2 $ withStrokeWidth 0.05 $
---   >      mkText $ "Now=" <> T.pack (show now)
+-- @
+-- do now \<- 'play' 'Reanimate.Builtin.Documentation.drawCircle' *\> 'queryNow'
+--    'play' $ 'staticFrame' 1 $ 'scale' 2 $ 'withStrokeWidth' 0.05 $
+--      'mkText' $ "Now=" <> T.pack (show now)
+-- @
 --
 --   <<docs/gifs/doc_queryNow.gif>>
 queryNow :: Scene s Time
@@ -256,9 +262,11 @@ queryNow = M $ \t -> return (t, 0, 0, [])
 --
 --   Example:
 --
---   > do fork $ play drawBox
---   >    wait 1
---   >    play drawCircle
+-- @
+-- do 'fork' $ 'play' 'Reanimate.Builtin.Documentation.drawBox'
+--    'wait' 1
+--    'play' 'Reanimate.Builtin.Documentation.drawCircle'
+-- @
 --
 --   <<docs/gifs/doc_wait.gif>>
 wait :: Duration -> Scene s ()
@@ -274,8 +282,10 @@ waitUntil tNew = do
 --
 --   Example:
 --
---   > do waitOn $ fork $ play drawBox
---   >    play drawCircle
+-- @
+-- do 'waitOn' $ 'fork' $ 'play' 'Reanimate.Builtin.Documentation.drawBox'
+--    'play' 'Reanimate.Builtin.Documentation.drawCircle'
+-- @
 --
 --   <<docs/gifs/doc_waitOn.gif>>
 waitOn :: Scene s a -> Scene s a
@@ -311,9 +321,11 @@ newtype Var s a = Var (STRef s (Time -> a))
 --   Variables always have a defined value even if they are read at a timestamp that is
 --   earlier than when the variable was created. For example:
 --
---   > do v <- fork (wait 10 >> newVar 0) -- Create a variable at timestamp '10'.
---   >    readVar v                       -- Read the variable at timestamp '0'.
---   >                                    -- The value of the variable will be '0'.
+-- @
+-- do v \<- 'fork' ('wait' 10 \>\> 'newVar' 0) -- Create a variable at timestamp '10'.
+--    'readVar' v                       -- Read the variable at timestamp '0'.
+--                                    -- The value of the variable will be '0'.
+-- @
 newVar :: a -> Scene s (Var s a)
 newVar def = Var <$> liftST (newSTRef (const def))
 
@@ -325,11 +337,13 @@ readVar (Var ref) = liftST (readSTRef ref) <*> queryNow
 --
 --   Example:
 --
---   > do v <- newVar 0
---   >    newSprite $ mkCircle <$> unVar v
---   >    writeVar v 1; wait 1
---   >    writeVar v 2; wait 1
---   >    writeVar v 3; wait 1
+-- @
+-- do v \<- 'newVar' 0
+--    'newSprite' $ 'mkCircle' \<$\> 'unVar' v
+--    'writeVar' v 1; 'wait' 1
+--    'writeVar' v 2; 'wait' 1
+--    'writeVar' v 3; 'wait' 1
+-- @
 --
 --   <<docs/gifs/doc_writeVar.gif>>
 writeVar :: Var s a -> a -> Scene s ()
@@ -367,8 +381,10 @@ tweenVarUnclamped (Var ref) dur fn = do
 --
 --   Example:
 --
---   > do var <- simpleVar mkCircle 0
---   >    tweenVar var 2 $ \val -> fromToS val (screenHeight/2)
+-- @
+-- do var \<- 'simpleVar' 'mkCircle' 0
+--    'tweenVar' var 2 $ \val -> 'fromToS' val ('Reanimate.Constants.screenHeight'/2)
+-- @
 --
 --   <<docs/gifs/doc_simpleVar.gif>>
 simpleVar :: (a -> SVG) -> a -> Scene s (Var s a)
@@ -407,10 +423,12 @@ instance Applicative (Frame s) where
 --
 --   Example:
 --
---   > do v <- newVar 0
---   >    newSprite $ mkCircle <$> unVar v
---   >    tweenVar v 1 $ \val -> fromToS val 3
---   >    tweenVar v 1 $ \val -> fromToS val 0
+-- @
+-- do v \<- 'newVar' 0
+--    'newSprite' $ 'mkCircle' \<$\> 'unVar' v
+--    'tweenVar' v 1 $ \val -> 'fromToS' val 3
+--    'tweenVar' v 1 $ \val -> 'fromToS' val 0
+-- @
 --
 --   <<docs/gifs/doc_unVar.gif>>
 unVar :: Var s a -> Frame s a
@@ -432,8 +450,10 @@ spriteDuration = Frame $ return (\_real_t d _t -> d)
 --
 --   Example:
 --
---   > do newSprite $ mkCircle <$> spriteT -- Circle sprite where radius=time.
---   >    wait 2
+-- @
+-- do 'newSprite' $ 'mkCircle' \<$\> 'spriteT' -- Circle sprite where radius=time.
+--    'wait' 2
+-- @
 --
 --   <<docs/gifs/doc_newSprite.gif>>
 newSprite :: Frame s SVG -> Scene s (Sprite s)
@@ -474,9 +494,11 @@ newSprite_ = void . newSprite
 --
 --   Example:
 --
---   > do fork $ newSpriteA drawCircle
---   >    play drawBox
---   >    play $ reverseA drawBox
+-- @
+-- do 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawCircle'
+--    'play' 'Reanimate.Builtin.Documentation.drawBox'
+--    'play' $ 'reverseA' 'Reanimate.Builtin.Documentation.drawBox'
+-- @
 --
 --   <<docs/gifs/doc_newSpriteA.gif>>
 newSpriteA :: Animation -> Scene s (Sprite s)
@@ -487,9 +509,11 @@ newSpriteA = newSpriteA' SyncStretch
 --
 --   Example:
 --
---   > do fork $ newSpriteA' SyncFreeze drawCircle
---   >    play drawBox
---   >    play $ reverseA drawBox
+-- @
+-- do 'fork' $ 'newSpriteA'' 'SyncFreeze' 'Reanimate.Builtin.Documentation.drawCircle'
+--    'play' 'Reanimate.Builtin.Documentation.drawBox'
+--    'play' $ 'reverseA' 'Reanimate.Builtin.Documentation.drawBox'
+-- @
 --
 --   <<docs/gifs/doc_newSpriteA'.gif>>
 newSpriteA' :: Sync -> Animation -> Scene s (Sprite s)
@@ -501,8 +525,10 @@ newSpriteA' sync animation =
 --
 --   Example:
 --
---   > do newSpriteSVG $ mkBackground "lightblue"
---   >    play drawCircle
+-- @
+-- do 'newSpriteSVG' $ 'mkBackground' "lightblue"
+--    'play' 'Reanimate.Builtin.Documentation.drawCircle'
+-- @
 --
 --   <<docs/gifs/doc_newSpriteSVG.gif>>
 newSpriteSVG :: SVG -> Scene s (Sprite s)
@@ -518,10 +544,12 @@ newSpriteSVG_ = void . newSpriteSVG
 --
 --   Example:
 --
---   > do s <- fork $ newSpriteA drawBox
---   >    v <- newVar 0
---   >    applyVar v s rotate
---   >    tweenVar v 2 $ \val -> fromToS val 90
+-- @
+-- do s \<- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawBox'
+--    v \<- 'newVar' 0
+--    'applyVar' v s 'rotate'
+--    'tweenVar' v 2 $ \val -> 'fromToS' val 90
+-- @
 --
 --   <<docs/gifs/doc_applyVar.gif>>
 applyVar :: Var s a -> Sprite s -> (a -> SVG -> SVG) -> Scene s ()
@@ -534,9 +562,11 @@ applyVar var sprite fn = spriteModify sprite $ do
 --
 --   Example:
 --
---   > do s <- newSpriteSVG $ withFillOpacity 1 $ mkCircle 1
---   >    fork $ wait 1 >> destroySprite s
---   >    play drawBox
+-- @
+-- do s <- 'newSpriteSVG' $ 'withFillOpacity' 1 $ 'mkCircle' 1
+--    'fork' $ 'wait' 1 \>\> 'destroySprite' s
+--    'play' 'Reanimate.Builtin.Documentation.drawBox'
+-- @
 --
 --   <<docs/gifs/doc_destroySprite.gif>>
 destroySprite :: Sprite s -> Scene s ()
@@ -560,9 +590,11 @@ spriteModify (Sprite born ref) modFn = liftST $ modifySTRef ref $ \(ttl, renderG
 --
 --   Example:
 --
---   > do s <- fork $ newSpriteA drawCircle
---   >    wait 1
---   >    spriteMap s flipYAxis
+-- @
+-- do s \<- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawCircle'
+--    'wait' 1
+--    'spriteMap' s 'flipYAxis'
+-- @
 --
 --   <<docs/gifs/doc_spriteMap.gif>>
 spriteMap :: Sprite s -> (SVG -> SVG) -> Scene s ()
@@ -577,8 +609,10 @@ spriteMap sprite@(Sprite born _) fn = do
 --
 --   Example:
 --
---   > do s <- fork $ newSpriteA drawCircle
---   >    spriteTween s 1 $ \val -> translate (screenWidth*0.3*val) 0
+-- @
+-- do s \<- 'fork' $ 'newSpriteA' 'drawCircle'
+--    'spriteTween' s 1 $ \val -> 'translate' ('Reanimate.Constants.screenWidth'*0.3*val) 0
+-- @
 --
 --   <<docs/gifs/doc_spriteTween.gif>>
 spriteTween :: Sprite s -> Duration -> (Double -> SVG -> SVG) -> Scene s ()
@@ -598,9 +632,11 @@ spriteTween sprite@(Sprite born _) dur fn = do
 --
 --   Example:
 --
---   > do s <- fork $ newSpriteA drawBox
---   >    v <- spriteVar s 0 rotate
---   >    tweenVar v 2 $ \val -> fromToS val 90
+-- @
+-- do s \<- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawBox'
+--    v \<- 'spriteVar' s 0 'rotate'
+--    'tweenVar' v 2 $ \val -> 'fromToS' val 90
+-- @
 --
 --   <<docs/gifs/doc_spriteVar.gif>>
 spriteVar :: Sprite s -> a -> (a -> SVG -> SVG) -> Scene s (Var s a)
@@ -613,9 +649,11 @@ spriteVar sprite def fn = do
 --
 --   Example:
 --
---   > do s <- fork $ newSpriteA drawCircle
---   >    spriteE s $ overBeginning 1 fadeInE
---   >    spriteE s $ overEnding 0.5 fadeOutE
+-- @
+-- do s <- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawCircle'
+--    'spriteE' s $ 'overBeginning' 1 'fadeInE'
+--    'spriteE' s $ 'overEnding' 0.5 'fadeOutE'
+-- @
 --
 --   <<docs/gifs/doc_spriteE.gif>>
 spriteE :: Sprite s -> Effect -> Scene s ()
@@ -634,11 +672,13 @@ spriteE (Sprite born ref) effect = do
 --
 --   Example:
 --
---   > do s1 <- newSpriteSVG $ withFillOpacity 1 $ withFillColor "blue" $ mkCircle 3
---   >    newSpriteSVG $ withFillOpacity 1 $ withFillColor "red" $ mkRect 8 3
---   >    wait 1
---   >    spriteZ s1 1
---   >    wait 1
+-- @
+-- do s1 \<- 'newSpriteSVG' $ 'withFillOpacity' 1 $ 'withFillColor' "blue" $ 'mkCircle' 3
+--    'newSpriteSVG' $ 'withFillOpacity' 1 $ 'withFillColor' "red" $ 'mkRect' 8 3
+--    'wait' 1
+--    'spriteZ' s1 1
+--    'wait' 1
+-- @
 --
 --   <<docs/gifs/doc_spriteZ.gif>>
 spriteZ :: Sprite s -> ZIndex -> Scene s ()
@@ -656,16 +696,18 @@ spriteZ (Sprite born ref) zindex = do
 --
 --   Example:
 --
---   > do -- the rect lives through the entire 3s animation
---   >    newSpriteSVG_ $ translate (-3) 0 $ mkRect 4 4
---   >    wait 1
---   >    spriteScope $ do
---   >      -- the circle only lives for 1 second.
---   >      local <- newSpriteSVG $ translate 3 0 $ mkCircle 2
---   >      spriteE local $ overBeginning 0.3 fadeInE
---   >      spriteE local $ overEnding 0.3 fadeOutE
---   >      wait 1
---   >    wait 1
+-- @
+-- do -- the rect lives through the entire 3s animation
+--    'newSpriteSVG_' $ 'translate' (-3) 0 $ 'mkRect' 4 4
+--    'wait' 1
+--    'spriteScope' $ do
+--      -- the circle only lives for 1 second.
+--      local \<- 'newSpriteSVG' $ 'translate' 3 0 $ 'mkCircle' 2
+--      'spriteE' local $ 'overBeginning' 0.3 'fadeInE'
+--      'spriteE' local $ 'overEnding' 0.3 'fadeOutE'
+--      'wait' 1
+--    'wait' 1
+-- @
 --
 --   <<docs/gifs/doc_spriteScope.gif>>
 spriteScope :: Scene s a -> Scene s a
@@ -1102,14 +1144,16 @@ instance Renderable Camera where
 --
 --   Example
 --
---   > do cam <- newObject Camera
---   >    circ <- newObject $ Circle 2
---   >    oModifyS circ $
---   >      oContext .= withFillOpacity 1 . withFillColor "blue"
---   >    oShow circ
---   >    cameraAttach cam circ
---   >    cameraZoom cam 1 2
---   >    cameraZoom cam 1 1
+-- @
+-- do cam \<- 'newObject' 'Camera'
+--    circ \<- 'newObject' $ 'Circle' 2
+--    'oModifyS' circ $
+--      'oContext' .= 'withFillOpacity' 1 . 'withFillColor' "blue"
+--    'oShow' circ
+--    'cameraAttach' cam circ
+--    'cameraZoom' cam 1 2
+--    'cameraZoom' cam 1 1
+-- @
 --
 --   <<docs/gifs/doc_cameraAttach.gif>>
 cameraAttach :: Object s Camera -> Object s a -> Scene s ()
@@ -1129,19 +1173,21 @@ cameraAttach cam obj =
 --
 --   Example
 --
---   > do cam <- newObject Camera
---   >    circ <- newObject $ Circle 2; oShow circ
---   >    oModify circ $ oTranslate .~ (-3,0)
---   >    box <- newObject $ Rectangle 4 4; oShow box
---   >    oModify box $ oTranslate .~ (3,0)
---   >    cameraAttach cam circ
---   >    cameraAttach cam box
---   >    cameraFocus cam (-3,0)
---   >    cameraZoom cam 2 2      -- Zoom in
---   >    cameraZoom cam 2 1      -- Zoom out
---   >    cameraFocus cam (3,0)
---   >    cameraZoom cam 2 2      -- Zoom in
---   >    cameraZoom cam 2 1      -- Zoom out
+-- @
+-- do cam \<- 'newObject' 'Camera'
+--    circ \<- 'newObject' $ 'Circle' 2; 'oShow' circ
+--    'oModify' circ $ 'oTranslate' .~ (-3,0)
+--    box \<- 'newObject' $ 'Rectangle' 4 4; 'oShow' box
+--    'oModify' box $ 'oTranslate' .~ (3,0)
+--    'cameraAttach' cam circ
+--    'cameraAttach' cam box
+--    'cameraFocus' cam (-3,0)
+--    'cameraZoom' cam 2 2      -- Zoom in
+--    'cameraZoom' cam 2 1      -- Zoom out
+--    'cameraFocus' cam (3,0)
+--    'cameraZoom' cam 2 2      -- Zoom in
+--    'cameraZoom' cam 2 1      -- Zoom out
+-- @
 --
 --   <<docs/gifs/doc_cameraFocus.gif>>
 cameraFocus :: Object s Camera -> (Double, Double) -> Scene s ()

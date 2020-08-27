@@ -1,6 +1,10 @@
 # Revision history for reanimate
 
-## 0.4.2.0
+## 0.4.3.0
+
+
+
+## 0.4.2.0 -- 2020-08-27
 
 * Web-viewer: Use GHCi to reload code, reducing latency by ~100x.
 * Improve caching for blender and povray.
