@@ -1,10 +1,10 @@
 let
   haskellNixSrc = fetchTarball {
-    url = "https://github.com/input-output-hk/haskell.nix/tarball/af5998fe8d6b201d2a9be09993f1b9fae74e0082";
-    sha256 = "0z5w99wkkpg2disvwjnsyp45w0bhdkrhvnrpz5nbwhhp21c71mbn";
+    url = "https://github.com/input-output-hk/haskell.nix/tarball/878121ff8e5a8a51ffb46f57d4b3b6d8e32bfb2e";
+    sha256 = "0p18izavpwmhxz5x3crdcgk16rjz6ghm6cr136h52wa1nwahk1jk";
   };
-  haskellSrcMaster = builtins.fetchTarball https://github.com/input-output-hk/haskell.nix/archive/master.tar.gz;
-  haskellNix = import haskellSrcMaster {};
+  # haskellSrcMaster = builtins.fetchTarball https://github.com/input-output-hk/haskell.nix/archive/master.tar.gz;
+  haskellNix = import haskellNixSrc {};
 
   all-hies = fetchTarball {
     # Insert the desired all-hies commit here
