@@ -271,11 +271,11 @@ span.spaces    { background: white }
 <span class="lineno">  252 </span><span class="spaces">    </span><span class="nottickedoff">Left{}    -&gt; error &quot;bad image&quot;</span>
 <span class="lineno">  253 </span><span class="spaces">    </span><span class="nottickedoff">Right img -&gt; return img</span></span>
 <span class="lineno">  254 </span>
-<span class="lineno">  255 </span>-- | Use 'potrace' to trace edges in a raster image and convert them to SVG polygons.
+<span class="lineno">  255 </span>-- | Use \'potrace\' to trace edges in a raster image and convert them to SVG polygons.
 <span class="lineno">  256 </span>vectorize :: FilePath -&gt; SVG
 <span class="lineno">  257 </span><span class="decl"><span class="nottickedoff">vectorize = vectorize_ []</span></span>
 <span class="lineno">  258 </span>
-<span class="lineno">  259 </span>-- | Same as 'vectorize' but takes a list of arguments for 'potrace'.
+<span class="lineno">  259 </span>-- | Same as 'vectorize' but takes a list of arguments for \'potrace\'.
 <span class="lineno">  260 </span>vectorize_ :: [String] -&gt; FilePath -&gt; SVG
 <span class="lineno">  261 </span><span class="decl"><span class="nottickedoff">vectorize_ _ path | pNoExternals = mkText $ T.pack path</span>
 <span class="lineno">  262 </span><span class="spaces"></span><span class="nottickedoff">vectorize_ args path             = unsafePerformIO $ do</span>
