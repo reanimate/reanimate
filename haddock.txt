@@ -2,6 +2,8 @@
  100% ( 55 / 55) in 'Reanimate.Svg.Constructors'
  100% ( 41 / 41) in 'Reanimate.Animation'
  100% ( 40 / 40) in 'Reanimate.GeoProjection'
+ 100% ( 36 / 36) in 'Geom2D.CubicBezier.Linear'
+ 100% ( 29 / 29) in 'Reanimate.Math.Common'
  100% ( 25 / 25) in 'Reanimate.PolyShape'
  100% ( 22 / 22) in 'Reanimate.Effect'
  100% ( 18 / 18) in 'Reanimate.Svg'
@@ -34,6 +36,1446 @@
  100% (  3 /  3) in 'Reanimate.Math.Balloon'
  100% (  3 /  3) in 'Reanimate.Blender'
  100% (  2 /  2) in 'Reanimate.Builtin.CirclePlot'
-  97% ( 28 / 29) in 'Reanimate.Math.Common'
   89% (101 /113) in 'Reanimate.Scene'
-  89% ( 32 / 36) in 'Geom2D.CubicBezier.Linear'
+zlib                   > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/zlib-0.6.2.1-KKwzv9jEdPcA1wkhHMXBGy
+zlib                   >  100% ( 51 / 51) in 'Codec.Compression.Zlib.Internal'
+zlib                   >  100% ( 33 / 33) in 'Codec.Compression.Zlib'
+zlib                   >  100% ( 33 / 33) in 'Codec.Compression.GZip'
+zlib                   >   88% ( 28 / 32) in 'Codec.Compression.Zlib.Raw'
+yaml                   > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/yaml-0.11.4.0-H478ezdeTKsI7krVtFUUQ
+yaml                   >  100% ( 15 / 15) in 'Data.Yaml.Config'
+yaml                   >  100% (  2 /  2) in 'Data.Yaml.Aeson'
+yaml                   >   89% (  8 /  9) in 'Data.Yaml.Pretty'
+yaml                   >   88% ( 29 / 33) in 'Data.Yaml.Builder'
+yaml                   >   88% ( 14 / 16) in 'Data.Yaml.TH'
+yaml                   >   86% ( 49 / 57) in 'Data.Yaml'
+yaml                   >   75% (  3 /  4) in 'Data.Yaml.Include'
+yaml                   >   53% (  8 / 15) in 'Data.Yaml.Internal'
+yaml                   >    6% (  1 / 18) in 'Data.Yaml.Parser'
+xml                    > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/xml-1.3.14-IT4S7IkihY28IGBFVjHe4u
+xml                    >  100% ( 21 / 21) in 'Text.XML.Light.Proc'
+xml                    >  100% ( 10 / 10) in 'Text.XML.Light'
+xml                    >  100% (  3 /  3) in 'Text.XML.Light.Input'
+xml                    >   91% ( 10 / 11) in 'Text.XML.Light.Types'
+xml                    >   90% ( 45 / 50) in 'Text.XML.Light.Cursor'
+xml                    >   65% ( 13 / 20) in 'Text.XML.Light.Output'
+xml                    >   12% (  3 / 26) in 'Text.XML.Light.Lexer'
+xml                    >     Tab character found here, and in one further location.
+xml                    >     Tab character found here, and in one further location.
+websockets             > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/websockets-0.12.7.1-D8df4zsuP0xHPLLgvJ5neT
+websockets             >   78% ( 57 / 73) in 'Network.WebSockets'
+websockets             >   73% ( 24 / 33) in 'Network.WebSockets.Connection'
+websockets             >   46% (  6 / 13) in 'Network.WebSockets.Client'
+websockets             >   33% (  3 /  9) in 'Network.WebSockets.Stream'
+websockets             >   17% (  1 /  6) in 'Network.WebSockets.Extensions'
+void                   > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/void-0.7.3-FrIAx1z4E4J2j5pUfTWP2p
+void                   >  100% (  3 /  3) in 'Data.Void.Unsafe'
+vinyl                  > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/vinyl-0.13.0-22RZxwfYh3i37XmCDd1atp
+vinyl                  >  100% ( 20 / 20) in 'Data.Vinyl.SRec'
+vinyl                  >  100% ( 15 / 15) in 'Data.Vinyl.Recursive'
+vinyl                  >  100% ( 10 / 10) in 'Data.Vinyl.ARec'
+vinyl                  >  100% (  1 /  1) in 'Data.Vinyl.Tutorial.Overview'
+vinyl                  >  100% (  1 /  1) in 'Data.Vinyl.Syntax'
+vinyl                  >   97% ( 34 / 35) in 'Data.Vinyl.CoRec'
+vinyl                  >   97% ( 33 / 34) in 'Data.Vinyl.Derived'
+vinyl                  >   96% ( 23 / 24) in 'Data.Vinyl.Core'
+vinyl                  >   92% ( 11 / 12) in 'Data.Vinyl.FromTuple'
+vinyl                  >   91% ( 10 / 11) in 'Data.Vinyl.Notation'
+vinyl                  >   90% ( 18 / 20) in 'Data.Vinyl.Lens'
+vinyl                  >   88% ( 15 / 17) in 'Data.Vinyl.TypeLevel'
+vinyl                  >   88% ( 14 / 16) in 'Data.Vinyl.Curry'
+vinyl                  >   84% ( 26 / 31) in 'Data.Vinyl'
+vinyl                  >   77% ( 10 / 13) in 'Data.Vinyl.XRec'
+vinyl                  >   73% ( 24 / 33) in 'Data.Vinyl.Class.Method'
+vinyl                  >   69% ( 11 / 16) in 'Data.Vinyl.Functor'
+vector-space           > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/vector-space-0.16-5QmpzstMcnkFBalDUPANev
+vector-space           >  100% ( 12 / 12) in 'Data.VectorSpace'
+vector-space           >  100% (  8 /  8) in 'Data.Cross'
+vector-space           >  100% (  6 /  6) in 'Data.AdditiveGroup'
+vector-space           >  100% (  2 /  2) in 'Data.Derivative'
+vector-space           >   86% (  6 /  7) in 'Data.AffineSpace'
+vector-space           >   73% ( 16 / 22) in 'Data.Maclaurin'
+vector-space           >   50% (  2 /  4) in 'Data.Basis'
+vector-space           >   42% ( 10 / 24) in 'Data.LinearMap'
+vector-builder         > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/vector-builder-0.3.8-CkiYopVoi6QGNAwAVzWfLt
+vector-builder         >  100% (  2 /  2) in 'VectorBuilder.Vector'
+vector-builder         >  100% (  2 /  2) in 'VectorBuilder.MVector'
+vector-builder         >   71% (  5 /  7) in 'VectorBuilder.Builder'
+vector-builder         >   20% (  1 /  5) in 'VectorBuilder.Alternative'
+vector-builder         >   17% (  1 /  6) in 'VectorBuilder.MonadPlus'
+vector-algorithms      > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/vector-algorithms-0.8.0.3-34dgWTsfwwo6kXYadCSaiT
+vector-algorithms      >  100% ( 20 / 20) in 'Data.Vector.Algorithms.Heap'
+vector-algorithms      >  100% ( 17 / 17) in 'Data.Vector.Algorithms.Search'
+vector-algorithms      >  100% ( 14 / 14) in 'Data.Vector.Algorithms.Intro'
+vector-algorithms      >  100% (  8 /  8) in 'Data.Vector.Algorithms.Optimal'
+vector-algorithms      >  100% (  6 /  6) in 'Data.Vector.Algorithms.Insertion'
+vector-algorithms      >  100% (  5 /  5) in 'Data.Vector.Algorithms.AmericanFlag'
+vector-algorithms      >  100% (  4 /  4) in 'Data.Vector.Algorithms.Merge'
+vector-algorithms      >  100% (  3 /  3) in 'Data.Vector.Algorithms.Tim'
+vector-algorithms      >   75% (  3 /  4) in 'Data.Vector.Algorithms.Radix'
+vector                 > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/vector-0.12.1.2-AWRYcz9jfa25Avs2q9Jg9V
+vector                 >  100% (  9 /  9) in 'Data.Vector.Fusion.Bundle.Size'
+vector                 >  100% (  5 /  5) in 'Data.Vector.Fusion.Util'
+vector                 >  100% (  2 /  2) in 'Data.Vector.Generic.Mutable.Base'
+vector                 >   97% (202 /208) in 'Data.Vector.Storable'
+vector                 >   97% (193 /199) in 'Data.Vector.Primitive'
+vector                 >   96% (217 /226) in 'Data.Vector.Unboxed'
+vector                 >   94% (219 /232) in 'Data.Vector'
+vector                 >   92% (238 /260) in 'Data.Vector.Generic'
+vector                 >   82% (104 /127) in 'Data.Vector.Fusion.Stream.Monadic'
+vector                 >   82% ( 49 / 60) in 'Data.Vector.Storable.Mutable'
+vector                 >   80% ( 51 / 64) in 'Data.Vector.Unboxed.Mutable'
+vector                 >   79% (106 /135) in 'Data.Vector.Fusion.Bundle.Monadic'
+vector                 >   79% ( 88 /111) in 'Data.Vector.Fusion.Bundle'
+vector                 >   79% ( 42 / 53) in 'Data.Vector.Primitive.Mutable'
+vector                 >   79% ( 41 / 52) in 'Data.Vector.Mutable'
+vector                 >   65% ( 49 / 75) in 'Data.Vector.Generic.Mutable'
+vector                 >   25% (  1 /  4) in 'Data.Vector.Storable.Internal'
+vector                 >   11% (  1 /  9) in 'Data.Vector.Internal.Check'
+vector                 >    5% (  1 / 20) in 'Data.Vector.Generic.New'
+vector                 >     * in ‘GHC.Exts’
+validation             > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/validation-1.1-7BPSWKCslJYKdAi0hgRItg
+validation             >  100% ( 24 / 24) in 'Data.Validation'
+uuid-types             > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/uuid-types-1.0.3-Hdhjbfza64Z9j295dhULU2
+uuid-types             >  100% ( 16 / 16) in 'Data.UUID.Types'
+unordered-containers   > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/unordered-containers-0.2.10.0-KujsThAgCnwGXBG7PJnkNO
+unordered-containers   >  100% ( 56 / 56) in 'Data.HashMap.Lazy'
+unordered-containers   >  100% ( 55 / 55) in 'Data.HashMap.Strict'
+unordered-containers   >  100% ( 31 / 31) in 'Data.HashSet'
+unliftio-core          > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/unliftio-core-0.1.2.0-BfjjiCuGdFfJICKMeUQye4
+unliftio-core          >  100% (  8 /  8) in 'Control.Monad.IO.Unlift'
+unix-compat            > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/unix-compat-0.5.2-4xpiztFEGvZ2FOOfsaJdtF
+unix-compat            >  100% (  8 /  8) in 'System.PosixCompat'
+unix-compat            >  100% (  2 /  2) in 'System.PosixCompat.Types'
+unix-compat            >  100% (  2 /  2) in 'System.PosixCompat.Time'
+unix-compat            >  100% (  2 /  2) in 'System.PosixCompat.Temp'
+unix-compat            >   99% ( 77 / 78) in 'System.PosixCompat.Files'
+unix-compat            >   91% ( 21 / 23) in 'System.PosixCompat.User'
+unix-compat            >   75% (  6 /  8) in 'System.PosixCompat.Unistd'
+unix-compat            >   71% (  5 /  7) in 'System.PosixCompat.Extensions'
+type-equality          > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/type-equality-1-8qNA0T3539cEXInCSNFcJz
+type-equality          >  100% (  2 /  2) in 'Data.Type.Equality.Hetero'
+transformers-compat    > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/transformers-compat-0.6.5-4FrvPCFBsgnJ9PLf29P7hZ
+transformers-compat    >  100% ( 32 / 32) in 'Data.Functor.Classes.Generic.Internal'
+transformers-compat    >  100% ( 19 / 19) in 'Data.Functor.Classes.Generic'
+transformers-compat    >  100% (  1 /  1) in 'Control.Monad.Trans.Instances'
+transformers-compat    >     Defaulting to the one defined in ‘GHC.Base’
+transformers-compat    >     * in ‘Text.Read.Lex’
+transformers-compat    >     * in ‘GHC.Base’
+transformers-base      > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/transformers-base-0.4.5.2-IoBpU3sIpRWA7c6Y1j8JQ7
+transformers-base      >   33% (  1 /  3) in 'Control.Monad.Base'
+time-compat            > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/time-compat-1.9.3-CbmRqTfoveBHLasOnzaYEd
+time-compat            >   95% ( 21 / 22) in 'Data.Time.Clock.Compat'
+time-compat            >   95% ( 18 / 19) in 'Data.Time.Calendar.Julian.Compat'
+time-compat            >   94% ( 44 / 47) in 'Data.Time.Format.ISO8601.Compat'
+time-compat            >   88% (  7 /  8) in 'Data.Time.Clock.System.Compat'
+time-compat            >   83% (  5 /  6) in 'Data.Time.Calendar.Easter.Compat'
+time-compat            >   82% ( 36 / 44) in 'Data.Time.LocalTime.Compat'
+time-compat            >   80% (  4 /  5) in 'Data.Time.Compat'
+time-compat            >   80% (  4 /  5) in 'Data.Time.Calendar.WeekDate.Compat'
+time-compat            >   80% (  4 /  5) in 'Data.Time.Calendar.MonthDay.Compat'
+time-compat            >   75% (  9 / 12) in 'Data.Time.Calendar.OrdinalDate.Compat'
+time-compat            >   68% ( 13 / 19) in 'Data.Time.Format.Compat'
+time-compat            >   67% ( 20 / 30) in 'Data.Time.Calendar.Compat'
+time-compat            >   64% (  9 / 14) in 'Data.Time.Clock.TAI.Compat'
+time-compat            >   50% (  4 /  8) in 'Data.Time.Clock.POSIX.Compat'
+these                  > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/these-1.1-G7s3LV3Kehq5a3cJ1npUBs
+these                  >   79% ( 30 / 38) in 'Data.These.Combinators'
+these                  >   76% ( 13 / 17) in 'Data.These'
+these                  >    0% (  0 /  2) in 'Data.Functor.These'
+th-abstraction         > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/th-abstraction-0.3.2.0-D5zRQZUNFcq6kU1WHIrSvs
+th-abstraction         >   92% ( 49 / 53) in 'Language.Haskell.TH.Datatype'
+th-abstraction         >     * in ‘Language.Haskell.TH.Syntax’
+tf-random              > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/tf-random-0.5-9HF06zWGTuQIFpJn5Dfvt0
+tf-random              >  100% (  7 /  7) in 'System.Random.TF'
+tf-random              >  100% (  4 /  4) in 'System.Random.TF.Gen'
+tf-random              >   83% (  5 /  6) in 'System.Random.TF.Init'
+tf-random              >   33% (  1 /  3) in 'System.Random.TF.Instances'
+text-short             > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/text-short-0.1.3-ErAry1sGR1l2XgPBXmq7at
+text-short             >  100% ( 76 / 76) in 'Data.Text.Short'
+text-short             >  100% (  9 /  9) in 'Data.Text.Short.Partial'
+text-short             >  100% (  3 /  3) in 'Data.Text.Short.Unsafe'
+terminal-size          > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/terminal-size-0.3.2.1-Lp3EPz6AmPvE7uvVvixMVf
+terminal-size          >  100% (  5 /  5) in 'System.Console.Terminal.Size'
+temporary              > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/temporary-1.3-8J4CbYC9Bae4gdkn7lOATi
+temporary              >  100% ( 16 / 16) in 'System.IO.Temp'
+tagged                 > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/tagged-0.8.6-LfhHZ57rMjK9JkdnSRh9cF
+tagged                 >   93% ( 14 / 15) in 'Data.Tagged'
+tagged                 >   67% (  2 /  3) in 'Data.Proxy.TH'
+streaming-commons      > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/streaming-commons-0.2.1.2-GkkfLkGMBa74C7ATSMJBvC
+streaming-commons      >  100% ( 24 / 24) in 'Data.Streaming.Process'
+streaming-commons      >   96% ( 23 / 24) in 'Data.Streaming.Zlib'
+streaming-commons      >   95% ( 19 / 20) in 'Data.Streaming.ByteString.Builder.Buffer'
+streaming-commons      >   90% (  9 / 10) in 'Data.Streaming.Text'
+streaming-commons      >   89% (  8 /  9) in 'Data.Streaming.Network.Internal'
+streaming-commons      >   82% ( 23 / 28) in 'Data.Streaming.ByteString.Builder'
+streaming-commons      >   75% (  3 /  4) in 'Data.Streaming.Process.Internal'
+streaming-commons      >   68% ( 52 / 76) in 'Data.Streaming.Network'
+streaming-commons      >   43% (  3 /  7) in 'Data.Streaming.Filesystem'
+streaming-commons      >   20% (  1 /  5) in 'Data.Streaming.FileRead'
+streaming-commons      >    0% (  0 / 21) in 'Data.Streaming.Zlib.Lowlevel'
+splitmix               > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/splitmix-0.0.5-inm33kruRIL3MoAEVOOwx
+splitmix               >  100% ( 22 / 22) in 'System.Random.SplitMix32'
+splitmix               >  100% ( 22 / 22) in 'System.Random.SplitMix'
+split                  > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/split-0.2.3.4-KyPtAwfJzED2zEIheQpqQL
+split                  >   91% ( 62 / 68) in 'Data.List.Split.Internals'
+split                  >   90% ( 45 / 50) in 'Data.List.Split'
+shelly                 > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/shelly-1.9.0-CQaQ1yqllUn2f0maO8pWYA
+shelly                 >   96% (124 /129) in 'Shelly.Pipe'
+shelly                 >   90% (147 /163) in 'Shelly'
+shelly                 >   50% (  1 /  2) in 'Shelly.Unix'
+shelly                 >   32% ( 45 /142) in 'Shelly.Lifted'
+shelly                 >       (and originally defined in ‘Data.Traversable’)
+shelly                 >       (and originally defined in ‘Data.Traversable’)
+setenv                 > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/setenv-0.1.1.3-AApHapTZwGVKX9z2HargZZ
+setenv                 >   67% (  2 /  3) in 'System.SetEnv'
+semigroups             > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/semigroups-0.19.1-KswQSjRjA2JDrzoYmnhZUy
+semigroups             >   78% (  7 /  9) in 'Data.Semigroup.Generic'
+semigroupoids          > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/semigroupoids-5.3.4-1XmsNossymR5VRxGW9rvXN
+semigroupoids          >  100% ( 12 / 12) in 'Data.Functor.Apply'
+semigroupoids          >  100% (  4 /  4) in 'Data.Functor.Alt'
+semigroupoids          >  100% (  3 /  3) in 'Data.Functor.Plus'
+semigroupoids          >  100% (  2 /  2) in 'Data.Groupoid'
+semigroupoids          >  100% (  2 /  2) in 'Data.Functor.Bind.Trans'
+semigroupoids          >  100% (  1 /  1) in 'Data.Traversable.Instances'
+semigroupoids          >   75% (  9 / 12) in 'Data.Functor.Bind.Class'
+semigroupoids          >   75% (  3 /  4) in 'Data.Functor.Extend'
+semigroupoids          >   74% ( 14 / 19) in 'Data.Functor.Bind'
+semigroupoids          >   62% (  5 /  8) in 'Data.Bifunctor.Apply'
+semigroupoids          >   55% (  6 / 11) in 'Data.Semigroup.Foldable'
+semigroupoids          >   50% (  2 /  4) in 'Data.Semigroupoid'
+semigroupoids          >   50% (  1 /  2) in 'Data.Semigroupoid.Static'
+semigroupoids          >   50% (  1 /  2) in 'Data.Semigroupoid.Ob'
+semigroupoids          >   50% (  1 /  2) in 'Data.Semigroupoid.Dual'
+semigroupoids          >   50% (  1 /  2) in 'Data.Isomorphism'
+semigroupoids          >   33% (  2 /  6) in 'Data.Semigroup.Bifoldable'
+semigroupoids          >   33% (  1 /  3) in 'Data.Semigroup.Traversable.Class'
+semigroupoids          >   33% (  1 /  3) in 'Data.Semigroup.Traversable'
+semigroupoids          >   33% (  1 /  3) in 'Data.Semigroup.Foldable.Class'
+semigroupoids          >   33% (  1 /  3) in 'Data.Semigroup.Bitraversable'
+scientific             > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/scientific-0.3.6.2-88AAZ2094ShCvz9CIiUOKQ
+scientific             >  100% ( 31 / 31) in 'Data.Scientific'
+scientific             >   75% (  3 /  4) in 'Data.Text.Lazy.Builder.Scientific'
+scientific             >   75% (  3 /  4) in 'Data.ByteString.Builder.Scientific'
+resourcet              > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/resourcet-1.2.4.1-HiSCNmujbOlKpM0LZoFWfl
+resourcet              >  100% ( 40 / 40) in 'Control.Monad.Trans.Resource'
+resourcet              >  100% ( 12 / 12) in 'UnliftIO.Resource'
+resourcet              >  100% ( 10 / 10) in 'Data.Acquire'
+resourcet              >   71% (  5 /  7) in 'Data.Acquire.Internal'
+resourcet              >   64% (  9 / 14) in 'Control.Monad.Trans.Resource.Internal'
+reflection             > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/reflection-2.1.6-DbzilI8nDF2Hcx680Ibefu
+reflection             > GHC error in desugarer lookup in Ghci1:
+reflection             > GHC error in desugarer lookup in Ghci1:
+reflection             > GHC error in desugarer lookup in Ghci1:
+reflection             > GHC error in desugarer lookup in Ghci1:
+reflection             > GHC error in desugarer lookup in Ghci1:
+reflection             > GHC error in desugarer lookup in Ghci1:
+reflection             > GHC error in desugarer lookup in Ghci1:
+reflection             > GHC error in desugarer lookup in Ghci1:
+reflection             >   77% ( 23 / 30) in 'Data.Reflection'
+reflection             >     Probable cause: bug in .hi-boot file, or inconsistent .hi file
+reflection             >     Probable cause: bug in .hi-boot file, or inconsistent .hi file
+reflection             >     Probable cause: bug in .hi-boot file, or inconsistent .hi file
+reflection             >     Probable cause: bug in .hi-boot file, or inconsistent .hi file
+reflection             >     Probable cause: bug in .hi-boot file, or inconsistent .hi file
+reflection             >     Probable cause: bug in .hi-boot file, or inconsistent .hi file
+reflection             >     Probable cause: bug in .hi-boot file, or inconsistent .hi file
+reanimate-svg          > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/reanimate-svg-0.10.0.0-v80C82Fhrk14KdRLewBHS
+reanimate-svg          >  100% ( 16 / 16) in 'Graphics.SvgTree.CssTypes'
+reanimate-svg          >   85% ( 11 / 13) in 'Graphics.SvgTree'
+reanimate-svg          >   84% (135 /161) in 'Graphics.SvgTree.Types'
+reanimate-svg          >    0% (  0 / 12) in 'Graphics.SvgTree.PathParser'
+reanimate-svg          >    0% (  0 /  3) in 'Graphics.SvgTree.Printer'
+reanimate-svg          >    0% (  0 /  3) in 'Graphics.SvgTree.Memo'
+reanimate-svg          >    0% (  0 /  2) in 'Graphics.SvgTree.NamedColors'
+random-shuffle         > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/random-shuffle-0.0.4-96xg496GVCX8GMWQB7EGdf
+random-shuffle         > 59 |           in b : (shuffleTree rest rs)
+random-shuffle         > 59 |           in b : (shuffleTree rest rs)
+random-shuffle         >  100% (  4 /  4) in 'System.Random.Shuffle'
+random-shuffle         >     Tab character found here, and in 10 further locations.
+random-shuffle         >     Tab character found here, and in 10 further locations.
+random                 > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/random-1.1-CUqV1zxrwrE4K5XCdTZSYy
+random                 >  100% ( 16 / 16) in 'System.Random'
+random                 >     Tab character found here, and in 74 further locations.
+random                 >     Tab character found here, and in 74 further locations.
+quickcheck-io          > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/quickcheck-io-0.2.0-Nkq1HnyA3Q6KM7hHwP3NX
+quickcheck-io          >    0% (  0 /  2) in 'Test.QuickCheck.IO'
+quickcheck-instances   > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/quickcheck-instances-0.3.23-FJQnRv3oWmJKSyq8HQwlAx
+quickcheck-instances   >  100% (  1 /  1) in 'Test.QuickCheck.Instances'
+quickcheck-instances   >    0% (  0 /  1) in 'Test.QuickCheck.Instances.Void'
+quickcheck-instances   >    0% (  0 /  1) in 'Test.QuickCheck.Instances.Vector'
+quickcheck-instances   >    0% (  0 /  1) in 'Test.QuickCheck.Instances.UnorderedContainers'
+quickcheck-instances   >    0% (  0 /  1) in 'Test.QuickCheck.Instances.UUID'
+quickcheck-instances   >    0% (  0 /  1) in 'Test.QuickCheck.Instances.Transformer'
+quickcheck-instances   >    0% (  0 /  1) in 'Test.QuickCheck.Instances.Time'
+quickcheck-instances   >    0% (  0 /  1) in 'Test.QuickCheck.Instances.These'
+quickcheck-instances   >    0% (  0 /  1) in 'Test.QuickCheck.Instances.Text'
+quickcheck-instances   >    0% (  0 /  1) in 'Test.QuickCheck.Instances.Tagged'
+quickcheck-instances   >    0% (  0 /  1) in 'Test.QuickCheck.Instances.Semigroup'
+quickcheck-instances   >    0% (  0 /  1) in 'Test.QuickCheck.Instances.Scientific'
+quickcheck-instances   >    0% (  0 /  1) in 'Test.QuickCheck.Instances.OldTime'
+quickcheck-instances   >    0% (  0 /  1) in 'Test.QuickCheck.Instances.Natural'
+quickcheck-instances   >    0% (  0 /  1) in 'Test.QuickCheck.Instances.Hashable'
+quickcheck-instances   >    0% (  0 /  1) in 'Test.QuickCheck.Instances.Containers'
+quickcheck-instances   >    0% (  0 /  1) in 'Test.QuickCheck.Instances.CaseInsensitive'
+quickcheck-instances   >    0% (  0 /  1) in 'Test.QuickCheck.Instances.ByteString'
+quickcheck-instances   >    0% (  0 /  1) in 'Test.QuickCheck.Instances.Array'
+profunctors            > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/profunctors-5.5.2-JPjsud6MFjs1U4Bznb0cTA
+profunctors            >  100% (  3 /  3) in 'Data.Profunctor.Unsafe'
+profunctors            >  100% (  3 /  3) in 'Data.Profunctor.Sieve'
+profunctors            >  100% (  2 /  2) in 'Data.Profunctor.Adjunction'
+profunctors            >   92% ( 12 / 13) in 'Data.Profunctor.Choice'
+profunctors            >   89% ( 17 / 19) in 'Data.Profunctor.Composition'
+profunctors            >   88% ( 15 / 17) in 'Data.Profunctor.Strong'
+profunctors            >   86% (  6 /  7) in 'Data.Profunctor.Yoneda'
+profunctors            >   75% (  3 /  4) in 'Data.Profunctor.Monad'
+profunctors            >   71% (  5 /  7) in 'Data.Profunctor.Types'
+profunctors            >   71% (  5 /  7) in 'Data.Profunctor.Closed'
+profunctors            >   70% ( 14 / 20) in 'Data.Profunctor'
+profunctors            >   67% ( 16 / 24) in 'Data.Profunctor.Rep'
+profunctors            >   57% (  8 / 14) in 'Data.Profunctor.Traversing'
+profunctors            >   50% (  4 /  8) in 'Data.Profunctor.Ran'
+profunctors            >   44% (  4 /  9) in 'Data.Profunctor.Mapping'
+profunctors            >   33% (  1 /  3) in 'Data.Profunctor.Cayley'
+primitive              > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/primitive-0.7.0.1-CN4ea3Jrhra6yENuqrDg51
+primitive              >  100% ( 16 / 16) in 'Data.Primitive.Ptr'
+primitive              >  100% ( 10 / 10) in 'Data.Primitive'
+primitive              >  100% (  9 /  9) in 'Data.Primitive.MutVar'
+primitive              >  100% (  8 /  8) in 'Data.Primitive.Types'
+primitive              >   95% ( 58 / 61) in 'Data.Primitive.PrimArray'
+primitive              >   91% ( 10 / 11) in 'Data.Primitive.MVar'
+primitive              >   90% ( 36 / 40) in 'Data.Primitive.ByteArray'
+primitive              >   88% ( 22 / 25) in 'Data.Primitive.Array'
+primitive              >   79% ( 19 / 24) in 'Data.Primitive.SmallArray'
+primitive              >   71% ( 17 / 24) in 'Control.Monad.Primitive'
+primitive              >    3% (  1 / 35) in 'Data.Primitive.MachDeps'
+parser-combinators     > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/parser-combinators-1.2.1-IRMw0PVyjClCzP4SjVbI21
+parser-combinators     >  100% ( 34 / 34) in 'Control.Applicative.Combinators'
+parser-combinators     >  100% ( 32 / 32) in 'Control.Monad.Combinators'
+parser-combinators     >  100% (  9 /  9) in 'Control.Applicative.Permutations'
+parser-combinators     >  100% (  6 /  6) in 'Control.Monad.Combinators.NonEmpty'
+parser-combinators     >  100% (  6 /  6) in 'Control.Applicative.Combinators.NonEmpty'
+parser-combinators     >  100% (  3 /  3) in 'Control.Monad.Combinators.Expr'
+parallel               > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/parallel-3.2.2.0-JZ47W1IFrQUHBkshKV2j85
+parallel               >  100% (  3 /  3) in 'Control.Parallel'
+parallel               >   82% ( 72 / 88) in 'Control.Parallel.Strategies'
+parallel               >   72% ( 21 / 29) in 'Control.Seq'
+optparse-applicative   > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/optparse-applicative-0.15.1.0-8lufb1qPLmfiWdRsJZ50S
+optparse-applicative   >  100% (  6 /  6) in 'Options.Applicative.Arrows'
+optparse-applicative   >   96% (113 /118) in 'Options.Applicative.Help.Pretty'
+optparse-applicative   >   92% ( 11 / 12) in 'Options.Applicative.Help'
+optparse-applicative   >   86% (102 /118) in 'Options.Applicative'
+optparse-applicative   >   86% ( 70 / 81) in 'Options.Applicative.Builder'
+optparse-applicative   >   86% ( 12 / 14) in 'Options.Applicative.Help.Chunk'
+optparse-applicative   >   83% (  5 /  6) in 'Options.Applicative.Builder.Completer'
+optparse-applicative   >   74% ( 14 / 19) in 'Options.Applicative.Extra'
+optparse-applicative   >   72% ( 13 / 18) in 'Options.Applicative.Common'
+optparse-applicative   >   50% (  1 /  2) in 'Options.Applicative.Help.Levenshtein'
+optparse-applicative   >   50% (  1 /  2) in 'Options.Applicative.BashCompletion'
+optparse-applicative   >   43% (  6 / 14) in 'Options.Applicative.Help.Core'
+optparse-applicative   >   39% ( 17 / 44) in 'Options.Applicative.Types'
+optparse-applicative   >   33% (  1 /  3) in 'Options.Applicative.Help.Types'
+optparse-applicative   >   20% (  4 / 20) in 'Options.Applicative.Builder.Internal'
+optparse-applicative   >    0% (  0 / 20) in 'Options.Applicative.Internal'
+optparse-applicative   >     * in ‘Data.Semigroup’
+optparse-applicative   >     * in ‘Data.Semigroup’
+open-browser           > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/open-browser-0.2.1.0-A3EUWgxwoew3moIr9QFjHi
+open-browser           > Installing executable example in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/bin
+open-browser           >   50% (  1 /  2) in 'Web.Browser'
+old-time               > checking whether struct tm is in sys/time.h or time.h... time.h
+old-time               > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/old-time-1.1.0.3-75MCuoGSdcPG1Cpmm1miBJ
+old-time               >   95% ( 20 / 21) in 'System.Time'
+old-locale             > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/old-locale-1.0.0.7-KOGgqu8HfWChZyQBUEp1c
+old-locale             >   60% (  3 /  5) in 'System.Locale'
+newtype-generics       > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/newtype-generics-0.5.4-6nS0vv8neOdKYrlxOvfaG6
+newtype-generics       >  100% ( 11 / 11) in 'Control.Newtype.Generics'
+newtype-generics       >   50% (  1 /  2) in 'Control.Newtype'
+network                > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/network-3.1.1.1-H5yw1GXuMJB7JJ4oD68Cdy
+network                >  100% ( 17 / 17) in 'Network.Socket.Internal'
+network                >  100% ( 16 / 16) in 'Network.Socket.Address'
+network                >  100% ( 13 / 13) in 'Network.Socket.ByteString'
+network                >   98% ( 95 / 97) in 'Network.Socket'
+network                >   71% (  5 /  7) in 'Network.Socket.ByteString.Lazy'
+neat-interpolation     > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/neat-interpolation-0.3.2.6-C0Hcx3a9UyJDfdjUQ6zueG
+neat-interpolation     >  100% (  2 /  2) in 'NeatInterpolation'
+mono-traversable       > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/mono-traversable-1.0.15.1-KeyuOuWpLKUJmWKB6WZlhB
+mono-traversable       >  100% ( 32 / 32) in 'Data.MonoTraversable.Unprefixed'
+mono-traversable       >  100% ( 30 / 30) in 'Data.NonNull'
+mono-traversable       >  100% (  8 /  8) in 'Data.Containers'
+mono-traversable       >   94% ( 34 / 36) in 'Data.MonoTraversable'
+mono-traversable       >   80% ( 40 / 50) in 'Data.Sequences'
+monad-control          > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/monad-control-1.0.2.3-JO74YKryaba7Fk6tMO2Ac8
+monad-control          >  100% ( 34 / 34) in 'Control.Monad.Trans.Control'
+microlens-th           > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/microlens-th-0.4.3.5-DBlkubhrRM45BKeAfZSG2O
+microlens-th           >  100% ( 29 / 29) in 'Lens.Micro.TH'
+microlens-th           >   67% ( 12 / 18) in 'Lens.Micro.TH.Internal'
+microlens-mtl          > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/microlens-mtl-0.2.0.1-JS2xcS8Sa3eBzmmc9knuGV
+microlens-mtl          >   89% ( 17 / 19) in 'Lens.Micro.Mtl.Internal'
+microlens-mtl          >   87% ( 26 / 30) in 'Lens.Micro.Mtl'
+microlens              > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/microlens-0.4.11.2-IwTHxwi8Eg8Dsmorq23zza
+microlens              >  100% ( 12 / 12) in 'Lens.Micro.Type'
+microlens              >  100% (  3 /  3) in 'Lens.Micro.Extras'
+microlens              >   95% ( 81 / 85) in 'Lens.Micro'
+microlens              >   23% (  6 / 26) in 'Lens.Micro.Internal'
+megaparsec             > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/megaparsec-8.0.0-3X2yLQVMnQV9YEPuTbc7UC
+megaparsec             >  100% ( 51 / 51) in 'Text.Megaparsec'
+megaparsec             >  100% ( 35 / 35) in 'Text.Megaparsec.Char'
+megaparsec             >  100% ( 27 / 27) in 'Text.Megaparsec.Char.Lexer'
+megaparsec             >  100% ( 27 / 27) in 'Text.Megaparsec.Byte'
+megaparsec             >  100% ( 17 / 17) in 'Text.Megaparsec.Error.Builder'
+megaparsec             >  100% ( 17 / 17) in 'Text.Megaparsec.Byte.Lexer'
+megaparsec             >  100% ( 15 / 15) in 'Text.Megaparsec.Error'
+megaparsec             >  100% ( 14 / 14) in 'Text.Megaparsec.Internal'
+megaparsec             >  100% ( 12 / 12) in 'Text.Megaparsec.Pos'
+megaparsec             >  100% (  2 /  2) in 'Text.Megaparsec.Stream'
+megaparsec             >  100% (  2 /  2) in 'Text.Megaparsec.Debug'
+matrix                 > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/matrix-0.3.6.1-9KlVSpK4OVaGBPMTnAmynz
+matrix                 >  100% ( 84 / 84) in 'Data.Matrix'
+matrices               > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/matrices-0.5.0-H6acr63qHOsKsx01kAiJyF
+matrices               >   72% ( 21 / 29) in 'Data.Matrix.Sparse.Generic'
+matrices               >   65% ( 13 / 20) in 'Data.Matrix.Class'
+matrices               >   45% ( 38 / 85) in 'Data.Matrix.Generic'
+matrices               >   40% (  4 / 10) in 'Data.Matrix.Symmetric.Generic.Mutable'
+matrices               >   36% (  4 / 11) in 'Data.Matrix.Generic.Mutable'
+matrices               >   35% (  7 / 20) in 'Data.Matrix.Symmetric.Generic'
+matrices               >   32% ( 26 / 82) in 'Data.Matrix'
+matrices               >   32% ( 25 / 79) in 'Data.Matrix.Unboxed'
+matrices               >   32% ( 25 / 79) in 'Data.Matrix.Storable'
+matrices               >   25% (  1 /  4) in 'Data.Matrix.Class.Mutable'
+matrices               >   18% (  2 / 11) in 'Data.Matrix.Unboxed.Mutable'
+matrices               >   18% (  2 / 11) in 'Data.Matrix.Storable.Mutable'
+matrices               >   18% (  2 / 11) in 'Data.Matrix.Mutable'
+matrices               >           -- Defined in ‘Data.Vector.Unboxed.Base’
+matrices               >           -- Defined in ‘Data.Vector.Unboxed.Base’
+matrices               >           -- Defined in ‘Data.Vector.Unboxed.Base’
+matrices               >           -- Defined in ‘Data.Vector.Unboxed.Base’
+matrices               >           -- Defined in ‘Data.Vector.Unboxed.Base’
+matrices               >           -- Defined in ‘Data.Vector.Unboxed.Base’
+matrices               >           -- Defined in ‘Data.Vector.Unboxed.Base’
+matrices               >           -- Defined in ‘Data.Vector.Unboxed.Base’
+matrices               >           -- Defined in ‘Data.Vector.Unboxed.Base’
+matrices               >           -- Defined in ‘Data.Vector.Unboxed.Base’
+matrices               >           -- Defined in ‘Data.Vector.Unboxed.Base’
+matrices               >           -- Defined in ‘Data.Vector.Unboxed.Base’
+matrices               >           -- Defined in ‘Data.Vector.Unboxed.Base’
+matrices               >           -- Defined in ‘Data.Vector.Unboxed.Base’
+matrices               >           -- Defined in ‘Data.Vector.Unboxed.Base’
+matrices               >           -- Defined in ‘Data.Vector.Unboxed.Base’
+matrices               >           -- Defined in ‘Data.Vector.Unboxed.Base’
+matrices               >           -- Defined in ‘Data.Vector.Unboxed.Base’
+matrices               >           -- Defined in ‘Data.Vector.Unboxed.Base’
+matrices               >           -- Defined in ‘Data.Vector.Unboxed.Base’
+loop                   > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/loop-0.3.0-K84hnbSrVaf8Uz8AvFcKr6
+loop                   >  100% (  7 /  7) in 'Control.Loop'
+loop                   >  100% (  3 /  3) in 'Control.Loop.Internal'
+linear                 > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/linear-1.21-BxZUXBw2bReKPjZlbgFtgV
+linear                 >  100% ( 17 / 17) in 'Linear'
+linear                 >  100% ( 13 / 13) in 'Linear.Vector'
+linear                 >  100% (  4 /  4) in 'Linear.Metric'
+linear                 >  100% (  3 /  3) in 'Linear.Conjugate'
+linear                 >  100% (  3 /  3) in 'Linear.Binary'
+linear                 >  100% (  2 /  2) in 'Linear.V0'
+linear                 >  100% (  2 /  2) in 'Linear.Plucker.Coincides'
+linear                 >  100% (  2 /  2) in 'Linear.Epsilon'
+linear                 >  100% (  1 /  1) in 'Linear.Instances'
+linear                 >   98% ( 55 / 56) in 'Linear.Matrix'
+linear                 >   83% ( 30 / 36) in 'Linear.Plucker'
+linear                 >   80% (  8 / 10) in 'Linear.Projection'
+linear                 >   79% ( 15 / 19) in 'Linear.Quaternion'
+linear                 >   75% (  3 /  4) in 'Linear.V1'
+linear                 >   67% (  2 /  3) in 'Linear.Trace'
+linear                 >   67% (  2 /  3) in 'Linear.Covector'
+linear                 >   64% (  7 / 11) in 'Linear.V2'
+linear                 >   58% (  7 / 12) in 'Linear.Affine'
+linear                 >   43% (  3 /  7) in 'Linear.Algebra'
+linear                 >   40% (  8 / 20) in 'Linear.V3'
+linear                 >   15% (  2 / 13) in 'Linear.V'
+linear                 >   14% ( 10 / 70) in 'Linear.V4'
+linear                 >     Defaulting to the one defined in ‘Data.IntMap.Internal’
+linear                 >     Defaulting to the one defined in ‘Data.IntMap.Internal’
+linear                 >     Defaulting to the one defined in ‘Control.Lens.Type’
+linear                 >     * in ‘Data.Map.Internal’
+linear                 >     * in ‘Data.Map.Internal’
+linear                 >     * in ‘Data.IntMap.Internal’
+linear                 >     * in ‘Data.IntMap.Internal’
+linear                 >     * in ‘Data.HashMap.Base’
+linear                 >     * in ‘Data.HashMap.Base’
+linear                 >     * in ‘Control.Lens.Type’
+linear                 >     * in ‘Control.Lens.Reified’
+lifted-base            > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/lifted-base-0.2.3.12-IaBrCQDRzJh4VBxpsH81yw
+lifted-base            >  100% ( 64 / 64) in 'Control.Exception.Lifted'
+lifted-base            >  100% ( 36 / 36) in 'Control.Concurrent.Lifted'
+lifted-base            >  100% ( 19 / 19) in 'Control.Concurrent.MVar.Lifted'
+lifted-base            >  100% ( 11 / 11) in 'Data.IORef.Lifted'
+lifted-base            >  100% (  8 /  8) in 'Control.Concurrent.Chan.Lifted'
+lifted-base            >  100% (  5 /  5) in 'Control.Concurrent.QSemN.Lifted'
+lifted-base            >  100% (  5 /  5) in 'Control.Concurrent.QSem.Lifted'
+lifted-base            >  100% (  2 /  2) in 'System.Timeout.Lifted'
+lifted-base            >  100% (  2 /  2) in 'Foreign.Marshal.Utils.Lifted'
+lifted-async           > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/lifted-async-0.10.0.6-2Rp3QWWYx4n40i76rixiiq
+lifted-async           >   98% ( 64 / 65) in 'Control.Concurrent.Async.Lifted.Safe'
+lifted-async           >   98% ( 62 / 63) in 'Control.Concurrent.Async.Lifted'
+libyaml                > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/libyaml-0.1.2-GSSGPdT4FXS8UrdbKxVkZQ
+libyaml                >   77% ( 23 / 30) in 'Text.Libyaml'
+lens                   > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/lens-4.18.1-44tD1ZSGzOC7tE3w8F9M7F
+lens                   >  100% (131 /131) in 'Control.Lens.Operators'
+lens                   >  100% (115 /115) in 'Control.Lens.Lens'
+lens                   >  100% ( 88 / 88) in 'Control.Lens.Setter'
+lens                   >  100% ( 41 / 41) in 'Control.Lens.Tuple'
+lens                   >  100% ( 33 / 33) in 'Control.Lens.Getter'
+lens                   >  100% ( 29 / 29) in 'Control.Lens.Prism'
+lens                   >  100% ( 23 / 23) in 'Control.Lens'
+lens                   >  100% ( 19 / 19) in 'System.FilePath.Lens'
+lens                   >  100% ( 17 / 17) in 'Data.Bits.Lens'
+lens                   >  100% ( 16 / 16) in 'Control.Monad.Error.Lens'
+lens                   >  100% ( 15 / 15) in 'Data.Vector.Generic.Lens'
+lens                   >  100% ( 15 / 15) in 'Control.Lens.Review'
+lens                   >  100% ( 15 / 15) in 'Control.Lens.Internal.Zoom'
+lens                   >  100% ( 15 / 15) in 'Control.Lens.Internal.Indexed'
+lens                   >  100% ( 13 / 13) in 'Data.Data.Lens'
+lens                   >  100% ( 13 / 13) in 'Control.Lens.Internal'
+lens                   >  100% ( 12 / 12) in 'Control.Lens.Internal.Magma'
+lens                   >  100% ( 11 / 11) in 'Control.Lens.Internal.Context'
+lens                   >  100% (  9 /  9) in 'Data.Vector.Lens'
+lens                   >  100% (  9 /  9) in 'Control.Lens.Internal.ByteString'
+lens                   >  100% (  7 /  7) in 'Numeric.Natural.Lens'
+lens                   >  100% (  7 /  7) in 'Data.Sequence.Lens'
+lens                   >  100% (  6 /  6) in 'Control.Lens.Internal.Level'
+lens                   >  100% (  6 /  6) in 'Control.Lens.Internal.Deque'
+lens                   >  100% (  5 /  5) in 'Control.Parallel.Strategies.Lens'
+lens                   >  100% (  5 /  5) in 'Control.Lens.Zoom'
+lens                   >  100% (  5 /  5) in 'Control.Lens.Internal.Review'
+lens                   >  100% (  4 /  4) in 'Data.IntSet.Lens'
+lens                   >  100% (  4 /  4) in 'Control.Lens.Unsound'
+lens                   >  100% (  4 /  4) in 'Control.Lens.Level'
+lens                   >  100% (  4 /  4) in 'Control.Lens.Internal.PrismTH'
+lens                   >  100% (  4 /  4) in 'Control.Lens.Internal.CTypes'
+lens                   >  100% (  3 /  3) in 'Data.Typeable.Lens'
+lens                   >  100% (  3 /  3) in 'Data.Tree.Lens'
+lens                   >  100% (  3 /  3) in 'Data.Set.Lens'
+lens                   >  100% (  3 /  3) in 'Data.HashSet.Lens'
+lens                   >  100% (  3 /  3) in 'Data.Array.Lens'
+lens                   >  100% (  3 /  3) in 'Control.Lens.Internal.Setter'
+lens                   >  100% (  3 /  3) in 'Control.Lens.Internal.Prism'
+lens                   >  100% (  3 /  3) in 'Control.Lens.Internal.Iso'
+lens                   >  100% (  3 /  3) in 'Control.Lens.Internal.Exception'
+lens                   >  100% (  3 /  3) in 'Control.Lens.Extras'
+lens                   >  100% (  3 /  3) in 'Control.Lens.Each'
+lens                   >  100% (  2 /  2) in 'Data.Map.Lens'
+lens                   >  100% (  2 /  2) in 'Control.Seq.Lens'
+lens                   >  100% (  2 /  2) in 'Control.Lens.Internal.List'
+lens                   >  100% (  1 /  1) in 'Control.Lens.Internal.Instances'
+lens                   >   99% (132 /133) in 'Control.Lens.Fold'
+lens                   >   98% ( 60 / 61) in 'Control.Lens.TH'
+lens                   >   96% ( 48 / 50) in 'Control.Lens.Plated'
+lens                   >   96% ( 24 / 25) in 'Control.Lens.Equality'
+lens                   >   95% ( 21 / 22) in 'Control.Lens.Reified'
+lens                   >   94% (614 /651) in 'Control.Lens.Combinators'
+lens                   >   94% ( 15 / 16) in 'Numeric.Lens'
+lens                   >   93% ( 13 / 14) in 'Control.Lens.At'
+lens                   >   92% ( 47 / 51) in 'Control.Lens.Indexed'
+lens                   >   91% ( 90 / 99) in 'Control.Lens.Traversal'
+lens                   >   91% ( 51 / 56) in 'Control.Lens.Iso'
+lens                   >   91% ( 10 / 11) in 'Control.Lens.Internal.Bazaar'
+lens                   >   88% ( 15 / 17) in 'Control.Lens.Internal.Fold'
+lens                   >   88% ( 15 / 17) in 'Control.Lens.Cons'
+lens                   >   88% (  7 /  8) in 'Data.Text.Strict.Lens'
+lens                   >   88% (  7 /  8) in 'Data.Text.Lazy.Lens'
+lens                   >   86% ( 51 / 59) in 'Control.Lens.Type'
+lens                   >   80% (  4 /  5) in 'Data.Text.Lens'
+lens                   >   78% (  7 /  9) in 'Data.ByteString.Strict.Lens'
+lens                   >   78% (  7 /  9) in 'Data.ByteString.Lazy.Lens'
+lens                   >   78% (  7 /  9) in 'Control.Lens.Internal.FieldTH'
+lens                   >   75% (  3 /  4) in 'Data.List.Lens'
+lens                   >   73% ( 16 / 22) in 'Control.Lens.Wrapped'
+lens                   >   67% (  8 / 12) in 'Data.Complex.Lens'
+lens                   >   67% (  4 /  6) in 'System.Exit.Lens'
+lens                   >   67% (  4 /  6) in 'Data.ByteString.Lens'
+lens                   >   67% (  2 /  3) in 'Data.Dynamic.Lens'
+lens                   >   67% (  2 /  3) in 'Control.Lens.Internal.Typeable'
+lens                   >   60% ( 72 /121) in 'Control.Exception.Lens'
+lens                   >   50% (  2 /  4) in 'Control.Lens.Internal.Getter'
+lens                   >   50% (  2 /  4) in 'Control.Lens.Internal.Coerce'
+lens                   >   33% (  1 /  3) in 'Control.Lens.Empty'
+lens                   >   32% (  9 / 28) in 'System.IO.Error.Lens'
+lens                   >   25% ( 73 /287) in 'Language.Haskell.TH.Lens'
+lens                   >   24% ( 10 / 42) in 'Control.Lens.Internal.TH'
+lens                   >   24% (  4 / 17) in 'GHC.Generics.Lens'
+lens                   >     Defaulting to the one defined in ‘GHC.Generics’
+lens                   >     Defaulting to the one defined in ‘GHC.Exception.Type’
+lens                   >     Defaulting to the one defined in ‘GHC.Base’
+lens                   >     Defaulting to the one defined in ‘Data.Vector.Primitive’
+lens                   >     Defaulting to the one defined in ‘Data.Text.Lazy’
+lens                   >     Defaulting to the one defined in ‘Data.Text.Lazy’
+lens                   >     Defaulting to the one defined in ‘Data.Text.Lazy’
+lens                   >     Defaulting to the one defined in ‘Data.Text.Lazy’
+lens                   >     Defaulting to the one defined in ‘Data.Text.Internal.Lazy’
+lens                   >     Defaulting to the one defined in ‘Data.IntMap.Internal’
+lens                   >     Defaulting to the one defined in ‘Data.IntMap.Internal’
+lens                   >     Defaulting to the one defined in ‘Data.ByteString.Lazy.Internal’
+lens                   >     Defaulting to the one defined in ‘Data.ByteString.Lazy.Internal’
+lens                   >     Defaulting to the one defined in ‘Control.Monad.Trans.State.Strict’
+lens                   >     Defaulting to the one defined in ‘Control.Monad.Trans.State.Strict’
+lens                   >     Defaulting to the one defined in ‘Control.Monad.Trans.RWS.Strict’
+lens                   >     Defaulting to the one defined in ‘Control.Monad.Trans.RWS.Strict’
+lens                   >     Defaulting to the one defined in ‘Control.Monad.Catch’
+lens                   >     Defaulting to the one defined in ‘Control.Monad.Catch’
+lens                   >     * in ‘GHC.Real’
+lens                   >     * in ‘GHC.Generics’
+lens                   >     * in ‘GHC.Exception.Type’
+lens                   >     * in ‘GHC.Exception.Type’
+lens                   >     * in ‘GHC.Base’
+lens                   >     * in ‘Data.Vector’
+lens                   >     * in ‘Data.Vector’
+lens                   >     * in ‘Data.Vector.Unboxed’
+lens                   >     * in ‘Data.Vector.Unboxed’
+lens                   >     * in ‘Data.Vector.Storable’
+lens                   >     * in ‘Data.Vector.Storable’
+lens                   >     * in ‘Data.Vector.Primitive’
+lens                   >     * in ‘Data.Vector.Primitive’
+lens                   >     * in ‘Data.Text’
+lens                   >     * in ‘Data.Text.Show’
+lens                   >     * in ‘Data.Text.Lazy’
+lens                   >     * in ‘Data.Text.Lazy’
+lens                   >     * in ‘Data.Text.Lazy’
+lens                   >     * in ‘Data.Text.Lazy’
+lens                   >     * in ‘Data.Text.Internal’
+lens                   >     * in ‘Data.Text.Internal’
+lens                   >     * in ‘Data.Text.Internal’
+lens                   >     * in ‘Data.Text.Internal.Lazy’
+lens                   >     * in ‘Data.Text.Internal.Lazy’
+lens                   >     * in ‘Data.Text.Internal.Lazy’
+lens                   >     * in ‘Data.Map.Internal’
+lens                   >     * in ‘Data.Map.Internal’
+lens                   >     * in ‘Data.IntMap.Internal’
+lens                   >     * in ‘Data.IntMap.Internal’
+lens                   >     * in ‘Data.IntMap.Internal’
+lens                   >     * in ‘Data.HashMap.Base’
+lens                   >     * in ‘Data.Foldable’
+lens                   >     * in ‘Data.Dynamic’
+lens                   >     * in ‘Data.Dynamic’
+lens                   >     * in ‘Data.ByteString.Lazy’
+lens                   >     * in ‘Data.ByteString.Lazy’
+lens                   >     * in ‘Data.ByteString.Lazy.Internal’
+lens                   >     * in ‘Data.ByteString.Lazy.Internal’
+lens                   >     * in ‘Data.ByteString.Internal’
+lens                   >     * in ‘Data.ByteString.Internal’
+lens                   >     * in ‘Data.Array.Base’
+lens                   >     * in ‘Data.Array.Base’
+lens                   >     * in ‘Control.Monad.Trans.State.Strict’
+lens                   >     * in ‘Control.Monad.Trans.State.Strict’
+lens                   >     * in ‘Control.Monad.Trans.State.Strict’
+lens                   >     * in ‘Control.Monad.Trans.State.Lazy’
+lens                   >     * in ‘Control.Monad.Trans.State.Lazy’
+lens                   >     * in ‘Control.Monad.Trans.State.Lazy’
+lens                   >     * in ‘Control.Monad.Trans.RWS.Strict’
+lens                   >     * in ‘Control.Monad.Trans.RWS.Strict’
+lens                   >     * in ‘Control.Monad.Trans.RWS.Strict’
+lens                   >     * in ‘Control.Monad.Trans.RWS.Lazy’
+lens                   >     * in ‘Control.Monad.Trans.RWS.Lazy’
+lens                   >     * in ‘Control.Monad.Trans.RWS.Lazy’
+lens                   >     * in ‘Control.Monad.Catch’
+lens                   >     * in ‘Control.Monad.Catch’
+lens                   >     * in ‘Control.Monad.Catch’
+lens                   >     * in ‘Control.Exception’
+lens                   >     * in ‘Control.Exception’
+lens                   >     * in ‘Control.Exception’
+kan-extensions         > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/kan-extensions-5.2-EgdoVNaKZiFCaOufJ9LstY
+kan-extensions         >  100% ( 14 / 14) in 'Data.Functor.Invariant.Day'
+kan-extensions         >  100% ( 14 / 14) in 'Data.Functor.Contravariant.Day'
+kan-extensions         >  100% (  4 /  4) in 'Data.Functor.Contravariant.Coyoneda'
+kan-extensions         >   93% ( 14 / 15) in 'Data.Functor.Day'
+kan-extensions         >   93% ( 13 / 14) in 'Data.Functor.Day.Curried'
+kan-extensions         >   89% (  8 /  9) in 'Data.Functor.Coyoneda'
+kan-extensions         >   82% (  9 / 11) in 'Control.Monad.Codensity'
+kan-extensions         >   75% (  9 / 12) in 'Data.Functor.Kan.Lan'
+kan-extensions         >   75% (  3 /  4) in 'Data.Functor.Contravariant.Yoneda'
+kan-extensions         >   57% (  4 /  7) in 'Control.Comonad.Density'
+kan-extensions         >   53% (  8 / 15) in 'Data.Functor.Kan.Ran'
+kan-extensions         >   45% (  5 / 11) in 'Data.Functor.Yoneda'
+kan-extensions         >   21% (  5 / 24) in 'Control.Monad.Co'
+invariant              > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/invariant-0.5.3-5OmHRqMXULo6aVUWozWgIY
+invariant              >  100% ( 17 / 17) in 'Data.Functor.Invariant.TH'
+invariant              >  100% ( 16 / 16) in 'Data.Functor.Invariant'
+integration            > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/integration-0.2.1-H2ermwUhswy9AU4kE1zJmh
+integration            >  100% ( 17 / 17) in 'Numeric.Integration.TanhSinh'
+integer-logarithms     > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/integer-logarithms-1.0.3-DB3mmMEnGUoGsmGCDooyTI
+integer-logarithms     >  100% ( 17 / 17) in 'Math.NumberTheory.Logarithms'
+integer-logarithms     >  100% (  5 /  5) in 'GHC.Integer.Logarithms.Compat'
+integer-logarithms     >  100% (  3 /  3) in 'Math.NumberTheory.Powers.Natural'
+integer-logarithms     >  100% (  3 /  3) in 'Math.NumberTheory.Powers.Integer'
+hspec-expectations     > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/hspec-expectations-0.8.2-Gyxpw5RZvqV2WiQLfU4YHY
+hspec-expectations     >  100% (  5 /  5) in 'Test.Hspec.Expectations.Contrib'
+hspec-expectations     >   77% ( 23 / 30) in 'Test.Hspec.Expectations'
+hspec-discover         > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/hspec-discover-2.7.1-Fcf3GZzHd1g5RvV5E6Q3xM
+hspec-discover         > Installing executable hspec-discover in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/bin
+hspec-discover         >   40% (  4 / 10) in 'Test.Hspec.Discover.Run'
+hspec-discover         >   20% (  1 /  5) in 'Test.Hspec.Discover.Config'
+hspec-discover         >    0% (  0 /  4) in 'Test.Hspec.Discover.Sort'
+hspec-core             > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/hspec-core-2.7.1-3JaVMkOn8WPCCErc5jMHlK
+hspec-core             >  100% ( 13 / 13) in 'Test.Hspec.Core.Util'
+hspec-core             >  100% ( 13 / 13) in 'Test.Hspec.Core.Hooks'
+hspec-core             >  100% (  6 /  6) in 'Test.Hspec.Core.QuickCheck'
+hspec-core             >   85% ( 17 / 20) in 'Test.Hspec.Core.Runner'
+hspec-core             >   72% ( 26 / 36) in 'Test.Hspec.Core.Formatters'
+hspec-core             >   71% ( 35 / 49) in 'Test.Hspec.Core.Spec'
+hspec                  > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/hspec-2.7.1-2nalEk6rvaQHQTbRxzuBLv
+hspec                  >   94% ( 44 / 47) in 'Test.Hspec'
+hspec                  >   93% (135 /145) in 'Test.Hspec.Discover'
+hspec                  >   89% (  8 /  9) in 'Test.Hspec.QuickCheck'
+hspec                  >   50% (  1 /  2) in 'Test.Hspec.Runner'
+hspec                  >   50% (  1 /  2) in 'Test.Hspec.Formatters'
+hinotify               > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/hinotify-0.4-6XtcWRfv6VV1WECkAx2l2F
+hinotify               >    9% (  1 / 11) in 'System.INotify'
+hgeometry-combinatorial> Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/hgeometry-combinatorial-0.11.0.0-5JFZkkENdu8NABAyRUL3V
+hgeometry-combinatorial>  100% ( 12 / 12) in 'Data.PlanarGraph.Dual'
+hgeometry-combinatorial>  100% (  7 /  7) in 'Data.PlanarGraph.EdgeOracle'
+hgeometry-combinatorial>  100% (  4 /  4) in 'Data.PlanarGraph.AdjRep'
+hgeometry-combinatorial>  100% (  4 /  4) in 'Algorithms.StringSearch.KMP'
+hgeometry-combinatorial>  100% (  2 /  2) in 'System.Random.Shuffle'
+hgeometry-combinatorial>   95% ( 20 / 21) in 'Data.Tree.Util'
+hgeometry-combinatorial>   92% ( 65 / 71) in 'Data.PlanarGraph'
+hgeometry-combinatorial>   92% ( 55 / 60) in 'Data.PlanarGraph.Core'
+hgeometry-combinatorial>   90% (  9 / 10) in 'Data.DynamicOrd'
+hgeometry-combinatorial>   89% (  8 /  9) in 'Data.Yaml.Util'
+hgeometry-combinatorial>   89% (  8 /  9) in 'Data.List.Zipper'
+hgeometry-combinatorial>   88% ( 15 / 17) in 'Data.BinaryTree'
+hgeometry-combinatorial>   88% (  7 /  8) in 'Data.Intersection'
+hgeometry-combinatorial>   88% (  7 /  8) in 'Algorithms.DivideAndConquer'
+hgeometry-combinatorial>   86% (  6 /  7) in 'Data.Set.Util'
+hgeometry-combinatorial>   85% ( 23 / 27) in 'Data.CircularSeq'
+hgeometry-combinatorial>   83% ( 10 / 12) in 'Data.Util'
+hgeometry-combinatorial>   83% (  5 /  6) in 'Data.List.Alternating'
+hgeometry-combinatorial>   82% (  9 / 11) in 'Data.PlanarGraph.Dart'
+hgeometry-combinatorial>   81% ( 17 / 21) in 'Data.IndexedDoublyLinkedList'
+hgeometry-combinatorial>   80% ( 16 / 20) in 'Data.IndexedDoublyLinkedList.Bare'
+hgeometry-combinatorial>   80% (  4 /  5) in 'Algorithms.Graph.DFS'
+hgeometry-combinatorial>   80% (  4 /  5) in 'Algorithms.BinarySearch'
+hgeometry-combinatorial>   75% (  9 / 12) in 'Data.BinaryTree.Zipper'
+hgeometry-combinatorial>   75% (  3 /  4) in 'Algorithms.Graph.MST'
+hgeometry-combinatorial>   71% (  5 /  7) in 'Data.PlanarGraph.IO'
+hgeometry-combinatorial>   71% (  5 /  7) in 'Data.CircularList.Util'
+hgeometry-combinatorial>   70% (  7 / 10) in 'Data.List.Set'
+hgeometry-combinatorial>   69% ( 11 / 16) in 'Data.Permutation'
+hgeometry-combinatorial>   64% ( 14 / 22) in 'Data.Range'
+hgeometry-combinatorial>   57% (  4 /  7) in 'Control.CanAquire'
+hgeometry-combinatorial>   50% (  3 /  6) in 'Control.Monad.State.Persistent'
+hgeometry-combinatorial>   50% (  2 /  4) in 'Data.Measured.Size'
+hgeometry-combinatorial>   50% (  1 /  2) in 'Data.Sequence.Util'
+hgeometry-combinatorial>   50% (  1 /  2) in 'Data.Measured'
+hgeometry-combinatorial>   44% ( 11 / 25) in 'Data.OrdSeq'
+hgeometry-combinatorial>   44% (  4 /  9) in 'Data.List.Util'
+hgeometry-combinatorial>   33% (  7 / 21) in 'Data.UnBounded'
+hgeometry-combinatorial>   31% ( 11 / 35) in 'Data.LSeq'
+hgeometry-combinatorial>   29% (  2 /  7) in 'Data.RealNumber.Rational'
+hgeometry-combinatorial>   29% (  2 /  7) in 'Data.Ext'
+hgeometry-combinatorial>    0% (  0 /  4) in 'Data.Measured.Class'
+hgeometry              > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/hgeometry-0.11.0.0-7rlqj6UDEBMIguXkwC2tQU
+hgeometry              >  100% (  8 /  8) in 'Data.PlaneGraph.IO'
+hgeometry              >  100% (  8 /  8) in 'Algorithms.Geometry.RedBlueSeparator.RIC'
+hgeometry              >  100% (  7 /  7) in 'Algorithms.Geometry.LinearProgramming.LP2DRIC'
+hgeometry              >  100% (  6 /  6) in 'Graphics.Render'
+hgeometry              >  100% (  5 /  5) in 'Data.Geometry.PlanarSubdivision'
+hgeometry              >  100% (  5 /  5) in 'Algorithms.Geometry.SmallestEnclosingBall.RIC'
+hgeometry              >  100% (  5 /  5) in 'Algorithms.Geometry.ClosestPair.DivideAndConquer'
+hgeometry              >  100% (  4 /  4) in 'Data.PlaneGraph.AdjRep'
+hgeometry              >  100% (  4 /  4) in 'Data.Geometry.Properties'
+hgeometry              >  100% (  4 /  4) in 'Data.Geometry.PrioritySearchTree'
+hgeometry              >  100% (  4 /  4) in 'Data.Geometry.Box'
+hgeometry              >  100% (  4 /  4) in 'Algorithms.Geometry.ConvexHull.DivideAndConquer'
+hgeometry              >  100% (  3 /  3) in 'Algorithms.Geometry.SmallestEnclosingBall.Naive'
+hgeometry              >  100% (  2 /  2) in 'Data.Geometry.Line'
+hgeometry              >   89% ( 65 / 73) in 'Data.PlaneGraph'
+hgeometry              >   89% ( 63 / 71) in 'Data.PlaneGraph.Core'
+hgeometry              >   89% ( 24 / 27) in 'Data.Geometry.Vector'
+hgeometry              >   89% (  8 /  9) in 'Algorithms.Geometry.SoS'
+hgeometry              >   88% ( 22 / 25) in 'Algorithms.Geometry.LineSegmentIntersection.BentleyOttmann'
+hgeometry              >   88% (  7 /  8) in 'Algorithms.Geometry.ConvexHull.GrahamScan'
+hgeometry              >   85% ( 11 / 13) in 'Data.Geometry.PolyLine'
+hgeometry              >   84% ( 27 / 32) in 'Data.Geometry.Line.Internal'
+hgeometry              >   83% (  5 /  6) in 'Algorithms.Geometry.PolyLineSimplification.DouglasPeucker'
+hgeometry              >   83% (  5 /  6) in 'Algorithms.Geometry.DelaunayTriangulation.Naive'
+hgeometry              >   81% ( 29 / 36) in 'Data.Geometry.Point'
+hgeometry              >   81% ( 13 / 16) in 'Algorithms.Geometry.SoS.Symbolic'
+hgeometry              >   80% (  4 /  5) in 'Data.Geometry.Duality'
+hgeometry              >   80% (  4 /  5) in 'Algorithms.Geometry.PolygonTriangulation.Triangulate'
+hgeometry              >   79% ( 59 / 75) in 'Data.Geometry.PlanarSubdivision.Basic'
+hgeometry              >   79% ( 31 / 39) in 'Data.Geometry.Polygon'
+hgeometry              >   79% ( 11 / 14) in 'Data.Geometry.Polygon.Convex'
+hgeometry              >   77% ( 10 / 13) in 'Data.Geometry.Triangle'
+hgeometry              >   77% ( 10 / 13) in 'Data.Geometry.QuadTree.Tree'
+hgeometry              >   77% ( 10 / 13) in 'Data.Geometry.BezierSpline'
+hgeometry              >   76% ( 26 / 34) in 'Algorithms.Geometry.WellSeparatedPairDecomposition.WSPD'
+hgeometry              >   75% (  6 /  8) in 'Algorithms.Geometry.ConvexHull.JarvisMarch'
+hgeometry              >   75% (  3 /  4) in 'Data.Geometry.Boundary'
+hgeometry              >   75% (  3 /  4) in 'Algorithms.Geometry.ClosestPair.Naive'
+hgeometry              >   74% ( 20 / 27) in 'Data.Geometry.Ball'
+hgeometry              >   73% ( 72 / 98) in 'Data.Geometry'
+hgeometry              >   73% ( 24 / 33) in 'Algorithms.Geometry.DelaunayTriangulation.DivideAndConquer'
+hgeometry              >   69% ( 18 / 26) in 'Data.Geometry.Vector.VectorFixed'
+hgeometry              >   69% ( 11 / 16) in 'Data.Geometry.SubLine'
+hgeometry              >   68% ( 13 / 19) in 'Data.Geometry.RangeTree.Generic'
+hgeometry              >   67% ( 10 / 15) in 'Data.Geometry.IntervalTree'
+hgeometry              >   67% ( 10 / 15) in 'Data.Geometry.Arrangement'
+hgeometry              >   67% (  4 /  6) in 'Data.Geometry.PlanarSubdivision.Merge'
+hgeometry              >   67% (  4 /  6) in 'Algorithms.Geometry.ConvexHull.Naive'
+hgeometry              >   67% (  2 /  3) in 'Algorithms.Geometry.LineSegmentIntersection'
+hgeometry              >   67% (  2 /  3) in 'Algorithms.Geometry.FrechetDistance.Discrete'
+hgeometry              >   67% (  2 /  3) in 'Algorithms.Geometry.EuclideanMST.EuclideanMST'
+hgeometry              >   66% ( 31 / 47) in 'Data.Geometry.LineSegment'
+hgeometry              >   60% ( 18 / 30) in 'Data.Geometry.Box.Internal'
+hgeometry              >   60% ( 12 / 20) in 'Data.Geometry.SegmentTree.Generic'
+hgeometry              >   60% (  6 / 10) in 'Data.Geometry.HalfSpace'
+hgeometry              >   60% (  3 /  5) in 'Algorithms.Geometry.PolygonTriangulation.MakeMonotone'
+hgeometry              >   59% ( 16 / 27) in 'Data.Geometry.Arrangement.Internal'
+hgeometry              >   59% ( 10 / 17) in 'Graphics.Camera'
+hgeometry              >   58% (  7 / 12) in 'Data.Geometry.PlanarSubdivision.Raw'
+hgeometry              >   57% ( 13 / 23) in 'Data.Geometry.Transformation'
+hgeometry              >   57% (  8 / 14) in 'Data.Geometry.HyperPlane'
+hgeometry              >   57% (  4 /  7) in 'Data.Geometry.QuadTree.Split'
+hgeometry              >   57% (  4 /  7) in 'Algorithms.Geometry.LowerEnvelope.DualCH'
+hgeometry              >   57% (  4 /  7) in 'Algorithms.Geometry.LineSegmentIntersection.Naive'
+hgeometry              >   56% ( 10 / 18) in 'Data.Geometry.Interval'
+hgeometry              >   50% (  3 /  6) in 'Algorithms.Geometry.SmallestEnclosingBall.Types'
+hgeometry              >   50% (  2 /  4) in 'Algorithms.Geometry.PolygonTriangulation.Types'
+hgeometry              >   50% (  2 /  4) in 'Algorithms.Geometry.Diameter.Naive'
+hgeometry              >   50% (  1 /  2) in 'Data.Geometry.SegmentTree'
+hgeometry              >   50% (  1 /  2) in 'Algorithms.Geometry.ConvexHull.QuickHull'
+hgeometry              >   48% ( 13 / 27) in 'Data.Geometry.Vector.VectorFamily'
+hgeometry              >   46% (  6 / 13) in 'Data.Geometry.Box.Sides'
+hgeometry              >   44% (  4 /  9) in 'Data.Geometry.HalfLine'
+hgeometry              >   43% (  3 /  7) in 'Data.Geometry.Matrix'
+hgeometry              >   41% (  7 / 17) in 'Data.Geometry.QuadTree.Cell'
+hgeometry              >   40% (  2 /  5) in 'Data.Geometry.Interval.Util'
+hgeometry              >   38% (  9 / 24) in 'Data.Geometry.QuadTree'
+hgeometry              >   38% (  6 / 16) in 'Algorithms.Geometry.PolygonTriangulation.TriangulateMonotone'
+hgeometry              >   38% (  3 /  8) in 'Data.Geometry.Ellipse'
+hgeometry              >   38% (  3 /  8) in 'Data.Geometry.Box.Corners'
+hgeometry              >   35% (  6 / 17) in 'Algorithms.Geometry.DelaunayTriangulation.Types'
+hgeometry              >   29% (  2 /  7) in 'Data.Geometry.Slab'
+hgeometry              >   25% (  2 /  8) in 'Algorithms.Geometry.LinearProgramming.Types'
+hgeometry              >   25% (  1 /  4) in 'Data.Geometry.QuadTree.Quadrants'
+hgeometry              >   23% (  3 / 13) in 'Data.Geometry.Directions'
+hgeometry              >   20% (  5 / 25) in 'Data.Geometry.Vector.VectorFamilyPeano'
+hgeometry              >   19% (  4 / 21) in 'Data.Geometry.KDTree'
+hgeometry              >   15% (  3 / 20) in 'Algorithms.Geometry.WellSeparatedPairDecomposition.Types'
+hgeometry              >   13% (  2 / 15) in 'Data.Geometry.RangeTree'
+hgeometry              >    8% (  1 / 13) in 'Algorithms.Geometry.LineSegmentIntersection.Types'
+hgeometry              >    0% (  0 /  5) in 'Data.Geometry.RangeTree.Measure'
+hashable               > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/hashable-1.3.0.0-CzctMgLWbfP4pv5F2JiKgj
+hashable               >  100% ( 28 / 28) in 'Data.Hashable'
+hashable               >   80% (  8 / 10) in 'Data.Hashable.Lifted'
+hashable               >   67% (  6 /  9) in 'Data.Hashable.Generic'
+ghcid                  > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/ghcid-0.8.7-7Wskfdfby5Y7svSO0yP5FU
+ghcid                  > Installing executable ghcid in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/bin
+ghcid                  >  100% ( 17 / 17) in 'Language.Haskell.Ghcid'
+geojson                > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/geojson-4.0.2-KzjQ34XfuAXBpywmWoqbtx
+geojson                >  100% ( 15 / 15) in 'Data.LinearRing'
+geojson                >  100% ( 15 / 15) in 'Data.LineString'
+geojson                >  100% (  7 /  7) in 'Data.Geospatial.Internal.Geometry.Aeson'
+geojson                >  100% (  5 /  5) in 'Data.Geospatial.Internal.GeoPosition'
+geojson                >   75% (  6 /  8) in 'Data.Geospatial.Internal.Geometry.GeoMultiPolygon'
+geojson                >   75% (  6 /  8) in 'Data.Geospatial.Internal.Geometry.GeoMultiPoint'
+geojson                >   75% (  6 /  8) in 'Data.Geospatial.Internal.Geometry.GeoMultiLine'
+geojson                >   67% (  4 /  6) in 'Data.Geospatial.Internal.GeoFeatureCollection'
+geojson                >   60% (  6 / 10) in 'Data.Geospatial.Internal.CRS'
+geojson                >   60% (  3 /  5) in 'Data.Geospatial.Internal.Geometry.GeoPolygon'
+geojson                >   60% (  3 /  5) in 'Data.Geospatial.Internal.Geometry.GeoLine'
+geojson                >   50% (  5 / 10) in 'Data.Geospatial.Internal.GeoFeature'
+geojson                >   40% (  2 /  5) in 'Data.Geospatial.Internal.Geometry.GeoPoint'
+geojson                >   35% ( 25 / 72) in 'Data.Geospatial'
+geojson                >   34% ( 11 / 32) in 'Data.Geospatial.Internal.Geometry'
+geojson                >   26% (  6 / 23) in 'Data.Geospatial.Internal.BasicTypes'
+geojson                >   25% (  1 /  4) in 'Data.SeqHelper'
+fsnotify               > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/fsnotify-0.3.0.1-BPNC5WupG5sLuKCzt386vX
+fsnotify               >  100% (  6 /  6) in 'System.FSNotify.Devel'
+fsnotify               >   92% ( 24 / 26) in 'System.FSNotify'
+free                   > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/free-5.1.3-2ooPSSsztIUBA2KeNDhcsF
+free                   >  100% ( 28 / 28) in 'Control.Monad.Trans.Free.Church'
+free                   >  100% ( 28 / 28) in 'Control.Monad.Trans.Free'
+free                   >  100% ( 27 / 27) in 'Control.Monad.Trans.Free.Ap'
+free                   >  100% ( 25 / 25) in 'Control.Monad.Trans.Iter'
+free                   >  100% ( 22 / 22) in 'Control.Applicative.Trans.Free'
+free                   >  100% ( 16 / 16) in 'Control.Monad.Free.Ap'
+free                   >  100% ( 16 / 16) in 'Control.Monad.Free'
+free                   >  100% ( 14 / 14) in 'Control.Comonad.Trans.Coiter'
+free                   >  100% ( 14 / 14) in 'Control.Applicative.Free.Fast'
+free                   >  100% ( 13 / 13) in 'Control.Monad.Free.Church'
+free                   >  100% ( 11 / 11) in 'Control.Comonad.Trans.Cofree'
+free                   >  100% ( 11 / 11) in 'Control.Applicative.Free'
+free                   >  100% ( 10 / 10) in 'Control.Monad.Free.TH'
+free                   >  100% ( 10 / 10) in 'Control.Applicative.Free.Final'
+free                   >  100% (  5 /  5) in 'Control.Alternative.Free.Final'
+free                   >  100% (  4 /  4) in 'Control.Monad.Free.Class'
+free                   >  100% (  2 /  2) in 'Control.Comonad.Cofree.Class'
+free                   >   94% ( 15 / 16) in 'Control.Comonad.Cofree'
+free                   >   67% (  4 /  6) in 'Control.Alternative.Free'
+fixed-vector           > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/fixed-vector-1.2.0.0-JjaRgYKSMRyLAqnixcYILh
+fixed-vector           >  100% ( 11 / 11) in 'Data.Vector.Fixed.Generic'
+fixed-vector           >   95% ( 18 / 19) in 'Data.Vector.Fixed.Mutable'
+fixed-vector           >   92% ( 97 /106) in 'Data.Vector.Fixed.Cont'
+fixed-vector           >   89% (104 /117) in 'Data.Vector.Fixed'
+fixed-vector           >   62% ( 10 / 16) in 'Data.Vector.Fixed.Storable'
+fixed-vector           >   58% (  7 / 12) in 'Data.Vector.Fixed.Primitive'
+fixed-vector           >   50% (  5 / 10) in 'Data.Vector.Fixed.Boxed'
+fixed-vector           >   33% (  4 / 12) in 'Data.Vector.Fixed.Unboxed'
+fingertree             > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/fingertree-0.1.4.2-AcceahIMLXX3avs4HbXXk8
+fingertree             >  100% ( 39 / 39) in 'Data.FingerTree'
+fingertree             >  100% ( 20 / 20) in 'Data.IntervalMap.FingerTree'
+fingertree             >  100% ( 13 / 13) in 'Data.PriorityQueue.FingerTree'
+filelock               > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/filelock-0.1.1.4-JBagLa3bCrhfJ8hHEt730
+filelock               >  100% (  8 /  8) in 'System.FileLock'
+fast-math              > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/fast-math-1.0.2-Fhz1pdYY9mrGReoImM6U7r
+fast-math              >  100% (  1 /  1) in 'Numeric.FastMath.SignedZeros'
+fast-math              >  100% (  1 /  1) in 'Numeric.FastMath.NaN'
+fast-math              >  100% (  1 /  1) in 'Numeric.FastMath.Approximation'
+fast-math              >  100% (  1 /  1) in 'Numeric.FastMath'
+extra                  > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/extra-1.7.3-9ADZwIWVgpD4k272huY0G3
+extra                  >  100% (246 /246) in 'Extra'
+extra                  >  100% ( 76 / 76) in 'Data.List.Extra'
+extra                  >  100% ( 35 / 35) in 'Control.Monad.Extra'
+extra                  >  100% ( 26 / 26) in 'System.IO.Extra'
+extra                  >  100% ( 24 / 24) in 'Control.Concurrent.Extra'
+extra                  >  100% ( 20 / 20) in 'Control.Exception.Extra'
+extra                  >  100% ( 19 / 19) in 'Data.Tuple.Extra'
+extra                  >  100% ( 19 / 19) in 'Data.List.NonEmpty.Extra'
+extra                  >  100% ( 11 / 11) in 'Data.Either.Extra'
+extra                  >  100% (  8 /  8) in 'System.Time.Extra'
+extra                  >  100% (  8 /  8) in 'System.Directory.Extra'
+extra                  >  100% (  7 /  7) in 'Numeric.Extra'
+extra                  >  100% (  6 /  6) in 'Data.IORef.Extra'
+extra                  >  100% (  5 /  5) in 'System.Process.Extra'
+extra                  >  100% (  4 /  4) in 'System.Info.Extra'
+extra                  >  100% (  3 /  3) in 'Data.Version.Extra'
+extra                  >  100% (  2 /  2) in 'Text.Read.Extra'
+extra                  >  100% (  2 /  2) in 'System.Environment.Extra'
+extra                  >  100% (  2 /  2) in 'Data.Typeable.Extra'
+exceptions             > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/exceptions-0.10.4-6ENJVzINLe28VlhOUrvEZK
+exceptions             >  100% ( 33 / 33) in 'Control.Monad.Catch'
+exceptions             >   80% (  8 / 10) in 'Control.Monad.Catch.Pure'
+entropy                > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/entropy-0.4.1.6-2g9ocbVq32a8tBd2ONuu0j
+entropy                >  100% (  7 /  7) in 'System.Entropy'
+enclosed-exceptions    > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/enclosed-exceptions-1.0.3-2iIgEzttEiLEur5VHOAftC
+enclosed-exceptions    >  100% ( 17 / 17) in 'Control.Exception.Enclosed'
+double-conversion      > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/double-conversion-2.0.2.0-1x3gvKZR0XNISO1ezeDx0d
+double-conversion      >  100% (  5 /  5) in 'Data.Double.Conversion.Text'
+double-conversion      >  100% (  5 /  5) in 'Data.Double.Conversion.ByteString'
+dlist                  > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/dlist-0.8.0.8-JR3J30JsCPy8t4wCS6AU0f
+dlist                  >  100% ( 20 / 20) in 'Data.DList'
+distributive           > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/distributive-0.6.2-11NvqTJ0bWrHnNgHG1dlvN
+distributive           >  100% (  4 /  4) in 'Data.Distributive'
+distributive           >   75% (  3 /  4) in 'Data.Distributive.Generic'
+data-clist             > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/data-clist-0.1.2.3-GDC9v1C3wyb6WPNhDrpUod
+data-clist             >   98% ( 44 / 45) in 'Data.CircularList'
+cubicbezier            > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/cubicbezier-0.6.0.6-FsyjH7Bh5L0LMV5GLxTDuc
+cubicbezier            >  100% (  8 /  8) in 'Geom2D.CubicBezier'
+cubicbezier            >  100% (  4 /  4) in 'Geom2D.CubicBezier.Intersection'
+cubicbezier            >   88% ( 15 / 17) in 'Math.BernsteinPoly'
+cubicbezier            >   85% ( 35 / 41) in 'Geom2D.CubicBezier.Basic'
+cubicbezier            >   83% (  5 /  6) in 'Geom2D.CubicBezier.Approximate'
+cubicbezier            >   80% (  4 /  5) in 'Geom2D.CubicBezier.Curvature'
+cubicbezier            >   77% ( 27 / 35) in 'Geom2D'
+cubicbezier            >   71% (  5 /  7) in 'Geom2D.CubicBezier.Overlap'
+cubicbezier            >   67% ( 12 / 18) in 'Geom2D.CubicBezier.Numeric'
+cubicbezier            >   67% (  2 /  3) in 'Geom2D.CubicBezier.Outline'
+cubicbezier            >   43% (  3 /  7) in 'Geom2D.CubicBezier.Stroke'
+cubicbezier            >   25% (  2 /  8) in 'Geom2D.CubicBezier.MetaPath'
+contravariant          > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/contravariant-1.5.2-DesU7h4D1zW9390gAiKdEh
+contravariant          >  100% ( 17 / 17) in 'Data.Functor.Contravariant.Divisible'
+contravariant          >  100% (  4 /  4) in 'Data.Functor.Contravariant.Compose'
+contravariant          >  100% (  3 /  3) in 'Data.Functor.Contravariant.Generic'
+constraints            > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/constraints-0.12-IsG3AxYYcCdBClNUATqEcq
+constraints            >  100% (  8 /  8) in 'Data.Constraint.Unsafe'
+constraints            >   93% ( 27 / 29) in 'Data.Constraint'
+constraints            >   83% ( 10 / 12) in 'Data.Constraint.Forall'
+constraints            >   78% (  7 /  9) in 'Data.Constraint.Deferrable'
+constraints            >    4% (  1 / 23) in 'Data.Constraint.Symbol'
+constraints            >    3% (  3 / 98) in 'Data.Constraint.Nat'
+constraints            >    0% (  0 /  3) in 'Data.Constraint.Lifting'
+constraints            >     Defaulting to the one defined in ‘Control.Category’
+constraints            >     Defaulting to the one defined in ‘Control.Category’
+constraints            >     * in ‘GHC.Base’
+constraints            >     * in ‘GHC.Base’
+constraints            >     * in ‘Control.Category’
+constraints            >     * in ‘Control.Category’
+conduit                > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/conduit-1.3.2-LujR9NREqAS6rVClVqsxdd
+conduit                >  100% (186 /186) in 'Conduit'
+conduit                >  100% (166 /166) in 'Data.Conduit.Combinators'
+conduit                >  100% ( 55 / 55) in 'Data.Conduit.List'
+conduit                >  100% ( 42 / 42) in 'Data.Conduit.Lift'
+conduit                >   98% ( 78 / 80) in 'Data.Conduit'
+conduit                >   91% ( 85 / 93) in 'Data.Conduit.Internal'
+conduit                >   19% (  3 / 16) in 'Data.Conduit.Internal.Fusion'
+conduit                >   11% (  3 / 27) in 'Data.Conduit.Combinators.Stream'
+conduit                >    0% (  0 / 41) in 'Data.Conduit.Internal.List.Stream'
+comonad                > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/comonad-5.0.6-4gAMnnpOjptCGBhopRpzCo
+comonad                >  100% ( 22 / 22) in 'Control.Comonad'
+comonad                >  100% (  4 /  4) in 'Control.Comonad.Identity'
+comonad                >  100% (  2 /  2) in 'Control.Comonad.Trans.Identity'
+comonad                >   73% ( 11 / 15) in 'Control.Comonad.Trans.Store'
+comonad                >   69% (  9 / 13) in 'Control.Comonad.Trans.Env'
+comonad                >   62% (  8 / 13) in 'Control.Comonad.Store'
+comonad                >   60% (  9 / 15) in 'Control.Comonad.Env'
+comonad                >   57% (  8 / 14) in 'Control.Comonad.Traced'
+comonad                >   50% (  1 /  2) in 'Data.Functor.Composition'
+comonad                >   50% (  1 /  2) in 'Control.Comonad.Trans.Class'
+comonad                >   50% (  1 /  2) in 'Control.Comonad.Hoist.Class'
+comonad                >   33% (  4 / 12) in 'Control.Comonad.Trans.Traced'
+comonad                >   33% (  1 /  3) in 'Control.Comonad.Traced.Class'
+comonad                >   33% (  1 /  3) in 'Control.Comonad.Env.Class'
+comonad                >   25% (  1 /  4) in 'Control.Comonad.Store.Class'
+colour                 > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/colour-2.3.5-HwkwGdq0zHOAgUmo2lVa4V
+colour                 >  100% ( 21 / 21) in 'Data.Colour.CIE.Illuminant'
+colour                 >  100% ( 14 / 14) in 'Data.Colour.SRGB'
+colour                 >  100% (  6 /  6) in 'Data.Colour.SRGB.Linear'
+colour                 >   88% ( 15 / 17) in 'Data.Colour.CIE'
+colour                 >   86% (  6 /  7) in 'Data.Colour.RGBSpace.HSV'
+colour                 >   86% (  6 /  7) in 'Data.Colour.RGBSpace.HSL'
+colour                 >   85% ( 17 / 20) in 'Data.Colour'
+colour                 >   83% ( 20 / 24) in 'Data.Colour.RGBSpace'
+colour                 >    1% (  1 /149) in 'Data.Colour.Names'
+cmdargs                > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/cmdargs-0.10.20-3vykGHDI4u11ZYJ5Aek1JG
+cmdargs                >  100% ( 50 / 50) in 'System.Console.CmdArgs.Implicit'
+cmdargs                >  100% ( 48 / 48) in 'System.Console.CmdArgs.Explicit'
+cmdargs                >  100% ( 17 / 17) in 'System.Console.CmdArgs.Annotate'
+cmdargs                >  100% (  9 /  9) in 'System.Console.CmdArgs.Quote'
+cmdargs                >  100% (  8 /  8) in 'System.Console.CmdArgs.Verbosity'
+cmdargs                >  100% (  8 /  8) in 'System.Console.CmdArgs.Helper'
+cmdargs                >  100% (  8 /  8) in 'System.Console.CmdArgs.GetOpt'
+cmdargs                >  100% (  5 /  5) in 'System.Console.CmdArgs.Text'
+cmdargs                >  100% (  2 /  2) in 'System.Console.CmdArgs.Default'
+cmdargs                >  100% (  2 /  2) in 'System.Console.CmdArgs'
+clock                  > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/clock-0.8-BDr0ZJKaVWEAskyGHHBCXi
+clock                  >  100% (  9 /  9) in 'System.Clock'
+cereal                 > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/cereal-0.5.8.1-9ntckremgTg1GZyrWpwmPK
+cereal                 >  100% ( 11 / 11) in 'Data.Serialize.IEEE754'
+cereal                 >   94% ( 61 / 65) in 'Data.Serialize.Get'
+cereal                 >   87% ( 13 / 15) in 'Data.Serialize'
+cereal                 >   75% ( 42 / 56) in 'Data.Serialize.Put'
+cassava                > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/cassava-0.5.2.0-2PjwabWSp401VJzisLBWvM
+cassava                >  100% ( 33 / 33) in 'Data.Csv.Incremental'
+cassava                >  100% ( 17 / 17) in 'Data.Csv.Streaming'
+cassava                >  100% ( 11 / 11) in 'Data.Csv.Builder'
+cassava                >  100% (  9 /  9) in 'Data.Csv.Parser'
+cassava                >   96% ( 85 / 89) in 'Data.Csv'
+case-insensitive       > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/case-insensitive-1.2.1.0-3V9HnJ59G423CQPOs7nwss
+case-insensitive       >  100% (  8 /  8) in 'Data.CaseInsensitive'
+case-insensitive       >  100% (  2 /  2) in 'Data.CaseInsensitive.Unsafe'
+call-stack             > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/call-stack-0.2.0-60bTmb9VEHP3C0mVwwOjhh
+call-stack             >   33% (  2 /  6) in 'Data.CallStack'
+cabal-doctest          > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/cabal-doctest-1.0.8-2wQRz9ec1yB5lMDRmEgBWB
+cabal-doctest          >  100% (  6 /  6) in 'Distribution.Extra.Doctest'
+bytestring-builder     > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/bytestring-builder-0.10.8.2.0-AdoQCDOg6cqIZYcB2EprAi
+bytes                  > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/bytes-0.17-LCEHcO6BxGl6Y06Kh0p2eW
+bytes                  >   75% (  3 /  4) in 'Data.Bytes.Put'
+bytes                  >   75% (  3 /  4) in 'Data.Bytes.Get'
+bytes                  >   71% ( 15 / 21) in 'Data.Bytes.Serial'
+bytes                  >   50% (  1 /  2) in 'Data.Bytes.VarInt'
+bytes                  >   20% (  1 /  5) in 'Data.Bytes.Signed'
+bytes                  >     Defaulting to the one defined in ‘Data.ByteString.Lazy.Internal’
+bytes                  >     * in ‘Data.ByteString.Lazy.Internal’
+bytes                  >     * in ‘Data.ByteString.Internal’
+binary-orphans         > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/binary-orphans-1.0.1-CfL70at61kj3dO0MxMiAdK
+binary-orphans         >    0% (  0 /  1) in 'Data.Binary.Orphans'
+bifunctors             > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/bifunctors-5.5.7-J3zEkitvo5e6gFaUUDqim5
+bifunctors             >  100% (  2 /  2) in 'Data.Bifunctor.Wrapped'
+bifunctors             >  100% (  2 /  2) in 'Data.Bifunctor.Tannen'
+bifunctors             >  100% (  2 /  2) in 'Data.Bifunctor.Product'
+bifunctors             >  100% (  2 /  2) in 'Data.Bifunctor.Joker'
+bifunctors             >  100% (  2 /  2) in 'Data.Bifunctor.Join'
+bifunctors             >  100% (  2 /  2) in 'Data.Bifunctor.Flip'
+bifunctors             >  100% (  2 /  2) in 'Data.Bifunctor.Fix'
+bifunctors             >  100% (  2 /  2) in 'Data.Bifunctor.Clown'
+bifunctors             >  100% (  2 /  2) in 'Data.Bifunctor.Biff'
+bifunctors             >  100% (  2 /  2) in 'Data.Bifunctor.Biap'
+bifunctors             >   97% ( 32 / 33) in 'Data.Bifunctor.TH'
+bifunctors             >   70% (  7 / 10) in 'Data.Biapplicative'
+bifunctors             >   14% (  1 /  7) in 'Data.Bifunctor.Functor'
+bifunctors             >    0% (  0 /  2) in 'Data.Bifunctor.Sum'
+base64-bytestring      > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/base64-bytestring-1.0.0.3-G2dYBQRtOn8Kxdm0ndZRY
+base64-bytestring      >  100% (  5 /  5) in 'Data.ByteString.Base64.URL'
+base64-bytestring      >  100% (  5 /  5) in 'Data.ByteString.Base64'
+base64-bytestring      >  100% (  4 /  4) in 'Data.ByteString.Base64.URL.Lazy'
+base64-bytestring      >  100% (  4 /  4) in 'Data.ByteString.Base64.Lazy'
+base-prelude           > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/base-prelude-1.3-GkjcM0d5Bef5VOhNpPY6Ft
+base-prelude           >   90% (807 /893) in 'BasePrelude'
+base-orphans           > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/base-orphans-0.8.2-1Y1ZqNmIsRFEurBzE3x0AA
+base-orphans           >  100% (  1 /  1) in 'Data.Orphans'
+base-compat-batteries  > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/base-compat-batteries-0.11.1-LOY5lyev4zYDDSw7XooUgP
+base-compat-batteries  >  100% ( 68 / 68) in 'Data.List.NonEmpty.Compat'
+base-compat-batteries  >  100% (  2 /  2) in 'Type.Reflection.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Text.Read.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'System.IO.Unsafe.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'System.IO.Error.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'System.Exit.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'System.Environment.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Prelude.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Numeric.Natural.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Numeric.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Foreign.Marshal.Utils.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Foreign.Marshal.Unsafe.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Foreign.Marshal.Safe.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Foreign.Marshal.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Foreign.Marshal.Array.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Foreign.Marshal.Alloc.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Foreign.ForeignPtr.Unsafe.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Foreign.ForeignPtr.Safe.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Foreign.ForeignPtr.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Foreign.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Debug.Trace.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Word.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Void.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Version.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Type.Equality.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Type.Coercion.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.String.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Semigroup.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.STRef.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Ratio.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Proxy.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Monoid.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.List.NonEmpty.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.List.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.IORef.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Functor.Sum.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Functor.Product.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Functor.Identity.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Functor.Contravariant.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Functor.Const.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Functor.Compose.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Functor.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Function.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Foldable.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Either.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Complex.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Bool.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Bits.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Bitraversable.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Bifunctor.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Data.Bifoldable.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Control.Monad.ST.Unsafe.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Control.Monad.ST.Lazy.Unsafe.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Control.Monad.IO.Class.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Control.Monad.Fail.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Control.Monad.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Control.Exception.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Control.Concurrent.MVar.Compat.Repl.Batteries'
+base-compat-batteries  >  100% (  2 /  2) in 'Control.Concurrent.Compat.Repl.Batteries'
+base-compat-batteries  >   95% ( 36 / 38) in 'Control.Monad.Compat'
+base-compat-batteries  >   94% ( 16 / 17) in 'Data.Type.Equality.Compat'
+base-compat-batteries  >   92% ( 12 / 13) in 'Data.Monoid.Compat'
+base-compat-batteries  >   83% ( 24 / 29) in 'Data.Semigroup.Compat'
+base-compat-batteries  >   83% (  5 /  6) in 'Data.Functor.Compat'
+base-compat-batteries  >   75% (  3 /  4) in 'Data.Void.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Type.Reflection.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Text.Read.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'System.IO.Unsafe.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'System.IO.Error.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'System.Exit.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'System.Environment.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Prelude.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Numeric.Natural.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Numeric.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Foreign.Marshal.Utils.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Foreign.Marshal.Unsafe.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Foreign.Marshal.Safe.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Foreign.Marshal.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Foreign.Marshal.Array.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Foreign.Marshal.Alloc.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Foreign.ForeignPtr.Unsafe.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Foreign.ForeignPtr.Safe.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Foreign.ForeignPtr.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Foreign.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Debug.Trace.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.Word.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.Version.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.Type.Coercion.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.String.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.STRef.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.Ratio.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.Proxy.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.List.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.IORef.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.Functor.Sum.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.Functor.Product.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.Functor.Identity.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.Functor.Contravariant.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.Functor.Const.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.Functor.Compose.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.Function.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.Foldable.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.Either.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.Complex.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.Bool.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.Bits.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.Bitraversable.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.Bifunctor.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Data.Bifoldable.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Control.Monad.ST.Unsafe.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Control.Monad.ST.Lazy.Unsafe.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Control.Monad.IO.Class.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Control.Monad.Fail.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Control.Exception.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Control.Concurrent.MVar.Compat'
+base-compat-batteries  >   50% (  1 /  2) in 'Control.Concurrent.Compat'
+base-compat            > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/base-compat-0.11.1-4oueEGUxmwHC6tuHqQ6hE2
+base-compat            >  100% ( 68 / 68) in 'Data.List.NonEmpty.Compat'
+base-compat            >  100% ( 10 / 10) in 'System.Environment.Compat'
+base-compat            >  100% (  2 /  2) in 'Type.Reflection.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Text.Read.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'System.IO.Unsafe.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'System.IO.Error.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'System.Exit.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'System.Environment.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Prelude.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Numeric.Natural.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Numeric.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Foreign.Marshal.Utils.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Foreign.Marshal.Unsafe.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Foreign.Marshal.Safe.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Foreign.Marshal.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Foreign.Marshal.Array.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Foreign.Marshal.Alloc.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Foreign.ForeignPtr.Unsafe.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Foreign.ForeignPtr.Safe.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Foreign.ForeignPtr.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Foreign.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Debug.Trace.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Word.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Void.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Version.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Type.Equality.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Type.Coercion.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.String.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Semigroup.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.STRef.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Ratio.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Proxy.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Monoid.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.List.NonEmpty.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.List.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.IORef.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Functor.Sum.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Functor.Product.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Functor.Identity.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Functor.Contravariant.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Functor.Const.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Functor.Compose.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Functor.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Function.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Foldable.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Either.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Complex.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Bool.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Bits.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Bitraversable.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Bifunctor.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Data.Bifoldable.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Control.Monad.ST.Unsafe.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Control.Monad.ST.Lazy.Unsafe.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Control.Monad.IO.Class.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Control.Monad.Fail.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Control.Monad.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Control.Exception.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Control.Concurrent.MVar.Compat.Repl'
+base-compat            >  100% (  2 /  2) in 'Control.Concurrent.Compat.Repl'
+base-compat            >   95% ( 39 / 41) in 'Control.Monad.Compat'
+base-compat            >   92% ( 12 / 13) in 'Data.Monoid.Compat'
+base-compat            >   90% ( 19 / 21) in 'Foreign.ForeignPtr.Safe.Compat'
+base-compat            >   89% ( 16 / 18) in 'Text.Read.Compat'
+base-compat            >   86% ( 25 / 29) in 'Data.Semigroup.Compat'
+base-compat            >   86% (  6 /  7) in 'Foreign.Marshal.Safe.Compat'
+base-compat            >   86% (  6 /  7) in 'Data.String.Compat'
+base-compat            >   83% (  5 /  6) in 'Debug.Trace.Compat'
+base-compat            >   83% (  5 /  6) in 'Data.Functor.Compat'
+base-compat            >   83% (  5 /  6) in 'Data.Either.Compat'
+base-compat            >   83% (  5 /  6) in 'Data.Bits.Compat'
+base-compat            >   80% (  4 /  5) in 'System.IO.Error.Compat'
+base-compat            >   80% (  4 /  5) in 'Numeric.Compat'
+base-compat            >   80% (  4 /  5) in 'Foreign.Marshal.Compat'
+base-compat            >   80% (  4 /  5) in 'Data.Word.Compat'
+base-compat            >   80% (  4 /  5) in 'Data.IORef.Compat'
+base-compat            >   80% (  4 /  5) in 'Control.Monad.ST.Unsafe.Compat'
+base-compat            >   75% (  3 /  4) in 'System.IO.Unsafe.Compat'
+base-compat            >   75% (  3 /  4) in 'Foreign.Marshal.Array.Compat'
+base-compat            >   75% (  3 /  4) in 'Foreign.Marshal.Alloc.Compat'
+base-compat            >   75% (  3 /  4) in 'Control.Concurrent.Compat'
+base-compat            >   67% (  2 /  3) in 'Type.Reflection.Compat'
+base-compat            >   67% (  2 /  3) in 'System.Exit.Compat'
+base-compat            >   67% (  2 /  3) in 'Foreign.Marshal.Utils.Compat'
+base-compat            >   67% (  2 /  3) in 'Foreign.Marshal.Unsafe.Compat'
+base-compat            >   67% (  2 /  3) in 'Foreign.ForeignPtr.Unsafe.Compat'
+base-compat            >   67% (  2 /  3) in 'Foreign.ForeignPtr.Compat'
+base-compat            >   67% (  2 /  3) in 'Foreign.Compat'
+base-compat            >   67% (  2 /  3) in 'Data.Version.Compat'
+base-compat            >   67% (  2 /  3) in 'Data.Type.Coercion.Compat'
+base-compat            >   67% (  2 /  3) in 'Data.STRef.Compat'
+base-compat            >   67% (  2 /  3) in 'Data.Proxy.Compat'
+base-compat            >   67% (  2 /  3) in 'Data.Function.Compat'
+base-compat            >   67% (  2 /  3) in 'Data.Bool.Compat'
+base-compat            >   67% (  2 /  3) in 'Control.Exception.Compat'
+base-compat            >   67% (  2 /  3) in 'Control.Concurrent.MVar.Compat'
+base-compat            >   50% (  1 /  2) in 'Prelude.Compat'
+base-compat            >   50% (  1 /  2) in 'Numeric.Natural.Compat'
+base-compat            >   50% (  1 /  2) in 'Data.Void.Compat'
+base-compat            >   50% (  1 /  2) in 'Data.Type.Equality.Compat'
+base-compat            >   50% (  1 /  2) in 'Data.Ratio.Compat'
+base-compat            >   50% (  1 /  2) in 'Data.List.Compat'
+base-compat            >   50% (  1 /  2) in 'Data.Functor.Sum.Compat'
+base-compat            >   50% (  1 /  2) in 'Data.Functor.Product.Compat'
+base-compat            >   50% (  1 /  2) in 'Data.Functor.Identity.Compat'
+base-compat            >   50% (  1 /  2) in 'Data.Functor.Contravariant.Compat'
+base-compat            >   50% (  1 /  2) in 'Data.Functor.Const.Compat'
+base-compat            >   50% (  1 /  2) in 'Data.Functor.Compose.Compat'
+base-compat            >   50% (  1 /  2) in 'Data.Foldable.Compat'
+base-compat            >   50% (  1 /  2) in 'Data.Complex.Compat'
+base-compat            >   50% (  1 /  2) in 'Data.Bitraversable.Compat'
+base-compat            >   50% (  1 /  2) in 'Data.Bifunctor.Compat'
+base-compat            >   50% (  1 /  2) in 'Data.Bifoldable.Compat'
+base-compat            >   50% (  1 /  2) in 'Control.Monad.IO.Class.Compat'
+base-compat            >   50% (  1 /  2) in 'Control.Monad.Fail.Compat'
+base-compat            >   25% (  1 /  4) in 'Control.Monad.ST.Lazy.Unsafe.Compat'
+attoparsec             > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/attoparsec-0.13.2.4-K4YDSisk3Ve1wRNN9lhNEg
+attoparsec             >  100% ( 24 / 24) in 'Data.Attoparsec.Combinator'
+attoparsec             >  100% ( 10 / 10) in 'Data.Attoparsec.Internal'
+attoparsec             >  100% (  4 /  4) in 'Data.Attoparsec.Types'
+attoparsec             >  100% (  2 /  2) in 'Data.Attoparsec.Number'
+attoparsec             >  100% (  2 /  2) in 'Data.Attoparsec.Lazy'
+attoparsec             >  100% (  2 /  2) in 'Data.Attoparsec.Char8'
+attoparsec             >  100% (  2 /  2) in 'Data.Attoparsec'
+attoparsec             >   99% ( 70 / 71) in 'Data.Attoparsec.Text.Lazy'
+attoparsec             >   98% ( 91 / 93) in 'Data.Attoparsec.ByteString.Char8'
+attoparsec             >   98% ( 90 / 92) in 'Data.Attoparsec.Text'
+attoparsec             >   98% ( 51 / 52) in 'Data.Attoparsec.ByteString.Lazy'
+attoparsec             >   97% ( 66 / 68) in 'Data.Attoparsec.ByteString'
+attoparsec             >   89% (  8 /  9) in 'Data.Attoparsec.Zepto'
+attoparsec             >   60% (  6 / 10) in 'Data.Attoparsec.Internal.Types'
+async                  > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/async-2.2.2-1Hgd7O1auE8JVtqupH0WFY
+async                  >   98% ( 64 / 65) in 'Control.Concurrent.Async'
+assoc                  > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/assoc-1.0.1-59nK2gFssAsBQrhrJ0akRl
+assoc                  >   50% (  1 /  2) in 'Data.Bifunctor.Swap'
+assoc                  >   50% (  1 /  2) in 'Data.Bifunctor.Assoc'
+ansi-wl-pprint         > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/ansi-wl-pprint-0.6.9-8g4uNwkOiJA5RF873eOrQv
+ansi-wl-pprint         >   97% (137 /141) in 'Text.PrettyPrint.ANSI.Leijen'
+ansi-wl-pprint         >   89% (117 /132) in 'Text.PrettyPrint.ANSI.Leijen.Internal'
+ansi-wl-pprint         >     * in ‘Data.Functor’
+ansi-terminal          > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/ansi-terminal-0.10.3-9zJT3Osp5wTAaMBIHKdPu2
+ansi-terminal          >  100% ( 13 / 13) in 'System.Console.ANSI.Types'
+ansi-terminal          >   58% ( 23 / 40) in 'System.Console.ANSI.Codes'
+ansi-terminal          >   48% ( 47 / 97) in 'System.Console.ANSI'
+aeson                  > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/aeson-1.4.7.1-CYBfyzHWco0JrS94obsAvi
+aeson                  >  100% ( 25 / 25) in 'Data.Aeson.TH'
+aeson                  >  100% (  3 /  3) in 'Data.Aeson.Text'
+aeson                  >   94% (115 /122) in 'Data.Aeson.Types'
+aeson                  >   93% (112 /120) in 'Data.Aeson'
+aeson                  >   88% (  7 /  8) in 'Data.Aeson.Internal'
+aeson                  >   86% ( 24 / 28) in 'Data.Aeson.Parser.Internal'
+aeson                  >   85% ( 22 / 26) in 'Data.Aeson.Parser'
+aeson                  >   50% (  1 /  2) in 'Data.Aeson.QQ.Simple'
+aeson                  >   33% (  2 /  6) in 'Data.Aeson.Internal.Time'
+aeson                  >   33% (  1 /  3) in 'Data.Aeson.Encode'
+aeson                  >   24% ( 15 / 62) in 'Data.Aeson.Encoding'
+aeson                  >   22% ( 17 / 77) in 'Data.Aeson.Encoding.Internal'
+aeson                  >     Defaulting to the one defined in ‘GHC.Types’
+aeson                  >     Defaulting to the one defined in ‘GHC.Base’
+aeson                  >     Defaulting to the one defined in ‘GHC.Base’
+aeson                  >     * in ‘GHC.Types’
+aeson                  >     * in ‘GHC.Base’
+aeson                  >     * in ‘GHC.Base’
+aeson                  >     * in ‘GHC.Base’
+adjunctions            > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/adjunctions-4.4-4ET7YWr53MjLm5r54i269M
+adjunctions            >   83% (  5 /  6) in 'Data.Functor.Contravariant.Rep'
+adjunctions            >   80% ( 12 / 15) in 'Control.Monad.Representable.State'
+adjunctions            >   80% (  4 /  5) in 'Data.Functor.Contravariant.Adjunction'
+adjunctions            >   62% ( 10 / 16) in 'Data.Functor.Adjunction'
+adjunctions            >   62% (  5 /  8) in 'Control.Comonad.Representable.Store'
+adjunctions            >   50% (  5 / 10) in 'Control.Monad.Representable.Reader'
+adjunctions            >   47% ( 22 / 47) in 'Data.Functor.Rep'
+adjunctions            >   33% (  4 / 12) in 'Control.Monad.Trans.Conts'
+adjunctions            >   20% (  1 /  5) in 'Control.Monad.Trans.Contravariant.Adjoint'
+adjunctions            >   20% (  1 /  5) in 'Control.Monad.Trans.Adjoint'
+adjunctions            >   20% (  1 /  5) in 'Control.Comonad.Trans.Adjoint'
+adjunctions            >     deprecated in the future.
+adjunctions            >     deprecated in the future.
+adjunctions            >     deprecated in the future.
+adjunctions            >     deprecated in the future.
+adjunctions            >     deprecated in the future.
+adjunctions            >     deprecated in the future.
+adjunctions            >     deprecated in the future.
+adjunctions            >     deprecated in the future.
+adjunctions            >     deprecated in the future.
+adjunctions            >     deprecated in the future.
+StateVar               > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/StateVar-1.2-9GFTup1qqdWAy26rtsnB7R
+StateVar               >  100% ( 15 / 15) in 'Data.StateVar'
+SHA                    > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/SHA-1.6.4.4-BM2VuKwAhPx3oavwxX8YnI
+SHA                    >   62% ( 24 / 39) in 'Data.Digest.Pure.SHA'
+QuickCheck             > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/QuickCheck-2.13.2-DaUcgEOc05f2iBoF7dUZuu
+QuickCheck             >  100% ( 28 / 28) in 'Test.QuickCheck.Gen'
+QuickCheck             >  100% ( 17 / 17) in 'Test.QuickCheck.Function'
+QuickCheck             >  100% ( 10 / 10) in 'Test.QuickCheck.All'
+QuickCheck             >   97% (187 /192) in 'Test.QuickCheck'
+QuickCheck             >   95% ( 21 / 22) in 'Test.QuickCheck.Modifiers'
+QuickCheck             >   92% ( 44 / 48) in 'Test.QuickCheck.Arbitrary'
+QuickCheck             >   80% (  4 /  5) in 'Test.QuickCheck.Gen.Unsafe'
+QuickCheck             >   78% ( 14 / 18) in 'Test.QuickCheck.Monadic'
+QuickCheck             >   14% (  1 /  7) in 'Test.QuickCheck.Poly'
+Only                   > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/Only-0.1-IJIAET7WRoQFFeBfrGSvp2
+Only                   >   50% (  1 /  2) in 'Data.Tuple.Only'
+NumInstances           > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/NumInstances-1.4-3iRnALm7sTTHgwOcqJZRCz
+NumInstances           >  100% (  1 /  1) in 'Data.NumInstances.Tuple'
+NumInstances           >  100% (  1 /  1) in 'Data.NumInstances.Function'
+NumInstances           >  100% (  1 /  1) in 'Data.NumInstances'
+MonadRandom            > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/MonadRandom-0.5.1.2-Amobxnw15YX5LxSSb04C9R
+MonadRandom            >  100% ( 28 / 28) in 'Control.Monad.Trans.Random.Strict'
+MonadRandom            >  100% ( 28 / 28) in 'Control.Monad.Trans.Random.Lazy'
+MonadRandom            >  100% ( 25 / 25) in 'Control.Monad.Random.Strict'
+MonadRandom            >  100% ( 25 / 25) in 'Control.Monad.Random.Lazy'
+MonadRandom            >  100% ( 14 / 14) in 'Control.Monad.Random.Class'
+MonadRandom            >  100% (  2 /  2) in 'Control.Monad.Trans.Random'
+MonadRandom            >  100% (  2 /  2) in 'Control.Monad.Random'
+MemoTrie               > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/MemoTrie-0.6.10-4gWVL2Ji0zM18WzH0yqIeG
+MemoTrie               >  100% ( 17 / 17) in 'Data.MemoTrie'
+JuicyPixels            > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/JuicyPixels-3.3.5-GjUjQEhW6hw5IymL6JRdPC
+JuicyPixels            >  100% (113 /113) in 'Codec.Picture'
+JuicyPixels            >  100% ( 81 / 81) in 'Codec.Picture.Types'
+JuicyPixels            >  100% ( 27 / 27) in 'Codec.Picture.Metadata'
+JuicyPixels            >  100% ( 13 / 13) in 'Codec.Picture.Bitmap'
+JuicyPixels            >  100% ( 10 / 10) in 'Codec.Picture.Png'
+JuicyPixels            >  100% (  8 /  8) in 'Codec.Picture.Saving'
+JuicyPixels            >  100% (  8 /  8) in 'Codec.Picture.Jpg'
+JuicyPixels            >  100% (  8 /  8) in 'Codec.Picture.HDR'
+JuicyPixels            >  100% (  7 /  7) in 'Codec.Picture.Tiff'
+JuicyPixels            >  100% (  7 /  7) in 'Codec.Picture.Tga'
+JuicyPixels            >  100% (  6 /  6) in 'Codec.Picture.Png.Internal.Export'
+JuicyPixels            >  100% (  6 /  6) in 'Codec.Picture.ColorQuant'
+JuicyPixels            >  100% (  5 /  5) in 'Codec.Picture.Jpg.Internal.FastIdct'
+JuicyPixels            >   91% ( 20 / 22) in 'Codec.Picture.Gif'
+JuicyPixels            >   83% (  5 /  6) in 'Codec.Picture.Metadata.Exif'
+JuicyPixels            >   67% (  2 /  3) in 'Codec.Picture.Jpg.Internal.FastDct'
+JuicyPixels            >   59% ( 19 / 32) in 'Codec.Picture.Png.Internal.Type'
+JuicyPixels            >   38% (  9 / 24) in 'Codec.Picture.Jpg.Internal.DefaultTable'
+JuicyPixels            >   29% (  5 / 17) in 'Codec.Picture.Jpg.Internal.Common'
+JuicyPixels            >   17% (  4 / 23) in 'Codec.Picture.Jpg.Internal.Types'
+JuicyPixels            >    9% (  2 / 23) in 'Codec.Picture.Tiff.Internal.Types'
+JuicyPixels            >    0% (  0 /  4) in 'Codec.Picture.Tiff.Internal.Metadata'
+JuicyPixels            >    0% (  0 /  3) in 'Codec.Picture.Png.Internal.Metadata'
+JuicyPixels            >    0% (  0 /  3) in 'Codec.Picture.Jpg.Internal.Progressive'
+JuicyPixels            >    0% (  0 /  3) in 'Codec.Picture.Jpg.Internal.Metadata'
+JuicyPixels            >    0% (  0 /  3) in 'Codec.Picture.Gif.Internal.LZW'
+JuicyPixels            >    0% (  0 /  2) in 'Codec.Picture.Gif.Internal.LZWEncoding'
+Installing library in /home/runner/work/reanimate/reanimate/.stack-work/install/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/reanimate-0.4.1.0-BMg1j2CgMKGE3zTRu6is48
+HUnit                  > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/HUnit-1.6.0.0-Jclpnuqehp8GGyrAnfCVLK
+HUnit                  >  100% ( 33 / 33) in 'Test.HUnit.Base'
+HUnit                  >  100% (  8 /  8) in 'Test.HUnit.Text'
+HUnit                  >  100% (  3 /  3) in 'Test.HUnit'
+HUnit                  >  100% (  2 /  2) in 'Test.HUnit.Terminal'
+HUnit                  >   55% (  6 / 11) in 'Test.HUnit.Lang'
+Boolean                > Installing library in /home/runner/.stack/snapshots/x86_64-linux/d28b6b5844fd61c80a39eae9f5a3f8f443cf7f4650513446d68c8e914dcc2e6a/8.8.3/lib/x86_64-linux-ghc-8.8.3/Boolean-0.2.4-7VPGqi5hOta7T9HeL9yIFW
+Boolean                >  100% ( 14 / 14) in 'Data.Boolean'
+Boolean                >  100% (  8 /  8) in 'Data.Boolean.Numbers'
+Boolean                >   14% (  2 / 14) in 'Data.Boolean.Overload'
+Boolean                >     * in ‘GHC.Real’
+Boolean                >     * in ‘GHC.Real’
+Boolean                >     * in ‘GHC.Real’
+Boolean                >     * in ‘GHC.Real’
+Boolean                >     * in ‘GHC.Float’
