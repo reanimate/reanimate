@@ -333,13 +333,13 @@ span.spaces    { background: white }
 <span class="lineno">  314 </span>unionPolyShapes :: [PolyShape] -&gt; [PolyShape]
 <span class="lineno">  315 </span><span class="decl"><span class="nottickedoff">unionPolyShapes shapes =</span>
 <span class="lineno">  316 </span><span class="spaces">    </span><span class="nottickedoff">map PolyShape $</span>
-<span class="lineno">  317 </span><span class="spaces">    </span><span class="nottickedoff">union (map unPolyShape shapes) NonZero (polyShapeTolerance/10000)</span></span>
+<span class="lineno">  317 </span><span class="spaces">    </span><span class="nottickedoff">union (map unPolyShape shapes) FillNonZero (polyShapeTolerance/10000)</span></span>
 <span class="lineno">  318 </span>
 <span class="lineno">  319 </span>-- | Merge overlapping shapes to within given tolerance.
 <span class="lineno">  320 </span>unionPolyShapes' :: Double -&gt; [PolyShape] -&gt; [PolyShape]
 <span class="lineno">  321 </span><span class="decl"><span class="nottickedoff">unionPolyShapes' tol shapes =</span>
 <span class="lineno">  322 </span><span class="spaces">    </span><span class="nottickedoff">map PolyShape $</span>
-<span class="lineno">  323 </span><span class="spaces">    </span><span class="nottickedoff">union (map unPolyShape shapes) NonZero tol</span></span>
+<span class="lineno">  323 </span><span class="spaces">    </span><span class="nottickedoff">union (map unPolyShape shapes) FillNonZero tol</span></span>
 <span class="lineno">  324 </span>
 <span class="lineno">  325 </span>-- | True iff lhs is inside of rhs.
 <span class="lineno">  326 </span>--   lhs and rhs may not overlap.
