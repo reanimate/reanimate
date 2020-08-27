@@ -19,7 +19,7 @@ let
     ];
   });
 
-  set = pkgs.haskell-nix.cabalProject' {
+  set = pkgs.haskell-nix.stackProject {
     name = "reanimate";
     compiler-nix-name = "ghc883";
     src = pkgs.haskell-nix.haskellLib.cleanGit {
@@ -27,9 +27,8 @@ let
       src = ./.;
     };
   };
-
-in set.hsPkgs.reanimate.components.library // {
-  env = set.hsPkgs.shellFor {
+in set.reanimate.components.library // {
+  env = set.shellFor {
     packages = p: [ p.reanimate ];
     # exactDeps = true;
     nativeBuildInputs = [ pkgs.stack
