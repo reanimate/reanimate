@@ -10,6 +10,7 @@
 * Introduce the basics for a new graphical object system.
 * Introduce online playground.
 * Introduce interactive embedded player.
+* Hide internal modules and bring documentation coverage up to 100%.
 
 ## 0.4.1.0 -- 2020-07-30
 
