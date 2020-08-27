@@ -16,11 +16,11 @@ animation = env $
       oRightX .= screenRight
     botR <- newText "Bottom right"
     oModifyS botR $ do
-      oBottomY .= screenBottom
+      oTranslate .= (0, screenBottom+0.5)
       oRightX .= screenRight
     botL <- newText "Bottom left"
     oModifyS botL $ do
-      oBottomY .= screenBottom
+      oTranslate .= (0, screenBottom+0.5)
       oLeftX .= screenLeft
     topL <- newText "Top left"
     oModifyS topL $ do
