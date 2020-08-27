@@ -116,7 +116,7 @@ span.spaces    { background: white }
 <span class="lineno">   97 </span>--
 <span class="lineno">   98 </span>--   Example:
 <span class="lineno">   99 </span>--
-<span class="lineno">  100 </span>--   &gt; drawBox `seqA` drawCircle
+<span class="lineno">  100 </span>--   @'Reanimate.Builtin.Documentation.drawBox' `'seqA'` 'Reanimate.Builtin.Documentation.drawCircle'@
 <span class="lineno">  101 </span>--
 <span class="lineno">  102 </span>--   &lt;&lt;docs/gifs/doc_seqA.gif&gt;&gt;
 <span class="lineno">  103 </span>seqA :: Animation -&gt; Animation -&gt; Animation
@@ -133,7 +133,7 @@ span.spaces    { background: white }
 <span class="lineno">  114 </span>--
 <span class="lineno">  115 </span>--   Example:
 <span class="lineno">  116 </span>--
-<span class="lineno">  117 </span>--   &gt; drawBox `parA` adjustDuration (*2) drawCircle
+<span class="lineno">  117 </span>--   @'Reanimate.Builtin.Documentation.drawBox' `'parA'` 'adjustDuration' (*2) 'Reanimate.Builtin.Documentation.drawCircle'@
 <span class="lineno">  118 </span>--
 <span class="lineno">  119 </span>--   &lt;&lt;docs/gifs/doc_parA.gif&gt;&gt;
 <span class="lineno">  120 </span>parA :: Animation -&gt; Animation -&gt; Animation
@@ -152,7 +152,7 @@ span.spaces    { background: white }
 <span class="lineno">  133 </span>--
 <span class="lineno">  134 </span>--   Example:
 <span class="lineno">  135 </span>--
-<span class="lineno">  136 </span>--   &gt; drawBox `parLoopA` adjustDuration (*2) drawCircle
+<span class="lineno">  136 </span>--   @'Reanimate.Builtin.Documentation.drawBox' `'parLoopA'` 'adjustDuration' (*2) 'Reanimate.Builtin.Documentation.drawCircle'@
 <span class="lineno">  137 </span>--
 <span class="lineno">  138 </span>--   &lt;&lt;docs/gifs/doc_parLoopA.gif&gt;&gt;
 <span class="lineno">  139 </span>parLoopA :: Animation -&gt; Animation -&gt; Animation
@@ -171,7 +171,7 @@ span.spaces    { background: white }
 <span class="lineno">  152 </span>--
 <span class="lineno">  153 </span>--   Example:
 <span class="lineno">  154 </span>--
-<span class="lineno">  155 </span>--   &gt; drawBox `parLoopA` adjustDuration (*2) drawCircle
+<span class="lineno">  155 </span>--   @'Reanimate.Builtin.Documentation.drawBox' `'parLoopA'` 'adjustDuration' (*2) 'Reanimate.Builtin.Documentation.drawCircle'@
 <span class="lineno">  156 </span>--
 <span class="lineno">  157 </span>--   &lt;&lt;docs/gifs/doc_parDropA.gif&gt;&gt;
 <span class="lineno">  158 </span>parDropA :: Animation -&gt; Animation -&gt; Animation
@@ -189,7 +189,7 @@ span.spaces    { background: white }
 <span class="lineno">  170 </span>--
 <span class="lineno">  171 </span>--   Example:
 <span class="lineno">  172 </span>--
-<span class="lineno">  173 </span>--   &gt; pause 1 `seqA` drawProgress
+<span class="lineno">  173 </span>--   @'pause' 1 `'seqA'` 'Reanimate.Builtin.Documentation.drawProgress'@
 <span class="lineno">  174 </span>--
 <span class="lineno">  175 </span>--   &lt;&lt;docs/gifs/doc_pause.gif&gt;&gt;
 <span class="lineno">  176 </span>pause :: Duration -&gt; Animation
@@ -200,7 +200,7 @@ span.spaces    { background: white }
 <span class="lineno">  181 </span>--
 <span class="lineno">  182 </span>--   Example:
 <span class="lineno">  183 </span>--
-<span class="lineno">  184 </span>--   &gt; drawBox `andThen` drawCircle
+<span class="lineno">  184 </span>--   @'Reanimate.Builtin.Documentation.drawBox' `'andThen'` 'Reanimate.Builtin.Documentation.drawCircle'@
 <span class="lineno">  185 </span>--
 <span class="lineno">  186 </span>--   &lt;&lt;docs/gifs/doc_andThen.gif&gt;&gt;
 <span class="lineno">  187 </span>andThen :: Animation -&gt; Animation -&gt; Animation
@@ -242,7 +242,7 @@ span.spaces    { background: white }
 <span class="lineno">  223 </span>--
 <span class="lineno">  224 </span>--   Example:
 <span class="lineno">  225 </span>--
-<span class="lineno">  226 </span>--   &gt; mapA (scale 0.5) drawCircle
+<span class="lineno">  226 </span>--   @'mapA' ('scale' 0.5) 'Reanimate.Builtin.Documentation.drawCircle'@
 <span class="lineno">  227 </span>--
 <span class="lineno">  228 </span>--   &lt;&lt;docs/gifs/doc_mapA.gif&gt;&gt;
 <span class="lineno">  229 </span>
@@ -253,7 +253,7 @@ span.spaces    { background: white }
 <span class="lineno">  234 </span>--
 <span class="lineno">  235 </span>--   Example:
 <span class="lineno">  236 </span>--
-<span class="lineno">  237 </span>--   &gt; pauseAtEnd 1 drawProgress
+<span class="lineno">  237 </span>--   @'pauseAtEnd' 1 'Reanimate.Builtin.Documentation.drawProgress'@
 <span class="lineno">  238 </span>--
 <span class="lineno">  239 </span>--   &lt;&lt;docs/gifs/doc_pauseAtEnd.gif&gt;&gt;
 <span class="lineno">  240 </span>pauseAtEnd :: Duration -&gt; Animation -&gt; Animation
@@ -263,7 +263,7 @@ span.spaces    { background: white }
 <span class="lineno">  244 </span>--
 <span class="lineno">  245 </span>--   Example:
 <span class="lineno">  246 </span>--
-<span class="lineno">  247 </span>--   &gt; pauseAtBeginning 1 drawProgress
+<span class="lineno">  247 </span>--   @'pauseAtBeginning' 1 'Reanimate.Builtin.Documentation.drawProgress'@
 <span class="lineno">  248 </span>--
 <span class="lineno">  249 </span>--   &lt;&lt;docs/gifs/doc_pauseAtBeginning.gif&gt;&gt;
 <span class="lineno">  250 </span>pauseAtBeginning :: Duration -&gt; Animation -&gt; Animation
@@ -274,7 +274,7 @@ span.spaces    { background: white }
 <span class="lineno">  255 </span>--
 <span class="lineno">  256 </span>--   Example:
 <span class="lineno">  257 </span>--
-<span class="lineno">  258 </span>--   &gt; pauseAround 1 1 drawProgress
+<span class="lineno">  258 </span>--   @'pauseAround' 1 1 'Reanimate.Builtin.Documentation.drawProgress'@
 <span class="lineno">  259 </span>--
 <span class="lineno">  260 </span>--   &lt;&lt;docs/gifs/doc_pauseAround.gif&gt;&gt;
 <span class="lineno">  261 </span>pauseAround :: Duration -&gt; Duration -&gt; Animation -&gt; Animation
@@ -300,7 +300,7 @@ span.spaces    { background: white }
 <span class="lineno">  281 </span>--
 <span class="lineno">  282 </span>--   Example:
 <span class="lineno">  283 </span>--
-<span class="lineno">  284 </span>--   &gt; reverseA drawCircle
+<span class="lineno">  284 </span>--   @'reverseA' 'Reanimate.Builtin.Documentation.drawCircle'@
 <span class="lineno">  285 </span>--
 <span class="lineno">  286 </span>--   &lt;&lt;docs/gifs/doc_reverseA.gif&gt;&gt;
 <span class="lineno">  287 </span>reverseA :: Animation -&gt; Animation
@@ -311,7 +311,7 @@ span.spaces    { background: white }
 <span class="lineno">  292 </span>--
 <span class="lineno">  293 </span>--   Example:
 <span class="lineno">  294 </span>--
-<span class="lineno">  295 </span>--   &gt; playThenReverseA drawCircle
+<span class="lineno">  295 </span>--   @'playThenReverseA' 'Reanimate.Builtin.Documentation.drawCircle'@
 <span class="lineno">  296 </span>--
 <span class="lineno">  297 </span>--   &lt;&lt;docs/gifs/doc_playThenReverseA.gif&gt;&gt;
 <span class="lineno">  298 </span>playThenReverseA :: Animation -&gt; Animation
@@ -323,7 +323,7 @@ span.spaces    { background: white }
 <span class="lineno">  304 </span>--
 <span class="lineno">  305 </span>--   Example:
 <span class="lineno">  306 </span>--
-<span class="lineno">  307 </span>--   &gt; repeatA 1.5 drawCircle
+<span class="lineno">  307 </span>--   @'repeatA' 1.5 'Reanimate.Builtin.Documentation.drawCircle'@
 <span class="lineno">  308 </span>--
 <span class="lineno">  309 </span>--   &lt;&lt;docs/gifs/doc_repeatA.gif&gt;&gt;
 <span class="lineno">  310 </span>repeatA :: Double -&gt; Animation -&gt; Animation
@@ -344,7 +344,7 @@ span.spaces    { background: white }
 <span class="lineno">  325 </span>--
 <span class="lineno">  326 </span>--  Example:
 <span class="lineno">  327 </span>--
-<span class="lineno">  328 </span>--  &gt; addStatic (mkBackground &quot;lightblue&quot;) drawCircle
+<span class="lineno">  328 </span>--  @'addStatic' ('mkBackground' &quot;lightblue&quot;) 'Reanimate.Builtin.Documentation.drawCircle'@
 <span class="lineno">  329 </span>--
 <span class="lineno">  330 </span>--  &lt;&lt;docs/gifs/doc_addStatic.gif&gt;&gt;
 <span class="lineno">  331 </span>addStatic :: SVG -&gt; Animation -&gt; Animation
@@ -354,7 +354,7 @@ span.spaces    { background: white }
 <span class="lineno">  335 </span>--
 <span class="lineno">  336 </span>--   Example:
 <span class="lineno">  337 </span>--
-<span class="lineno">  338 </span>--   &gt; signalA (fromToS 0.25 0.75) drawCircle
+<span class="lineno">  338 </span>--   @'signalA' ('fromToS' 0.25 0.75) 'Reanimate.Builtin.Documentation.drawCircle'@
 <span class="lineno">  339 </span>--
 <span class="lineno">  340 </span>--   &lt;&lt;docs/gifs/doc_signalA.gif&gt;&gt;
 <span class="lineno">  341 </span>signalA :: Signal -&gt; Animation -&gt; Animation
