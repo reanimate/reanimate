@@ -1,4 +1,5 @@
  100% (155 /155) in 'Reanimate'
+ 100% (113 /113) in 'Reanimate.Scene'
  100% ( 55 / 55) in 'Reanimate.Svg.Constructors'
  100% ( 41 / 41) in 'Reanimate.Animation'
  100% ( 40 / 40) in 'Reanimate.GeoProjection'
@@ -36,4 +37,3 @@
  100% (  3 /  3) in 'Reanimate.Math.Balloon'
  100% (  3 /  3) in 'Reanimate.Blender'
  100% (  2 /  2) in 'Reanimate.Builtin.CirclePlot'
-  89% (101 /113) in 'Reanimate.Scene'

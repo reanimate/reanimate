@@ -704,483 +704,499 @@ span.spaces    { background: white }
 <span class="lineno">  685 </span><span class="spaces">  </span><span class="nottickedoff">now &lt;- queryNow</span>
 <span class="lineno">  686 </span><span class="spaces">  </span><span class="nottickedoff">return $ dropA now (sceneAnimation (wait now &gt;&gt; s))</span></span>
 <span class="lineno">  687 </span>
-<span class="lineno">  688 </span>transitionO :: Transition -&gt; Double -&gt; (forall s'. Scene s' a) -&gt; (forall s'. Scene s' b) -&gt; Scene s ()
-<span class="lineno">  689 </span><span class="decl"><span class="nottickedoff">transitionO t o a b = do</span>
-<span class="lineno">  690 </span><span class="spaces">  </span><span class="nottickedoff">aA &lt;- asAnimation a</span>
-<span class="lineno">  691 </span><span class="spaces">  </span><span class="nottickedoff">bA &lt;- fork $ do</span>
-<span class="lineno">  692 </span><span class="spaces">    </span><span class="nottickedoff">wait (duration aA - o)</span>
-<span class="lineno">  693 </span><span class="spaces">    </span><span class="nottickedoff">asAnimation b</span>
-<span class="lineno">  694 </span><span class="spaces">  </span><span class="nottickedoff">play $ overlapT o t aA bA</span></span>
-<span class="lineno">  695 </span>
-<span class="lineno">  696 </span>
-<span class="lineno">  697 </span>
+<span class="lineno">  688 </span>-- | Apply a transformation with a given overlap. This makes sure
+<span class="lineno">  689 </span>--   to keep timestamps intact such that events can still be timed
+<span class="lineno">  690 </span>--   by transcripts.
+<span class="lineno">  691 </span>transitionO :: Transition -&gt; Double -&gt; (forall s'. Scene s' a) -&gt; (forall s'. Scene s' b) -&gt; Scene s ()
+<span class="lineno">  692 </span><span class="decl"><span class="nottickedoff">transitionO t o a b = do</span>
+<span class="lineno">  693 </span><span class="spaces">  </span><span class="nottickedoff">aA &lt;- asAnimation a</span>
+<span class="lineno">  694 </span><span class="spaces">  </span><span class="nottickedoff">bA &lt;- fork $ do</span>
+<span class="lineno">  695 </span><span class="spaces">    </span><span class="nottickedoff">wait (duration aA - o)</span>
+<span class="lineno">  696 </span><span class="spaces">    </span><span class="nottickedoff">asAnimation b</span>
+<span class="lineno">  697 </span><span class="spaces">  </span><span class="nottickedoff">play $ overlapT o t aA bA</span></span>
 <span class="lineno">  698 </span>
-<span class="lineno">  699 </span>-------------------------------------------------------
-<span class="lineno">  700 </span>-- Objects
+<span class="lineno">  699 </span>
+<span class="lineno">  700 </span>
 <span class="lineno">  701 </span>
-<span class="lineno">  702 </span>class Renderable a where
-<span class="lineno">  703 </span>  toSVG :: a -&gt; SVG
+<span class="lineno">  702 </span>-------------------------------------------------------
+<span class="lineno">  703 </span>-- Objects
 <span class="lineno">  704 </span>
-<span class="lineno">  705 </span>instance Renderable Tree where
-<span class="lineno">  706 </span>  <span class="decl"><span class="nottickedoff">toSVG = id</span></span>
-<span class="lineno">  707 </span>
-<span class="lineno">  708 </span>-- | Objects are SVG nodes (represented as Haskell values) with
-<span class="lineno">  709 </span>--   identity, location, and several other properties that can
-<span class="lineno">  710 </span>--   change over time.
-<span class="lineno">  711 </span>data Object s a = Object
-<span class="lineno">  712 </span>  { <span class="nottickedoff"><span class="decl"><span class="nottickedoff">objectSprite</span></span></span> :: Sprite s
-<span class="lineno">  713 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">objectData</span></span></span>   :: Var s (ObjectData a)
-<span class="lineno">  714 </span>  }
-<span class="lineno">  715 </span>
-<span class="lineno">  716 </span>-- | Container for object properties.
-<span class="lineno">  717 </span>data ObjectData a = ObjectData
-<span class="lineno">  718 </span>  { <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oTranslate</span></span></span>   :: (Double, Double)
-<span class="lineno">  719 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oValueRef</span></span></span>    :: a
-<span class="lineno">  720 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oSVG</span></span></span>         :: SVG
-<span class="lineno">  721 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oContext</span></span></span>     :: SVG -&gt; SVG
-<span class="lineno">  722 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oMargin</span></span></span>      :: (Double, Double, Double, Double)
-<span class="lineno">  723 </span>      -- ^ Top, right, bottom, left
-<span class="lineno">  724 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oBB</span></span></span>          :: (Double,Double,Double,Double)
-<span class="lineno">  725 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oOpacity</span></span></span>     :: Double
-<span class="lineno">  726 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oShown</span></span></span>       :: Bool
-<span class="lineno">  727 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oZIndex</span></span></span>      :: Int
-<span class="lineno">  728 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oEasing</span></span></span>      :: Signal
-<span class="lineno">  729 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oScale</span></span></span>       :: Double
-<span class="lineno">  730 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oScaleOrigin</span></span></span> :: (Double, Double)
-<span class="lineno">  731 </span>  }
-<span class="lineno">  732 </span>
-<span class="lineno">  733 </span>-- Basic lenses
-<span class="lineno">  734 </span>
-<span class="lineno">  735 </span>-- FIXME: Maybe 'position' is a better name.
-<span class="lineno">  736 </span>-- | Object position. Default: \&lt;0,0\&gt;
-<span class="lineno">  737 </span>oTranslate :: Lens' (ObjectData a) (Double, Double)
-<span class="lineno">  738 </span><span class="decl"><span class="nottickedoff">oTranslate = lens _oTranslate $ \obj val -&gt; obj { _oTranslate = val }</span></span>
-<span class="lineno">  739 </span>
-<span class="lineno">  740 </span>-- | Rendered SVG node of an object. Does not include context
-<span class="lineno">  741 </span>--   or object properties. Read-only.
-<span class="lineno">  742 </span>oSVG :: Getter (ObjectData a) SVG
-<span class="lineno">  743 </span><span class="decl"><span class="nottickedoff">oSVG = to _oSVG</span></span>
-<span class="lineno">  744 </span>
-<span class="lineno">  745 </span>-- | Custom render context. Is applied to the object for every
-<span class="lineno">  746 </span>--   frame that it is shown.
-<span class="lineno">  747 </span>oContext :: Lens' (ObjectData a) (SVG -&gt; SVG)
-<span class="lineno">  748 </span><span class="decl"><span class="nottickedoff">oContext = lens _oContext $ \obj val -&gt; obj { _oContext = val  }</span></span>
-<span class="lineno">  749 </span>
-<span class="lineno">  750 </span>-- | Object margins (top, right, bottom, left) in local units.
-<span class="lineno">  751 </span>oMargin :: Lens' (ObjectData a) (Double, Double, Double, Double)
-<span class="lineno">  752 </span><span class="decl"><span class="nottickedoff">oMargin = lens _oMargin $ \obj val -&gt; obj { _oMargin = val }</span></span>
+<span class="lineno">  705 </span>-- | Objects can be any Haskell structure as long as it can be rendered to SVG.
+<span class="lineno">  706 </span>class Renderable a where
+<span class="lineno">  707 </span>  toSVG :: a -&gt; SVG
+<span class="lineno">  708 </span>
+<span class="lineno">  709 </span>instance Renderable Tree where
+<span class="lineno">  710 </span>  <span class="decl"><span class="nottickedoff">toSVG = id</span></span>
+<span class="lineno">  711 </span>
+<span class="lineno">  712 </span>-- | Objects are SVG nodes (represented as Haskell values) with
+<span class="lineno">  713 </span>--   identity, location, and several other properties that can
+<span class="lineno">  714 </span>--   change over time.
+<span class="lineno">  715 </span>data Object s a = Object
+<span class="lineno">  716 </span>  { <span class="nottickedoff"><span class="decl"><span class="nottickedoff">objectSprite</span></span></span> :: Sprite s
+<span class="lineno">  717 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">objectData</span></span></span>   :: Var s (ObjectData a)
+<span class="lineno">  718 </span>  }
+<span class="lineno">  719 </span>
+<span class="lineno">  720 </span>-- | Container for object properties.
+<span class="lineno">  721 </span>data ObjectData a = ObjectData
+<span class="lineno">  722 </span>  { <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oTranslate</span></span></span>   :: (Double, Double)
+<span class="lineno">  723 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oValueRef</span></span></span>    :: a
+<span class="lineno">  724 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oSVG</span></span></span>         :: SVG
+<span class="lineno">  725 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oContext</span></span></span>     :: SVG -&gt; SVG
+<span class="lineno">  726 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oMargin</span></span></span>      :: (Double, Double, Double, Double)
+<span class="lineno">  727 </span>      -- ^ Top, right, bottom, left
+<span class="lineno">  728 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oBB</span></span></span>          :: (Double,Double,Double,Double)
+<span class="lineno">  729 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oOpacity</span></span></span>     :: Double
+<span class="lineno">  730 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oShown</span></span></span>       :: Bool
+<span class="lineno">  731 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oZIndex</span></span></span>      :: Int
+<span class="lineno">  732 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oEasing</span></span></span>      :: Signal
+<span class="lineno">  733 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oScale</span></span></span>       :: Double
+<span class="lineno">  734 </span>  , <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_oScaleOrigin</span></span></span> :: (Double, Double)
+<span class="lineno">  735 </span>  }
+<span class="lineno">  736 </span>
+<span class="lineno">  737 </span>-- Basic lenses
+<span class="lineno">  738 </span>
+<span class="lineno">  739 </span>-- FIXME: Maybe 'position' is a better name.
+<span class="lineno">  740 </span>-- | Object position. Default: \&lt;0,0\&gt;
+<span class="lineno">  741 </span>oTranslate :: Lens' (ObjectData a) (Double, Double)
+<span class="lineno">  742 </span><span class="decl"><span class="nottickedoff">oTranslate = lens _oTranslate $ \obj val -&gt; obj { _oTranslate = val }</span></span>
+<span class="lineno">  743 </span>
+<span class="lineno">  744 </span>-- | Rendered SVG node of an object. Does not include context
+<span class="lineno">  745 </span>--   or object properties. Read-only.
+<span class="lineno">  746 </span>oSVG :: Getter (ObjectData a) SVG
+<span class="lineno">  747 </span><span class="decl"><span class="nottickedoff">oSVG = to _oSVG</span></span>
+<span class="lineno">  748 </span>
+<span class="lineno">  749 </span>-- | Custom render context. Is applied to the object for every
+<span class="lineno">  750 </span>--   frame that it is shown.
+<span class="lineno">  751 </span>oContext :: Lens' (ObjectData a) (SVG -&gt; SVG)
+<span class="lineno">  752 </span><span class="decl"><span class="nottickedoff">oContext = lens _oContext $ \obj val -&gt; obj { _oContext = val  }</span></span>
 <span class="lineno">  753 </span>
-<span class="lineno">  754 </span>-- | Object bounding-box (minimal X-coordinate, minimal Y-coordinate,
-<span class="lineno">  755 </span>--   width, height). Uses `Reanimate.Svg.BoundingBox.boundingBox`
-<span class="lineno">  756 </span>--   and has the same limitations.
-<span class="lineno">  757 </span>oBB :: Getter (ObjectData a) (Double, Double, Double, Double)
-<span class="lineno">  758 </span><span class="decl"><span class="nottickedoff">oBB = to _oBB</span></span>
-<span class="lineno">  759 </span>
-<span class="lineno">  760 </span>-- | Object opacity. Default: 1
-<span class="lineno">  761 </span>oOpacity :: Lens' (ObjectData a) Double
-<span class="lineno">  762 </span><span class="decl"><span class="nottickedoff">oOpacity = lens _oOpacity $ \obj val -&gt; obj { _oOpacity = val }</span></span>
+<span class="lineno">  754 </span>-- | Object margins (top, right, bottom, left) in local units.
+<span class="lineno">  755 </span>oMargin :: Lens' (ObjectData a) (Double, Double, Double, Double)
+<span class="lineno">  756 </span><span class="decl"><span class="nottickedoff">oMargin = lens _oMargin $ \obj val -&gt; obj { _oMargin = val }</span></span>
+<span class="lineno">  757 </span>
+<span class="lineno">  758 </span>-- | Object bounding-box (minimal X-coordinate, minimal Y-coordinate,
+<span class="lineno">  759 </span>--   width, height). Uses `Reanimate.Svg.BoundingBox.boundingBox`
+<span class="lineno">  760 </span>--   and has the same limitations.
+<span class="lineno">  761 </span>oBB :: Getter (ObjectData a) (Double, Double, Double, Double)
+<span class="lineno">  762 </span><span class="decl"><span class="nottickedoff">oBB = to _oBB</span></span>
 <span class="lineno">  763 </span>
-<span class="lineno">  764 </span>-- | Toggle for whether or not the object should be rendered.
-<span class="lineno">  765 </span>--   Default: False
-<span class="lineno">  766 </span>oShown :: Lens' (ObjectData a) Bool
-<span class="lineno">  767 </span><span class="decl"><span class="nottickedoff">oShown = lens _oShown $ \obj val -&gt; obj { _oShown = val }</span></span>
-<span class="lineno">  768 </span>
-<span class="lineno">  769 </span>-- | Object's z-index.
-<span class="lineno">  770 </span>oZIndex :: Lens' (ObjectData a) Int
-<span class="lineno">  771 </span><span class="decl"><span class="nottickedoff">oZIndex = lens _oZIndex $ \obj val -&gt; obj { _oZIndex = val }</span></span>
+<span class="lineno">  764 </span>-- | Object opacity. Default: 1
+<span class="lineno">  765 </span>oOpacity :: Lens' (ObjectData a) Double
+<span class="lineno">  766 </span><span class="decl"><span class="nottickedoff">oOpacity = lens _oOpacity $ \obj val -&gt; obj { _oOpacity = val }</span></span>
+<span class="lineno">  767 </span>
+<span class="lineno">  768 </span>-- | Toggle for whether or not the object should be rendered.
+<span class="lineno">  769 </span>--   Default: False
+<span class="lineno">  770 </span>oShown :: Lens' (ObjectData a) Bool
+<span class="lineno">  771 </span><span class="decl"><span class="nottickedoff">oShown = lens _oShown $ \obj val -&gt; obj { _oShown = val }</span></span>
 <span class="lineno">  772 </span>
-<span class="lineno">  773 </span>-- | Easing function used when modifying object properties.
-<span class="lineno">  774 </span>--   Default: @'Reanimate.Ease.curveS' 2@
-<span class="lineno">  775 </span>oEasing :: Lens' (ObjectData a) Signal
-<span class="lineno">  776 </span><span class="decl"><span class="nottickedoff">oEasing = lens _oEasing $ \obj val -&gt; obj { _oEasing = val }</span></span>
-<span class="lineno">  777 </span>
-<span class="lineno">  778 </span>-- | Object's scale. Default: 1
-<span class="lineno">  779 </span>oScale :: Lens' (ObjectData a) Double
-<span class="lineno">  780 </span><span class="decl"><span class="nottickedoff">oScale = lens _oScale $ \obj val -&gt; obj { _oScale = val }</span></span>
+<span class="lineno">  773 </span>-- | Object's z-index.
+<span class="lineno">  774 </span>oZIndex :: Lens' (ObjectData a) Int
+<span class="lineno">  775 </span><span class="decl"><span class="nottickedoff">oZIndex = lens _oZIndex $ \obj val -&gt; obj { _oZIndex = val }</span></span>
+<span class="lineno">  776 </span>
+<span class="lineno">  777 </span>-- | Easing function used when modifying object properties.
+<span class="lineno">  778 </span>--   Default: @'Reanimate.Ease.curveS' 2@
+<span class="lineno">  779 </span>oEasing :: Lens' (ObjectData a) Signal
+<span class="lineno">  780 </span><span class="decl"><span class="nottickedoff">oEasing = lens _oEasing $ \obj val -&gt; obj { _oEasing = val }</span></span>
 <span class="lineno">  781 </span>
-<span class="lineno">  782 </span>-- | Origin point for scaling. Default: \&lt;0,0\&gt;
-<span class="lineno">  783 </span>oScaleOrigin :: Lens' (ObjectData a) (Double, Double)
-<span class="lineno">  784 </span><span class="decl"><span class="nottickedoff">oScaleOrigin = lens _oScaleOrigin $ \obj val -&gt; obj { _oScaleOrigin = val }</span></span>
+<span class="lineno">  782 </span>-- | Object's scale. Default: 1
+<span class="lineno">  783 </span>oScale :: Lens' (ObjectData a) Double
+<span class="lineno">  784 </span><span class="decl"><span class="nottickedoff">oScale = lens _oScale $ \obj val -&gt; obj { _oScale = val }</span></span>
 <span class="lineno">  785 </span>
-<span class="lineno">  786 </span>-- Smart lenses
-<span class="lineno">  787 </span>
-<span class="lineno">  788 </span>-- | Lens for the source value contained in an object.
-<span class="lineno">  789 </span>oValue :: Renderable a =&gt; Lens' (ObjectData a) a
-<span class="lineno">  790 </span><span class="decl"><span class="nottickedoff">oValue = lens _oValueRef $ \obj newVal -&gt;</span>
-<span class="lineno">  791 </span><span class="spaces">    </span><span class="nottickedoff">let svg = toSVG newVal</span>
-<span class="lineno">  792 </span><span class="spaces">    </span><span class="nottickedoff">in obj</span>
-<span class="lineno">  793 </span><span class="spaces">    </span><span class="nottickedoff">{ _oValueRef = newVal</span>
-<span class="lineno">  794 </span><span class="spaces">    </span><span class="nottickedoff">, _oSVG      = svg</span>
-<span class="lineno">  795 </span><span class="spaces">    </span><span class="nottickedoff">, _oBB       = boundingBox svg }</span></span>
-<span class="lineno">  796 </span>
-<span class="lineno">  797 </span>-- | Derived location of the top-most point of an object + margin.
-<span class="lineno">  798 </span>oTopY :: Lens' (ObjectData a) Double
-<span class="lineno">  799 </span><span class="decl"><span class="nottickedoff">oTopY = lens getter setter</span>
-<span class="lineno">  800 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  801 </span><span class="spaces">    </span><span class="nottickedoff">getter obj = </span>
-<span class="lineno">  802 </span><span class="spaces">      </span><span class="nottickedoff">let top  = obj ^. oMarginTop</span>
-<span class="lineno">  803 </span><span class="spaces">          </span><span class="nottickedoff">miny = obj ^. oBBMinY</span>
-<span class="lineno">  804 </span><span class="spaces">          </span><span class="nottickedoff">h    = obj ^. oBBHeight</span>
-<span class="lineno">  805 </span><span class="spaces">          </span><span class="nottickedoff">dy   = obj ^. oTranslate . _2</span>
-<span class="lineno">  806 </span><span class="spaces">      </span><span class="nottickedoff">in dy+miny+h+top</span>
-<span class="lineno">  807 </span><span class="spaces">    </span><span class="nottickedoff">setter obj val =</span>
-<span class="lineno">  808 </span><span class="spaces">      </span><span class="nottickedoff">obj &amp; (oTranslate . _2) +~ val-getter obj</span></span>
-<span class="lineno">  809 </span>
-<span class="lineno">  810 </span>-- | Derived location of the bottom-most point of an object + margin.
-<span class="lineno">  811 </span>oBottomY :: Lens' (ObjectData a) Double
-<span class="lineno">  812 </span><span class="decl"><span class="nottickedoff">oBottomY = lens getter setter</span>
-<span class="lineno">  813 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  814 </span><span class="spaces">    </span><span class="nottickedoff">getter obj = </span>
-<span class="lineno">  815 </span><span class="spaces">      </span><span class="nottickedoff">let bot  = obj ^. oMarginBottom</span>
-<span class="lineno">  816 </span><span class="spaces">          </span><span class="nottickedoff">miny = obj ^. oBBMinY</span>
-<span class="lineno">  817 </span><span class="spaces">          </span><span class="nottickedoff">dy   = obj ^. oTranslate . _2</span>
-<span class="lineno">  818 </span><span class="spaces">      </span><span class="nottickedoff">in dy+miny-bot</span>
-<span class="lineno">  819 </span><span class="spaces">    </span><span class="nottickedoff">setter obj val = </span>
-<span class="lineno">  820 </span><span class="spaces">      </span><span class="nottickedoff">obj &amp; (oTranslate . _2) +~ val-getter obj</span></span>
-<span class="lineno">  821 </span>
-<span class="lineno">  822 </span>-- | Derived location of the left-most point of an object + margin.
-<span class="lineno">  823 </span>oLeftX :: Lens' (ObjectData a) Double
-<span class="lineno">  824 </span><span class="decl"><span class="nottickedoff">oLeftX = lens getter setter</span>
-<span class="lineno">  825 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  826 </span><span class="spaces">    </span><span class="nottickedoff">getter obj =</span>
-<span class="lineno">  827 </span><span class="spaces">      </span><span class="nottickedoff">let left = obj ^. oMarginLeft</span>
-<span class="lineno">  828 </span><span class="spaces">          </span><span class="nottickedoff">minx = obj ^. oBBMinX</span>
-<span class="lineno">  829 </span><span class="spaces">          </span><span class="nottickedoff">dx   = obj ^. oTranslate . _1</span>
-<span class="lineno">  830 </span><span class="spaces">      </span><span class="nottickedoff">in dx+minx-left</span>
-<span class="lineno">  831 </span><span class="spaces">    </span><span class="nottickedoff">setter obj val =</span>
-<span class="lineno">  832 </span><span class="spaces">      </span><span class="nottickedoff">obj &amp; (oTranslate . _1) +~ val-getter obj</span></span>
-<span class="lineno">  833 </span>
-<span class="lineno">  834 </span>-- | Derived location of the right-most point of an object + margin.
-<span class="lineno">  835 </span>oRightX :: Lens' (ObjectData a) Double
-<span class="lineno">  836 </span><span class="decl"><span class="nottickedoff">oRightX = lens getter setter</span>
-<span class="lineno">  837 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  838 </span><span class="spaces">    </span><span class="nottickedoff">getter obj =</span>
-<span class="lineno">  839 </span><span class="spaces">      </span><span class="nottickedoff">let right = obj ^. oMarginRight</span>
-<span class="lineno">  840 </span><span class="spaces">          </span><span class="nottickedoff">minx  = obj ^. oBBMinX</span>
-<span class="lineno">  841 </span><span class="spaces">          </span><span class="nottickedoff">w     = obj ^. oBBWidth</span>
-<span class="lineno">  842 </span><span class="spaces">          </span><span class="nottickedoff">dx    = obj ^. oTranslate . _1</span>
-<span class="lineno">  843 </span><span class="spaces">      </span><span class="nottickedoff">in dx+minx+w+right</span>
-<span class="lineno">  844 </span><span class="spaces">    </span><span class="nottickedoff">setter obj val =</span>
-<span class="lineno">  845 </span><span class="spaces">      </span><span class="nottickedoff">obj &amp; (oTranslate . _1) +~ val-getter obj</span></span>
-<span class="lineno">  846 </span>
-<span class="lineno">  847 </span>-- | Derived location of an object's center point.
-<span class="lineno">  848 </span>oCenterXY :: Lens' (ObjectData a) (Double, Double)
-<span class="lineno">  849 </span><span class="decl"><span class="nottickedoff">oCenterXY = lens getter setter</span>
-<span class="lineno">  850 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  851 </span><span class="spaces">    </span><span class="nottickedoff">getter obj =</span>
-<span class="lineno">  852 </span><span class="spaces">      </span><span class="nottickedoff">let minx    = obj ^. oBBMinX</span>
-<span class="lineno">  853 </span><span class="spaces">          </span><span class="nottickedoff">miny    = obj ^. oBBMinY</span>
-<span class="lineno">  854 </span><span class="spaces">          </span><span class="nottickedoff">w       = obj ^. oBBWidth</span>
-<span class="lineno">  855 </span><span class="spaces">          </span><span class="nottickedoff">h       = obj ^. oBBHeight</span>
-<span class="lineno">  856 </span><span class="spaces">          </span><span class="nottickedoff">(dx,dy) = obj ^. oTranslate</span>
-<span class="lineno">  857 </span><span class="spaces">      </span><span class="nottickedoff">in (dx+minx+w/2, dy+miny+h/2)</span>
-<span class="lineno">  858 </span><span class="spaces">    </span><span class="nottickedoff">setter obj (dx, dy) =</span>
-<span class="lineno">  859 </span><span class="spaces">      </span><span class="nottickedoff">let (x,y) = getter obj in</span>
-<span class="lineno">  860 </span><span class="spaces">      </span><span class="nottickedoff">obj &amp; (oTranslate . _1) +~ dx-x</span>
-<span class="lineno">  861 </span><span class="spaces">          </span><span class="nottickedoff">&amp; (oTranslate . _2) +~ dy-y</span></span>
-<span class="lineno">  862 </span>
-<span class="lineno">  863 </span>-- | Object's top margin.
-<span class="lineno">  864 </span>oMarginTop :: Lens' (ObjectData a) Double
-<span class="lineno">  865 </span><span class="decl"><span class="nottickedoff">oMarginTop = oMargin . _1</span></span>
+<span class="lineno">  786 </span>-- | Origin point for scaling. Default: \&lt;0,0\&gt;
+<span class="lineno">  787 </span>oScaleOrigin :: Lens' (ObjectData a) (Double, Double)
+<span class="lineno">  788 </span><span class="decl"><span class="nottickedoff">oScaleOrigin = lens _oScaleOrigin $ \obj val -&gt; obj { _oScaleOrigin = val }</span></span>
+<span class="lineno">  789 </span>
+<span class="lineno">  790 </span>-- Smart lenses
+<span class="lineno">  791 </span>
+<span class="lineno">  792 </span>-- | Lens for the source value contained in an object.
+<span class="lineno">  793 </span>oValue :: Renderable a =&gt; Lens' (ObjectData a) a
+<span class="lineno">  794 </span><span class="decl"><span class="nottickedoff">oValue = lens _oValueRef $ \obj newVal -&gt;</span>
+<span class="lineno">  795 </span><span class="spaces">    </span><span class="nottickedoff">let svg = toSVG newVal</span>
+<span class="lineno">  796 </span><span class="spaces">    </span><span class="nottickedoff">in obj</span>
+<span class="lineno">  797 </span><span class="spaces">    </span><span class="nottickedoff">{ _oValueRef = newVal</span>
+<span class="lineno">  798 </span><span class="spaces">    </span><span class="nottickedoff">, _oSVG      = svg</span>
+<span class="lineno">  799 </span><span class="spaces">    </span><span class="nottickedoff">, _oBB       = boundingBox svg }</span></span>
+<span class="lineno">  800 </span>
+<span class="lineno">  801 </span>-- | Derived location of the top-most point of an object + margin.
+<span class="lineno">  802 </span>oTopY :: Lens' (ObjectData a) Double
+<span class="lineno">  803 </span><span class="decl"><span class="nottickedoff">oTopY = lens getter setter</span>
+<span class="lineno">  804 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  805 </span><span class="spaces">    </span><span class="nottickedoff">getter obj = </span>
+<span class="lineno">  806 </span><span class="spaces">      </span><span class="nottickedoff">let top  = obj ^. oMarginTop</span>
+<span class="lineno">  807 </span><span class="spaces">          </span><span class="nottickedoff">miny = obj ^. oBBMinY</span>
+<span class="lineno">  808 </span><span class="spaces">          </span><span class="nottickedoff">h    = obj ^. oBBHeight</span>
+<span class="lineno">  809 </span><span class="spaces">          </span><span class="nottickedoff">dy   = obj ^. oTranslate . _2</span>
+<span class="lineno">  810 </span><span class="spaces">      </span><span class="nottickedoff">in dy+miny+h+top</span>
+<span class="lineno">  811 </span><span class="spaces">    </span><span class="nottickedoff">setter obj val =</span>
+<span class="lineno">  812 </span><span class="spaces">      </span><span class="nottickedoff">obj &amp; (oTranslate . _2) +~ val-getter obj</span></span>
+<span class="lineno">  813 </span>
+<span class="lineno">  814 </span>-- | Derived location of the bottom-most point of an object + margin.
+<span class="lineno">  815 </span>oBottomY :: Lens' (ObjectData a) Double
+<span class="lineno">  816 </span><span class="decl"><span class="nottickedoff">oBottomY = lens getter setter</span>
+<span class="lineno">  817 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  818 </span><span class="spaces">    </span><span class="nottickedoff">getter obj = </span>
+<span class="lineno">  819 </span><span class="spaces">      </span><span class="nottickedoff">let bot  = obj ^. oMarginBottom</span>
+<span class="lineno">  820 </span><span class="spaces">          </span><span class="nottickedoff">miny = obj ^. oBBMinY</span>
+<span class="lineno">  821 </span><span class="spaces">          </span><span class="nottickedoff">dy   = obj ^. oTranslate . _2</span>
+<span class="lineno">  822 </span><span class="spaces">      </span><span class="nottickedoff">in dy+miny-bot</span>
+<span class="lineno">  823 </span><span class="spaces">    </span><span class="nottickedoff">setter obj val = </span>
+<span class="lineno">  824 </span><span class="spaces">      </span><span class="nottickedoff">obj &amp; (oTranslate . _2) +~ val-getter obj</span></span>
+<span class="lineno">  825 </span>
+<span class="lineno">  826 </span>-- | Derived location of the left-most point of an object + margin.
+<span class="lineno">  827 </span>oLeftX :: Lens' (ObjectData a) Double
+<span class="lineno">  828 </span><span class="decl"><span class="nottickedoff">oLeftX = lens getter setter</span>
+<span class="lineno">  829 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  830 </span><span class="spaces">    </span><span class="nottickedoff">getter obj =</span>
+<span class="lineno">  831 </span><span class="spaces">      </span><span class="nottickedoff">let left = obj ^. oMarginLeft</span>
+<span class="lineno">  832 </span><span class="spaces">          </span><span class="nottickedoff">minx = obj ^. oBBMinX</span>
+<span class="lineno">  833 </span><span class="spaces">          </span><span class="nottickedoff">dx   = obj ^. oTranslate . _1</span>
+<span class="lineno">  834 </span><span class="spaces">      </span><span class="nottickedoff">in dx+minx-left</span>
+<span class="lineno">  835 </span><span class="spaces">    </span><span class="nottickedoff">setter obj val =</span>
+<span class="lineno">  836 </span><span class="spaces">      </span><span class="nottickedoff">obj &amp; (oTranslate . _1) +~ val-getter obj</span></span>
+<span class="lineno">  837 </span>
+<span class="lineno">  838 </span>-- | Derived location of the right-most point of an object + margin.
+<span class="lineno">  839 </span>oRightX :: Lens' (ObjectData a) Double
+<span class="lineno">  840 </span><span class="decl"><span class="nottickedoff">oRightX = lens getter setter</span>
+<span class="lineno">  841 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  842 </span><span class="spaces">    </span><span class="nottickedoff">getter obj =</span>
+<span class="lineno">  843 </span><span class="spaces">      </span><span class="nottickedoff">let right = obj ^. oMarginRight</span>
+<span class="lineno">  844 </span><span class="spaces">          </span><span class="nottickedoff">minx  = obj ^. oBBMinX</span>
+<span class="lineno">  845 </span><span class="spaces">          </span><span class="nottickedoff">w     = obj ^. oBBWidth</span>
+<span class="lineno">  846 </span><span class="spaces">          </span><span class="nottickedoff">dx    = obj ^. oTranslate . _1</span>
+<span class="lineno">  847 </span><span class="spaces">      </span><span class="nottickedoff">in dx+minx+w+right</span>
+<span class="lineno">  848 </span><span class="spaces">    </span><span class="nottickedoff">setter obj val =</span>
+<span class="lineno">  849 </span><span class="spaces">      </span><span class="nottickedoff">obj &amp; (oTranslate . _1) +~ val-getter obj</span></span>
+<span class="lineno">  850 </span>
+<span class="lineno">  851 </span>-- | Derived location of an object's center point.
+<span class="lineno">  852 </span>oCenterXY :: Lens' (ObjectData a) (Double, Double)
+<span class="lineno">  853 </span><span class="decl"><span class="nottickedoff">oCenterXY = lens getter setter</span>
+<span class="lineno">  854 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  855 </span><span class="spaces">    </span><span class="nottickedoff">getter obj =</span>
+<span class="lineno">  856 </span><span class="spaces">      </span><span class="nottickedoff">let minx    = obj ^. oBBMinX</span>
+<span class="lineno">  857 </span><span class="spaces">          </span><span class="nottickedoff">miny    = obj ^. oBBMinY</span>
+<span class="lineno">  858 </span><span class="spaces">          </span><span class="nottickedoff">w       = obj ^. oBBWidth</span>
+<span class="lineno">  859 </span><span class="spaces">          </span><span class="nottickedoff">h       = obj ^. oBBHeight</span>
+<span class="lineno">  860 </span><span class="spaces">          </span><span class="nottickedoff">(dx,dy) = obj ^. oTranslate</span>
+<span class="lineno">  861 </span><span class="spaces">      </span><span class="nottickedoff">in (dx+minx+w/2, dy+miny+h/2)</span>
+<span class="lineno">  862 </span><span class="spaces">    </span><span class="nottickedoff">setter obj (dx, dy) =</span>
+<span class="lineno">  863 </span><span class="spaces">      </span><span class="nottickedoff">let (x,y) = getter obj in</span>
+<span class="lineno">  864 </span><span class="spaces">      </span><span class="nottickedoff">obj &amp; (oTranslate . _1) +~ dx-x</span>
+<span class="lineno">  865 </span><span class="spaces">          </span><span class="nottickedoff">&amp; (oTranslate . _2) +~ dy-y</span></span>
 <span class="lineno">  866 </span>
-<span class="lineno">  867 </span>-- | Object's right margin.
-<span class="lineno">  868 </span>oMarginRight :: Lens' (ObjectData a) Double
-<span class="lineno">  869 </span><span class="decl"><span class="nottickedoff">oMarginRight = oMargin . _2</span></span>
+<span class="lineno">  867 </span>-- | Object's top margin.
+<span class="lineno">  868 </span>oMarginTop :: Lens' (ObjectData a) Double
+<span class="lineno">  869 </span><span class="decl"><span class="nottickedoff">oMarginTop = oMargin . _1</span></span>
 <span class="lineno">  870 </span>
-<span class="lineno">  871 </span>-- | Object's bottom margin.
-<span class="lineno">  872 </span>oMarginBottom :: Lens' (ObjectData a) Double
-<span class="lineno">  873 </span><span class="decl"><span class="nottickedoff">oMarginBottom = oMargin . _3</span></span>
+<span class="lineno">  871 </span>-- | Object's right margin.
+<span class="lineno">  872 </span>oMarginRight :: Lens' (ObjectData a) Double
+<span class="lineno">  873 </span><span class="decl"><span class="nottickedoff">oMarginRight = oMargin . _2</span></span>
 <span class="lineno">  874 </span>
-<span class="lineno">  875 </span>-- | Object's left margin.
-<span class="lineno">  876 </span>oMarginLeft :: Lens' (ObjectData a) Double
-<span class="lineno">  877 </span><span class="decl"><span class="nottickedoff">oMarginLeft = oMargin . _4</span></span>
+<span class="lineno">  875 </span>-- | Object's bottom margin.
+<span class="lineno">  876 </span>oMarginBottom :: Lens' (ObjectData a) Double
+<span class="lineno">  877 </span><span class="decl"><span class="nottickedoff">oMarginBottom = oMargin . _3</span></span>
 <span class="lineno">  878 </span>
-<span class="lineno">  879 </span>-- | Object's minimal X-coordinate..
-<span class="lineno">  880 </span>oBBMinX :: Getter (ObjectData a) Double
-<span class="lineno">  881 </span><span class="decl"><span class="nottickedoff">oBBMinX = oBB . _1</span></span>
+<span class="lineno">  879 </span>-- | Object's left margin.
+<span class="lineno">  880 </span>oMarginLeft :: Lens' (ObjectData a) Double
+<span class="lineno">  881 </span><span class="decl"><span class="nottickedoff">oMarginLeft = oMargin . _4</span></span>
 <span class="lineno">  882 </span>
-<span class="lineno">  883 </span>-- | Object's minimal Y-coordinate..
-<span class="lineno">  884 </span>oBBMinY :: Getter (ObjectData a) Double
-<span class="lineno">  885 </span><span class="decl"><span class="nottickedoff">oBBMinY = oBB . _2</span></span>
+<span class="lineno">  883 </span>-- | Object's minimal X-coordinate..
+<span class="lineno">  884 </span>oBBMinX :: Getter (ObjectData a) Double
+<span class="lineno">  885 </span><span class="decl"><span class="nottickedoff">oBBMinX = oBB . _1</span></span>
 <span class="lineno">  886 </span>
-<span class="lineno">  887 </span>-- | Object's width without margin.
-<span class="lineno">  888 </span>oBBWidth :: Getter (ObjectData a) Double
-<span class="lineno">  889 </span><span class="decl"><span class="nottickedoff">oBBWidth = oBB . _3</span></span>
+<span class="lineno">  887 </span>-- | Object's minimal Y-coordinate..
+<span class="lineno">  888 </span>oBBMinY :: Getter (ObjectData a) Double
+<span class="lineno">  889 </span><span class="decl"><span class="nottickedoff">oBBMinY = oBB . _2</span></span>
 <span class="lineno">  890 </span>
-<span class="lineno">  891 </span>-- | Object's height without margin.
-<span class="lineno">  892 </span>oBBHeight :: Getter (ObjectData a) Double
-<span class="lineno">  893 </span><span class="decl"><span class="nottickedoff">oBBHeight = oBB . _4</span></span>
+<span class="lineno">  891 </span>-- | Object's width without margin.
+<span class="lineno">  892 </span>oBBWidth :: Getter (ObjectData a) Double
+<span class="lineno">  893 </span><span class="decl"><span class="nottickedoff">oBBWidth = oBB . _3</span></span>
 <span class="lineno">  894 </span>
-<span class="lineno">  895 </span>-------------------------------------------------------------------------------
-<span class="lineno">  896 </span>-- Object modifiers
-<span class="lineno">  897 </span>
-<span class="lineno">  898 </span>-- | Modify object properties.
-<span class="lineno">  899 </span>oModify :: Object s a -&gt; (ObjectData a -&gt; ObjectData a) -&gt; Scene s ()
-<span class="lineno">  900 </span><span class="decl"><span class="nottickedoff">oModify o fn = modifyVar (objectData o) fn</span></span>
+<span class="lineno">  895 </span>-- | Object's height without margin.
+<span class="lineno">  896 </span>oBBHeight :: Getter (ObjectData a) Double
+<span class="lineno">  897 </span><span class="decl"><span class="nottickedoff">oBBHeight = oBB . _4</span></span>
+<span class="lineno">  898 </span>
+<span class="lineno">  899 </span>-------------------------------------------------------------------------------
+<span class="lineno">  900 </span>-- Object modifiers
 <span class="lineno">  901 </span>
-<span class="lineno">  902 </span>-- | Modify object properties using a stateful API.
-<span class="lineno">  903 </span>oModifyS :: Object s a -&gt; (State (ObjectData a) b) -&gt; Scene s ()
-<span class="lineno">  904 </span><span class="decl"><span class="nottickedoff">oModifyS o fn = oModify o (execState fn)</span></span>
+<span class="lineno">  902 </span>-- | Modify object properties.
+<span class="lineno">  903 </span>oModify :: Object s a -&gt; (ObjectData a -&gt; ObjectData a) -&gt; Scene s ()
+<span class="lineno">  904 </span><span class="decl"><span class="nottickedoff">oModify o fn = modifyVar (objectData o) fn</span></span>
 <span class="lineno">  905 </span>
-<span class="lineno">  906 </span>-- | Query object property.
-<span class="lineno">  907 </span>oRead :: Object s a -&gt; Getting b (ObjectData a) b -&gt; Scene s b
-<span class="lineno">  908 </span><span class="decl"><span class="nottickedoff">oRead o l = view l &lt;$&gt; readVar (objectData o)</span></span>
+<span class="lineno">  906 </span>-- | Modify object properties using a stateful API.
+<span class="lineno">  907 </span>oModifyS :: Object s a -&gt; (State (ObjectData a) b) -&gt; Scene s ()
+<span class="lineno">  908 </span><span class="decl"><span class="nottickedoff">oModifyS o fn = oModify o (execState fn)</span></span>
 <span class="lineno">  909 </span>
-<span class="lineno">  910 </span>-- | Modify object properties over a set duration.
-<span class="lineno">  911 </span>oTween :: Object s a -&gt; Duration -&gt; (Double -&gt; ObjectData a -&gt; ObjectData a) -&gt; Scene s ()
-<span class="lineno">  912 </span><span class="decl"><span class="nottickedoff">oTween o d fn = do</span>
-<span class="lineno">  913 </span><span class="spaces">  </span><span class="nottickedoff">-- Read 'easing' var here instead of taking it from 'v'.</span>
-<span class="lineno">  914 </span><span class="spaces">  </span><span class="nottickedoff">-- This allows different easing functions even at the same timestamp.</span>
-<span class="lineno">  915 </span><span class="spaces">  </span><span class="nottickedoff">ease &lt;- oRead o oEasing</span>
-<span class="lineno">  916 </span><span class="spaces">  </span><span class="nottickedoff">tweenVar (objectData o) d (\v t -&gt; fn (ease t) v)</span></span>
-<span class="lineno">  917 </span>
-<span class="lineno">  918 </span>-- | Modify object properties over a set duration using a stateful API.
-<span class="lineno">  919 </span>oTweenS :: Object s a -&gt; Duration -&gt; (Double -&gt; State (ObjectData a) b) -&gt; Scene s ()
-<span class="lineno">  920 </span><span class="decl"><span class="nottickedoff">oTweenS o d fn = oTween o d (\t -&gt; execState (fn t))</span></span>
+<span class="lineno">  910 </span>-- | Query object property.
+<span class="lineno">  911 </span>oRead :: Object s a -&gt; Getting b (ObjectData a) b -&gt; Scene s b
+<span class="lineno">  912 </span><span class="decl"><span class="nottickedoff">oRead o l = view l &lt;$&gt; readVar (objectData o)</span></span>
+<span class="lineno">  913 </span>
+<span class="lineno">  914 </span>-- | Modify object properties over a set duration.
+<span class="lineno">  915 </span>oTween :: Object s a -&gt; Duration -&gt; (Double -&gt; ObjectData a -&gt; ObjectData a) -&gt; Scene s ()
+<span class="lineno">  916 </span><span class="decl"><span class="nottickedoff">oTween o d fn = do</span>
+<span class="lineno">  917 </span><span class="spaces">  </span><span class="nottickedoff">-- Read 'easing' var here instead of taking it from 'v'.</span>
+<span class="lineno">  918 </span><span class="spaces">  </span><span class="nottickedoff">-- This allows different easing functions even at the same timestamp.</span>
+<span class="lineno">  919 </span><span class="spaces">  </span><span class="nottickedoff">ease &lt;- oRead o oEasing</span>
+<span class="lineno">  920 </span><span class="spaces">  </span><span class="nottickedoff">tweenVar (objectData o) d (\v t -&gt; fn (ease t) v)</span></span>
 <span class="lineno">  921 </span>
-<span class="lineno">  922 </span>-- | Modify object value over a set duration. This is a convenience function
-<span class="lineno">  923 </span>--   for modifying `oValue`.
-<span class="lineno">  924 </span>oTweenV :: Renderable a =&gt; Object s a -&gt; Duration -&gt; (Double -&gt; a -&gt; a) -&gt; Scene s ()
-<span class="lineno">  925 </span><span class="decl"><span class="nottickedoff">oTweenV o d fn = oTween o d (\t -&gt; oValue %~ fn t)</span></span>
-<span class="lineno">  926 </span>
-<span class="lineno">  927 </span>-- | Modify object value over a set duration using a stateful API. This is a
-<span class="lineno">  928 </span>--   convenience function for modifying `oValue`.
-<span class="lineno">  929 </span>oTweenVS :: Renderable a =&gt; Object s a -&gt; Duration -&gt; (Double -&gt; State a b) -&gt; Scene s ()
-<span class="lineno">  930 </span><span class="decl"><span class="nottickedoff">oTweenVS o d fn = oTween o d (\t -&gt; oValue %~ execState (fn t))</span></span>
-<span class="lineno">  931 </span>
-<span class="lineno">  932 </span>-- | Create new object.
-<span class="lineno">  933 </span>oNew :: Renderable a =&gt; a -&gt; Scene s (Object s a)
-<span class="lineno">  934 </span><span class="decl"><span class="nottickedoff">oNew = newObject</span></span>
+<span class="lineno">  922 </span>-- | Modify object properties over a set duration using a stateful API.
+<span class="lineno">  923 </span>oTweenS :: Object s a -&gt; Duration -&gt; (Double -&gt; State (ObjectData a) b) -&gt; Scene s ()
+<span class="lineno">  924 </span><span class="decl"><span class="nottickedoff">oTweenS o d fn = oTween o d (\t -&gt; execState (fn t))</span></span>
+<span class="lineno">  925 </span>
+<span class="lineno">  926 </span>-- | Modify object value over a set duration. This is a convenience function
+<span class="lineno">  927 </span>--   for modifying `oValue`.
+<span class="lineno">  928 </span>oTweenV :: Renderable a =&gt; Object s a -&gt; Duration -&gt; (Double -&gt; a -&gt; a) -&gt; Scene s ()
+<span class="lineno">  929 </span><span class="decl"><span class="nottickedoff">oTweenV o d fn = oTween o d (\t -&gt; oValue %~ fn t)</span></span>
+<span class="lineno">  930 </span>
+<span class="lineno">  931 </span>-- | Modify object value over a set duration using a stateful API. This is a
+<span class="lineno">  932 </span>--   convenience function for modifying `oValue`.
+<span class="lineno">  933 </span>oTweenVS :: Renderable a =&gt; Object s a -&gt; Duration -&gt; (Double -&gt; State a b) -&gt; Scene s ()
+<span class="lineno">  934 </span><span class="decl"><span class="nottickedoff">oTweenVS o d fn = oTween o d (\t -&gt; oValue %~ execState (fn t))</span></span>
 <span class="lineno">  935 </span>
 <span class="lineno">  936 </span>-- | Create new object.
-<span class="lineno">  937 </span>newObject :: Renderable a =&gt; a -&gt; Scene s (Object s a)
-<span class="lineno">  938 </span><span class="decl"><span class="nottickedoff">newObject val = do</span>
-<span class="lineno">  939 </span><span class="spaces">  </span><span class="nottickedoff">ref &lt;- newVar ObjectData</span>
-<span class="lineno">  940 </span><span class="spaces">    </span><span class="nottickedoff">{ _oTranslate = (0,0)</span>
-<span class="lineno">  941 </span><span class="spaces">    </span><span class="nottickedoff">, _oValueRef = val</span>
-<span class="lineno">  942 </span><span class="spaces">    </span><span class="nottickedoff">, _oSVG = svg</span>
-<span class="lineno">  943 </span><span class="spaces">    </span><span class="nottickedoff">, _oContext = id</span>
-<span class="lineno">  944 </span><span class="spaces">    </span><span class="nottickedoff">, _oMargin = (0.5,0.5,0.5,0.5)</span>
-<span class="lineno">  945 </span><span class="spaces">    </span><span class="nottickedoff">, _oBB = boundingBox svg</span>
-<span class="lineno">  946 </span><span class="spaces">    </span><span class="nottickedoff">, _oOpacity = 1</span>
-<span class="lineno">  947 </span><span class="spaces">    </span><span class="nottickedoff">, _oShown = False</span>
-<span class="lineno">  948 </span><span class="spaces">    </span><span class="nottickedoff">, _oZIndex = 1</span>
-<span class="lineno">  949 </span><span class="spaces">    </span><span class="nottickedoff">, _oEasing = curveS 2</span>
-<span class="lineno">  950 </span><span class="spaces">    </span><span class="nottickedoff">, _oScale = 1</span>
-<span class="lineno">  951 </span><span class="spaces">    </span><span class="nottickedoff">, _oScaleOrigin = (0,0)</span>
-<span class="lineno">  952 </span><span class="spaces">    </span><span class="nottickedoff">}</span>
-<span class="lineno">  953 </span><span class="spaces">  </span><span class="nottickedoff">sprite &lt;- newSprite $ do</span>
-<span class="lineno">  954 </span><span class="spaces">    </span><span class="nottickedoff">~ObjectData{..} &lt;- unVar ref</span>
-<span class="lineno">  955 </span><span class="spaces">    </span><span class="nottickedoff">pure $</span>
-<span class="lineno">  956 </span><span class="spaces">      </span><span class="nottickedoff">if _oShown</span>
-<span class="lineno">  957 </span><span class="spaces">        </span><span class="nottickedoff">then</span>
-<span class="lineno">  958 </span><span class="spaces">          </span><span class="nottickedoff">uncurry translate _oTranslate $</span>
-<span class="lineno">  959 </span><span class="spaces">          </span><span class="nottickedoff">uncurry translate (_oScaleOrigin &amp; both %~ negate) $</span>
-<span class="lineno">  960 </span><span class="spaces">          </span><span class="nottickedoff">scale _oScale $</span>
-<span class="lineno">  961 </span><span class="spaces">          </span><span class="nottickedoff">uncurry translate _oScaleOrigin $</span>
-<span class="lineno">  962 </span><span class="spaces">          </span><span class="nottickedoff">withGroupOpacity _oOpacity $</span>
-<span class="lineno">  963 </span><span class="spaces">          </span><span class="nottickedoff">_oContext _oSVG</span>
-<span class="lineno">  964 </span><span class="spaces">        </span><span class="nottickedoff">else None</span>
-<span class="lineno">  965 </span><span class="spaces">  </span><span class="nottickedoff">spriteModify sprite $ do</span>
-<span class="lineno">  966 </span><span class="spaces">    </span><span class="nottickedoff">~ObjectData{_oZIndex=z} &lt;- unVar ref</span>
-<span class="lineno">  967 </span><span class="spaces">    </span><span class="nottickedoff">pure $ \(img,_) -&gt; (img,z)</span>
-<span class="lineno">  968 </span><span class="spaces">  </span><span class="nottickedoff">return Object</span>
-<span class="lineno">  969 </span><span class="spaces">    </span><span class="nottickedoff">{ objectSprite = sprite</span>
-<span class="lineno">  970 </span><span class="spaces">    </span><span class="nottickedoff">, objectData   = ref }</span>
-<span class="lineno">  971 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  972 </span><span class="spaces">    </span><span class="nottickedoff">svg = toSVG val</span></span>
-<span class="lineno">  973 </span>
-<span class="lineno">  974 </span>-------------------------------------------------------------------------------
-<span class="lineno">  975 </span>-- Graphical transformations
-<span class="lineno">  976 </span>
-<span class="lineno">  977 </span>-- | Instantly show object.
-<span class="lineno">  978 </span>oShow :: Object s a -&gt; Scene s ()
-<span class="lineno">  979 </span><span class="decl"><span class="nottickedoff">oShow o = oModify o $ oShown .~ True</span></span>
+<span class="lineno">  937 </span>oNew :: Renderable a =&gt; a -&gt; Scene s (Object s a)
+<span class="lineno">  938 </span><span class="decl"><span class="nottickedoff">oNew = newObject</span></span>
+<span class="lineno">  939 </span>
+<span class="lineno">  940 </span>-- | Create new object.
+<span class="lineno">  941 </span>newObject :: Renderable a =&gt; a -&gt; Scene s (Object s a)
+<span class="lineno">  942 </span><span class="decl"><span class="nottickedoff">newObject val = do</span>
+<span class="lineno">  943 </span><span class="spaces">  </span><span class="nottickedoff">ref &lt;- newVar ObjectData</span>
+<span class="lineno">  944 </span><span class="spaces">    </span><span class="nottickedoff">{ _oTranslate = (0,0)</span>
+<span class="lineno">  945 </span><span class="spaces">    </span><span class="nottickedoff">, _oValueRef = val</span>
+<span class="lineno">  946 </span><span class="spaces">    </span><span class="nottickedoff">, _oSVG = svg</span>
+<span class="lineno">  947 </span><span class="spaces">    </span><span class="nottickedoff">, _oContext = id</span>
+<span class="lineno">  948 </span><span class="spaces">    </span><span class="nottickedoff">, _oMargin = (0.5,0.5,0.5,0.5)</span>
+<span class="lineno">  949 </span><span class="spaces">    </span><span class="nottickedoff">, _oBB = boundingBox svg</span>
+<span class="lineno">  950 </span><span class="spaces">    </span><span class="nottickedoff">, _oOpacity = 1</span>
+<span class="lineno">  951 </span><span class="spaces">    </span><span class="nottickedoff">, _oShown = False</span>
+<span class="lineno">  952 </span><span class="spaces">    </span><span class="nottickedoff">, _oZIndex = 1</span>
+<span class="lineno">  953 </span><span class="spaces">    </span><span class="nottickedoff">, _oEasing = curveS 2</span>
+<span class="lineno">  954 </span><span class="spaces">    </span><span class="nottickedoff">, _oScale = 1</span>
+<span class="lineno">  955 </span><span class="spaces">    </span><span class="nottickedoff">, _oScaleOrigin = (0,0)</span>
+<span class="lineno">  956 </span><span class="spaces">    </span><span class="nottickedoff">}</span>
+<span class="lineno">  957 </span><span class="spaces">  </span><span class="nottickedoff">sprite &lt;- newSprite $ do</span>
+<span class="lineno">  958 </span><span class="spaces">    </span><span class="nottickedoff">~ObjectData{..} &lt;- unVar ref</span>
+<span class="lineno">  959 </span><span class="spaces">    </span><span class="nottickedoff">pure $</span>
+<span class="lineno">  960 </span><span class="spaces">      </span><span class="nottickedoff">if _oShown</span>
+<span class="lineno">  961 </span><span class="spaces">        </span><span class="nottickedoff">then</span>
+<span class="lineno">  962 </span><span class="spaces">          </span><span class="nottickedoff">uncurry translate _oTranslate $</span>
+<span class="lineno">  963 </span><span class="spaces">          </span><span class="nottickedoff">uncurry translate (_oScaleOrigin &amp; both %~ negate) $</span>
+<span class="lineno">  964 </span><span class="spaces">          </span><span class="nottickedoff">scale _oScale $</span>
+<span class="lineno">  965 </span><span class="spaces">          </span><span class="nottickedoff">uncurry translate _oScaleOrigin $</span>
+<span class="lineno">  966 </span><span class="spaces">          </span><span class="nottickedoff">withGroupOpacity _oOpacity $</span>
+<span class="lineno">  967 </span><span class="spaces">          </span><span class="nottickedoff">_oContext _oSVG</span>
+<span class="lineno">  968 </span><span class="spaces">        </span><span class="nottickedoff">else None</span>
+<span class="lineno">  969 </span><span class="spaces">  </span><span class="nottickedoff">spriteModify sprite $ do</span>
+<span class="lineno">  970 </span><span class="spaces">    </span><span class="nottickedoff">~ObjectData{_oZIndex=z} &lt;- unVar ref</span>
+<span class="lineno">  971 </span><span class="spaces">    </span><span class="nottickedoff">pure $ \(img,_) -&gt; (img,z)</span>
+<span class="lineno">  972 </span><span class="spaces">  </span><span class="nottickedoff">return Object</span>
+<span class="lineno">  973 </span><span class="spaces">    </span><span class="nottickedoff">{ objectSprite = sprite</span>
+<span class="lineno">  974 </span><span class="spaces">    </span><span class="nottickedoff">, objectData   = ref }</span>
+<span class="lineno">  975 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  976 </span><span class="spaces">    </span><span class="nottickedoff">svg = toSVG val</span></span>
+<span class="lineno">  977 </span>
+<span class="lineno">  978 </span>-------------------------------------------------------------------------------
+<span class="lineno">  979 </span>-- Graphical transformations
 <span class="lineno">  980 </span>
-<span class="lineno">  981 </span>-- | Instantly hide object.
-<span class="lineno">  982 </span>oHide :: Object s a -&gt; Scene s ()
-<span class="lineno">  983 </span><span class="decl"><span class="nottickedoff">oHide o = oModify o $ oShown .~ False</span></span>
+<span class="lineno">  981 </span>-- | Instantly show object.
+<span class="lineno">  982 </span>oShow :: Object s a -&gt; Scene s ()
+<span class="lineno">  983 </span><span class="decl"><span class="nottickedoff">oShow o = oModify o $ oShown .~ True</span></span>
 <span class="lineno">  984 </span>
-<span class="lineno">  985 </span>-- | Fade in object over a set duration.
-<span class="lineno">  986 </span>oFadeIn :: Object s a -&gt; Duration -&gt; Scene s ()
-<span class="lineno">  987 </span><span class="decl"><span class="nottickedoff">oFadeIn o d = do</span>
-<span class="lineno">  988 </span><span class="spaces">  </span><span class="nottickedoff">oModify o $ </span>
-<span class="lineno">  989 </span><span class="spaces">    </span><span class="nottickedoff">oShown   .~ True</span>
-<span class="lineno">  990 </span><span class="spaces">  </span><span class="nottickedoff">oTweenS o d $ \t -&gt;</span>
-<span class="lineno">  991 </span><span class="spaces">    </span><span class="nottickedoff">oOpacity *= t</span></span>
-<span class="lineno">  992 </span>
-<span class="lineno">  993 </span>-- | Fade out object over a set duration.
-<span class="lineno">  994 </span>oFadeOut :: Object s a -&gt; Duration -&gt; Scene s ()
-<span class="lineno">  995 </span><span class="decl"><span class="nottickedoff">oFadeOut o d = do</span>
-<span class="lineno">  996 </span><span class="spaces">  </span><span class="nottickedoff">oModify o $ </span>
-<span class="lineno">  997 </span><span class="spaces">    </span><span class="nottickedoff">oShown   .~ True</span>
-<span class="lineno">  998 </span><span class="spaces">  </span><span class="nottickedoff">oTweenS o d $ \t -&gt;</span>
-<span class="lineno">  999 </span><span class="spaces">    </span><span class="nottickedoff">oOpacity *= 1-t</span></span>
-<span class="lineno"> 1000 </span>
-<span class="lineno"> 1001 </span>-- | Scale in object over a set duration.
-<span class="lineno"> 1002 </span>oGrow :: Object s a -&gt; Duration -&gt; Scene s ()
-<span class="lineno"> 1003 </span><span class="decl"><span class="nottickedoff">oGrow o d = do</span>
-<span class="lineno"> 1004 </span><span class="spaces">  </span><span class="nottickedoff">oModify o $ </span>
-<span class="lineno"> 1005 </span><span class="spaces">    </span><span class="nottickedoff">oShown .~ True</span>
-<span class="lineno"> 1006 </span><span class="spaces">  </span><span class="nottickedoff">oTweenS o d $ \t -&gt;</span>
-<span class="lineno"> 1007 </span><span class="spaces">    </span><span class="nottickedoff">oScale *= t</span></span>
-<span class="lineno"> 1008 </span>
-<span class="lineno"> 1009 </span>-- | Scale out object over a set duration.
-<span class="lineno"> 1010 </span>oShrink :: Object s a -&gt; Duration -&gt; Scene s ()
-<span class="lineno"> 1011 </span><span class="decl"><span class="nottickedoff">oShrink o d =</span>
-<span class="lineno"> 1012 </span><span class="spaces">  </span><span class="nottickedoff">oTweenS o d $ \t -&gt;</span>
-<span class="lineno"> 1013 </span><span class="spaces">    </span><span class="nottickedoff">oScale *= 1-t</span></span>
-<span class="lineno"> 1014 </span>
-<span class="lineno"> 1015 </span>-- FIXME: Also transform attributes: 'opacity', 'scale', 'scaleOrigin'.
-<span class="lineno"> 1016 </span>-- | Morph source object into target object over a set duration.
-<span class="lineno"> 1017 </span>oTransform :: Object s a -&gt; Object s b -&gt; Duration -&gt; Scene s ()
-<span class="lineno"> 1018 </span><span class="decl"><span class="nottickedoff">oTransform src dst d = do</span>
-<span class="lineno"> 1019 </span><span class="spaces">    </span><span class="nottickedoff">srcSvg &lt;- oRead src oSVG</span>
-<span class="lineno"> 1020 </span><span class="spaces">    </span><span class="nottickedoff">srcCtx &lt;- oRead src oContext</span>
-<span class="lineno"> 1021 </span><span class="spaces">    </span><span class="nottickedoff">srcEase &lt;- oRead src oEasing</span>
-<span class="lineno"> 1022 </span><span class="spaces">    </span><span class="nottickedoff">srcLoc &lt;- oRead src oTranslate</span>
-<span class="lineno"> 1023 </span><span class="spaces">    </span><span class="nottickedoff">oModify src $ oShown .~ False</span>
-<span class="lineno"> 1024 </span><span class="spaces">    </span><span class="nottickedoff"></span>
-<span class="lineno"> 1025 </span><span class="spaces">    </span><span class="nottickedoff">dstSvg &lt;- oRead dst oSVG</span>
-<span class="lineno"> 1026 </span><span class="spaces">    </span><span class="nottickedoff">dstCtx &lt;- oRead dst oContext</span>
-<span class="lineno"> 1027 </span><span class="spaces">    </span><span class="nottickedoff">dstLoc &lt;- oRead dst oTranslate</span>
-<span class="lineno"> 1028 </span><span class="spaces"></span><span class="nottickedoff"></span>
-<span class="lineno"> 1029 </span><span class="spaces">    </span><span class="nottickedoff">m &lt;- newObject $ Morph 0 (srcCtx srcSvg) (dstCtx dstSvg)</span>
-<span class="lineno"> 1030 </span><span class="spaces">    </span><span class="nottickedoff">oModifyS m $ do</span>
-<span class="lineno"> 1031 </span><span class="spaces">      </span><span class="nottickedoff">oShown     .= True</span>
-<span class="lineno"> 1032 </span><span class="spaces">      </span><span class="nottickedoff">oEasing    .= srcEase</span>
-<span class="lineno"> 1033 </span><span class="spaces">      </span><span class="nottickedoff">oTranslate .= srcLoc</span>
-<span class="lineno"> 1034 </span><span class="spaces">    </span><span class="nottickedoff">fork $ oTween m d $ \t -&gt; oTranslate %~ moveTo t dstLoc</span>
-<span class="lineno"> 1035 </span><span class="spaces">    </span><span class="nottickedoff">oTweenV m d $ \t -&gt; morphDelta .~ t</span>
-<span class="lineno"> 1036 </span><span class="spaces">    </span><span class="nottickedoff">oModify m $ oShown .~ False</span>
-<span class="lineno"> 1037 </span><span class="spaces">    </span><span class="nottickedoff">oModify dst $ oShown .~ True</span>
-<span class="lineno"> 1038 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno"> 1039 </span><span class="spaces">    </span><span class="nottickedoff">moveTo t (dstX, dstY) (srcX, srcY) =</span>
-<span class="lineno"> 1040 </span><span class="spaces">      </span><span class="nottickedoff">(fromToS srcX dstX t, fromToS srcY dstY t)</span></span>
-<span class="lineno"> 1041 </span>
-<span class="lineno"> 1042 </span>
-<span class="lineno"> 1043 </span>-------------------------------------------------------------------------------
-<span class="lineno"> 1044 </span>-- Built-in objects
+<span class="lineno">  985 </span>-- | Instantly hide object.
+<span class="lineno">  986 </span>oHide :: Object s a -&gt; Scene s ()
+<span class="lineno">  987 </span><span class="decl"><span class="nottickedoff">oHide o = oModify o $ oShown .~ False</span></span>
+<span class="lineno">  988 </span>
+<span class="lineno">  989 </span>-- | Fade in object over a set duration.
+<span class="lineno">  990 </span>oFadeIn :: Object s a -&gt; Duration -&gt; Scene s ()
+<span class="lineno">  991 </span><span class="decl"><span class="nottickedoff">oFadeIn o d = do</span>
+<span class="lineno">  992 </span><span class="spaces">  </span><span class="nottickedoff">oModify o $ </span>
+<span class="lineno">  993 </span><span class="spaces">    </span><span class="nottickedoff">oShown   .~ True</span>
+<span class="lineno">  994 </span><span class="spaces">  </span><span class="nottickedoff">oTweenS o d $ \t -&gt;</span>
+<span class="lineno">  995 </span><span class="spaces">    </span><span class="nottickedoff">oOpacity *= t</span></span>
+<span class="lineno">  996 </span>
+<span class="lineno">  997 </span>-- | Fade out object over a set duration.
+<span class="lineno">  998 </span>oFadeOut :: Object s a -&gt; Duration -&gt; Scene s ()
+<span class="lineno">  999 </span><span class="decl"><span class="nottickedoff">oFadeOut o d = do</span>
+<span class="lineno"> 1000 </span><span class="spaces">  </span><span class="nottickedoff">oModify o $ </span>
+<span class="lineno"> 1001 </span><span class="spaces">    </span><span class="nottickedoff">oShown   .~ True</span>
+<span class="lineno"> 1002 </span><span class="spaces">  </span><span class="nottickedoff">oTweenS o d $ \t -&gt;</span>
+<span class="lineno"> 1003 </span><span class="spaces">    </span><span class="nottickedoff">oOpacity *= 1-t</span></span>
+<span class="lineno"> 1004 </span>
+<span class="lineno"> 1005 </span>-- | Scale in object over a set duration.
+<span class="lineno"> 1006 </span>oGrow :: Object s a -&gt; Duration -&gt; Scene s ()
+<span class="lineno"> 1007 </span><span class="decl"><span class="nottickedoff">oGrow o d = do</span>
+<span class="lineno"> 1008 </span><span class="spaces">  </span><span class="nottickedoff">oModify o $ </span>
+<span class="lineno"> 1009 </span><span class="spaces">    </span><span class="nottickedoff">oShown .~ True</span>
+<span class="lineno"> 1010 </span><span class="spaces">  </span><span class="nottickedoff">oTweenS o d $ \t -&gt;</span>
+<span class="lineno"> 1011 </span><span class="spaces">    </span><span class="nottickedoff">oScale *= t</span></span>
+<span class="lineno"> 1012 </span>
+<span class="lineno"> 1013 </span>-- | Scale out object over a set duration.
+<span class="lineno"> 1014 </span>oShrink :: Object s a -&gt; Duration -&gt; Scene s ()
+<span class="lineno"> 1015 </span><span class="decl"><span class="nottickedoff">oShrink o d =</span>
+<span class="lineno"> 1016 </span><span class="spaces">  </span><span class="nottickedoff">oTweenS o d $ \t -&gt;</span>
+<span class="lineno"> 1017 </span><span class="spaces">    </span><span class="nottickedoff">oScale *= 1-t</span></span>
+<span class="lineno"> 1018 </span>
+<span class="lineno"> 1019 </span>-- FIXME: Also transform attributes: 'opacity', 'scale', 'scaleOrigin'.
+<span class="lineno"> 1020 </span>-- | Morph source object into target object over a set duration.
+<span class="lineno"> 1021 </span>oTransform :: Object s a -&gt; Object s b -&gt; Duration -&gt; Scene s ()
+<span class="lineno"> 1022 </span><span class="decl"><span class="nottickedoff">oTransform src dst d = do</span>
+<span class="lineno"> 1023 </span><span class="spaces">    </span><span class="nottickedoff">srcSvg &lt;- oRead src oSVG</span>
+<span class="lineno"> 1024 </span><span class="spaces">    </span><span class="nottickedoff">srcCtx &lt;- oRead src oContext</span>
+<span class="lineno"> 1025 </span><span class="spaces">    </span><span class="nottickedoff">srcEase &lt;- oRead src oEasing</span>
+<span class="lineno"> 1026 </span><span class="spaces">    </span><span class="nottickedoff">srcLoc &lt;- oRead src oTranslate</span>
+<span class="lineno"> 1027 </span><span class="spaces">    </span><span class="nottickedoff">oModify src $ oShown .~ False</span>
+<span class="lineno"> 1028 </span><span class="spaces">    </span><span class="nottickedoff"></span>
+<span class="lineno"> 1029 </span><span class="spaces">    </span><span class="nottickedoff">dstSvg &lt;- oRead dst oSVG</span>
+<span class="lineno"> 1030 </span><span class="spaces">    </span><span class="nottickedoff">dstCtx &lt;- oRead dst oContext</span>
+<span class="lineno"> 1031 </span><span class="spaces">    </span><span class="nottickedoff">dstLoc &lt;- oRead dst oTranslate</span>
+<span class="lineno"> 1032 </span><span class="spaces"></span><span class="nottickedoff"></span>
+<span class="lineno"> 1033 </span><span class="spaces">    </span><span class="nottickedoff">m &lt;- newObject $ Morph 0 (srcCtx srcSvg) (dstCtx dstSvg)</span>
+<span class="lineno"> 1034 </span><span class="spaces">    </span><span class="nottickedoff">oModifyS m $ do</span>
+<span class="lineno"> 1035 </span><span class="spaces">      </span><span class="nottickedoff">oShown     .= True</span>
+<span class="lineno"> 1036 </span><span class="spaces">      </span><span class="nottickedoff">oEasing    .= srcEase</span>
+<span class="lineno"> 1037 </span><span class="spaces">      </span><span class="nottickedoff">oTranslate .= srcLoc</span>
+<span class="lineno"> 1038 </span><span class="spaces">    </span><span class="nottickedoff">fork $ oTween m d $ \t -&gt; oTranslate %~ moveTo t dstLoc</span>
+<span class="lineno"> 1039 </span><span class="spaces">    </span><span class="nottickedoff">oTweenV m d $ \t -&gt; morphDelta .~ t</span>
+<span class="lineno"> 1040 </span><span class="spaces">    </span><span class="nottickedoff">oModify m $ oShown .~ False</span>
+<span class="lineno"> 1041 </span><span class="spaces">    </span><span class="nottickedoff">oModify dst $ oShown .~ True</span>
+<span class="lineno"> 1042 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno"> 1043 </span><span class="spaces">    </span><span class="nottickedoff">moveTo t (dstX, dstY) (srcX, srcY) =</span>
+<span class="lineno"> 1044 </span><span class="spaces">      </span><span class="nottickedoff">(fromToS srcX dstX t, fromToS srcY dstY t)</span></span>
 <span class="lineno"> 1045 </span>
-<span class="lineno"> 1046 </span>newtype Circle = Circle {<span class="nottickedoff"><span class="decl"><span class="nottickedoff">_circleRadius</span></span></span> :: Double}
-<span class="lineno"> 1047 </span>
-<span class="lineno"> 1048 </span>circleRadius :: Iso' Circle Double
-<span class="lineno"> 1049 </span><span class="decl"><span class="nottickedoff">circleRadius = iso _circleRadius Circle</span></span>
-<span class="lineno"> 1050 </span>
-<span class="lineno"> 1051 </span>instance Renderable Circle where
-<span class="lineno"> 1052 </span>  <span class="decl"><span class="nottickedoff">toSVG (Circle r) = mkCircle r</span></span>
-<span class="lineno"> 1053 </span>
-<span class="lineno"> 1054 </span>data Rectangle = Rectangle { <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_rectWidth</span></span></span> :: Double, <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_rectHeight</span></span></span> :: Double }
-<span class="lineno"> 1055 </span>
-<span class="lineno"> 1056 </span>rectWidth :: Lens' Rectangle Double
-<span class="lineno"> 1057 </span><span class="decl"><span class="nottickedoff">rectWidth = lens _rectWidth $ \obj val -&gt; obj{_rectWidth=val}</span></span>
-<span class="lineno"> 1058 </span>
-<span class="lineno"> 1059 </span>rectHeight :: Lens' Rectangle Double
-<span class="lineno"> 1060 </span><span class="decl"><span class="nottickedoff">rectHeight = lens _rectHeight $ \obj val -&gt; obj{_rectHeight=val}</span></span>
-<span class="lineno"> 1061 </span>
-<span class="lineno"> 1062 </span>instance Renderable Rectangle where
-<span class="lineno"> 1063 </span>  <span class="decl"><span class="nottickedoff">toSVG (Rectangle w h) = mkRect w h</span></span>
-<span class="lineno"> 1064 </span>
-<span class="lineno"> 1065 </span>data Morph = Morph { <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_morphDelta</span></span></span> :: Double, <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_morphSrc</span></span></span> :: SVG, <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_morphDst</span></span></span> :: SVG }
+<span class="lineno"> 1046 </span>
+<span class="lineno"> 1047 </span>-------------------------------------------------------------------------------
+<span class="lineno"> 1048 </span>-- Built-in objects
+<span class="lineno"> 1049 </span>
+<span class="lineno"> 1050 </span>-- | Basic object mapping to \&lt;circle\/\&gt; in SVG.
+<span class="lineno"> 1051 </span>newtype Circle = Circle {<span class="nottickedoff"><span class="decl"><span class="nottickedoff">_circleRadius</span></span></span> :: Double}
+<span class="lineno"> 1052 </span>
+<span class="lineno"> 1053 </span>-- | Circle radius in local units.
+<span class="lineno"> 1054 </span>circleRadius :: Lens' Circle Double
+<span class="lineno"> 1055 </span><span class="decl"><span class="nottickedoff">circleRadius = iso _circleRadius Circle</span></span>
+<span class="lineno"> 1056 </span>
+<span class="lineno"> 1057 </span>instance Renderable Circle where
+<span class="lineno"> 1058 </span>  <span class="decl"><span class="nottickedoff">toSVG (Circle r) = mkCircle r</span></span>
+<span class="lineno"> 1059 </span>
+<span class="lineno"> 1060 </span>-- | Basic object mapping to \&lt;rect\/\&gt; in SVG.
+<span class="lineno"> 1061 </span>data Rectangle = Rectangle { <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_rectWidth</span></span></span> :: Double, <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_rectHeight</span></span></span> :: Double }
+<span class="lineno"> 1062 </span>
+<span class="lineno"> 1063 </span>-- | Rectangle width in local units.
+<span class="lineno"> 1064 </span>rectWidth :: Lens' Rectangle Double
+<span class="lineno"> 1065 </span><span class="decl"><span class="nottickedoff">rectWidth = lens _rectWidth $ \obj val -&gt; obj{_rectWidth=val}</span></span>
 <span class="lineno"> 1066 </span>
-<span class="lineno"> 1067 </span>morphDelta :: Lens' Morph Double
-<span class="lineno"> 1068 </span><span class="decl"><span class="nottickedoff">morphDelta = lens _morphDelta $ \obj val -&gt; obj{_morphDelta = val}</span></span>
-<span class="lineno"> 1069 </span>
-<span class="lineno"> 1070 </span>morphSrc :: Lens' Morph SVG
-<span class="lineno"> 1071 </span><span class="decl"><span class="nottickedoff">morphSrc = lens _morphSrc $ \obj val -&gt; obj{_morphSrc = val}</span></span>
-<span class="lineno"> 1072 </span>
-<span class="lineno"> 1073 </span>morphDst :: Lens' Morph SVG
-<span class="lineno"> 1074 </span><span class="decl"><span class="nottickedoff">morphDst = lens _morphDst $ \obj val -&gt; obj{_morphDst = val}</span></span>
-<span class="lineno"> 1075 </span>
-<span class="lineno"> 1076 </span>instance Renderable Morph where
-<span class="lineno"> 1077 </span>  <span class="decl"><span class="nottickedoff">toSVG (Morph t src dst) = morph linear src dst t</span></span>
-<span class="lineno"> 1078 </span>
-<span class="lineno"> 1079 </span>data Camera = Camera
-<span class="lineno"> 1080 </span>instance Renderable Camera where
-<span class="lineno"> 1081 </span>  <span class="decl"><span class="nottickedoff">toSVG Camera = None</span></span>
-<span class="lineno"> 1082 </span>
-<span class="lineno"> 1083 </span>-- | Connect an object to a camera such that
-<span class="lineno"> 1084 </span>--   camera settings (position, zoom, and rotation) is
-<span class="lineno"> 1085 </span>--   applied to the object.
-<span class="lineno"> 1086 </span>--
-<span class="lineno"> 1087 </span>--   Example
-<span class="lineno"> 1088 </span>--
-<span class="lineno"> 1089 </span>--   &gt; do cam &lt;- newObject Camera
-<span class="lineno"> 1090 </span>--   &gt;    circ &lt;- newObject $ Circle 2
-<span class="lineno"> 1091 </span>--   &gt;    oModifyS circ $
-<span class="lineno"> 1092 </span>--   &gt;      oContext .= withFillOpacity 1 . withFillColor &quot;blue&quot;
-<span class="lineno"> 1093 </span>--   &gt;    oShow circ
-<span class="lineno"> 1094 </span>--   &gt;    cameraAttach cam circ
-<span class="lineno"> 1095 </span>--   &gt;    cameraZoom cam 1 2
-<span class="lineno"> 1096 </span>--   &gt;    cameraZoom cam 1 1
-<span class="lineno"> 1097 </span>--
-<span class="lineno"> 1098 </span>--   &lt;&lt;docs/gifs/doc_cameraAttach.gif&gt;&gt;
-<span class="lineno"> 1099 </span>cameraAttach :: Object s Camera -&gt; Object s a -&gt; Scene s ()
-<span class="lineno"> 1100 </span><span class="decl"><span class="nottickedoff">cameraAttach cam obj =</span>
-<span class="lineno"> 1101 </span><span class="spaces">  </span><span class="nottickedoff">spriteModify (objectSprite obj) $ do</span>
-<span class="lineno"> 1102 </span><span class="spaces">    </span><span class="nottickedoff">camData &lt;- unVar (objectData cam)</span>
-<span class="lineno"> 1103 </span><span class="spaces">    </span><span class="nottickedoff">return $ \(svg,zindex) -&gt;</span>
-<span class="lineno"> 1104 </span><span class="spaces">      </span><span class="nottickedoff">let (x,y) = camData^.oTranslate</span>
-<span class="lineno"> 1105 </span><span class="spaces">          </span><span class="nottickedoff">ctx =</span>
-<span class="lineno"> 1106 </span><span class="spaces">            </span><span class="nottickedoff">translate (-x) (-y) .</span>
-<span class="lineno"> 1107 </span><span class="spaces">            </span><span class="nottickedoff">uncurry translate (camData^.oScaleOrigin) .</span>
-<span class="lineno"> 1108 </span><span class="spaces">            </span><span class="nottickedoff">scale (camData^.oScale) .</span>
-<span class="lineno"> 1109 </span><span class="spaces">            </span><span class="nottickedoff">uncurry translate (camData^.oScaleOrigin &amp; both %~ negate)</span>
-<span class="lineno"> 1110 </span><span class="spaces">      </span><span class="nottickedoff">in (ctx svg, zindex)</span></span>
-<span class="lineno"> 1111 </span>
-<span class="lineno"> 1112 </span>-- |
+<span class="lineno"> 1067 </span>-- | Rectangle height in local units.
+<span class="lineno"> 1068 </span>rectHeight :: Lens' Rectangle Double
+<span class="lineno"> 1069 </span><span class="decl"><span class="nottickedoff">rectHeight = lens _rectHeight $ \obj val -&gt; obj{_rectHeight=val}</span></span>
+<span class="lineno"> 1070 </span>
+<span class="lineno"> 1071 </span>instance Renderable Rectangle where
+<span class="lineno"> 1072 </span>  <span class="decl"><span class="nottickedoff">toSVG (Rectangle w h) = mkRect w h</span></span>
+<span class="lineno"> 1073 </span>
+<span class="lineno"> 1074 </span>-- | Object representing an interpolation between SVG nodes.
+<span class="lineno"> 1075 </span>data Morph = Morph { <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_morphDelta</span></span></span> :: Double, <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_morphSrc</span></span></span> :: SVG, <span class="nottickedoff"><span class="decl"><span class="nottickedoff">_morphDst</span></span></span> :: SVG }
+<span class="lineno"> 1076 </span>
+<span class="lineno"> 1077 </span>-- | Control variable for the interpolation. A value of 0 gives the
+<span class="lineno"> 1078 </span>--   source SVG and 1 gives the target svg.
+<span class="lineno"> 1079 </span>morphDelta :: Lens' Morph Double
+<span class="lineno"> 1080 </span><span class="decl"><span class="nottickedoff">morphDelta = lens _morphDelta $ \obj val -&gt; obj{_morphDelta = val}</span></span>
+<span class="lineno"> 1081 </span>
+<span class="lineno"> 1082 </span>-- | Source shape.
+<span class="lineno"> 1083 </span>morphSrc :: Lens' Morph SVG
+<span class="lineno"> 1084 </span><span class="decl"><span class="nottickedoff">morphSrc = lens _morphSrc $ \obj val -&gt; obj{_morphSrc = val}</span></span>
+<span class="lineno"> 1085 </span>
+<span class="lineno"> 1086 </span>-- | Target shape.
+<span class="lineno"> 1087 </span>morphDst :: Lens' Morph SVG
+<span class="lineno"> 1088 </span><span class="decl"><span class="nottickedoff">morphDst = lens _morphDst $ \obj val -&gt; obj{_morphDst = val}</span></span>
+<span class="lineno"> 1089 </span>
+<span class="lineno"> 1090 </span>instance Renderable Morph where
+<span class="lineno"> 1091 </span>  <span class="decl"><span class="nottickedoff">toSVG (Morph t src dst) = morph linear src dst t</span></span>
+<span class="lineno"> 1092 </span>
+<span class="lineno"> 1093 </span>-- | Cameras can take control of objects and manipulate them
+<span class="lineno"> 1094 </span>--   with convenient pan and zoom operations.
+<span class="lineno"> 1095 </span>data Camera = Camera
+<span class="lineno"> 1096 </span>instance Renderable Camera where
+<span class="lineno"> 1097 </span>  <span class="decl"><span class="nottickedoff">toSVG Camera = None</span></span>
+<span class="lineno"> 1098 </span>
+<span class="lineno"> 1099 </span>-- | Connect an object to a camera such that
+<span class="lineno"> 1100 </span>--   camera settings (position, zoom, and rotation) is
+<span class="lineno"> 1101 </span>--   applied to the object.
+<span class="lineno"> 1102 </span>--
+<span class="lineno"> 1103 </span>--   Example
+<span class="lineno"> 1104 </span>--
+<span class="lineno"> 1105 </span>--   &gt; do cam &lt;- newObject Camera
+<span class="lineno"> 1106 </span>--   &gt;    circ &lt;- newObject $ Circle 2
+<span class="lineno"> 1107 </span>--   &gt;    oModifyS circ $
+<span class="lineno"> 1108 </span>--   &gt;      oContext .= withFillOpacity 1 . withFillColor &quot;blue&quot;
+<span class="lineno"> 1109 </span>--   &gt;    oShow circ
+<span class="lineno"> 1110 </span>--   &gt;    cameraAttach cam circ
+<span class="lineno"> 1111 </span>--   &gt;    cameraZoom cam 1 2
+<span class="lineno"> 1112 </span>--   &gt;    cameraZoom cam 1 1
 <span class="lineno"> 1113 </span>--
-<span class="lineno"> 1114 </span>--   Example
-<span class="lineno"> 1115 </span>--
-<span class="lineno"> 1116 </span>--   &gt; do cam &lt;- newObject Camera
-<span class="lineno"> 1117 </span>--   &gt;    circ &lt;- newObject $ Circle 2; oShow circ
-<span class="lineno"> 1118 </span>--   &gt;    oModify circ $ oTranslate .~ (-3,0)
-<span class="lineno"> 1119 </span>--   &gt;    box &lt;- newObject $ Rectangle 4 4; oShow box
-<span class="lineno"> 1120 </span>--   &gt;    oModify box $ oTranslate .~ (3,0)
-<span class="lineno"> 1121 </span>--   &gt;    cameraAttach cam circ
-<span class="lineno"> 1122 </span>--   &gt;    cameraAttach cam box
-<span class="lineno"> 1123 </span>--   &gt;    cameraFocus cam (-3,0)
-<span class="lineno"> 1124 </span>--   &gt;    cameraZoom cam 2 2      -- Zoom in
-<span class="lineno"> 1125 </span>--   &gt;    cameraZoom cam 2 1      -- Zoom out
-<span class="lineno"> 1126 </span>--   &gt;    cameraFocus cam (3,0)
-<span class="lineno"> 1127 </span>--   &gt;    cameraZoom cam 2 2      -- Zoom in
-<span class="lineno"> 1128 </span>--   &gt;    cameraZoom cam 2 1      -- Zoom out
+<span class="lineno"> 1114 </span>--   &lt;&lt;docs/gifs/doc_cameraAttach.gif&gt;&gt;
+<span class="lineno"> 1115 </span>cameraAttach :: Object s Camera -&gt; Object s a -&gt; Scene s ()
+<span class="lineno"> 1116 </span><span class="decl"><span class="nottickedoff">cameraAttach cam obj =</span>
+<span class="lineno"> 1117 </span><span class="spaces">  </span><span class="nottickedoff">spriteModify (objectSprite obj) $ do</span>
+<span class="lineno"> 1118 </span><span class="spaces">    </span><span class="nottickedoff">camData &lt;- unVar (objectData cam)</span>
+<span class="lineno"> 1119 </span><span class="spaces">    </span><span class="nottickedoff">return $ \(svg,zindex) -&gt;</span>
+<span class="lineno"> 1120 </span><span class="spaces">      </span><span class="nottickedoff">let (x,y) = camData^.oTranslate</span>
+<span class="lineno"> 1121 </span><span class="spaces">          </span><span class="nottickedoff">ctx =</span>
+<span class="lineno"> 1122 </span><span class="spaces">            </span><span class="nottickedoff">translate (-x) (-y) .</span>
+<span class="lineno"> 1123 </span><span class="spaces">            </span><span class="nottickedoff">uncurry translate (camData^.oScaleOrigin) .</span>
+<span class="lineno"> 1124 </span><span class="spaces">            </span><span class="nottickedoff">scale (camData^.oScale) .</span>
+<span class="lineno"> 1125 </span><span class="spaces">            </span><span class="nottickedoff">uncurry translate (camData^.oScaleOrigin &amp; both %~ negate)</span>
+<span class="lineno"> 1126 </span><span class="spaces">      </span><span class="nottickedoff">in (ctx svg, zindex)</span></span>
+<span class="lineno"> 1127 </span>
+<span class="lineno"> 1128 </span>-- |
 <span class="lineno"> 1129 </span>--
-<span class="lineno"> 1130 </span>--   &lt;&lt;docs/gifs/doc_cameraFocus.gif&gt;&gt;
-<span class="lineno"> 1131 </span>cameraFocus :: Object s Camera -&gt; (Double, Double) -&gt; Scene s ()
-<span class="lineno"> 1132 </span><span class="decl"><span class="nottickedoff">cameraFocus cam (x,y) = do</span>
-<span class="lineno"> 1133 </span><span class="spaces">  </span><span class="nottickedoff">(ox, oy) &lt;- oRead cam oScaleOrigin</span>
-<span class="lineno"> 1134 </span><span class="spaces">  </span><span class="nottickedoff">(tx, ty) &lt;- oRead cam oTranslate</span>
-<span class="lineno"> 1135 </span><span class="spaces">  </span><span class="nottickedoff">s &lt;- oRead cam oScale</span>
-<span class="lineno"> 1136 </span><span class="spaces">  </span><span class="nottickedoff">let newLocation = (x-((x-ox)*s+ox-tx), y-((y-oy)*s+oy-ty))</span>
-<span class="lineno"> 1137 </span><span class="spaces">  </span><span class="nottickedoff">oModifyS cam $ do</span>
-<span class="lineno"> 1138 </span><span class="spaces">    </span><span class="nottickedoff">oTranslate .= newLocation</span>
-<span class="lineno"> 1139 </span><span class="spaces">    </span><span class="nottickedoff">oScaleOrigin .= (x,y)</span></span>
-<span class="lineno"> 1140 </span>
-<span class="lineno"> 1141 </span>-- | Instantaneously set camera zoom level.
-<span class="lineno"> 1142 </span>cameraSetZoom :: Object s Camera -&gt; Double -&gt; Scene s ()
-<span class="lineno"> 1143 </span><span class="decl"><span class="nottickedoff">cameraSetZoom cam s =</span>
-<span class="lineno"> 1144 </span><span class="spaces">  </span><span class="nottickedoff">oModifyS cam $</span>
-<span class="lineno"> 1145 </span><span class="spaces">    </span><span class="nottickedoff">oScale .= s</span></span>
-<span class="lineno"> 1146 </span>
-<span class="lineno"> 1147 </span>-- | Change camera zoom level over a set duration.
-<span class="lineno"> 1148 </span>cameraZoom :: Object s Camera -&gt; Duration -&gt; Double -&gt; Scene s ()
-<span class="lineno"> 1149 </span><span class="decl"><span class="nottickedoff">cameraZoom cam d s =</span>
-<span class="lineno"> 1150 </span><span class="spaces">  </span><span class="nottickedoff">oTweenS cam d $ \t -&gt;</span>
-<span class="lineno"> 1151 </span><span class="spaces">    </span><span class="nottickedoff">oScale %= \v -&gt; fromToS v s t</span></span>
-<span class="lineno"> 1152 </span>
-<span class="lineno"> 1153 </span>-- | Instantaneously set camera location.
-<span class="lineno"> 1154 </span>cameraSetPan :: Object s Camera -&gt; (Double, Double) -&gt; Scene s ()
-<span class="lineno"> 1155 </span><span class="decl"><span class="nottickedoff">cameraSetPan cam location =</span>
-<span class="lineno"> 1156 </span><span class="spaces">  </span><span class="nottickedoff">oModifyS cam $ do</span>
-<span class="lineno"> 1157 </span><span class="spaces">    </span><span class="nottickedoff">oTranslate .= location</span></span>
-<span class="lineno"> 1158 </span>
-<span class="lineno"> 1159 </span>-- | Change camera location over a set duration.
-<span class="lineno"> 1160 </span>cameraPan :: Object s Camera -&gt; Duration -&gt; (Double, Double) -&gt; Scene s ()
-<span class="lineno"> 1161 </span><span class="decl"><span class="nottickedoff">cameraPan cam d (x,y) =</span>
-<span class="lineno"> 1162 </span><span class="spaces">  </span><span class="nottickedoff">oTweenS cam d $ \t -&gt; do</span>
-<span class="lineno"> 1163 </span><span class="spaces">    </span><span class="nottickedoff">oTranslate._1 %= \v -&gt; fromToS v x t</span>
-<span class="lineno"> 1164 </span><span class="spaces">    </span><span class="nottickedoff">oTranslate._2 %= \v -&gt; fromToS v y t</span></span>
+<span class="lineno"> 1130 </span>--   Example
+<span class="lineno"> 1131 </span>--
+<span class="lineno"> 1132 </span>--   &gt; do cam &lt;- newObject Camera
+<span class="lineno"> 1133 </span>--   &gt;    circ &lt;- newObject $ Circle 2; oShow circ
+<span class="lineno"> 1134 </span>--   &gt;    oModify circ $ oTranslate .~ (-3,0)
+<span class="lineno"> 1135 </span>--   &gt;    box &lt;- newObject $ Rectangle 4 4; oShow box
+<span class="lineno"> 1136 </span>--   &gt;    oModify box $ oTranslate .~ (3,0)
+<span class="lineno"> 1137 </span>--   &gt;    cameraAttach cam circ
+<span class="lineno"> 1138 </span>--   &gt;    cameraAttach cam box
+<span class="lineno"> 1139 </span>--   &gt;    cameraFocus cam (-3,0)
+<span class="lineno"> 1140 </span>--   &gt;    cameraZoom cam 2 2      -- Zoom in
+<span class="lineno"> 1141 </span>--   &gt;    cameraZoom cam 2 1      -- Zoom out
+<span class="lineno"> 1142 </span>--   &gt;    cameraFocus cam (3,0)
+<span class="lineno"> 1143 </span>--   &gt;    cameraZoom cam 2 2      -- Zoom in
+<span class="lineno"> 1144 </span>--   &gt;    cameraZoom cam 2 1      -- Zoom out
+<span class="lineno"> 1145 </span>--
+<span class="lineno"> 1146 </span>--   &lt;&lt;docs/gifs/doc_cameraFocus.gif&gt;&gt;
+<span class="lineno"> 1147 </span>cameraFocus :: Object s Camera -&gt; (Double, Double) -&gt; Scene s ()
+<span class="lineno"> 1148 </span><span class="decl"><span class="nottickedoff">cameraFocus cam (x,y) = do</span>
+<span class="lineno"> 1149 </span><span class="spaces">  </span><span class="nottickedoff">(ox, oy) &lt;- oRead cam oScaleOrigin</span>
+<span class="lineno"> 1150 </span><span class="spaces">  </span><span class="nottickedoff">(tx, ty) &lt;- oRead cam oTranslate</span>
+<span class="lineno"> 1151 </span><span class="spaces">  </span><span class="nottickedoff">s &lt;- oRead cam oScale</span>
+<span class="lineno"> 1152 </span><span class="spaces">  </span><span class="nottickedoff">let newLocation = (x-((x-ox)*s+ox-tx), y-((y-oy)*s+oy-ty))</span>
+<span class="lineno"> 1153 </span><span class="spaces">  </span><span class="nottickedoff">oModifyS cam $ do</span>
+<span class="lineno"> 1154 </span><span class="spaces">    </span><span class="nottickedoff">oTranslate .= newLocation</span>
+<span class="lineno"> 1155 </span><span class="spaces">    </span><span class="nottickedoff">oScaleOrigin .= (x,y)</span></span>
+<span class="lineno"> 1156 </span>
+<span class="lineno"> 1157 </span>-- | Instantaneously set camera zoom level.
+<span class="lineno"> 1158 </span>cameraSetZoom :: Object s Camera -&gt; Double -&gt; Scene s ()
+<span class="lineno"> 1159 </span><span class="decl"><span class="nottickedoff">cameraSetZoom cam s =</span>
+<span class="lineno"> 1160 </span><span class="spaces">  </span><span class="nottickedoff">oModifyS cam $</span>
+<span class="lineno"> 1161 </span><span class="spaces">    </span><span class="nottickedoff">oScale .= s</span></span>
+<span class="lineno"> 1162 </span>
+<span class="lineno"> 1163 </span>-- | Change camera zoom level over a set duration.
+<span class="lineno"> 1164 </span>cameraZoom :: Object s Camera -&gt; Duration -&gt; Double -&gt; Scene s ()
+<span class="lineno"> 1165 </span><span class="decl"><span class="nottickedoff">cameraZoom cam d s =</span>
+<span class="lineno"> 1166 </span><span class="spaces">  </span><span class="nottickedoff">oTweenS cam d $ \t -&gt;</span>
+<span class="lineno"> 1167 </span><span class="spaces">    </span><span class="nottickedoff">oScale %= \v -&gt; fromToS v s t</span></span>
+<span class="lineno"> 1168 </span>
+<span class="lineno"> 1169 </span>-- | Instantaneously set camera location.
+<span class="lineno"> 1170 </span>cameraSetPan :: Object s Camera -&gt; (Double, Double) -&gt; Scene s ()
+<span class="lineno"> 1171 </span><span class="decl"><span class="nottickedoff">cameraSetPan cam location =</span>
+<span class="lineno"> 1172 </span><span class="spaces">  </span><span class="nottickedoff">oModifyS cam $ do</span>
+<span class="lineno"> 1173 </span><span class="spaces">    </span><span class="nottickedoff">oTranslate .= location</span></span>
+<span class="lineno"> 1174 </span>
+<span class="lineno"> 1175 </span>-- | Change camera location over a set duration.
+<span class="lineno"> 1176 </span>cameraPan :: Object s Camera -&gt; Duration -&gt; (Double, Double) -&gt; Scene s ()
+<span class="lineno"> 1177 </span><span class="decl"><span class="nottickedoff">cameraPan cam d (x,y) =</span>
+<span class="lineno"> 1178 </span><span class="spaces">  </span><span class="nottickedoff">oTweenS cam d $ \t -&gt; do</span>
+<span class="lineno"> 1179 </span><span class="spaces">    </span><span class="nottickedoff">oTranslate._1 %= \v -&gt; fromToS v x t</span>
+<span class="lineno"> 1180 </span><span class="spaces">    </span><span class="nottickedoff">oTranslate._2 %= \v -&gt; fromToS v y t</span></span>
 
 </pre>
 </body>
