@@ -27,6 +27,7 @@ let
       src = ./.;
     };
   };
+
 in set.hsPkgs.reanimate.components.library // {
   env = set.hsPkgs.shellFor {
     packages = p: [ p.reanimate ];
