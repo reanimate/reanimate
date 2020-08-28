@@ -150,6 +150,8 @@ import           Reanimate.Transition
 import           Reanimate.Morph.Common (morph)
 import           Reanimate.Morph.Linear (linear)
 
+import Debug.Trace
+
 -- | The ZIndex property specifies the stack order of sprites and animations. Elements
 --   with a higher ZIndex will be drawn on top of elements with a lower index.
 type ZIndex = Int
@@ -322,9 +324,10 @@ addGen gen = M $ \_ -> return ((), 0, 0, [gen])
 newtype EVar s a = EVar (STRef s (EVarData a))
 
 data EVarData a = EVarData
-  { evarDefault :: a
-  , evarTimeline :: ...
-  , evarLastValue? }
+  { evarDefault   :: a
+  , evarTimeline  :: ()
+  , evarLastValue :: () -- this might not be necessary
+  }
 
 newEVar :: a -> Scene s (EVar s a)
 newEVar = undefined
@@ -341,7 +344,25 @@ modifyEVar = undefined
 tweenEVar :: EVar s a -> Duration -> (a -> Time -> a) -> Scene s a
 tweenEVar = undefined
 
+-- If this prints 'expensive' twice then Var is not efficient.
+efficiencyTesterVar :: Int
+efficiencyTesterVar = evalScene $ do
+  v <- newVar 0
+  modifyVar v $ \old -> trace "expensive" 1 + old
+  at0 <- readVar v
+  wait 1
+  at1 <- readVar v
+  pure $ at0 + at1
 
+-- If this prints 'expensive' twice then EVar is not efficient.
+efficiencyTesterEVar :: Int
+efficiencyTesterEVar = evalScene $ do
+  v <- newEVar 0
+  modifyEVar v $ \old -> trace "expensive" 1 + old
+  at0 <- readEVar v
+  wait 1
+  at1 <- readEVar v
+  pure $ at0+at1
 
 -- | Time dependent variable.
 newtype Var s a = Var (STRef s (Time -> a))
