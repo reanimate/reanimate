@@ -119,6 +119,7 @@ main = do
       putStrLn $ "const playgroundVersion = " ++ show playgroundVersion ++ ";"
     [] -> do
       root <- cacheDir
+      -- The http server is only used for local development.
       tid <- forkIO $ run 10162 (staticApp $ defaultWebAppSettings root)
       serverMain backend `finally` killThread tid
     _ -> do
