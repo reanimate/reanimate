@@ -366,78 +366,84 @@ span.spaces    { background: white }
 <span class="lineno">  347 </span>--
 <span class="lineno">  348 </span>--   Example:
 <span class="lineno">  349 </span>--
-<span class="lineno">  350 </span>--   &gt; animate $ const $ mkBackground &quot;yellow&quot;
-<span class="lineno">  351 </span>--
-<span class="lineno">  352 </span>--   &lt;&lt;docs/gifs/doc_mkBackground.gif&gt;&gt;
-<span class="lineno">  353 </span>mkBackground :: String -&gt; Tree
-<span class="lineno">  354 </span><span class="decl"><span class="istickedoff">mkBackground color = withFillOpacity 1 $  withStrokeWidth 0 $</span>
-<span class="lineno">  355 </span><span class="spaces">  </span><span class="istickedoff">withFillColor color $ mkRect screenWidth screenHeight</span></span>
-<span class="lineno">  356 </span>
-<span class="lineno">  357 </span>-- | Rectangle with a uniform color and the same size as the screen.
-<span class="lineno">  358 </span>mkBackgroundPixel :: PixelRGBA8 -&gt; Tree
-<span class="lineno">  359 </span><span class="decl"><span class="istickedoff">mkBackgroundPixel pixel =</span>
-<span class="lineno">  360 </span><span class="spaces">    </span><span class="istickedoff">withFillOpacity 1 $ withStrokeWidth 0 $</span>
-<span class="lineno">  361 </span><span class="spaces">    </span><span class="istickedoff">withFillColorPixel pixel $ mkRect screenWidth screenHeight</span></span>
-<span class="lineno">  362 </span>
-<span class="lineno">  363 </span>-- | Take list of rows, where each row consists of number of images and display them in regular
-<span class="lineno">  364 </span>--   grid structure.
-<span class="lineno">  365 </span>--   All rows will get equal amount of vertical space.
-<span class="lineno">  366 </span>--   The images within each row will get equal amount of horizontal space, independent of the other
-<span class="lineno">  367 </span>--   rows. Each row can contain different number of cells.
-<span class="lineno">  368 </span>gridLayout :: [[Tree]] -&gt; Tree
-<span class="lineno">  369 </span><span class="decl"><span class="istickedoff">gridLayout rows = mkGroup</span>
-<span class="lineno">  370 </span><span class="spaces">    </span><span class="istickedoff">[ translate (-screenWidth/2+colSep*nCol + colSep*0.5)</span>
-<span class="lineno">  371 </span><span class="spaces">                </span><span class="istickedoff">(screenHeight/2-rowSep*nRow - rowSep*0.5)</span>
-<span class="lineno">  372 </span><span class="spaces">      </span><span class="istickedoff">elt</span>
-<span class="lineno">  373 </span><span class="spaces">    </span><span class="istickedoff">| (nRow, row) &lt;- zip [0..] rows</span>
-<span class="lineno">  374 </span><span class="spaces">    </span><span class="istickedoff">, let nCols = length row</span>
-<span class="lineno">  375 </span><span class="spaces">          </span><span class="istickedoff">colSep = screenWidth / fromIntegral nCols</span>
-<span class="lineno">  376 </span><span class="spaces">    </span><span class="istickedoff">, (nCol, elt) &lt;- zip [0..] row ]</span>
-<span class="lineno">  377 </span><span class="spaces">  </span><span class="istickedoff">where</span>
-<span class="lineno">  378 </span><span class="spaces">    </span><span class="istickedoff">rowSep = screenHeight / fromIntegral nRows</span>
-<span class="lineno">  379 </span><span class="spaces">    </span><span class="istickedoff">nRows = length rows</span></span>
-<span class="lineno">  380 </span>
-<span class="lineno">  381 </span>-- | Insert a native text object anchored at the middle.
-<span class="lineno">  382 </span>--
-<span class="lineno">  383 </span>--   Example:
+<span class="lineno">  350 </span>-- @
+<span class="lineno">  351 </span>-- 'Reanimate.animate' $ 'const' $ 'mkBackground' &quot;yellow&quot;
+<span class="lineno">  352 </span>-- @
+<span class="lineno">  353 </span>--
+<span class="lineno">  354 </span>--   &lt;&lt;docs/gifs/doc_mkBackground.gif&gt;&gt;
+<span class="lineno">  355 </span>mkBackground :: String -&gt; Tree
+<span class="lineno">  356 </span><span class="decl"><span class="istickedoff">mkBackground color = withFillOpacity 1 $  withStrokeWidth 0 $</span>
+<span class="lineno">  357 </span><span class="spaces">  </span><span class="istickedoff">withFillColor color $ mkRect screenWidth screenHeight</span></span>
+<span class="lineno">  358 </span>
+<span class="lineno">  359 </span>-- | Rectangle with a uniform color and the same size as the screen.
+<span class="lineno">  360 </span>mkBackgroundPixel :: PixelRGBA8 -&gt; Tree
+<span class="lineno">  361 </span><span class="decl"><span class="istickedoff">mkBackgroundPixel pixel =</span>
+<span class="lineno">  362 </span><span class="spaces">    </span><span class="istickedoff">withFillOpacity 1 $ withStrokeWidth 0 $</span>
+<span class="lineno">  363 </span><span class="spaces">    </span><span class="istickedoff">withFillColorPixel pixel $ mkRect screenWidth screenHeight</span></span>
+<span class="lineno">  364 </span>
+<span class="lineno">  365 </span>-- | Take list of rows, where each row consists of number of images and display them in regular
+<span class="lineno">  366 </span>--   grid structure.
+<span class="lineno">  367 </span>--   All rows will get equal amount of vertical space.
+<span class="lineno">  368 </span>--   The images within each row will get equal amount of horizontal space, independent of the other
+<span class="lineno">  369 </span>--   rows. Each row can contain different number of cells.
+<span class="lineno">  370 </span>gridLayout :: [[Tree]] -&gt; Tree
+<span class="lineno">  371 </span><span class="decl"><span class="istickedoff">gridLayout rows = mkGroup</span>
+<span class="lineno">  372 </span><span class="spaces">    </span><span class="istickedoff">[ translate (-screenWidth/2+colSep*nCol + colSep*0.5)</span>
+<span class="lineno">  373 </span><span class="spaces">                </span><span class="istickedoff">(screenHeight/2-rowSep*nRow - rowSep*0.5)</span>
+<span class="lineno">  374 </span><span class="spaces">      </span><span class="istickedoff">elt</span>
+<span class="lineno">  375 </span><span class="spaces">    </span><span class="istickedoff">| (nRow, row) &lt;- zip [0..] rows</span>
+<span class="lineno">  376 </span><span class="spaces">    </span><span class="istickedoff">, let nCols = length row</span>
+<span class="lineno">  377 </span><span class="spaces">          </span><span class="istickedoff">colSep = screenWidth / fromIntegral nCols</span>
+<span class="lineno">  378 </span><span class="spaces">    </span><span class="istickedoff">, (nCol, elt) &lt;- zip [0..] row ]</span>
+<span class="lineno">  379 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  380 </span><span class="spaces">    </span><span class="istickedoff">rowSep = screenHeight / fromIntegral nRows</span>
+<span class="lineno">  381 </span><span class="spaces">    </span><span class="istickedoff">nRows = length rows</span></span>
+<span class="lineno">  382 </span>
+<span class="lineno">  383 </span>-- | Insert a native text object anchored at the middle.
 <span class="lineno">  384 </span>--
-<span class="lineno">  385 </span>--   &gt; mkAnimation 2 $ \t -&gt; scale 2 $ withStrokeWidth 0.05 $ mkText (T.take (round $ t*15) &quot;text&quot;)
+<span class="lineno">  385 </span>--   Example:
 <span class="lineno">  386 </span>--
-<span class="lineno">  387 </span>--   &lt;&lt;docs/gifs/doc_mkText.gif&gt;&gt;
-<span class="lineno">  388 </span>mkText :: T.Text -&gt; Tree
-<span class="lineno">  389 </span><span class="decl"><span class="istickedoff">mkText str =</span>
-<span class="lineno">  390 </span><span class="spaces">  </span><span class="istickedoff">flipYAxis</span>
-<span class="lineno">  391 </span><span class="spaces">  </span><span class="istickedoff">(TextTree Nothing $ defaultSvg</span>
-<span class="lineno">  392 </span><span class="spaces">    </span><span class="istickedoff">&amp; textRoot .~ span_</span>
-<span class="lineno">  393 </span><span class="spaces">    </span><span class="istickedoff">&amp; fontSize .~ pure (Num 2))</span>
-<span class="lineno">  394 </span><span class="spaces">    </span><span class="istickedoff">&amp; textAnchor .~ pure TextAnchorMiddle</span>
-<span class="lineno">  395 </span><span class="spaces">    </span><span class="istickedoff">-- Note: TextAnchorMiddle is placed on the 'flipYAxis' group such that it can easily</span>
-<span class="lineno">  396 </span><span class="spaces">    </span><span class="istickedoff">-- be overwritten by the user.</span>
-<span class="lineno">  397 </span><span class="spaces">  </span><span class="istickedoff">where</span>
-<span class="lineno">  398 </span><span class="spaces">    </span><span class="istickedoff">span_ = defaultSvg &amp; spanContent .~ [SpanText str]</span></span>
-<span class="lineno">  399 </span>
-<span class="lineno">  400 </span>-- | Switch from the default viewbox to a custom viewbox. Nesting custom viewboxes is
-<span class="lineno">  401 </span>--   unlikely to give good results. If you need nested custom viewboxes, you will have
-<span class="lineno">  402 </span>--   to configure them by hand.
-<span class="lineno">  403 </span>--
-<span class="lineno">  404 </span>--   The viewbox argument is (min-x, min-y, width, height).
-<span class="lineno">  405 </span>--
-<span class="lineno">  406 </span>--   Example:
+<span class="lineno">  387 </span>-- @
+<span class="lineno">  388 </span>-- 'Reanimate.mkAnimation' 2 $ \\t -&gt; 'scale' 2 $ 'withStrokeWidth' 0.05 $ 'mkText' (T.take (round $ t*15) &quot;text&quot;)
+<span class="lineno">  389 </span>-- @
+<span class="lineno">  390 </span>--
+<span class="lineno">  391 </span>--   &lt;&lt;docs/gifs/doc_mkText.gif&gt;&gt;
+<span class="lineno">  392 </span>mkText :: T.Text -&gt; Tree
+<span class="lineno">  393 </span><span class="decl"><span class="istickedoff">mkText str =</span>
+<span class="lineno">  394 </span><span class="spaces">  </span><span class="istickedoff">flipYAxis</span>
+<span class="lineno">  395 </span><span class="spaces">  </span><span class="istickedoff">(TextTree Nothing $ defaultSvg</span>
+<span class="lineno">  396 </span><span class="spaces">    </span><span class="istickedoff">&amp; textRoot .~ span_</span>
+<span class="lineno">  397 </span><span class="spaces">    </span><span class="istickedoff">&amp; fontSize .~ pure (Num 2))</span>
+<span class="lineno">  398 </span><span class="spaces">    </span><span class="istickedoff">&amp; textAnchor .~ pure TextAnchorMiddle</span>
+<span class="lineno">  399 </span><span class="spaces">    </span><span class="istickedoff">-- Note: TextAnchorMiddle is placed on the 'flipYAxis' group such that it can easily</span>
+<span class="lineno">  400 </span><span class="spaces">    </span><span class="istickedoff">-- be overwritten by the user.</span>
+<span class="lineno">  401 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  402 </span><span class="spaces">    </span><span class="istickedoff">span_ = defaultSvg &amp; spanContent .~ [SpanText str]</span></span>
+<span class="lineno">  403 </span>
+<span class="lineno">  404 </span>-- | Switch from the default viewbox to a custom viewbox. Nesting custom viewboxes is
+<span class="lineno">  405 </span>--   unlikely to give good results. If you need nested custom viewboxes, you will have
+<span class="lineno">  406 </span>--   to configure them by hand.
 <span class="lineno">  407 </span>--
-<span class="lineno">  408 </span>--   &gt; withViewBox (0,0,1,1) $ mkBackground &quot;yellow&quot;
+<span class="lineno">  408 </span>--   The viewbox argument is (min-x, min-y, width, height).
 <span class="lineno">  409 </span>--
-<span class="lineno">  410 </span>--   &lt;&lt;docs/gifs/doc_withViewBox.gif&gt;&gt;
-<span class="lineno">  411 </span>withViewBox :: (Double, Double, Double, Double) -&gt; Tree -&gt; Tree
-<span class="lineno">  412 </span><span class="decl"><span class="istickedoff">withViewBox vbox child = translate (-screenWidth/2) (-screenHeight/2) $</span>
-<span class="lineno">  413 </span><span class="spaces">  </span><span class="istickedoff">SvgTree $ Document</span>
-<span class="lineno">  414 </span><span class="spaces">  </span><span class="istickedoff">{ _viewBox = Just vbox</span>
-<span class="lineno">  415 </span><span class="spaces">  </span><span class="istickedoff">, _width = Just (Num screenWidth)</span>
-<span class="lineno">  416 </span><span class="spaces">  </span><span class="istickedoff">, _height = Just (Num screenHeight)</span>
-<span class="lineno">  417 </span><span class="spaces">  </span><span class="istickedoff">, _elements = [child]</span>
-<span class="lineno">  418 </span><span class="spaces">  </span><span class="istickedoff">, _description = &quot;&quot;</span>
-<span class="lineno">  419 </span><span class="spaces">  </span><span class="istickedoff">, _documentLocation = <span class="nottickedoff">&quot;&quot;</span></span>
-<span class="lineno">  420 </span><span class="spaces">  </span><span class="istickedoff">, _documentAspectRatio = PreserveAspectRatio False AlignNone Nothing</span>
-<span class="lineno">  421 </span><span class="spaces">  </span><span class="istickedoff">}</span></span>
+<span class="lineno">  410 </span>--   Example:
+<span class="lineno">  411 </span>--
+<span class="lineno">  412 </span>-- @
+<span class="lineno">  413 </span>-- 'withViewBox' (0,0,1,1) $ 'mkBackground' &quot;yellow&quot;
+<span class="lineno">  414 </span>-- @
+<span class="lineno">  415 </span>--
+<span class="lineno">  416 </span>--   &lt;&lt;docs/gifs/doc_withViewBox.gif&gt;&gt;
+<span class="lineno">  417 </span>withViewBox :: (Double, Double, Double, Double) -&gt; Tree -&gt; Tree
+<span class="lineno">  418 </span><span class="decl"><span class="istickedoff">withViewBox vbox child = translate (-screenWidth/2) (-screenHeight/2) $</span>
+<span class="lineno">  419 </span><span class="spaces">  </span><span class="istickedoff">SvgTree $ Document</span>
+<span class="lineno">  420 </span><span class="spaces">  </span><span class="istickedoff">{ _viewBox = Just vbox</span>
+<span class="lineno">  421 </span><span class="spaces">  </span><span class="istickedoff">, _width = Just (Num screenWidth)</span>
+<span class="lineno">  422 </span><span class="spaces">  </span><span class="istickedoff">, _height = Just (Num screenHeight)</span>
+<span class="lineno">  423 </span><span class="spaces">  </span><span class="istickedoff">, _elements = [child]</span>
+<span class="lineno">  424 </span><span class="spaces">  </span><span class="istickedoff">, _description = &quot;&quot;</span>
+<span class="lineno">  425 </span><span class="spaces">  </span><span class="istickedoff">, _documentLocation = <span class="nottickedoff">&quot;&quot;</span></span>
+<span class="lineno">  426 </span><span class="spaces">  </span><span class="istickedoff">, _documentAspectRatio = PreserveAspectRatio False AlignNone Nothing</span>
+<span class="lineno">  427 </span><span class="spaces">  </span><span class="istickedoff">}</span></span>
 
 </pre>
 </body>
