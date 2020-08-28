@@ -43,4 +43,4 @@ switchTo src dst = do
   wait 1
 
 newText txt =
-  newObject $ scale 1.5 $ center $ latex txt
+  newObject $ scale 1.5 $ centerX $ latex txt
