@@ -314,12 +314,34 @@ withSceneDuration s = do
 addGen :: Gen s -> Scene s ()
 addGen gen = M $ \_ -> return ((), 0, 0, [gen])
 
+
+
+
+
 -- Efficient time variable
-newtype EVar s a = EVar (STRef s (EVarData s a))
-data EVarData s a = EVarData
+newtype EVar s a = EVar (STRef s (EVarData a))
+
+data EVarData a = EVarData
   { evarDefault :: a
   , evarTimeline :: ...
   , evarLastValue? }
+
+newEVar :: a -> Scene s (EVar s a)
+newEVar = undefined
+
+readEVar :: EVar s a -> Scene s a
+readEVar = undefined
+
+writeEVar :: EVar s a -> a -> Scene s a
+writeEVar = undefined
+
+modifyEVar :: EVar s a -> (a -> a) -> Scene s a
+modifyEVar = undefined
+
+tweenEVar :: EVar s a -> Duration -> (a -> Time -> a) -> Scene s a
+tweenEVar = undefined
+
+
 
 -- | Time dependent variable.
 newtype Var s a = Var (STRef s (Time -> a))
