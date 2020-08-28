@@ -14,7 +14,7 @@ module Reanimate.Render
   ( render
   , renderSvgs
   , renderSnippets        -- :: Animation -> IO ()
-  , renderOneFrame
+  , renderLimitedFrames
   , Format(..)
   , Raster(..)
   , Width, Height, FPS
@@ -82,27 +82,35 @@ renderSvgs folder offset _prettyPrint ani = do
     hPutStrLn stderr msg
     exitWith (ExitFailure 1)
 
--- | Select a single frame that doesn't already exist in the output
---   folder and render it. If all frames have been rendered, print "Done".
-renderOneFrame :: FilePath -> Int -> Bool -> Int -> Animation -> IO ()
-renderOneFrame folder offset _prettyPrint rate ani =
-    worker (frameOrder rate frameCount)
+-- | Render as many frames as possible in 2 seconds. Limited to 20 frames.
+renderLimitedFrames :: FilePath -> Int -> Bool -> Int -> Animation -> IO ()
+renderLimitedFrames folder offset _prettyPrint rate ani = do
+    now <- getCurrentTime
+    worker (addUTCTime timeLimit now) frameLimit (frameOrder rate frameCount)
   where
-    worker [] = putStrLn "Done"
-    worker (x:xs) = do
-      let nth = (x+offset) `mod` frameCount
-          now = (duration ani / (fromIntegral frameCount - 1)) * fromIntegral nth
-          frame = frameAt (if frameCount <= 1 then 0 else now) ani
-          svg = renderSvg Nothing Nothing frame
-          path = folder </> show nth <.> "svg"
-          tmpPath = path <.> "tmp"
-      haveFile <- doesFileExist path
-      if haveFile
-        then worker xs
+    timeLimit = 2
+    frameLimit = 20 :: Int
+    worker _ 0 _ = return ()
+    worker _ _ [] = putStrLn "Done"
+    worker localTimeLimit l (x:xs) = do
+      curTime <- getCurrentTime
+      if curTime > localTimeLimit
+        then return ()
         else do
-          writeFile tmpPath svg
-          renameOrCopyFile tmpPath path
-          print nth
+          let nth = (x+offset) `mod` frameCount
+              now = (duration ani / (fromIntegral frameCount - 1)) * fromIntegral nth
+              frame = frameAt (if frameCount <= 1 then 0 else now) ani
+              svg = renderSvg Nothing Nothing frame
+              path = folder </> show nth <.> "svg"
+              tmpPath = path <.> "tmp"
+          haveFile <- doesFileExist path
+          if haveFile
+            then worker localTimeLimit l xs
+            else do
+              writeFile tmpPath svg
+              renameOrCopyFile tmpPath path
+              print nth
+              worker localTimeLimit (l-1) xs
     frameCount = round (duration ani * fromIntegral rate) :: Int
 
 -- XXX: Merge with 'renderSvgs'

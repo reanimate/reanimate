@@ -1,6 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
 {-# LANGUAGE TypeApplications #-}
+{-
+  Mitigated attacks:
+    * unsafeIO: Blocked by fixed import list.
+    * TemplateHaskell: Blocked by parsing code.
+    * Code injection: Blocked by parsing code.
+    * Exhausting memory: Blocked by RTS flags on ghci.
+    * Rendering too long: Blocked by both soft and hard timeouts.
+    * Generating huge error messages: Error messages are truncated.
+    * Take up disk space: Space limits are checked before each frame is rendered.
+-}
 module Main (main) where
 
 import           Control.Applicative
@@ -56,8 +66,23 @@ playgroundVersion = T.pack $
   formatTime defaultTimeLocale "%F" playgroundCommitDate ++
   " (" ++ take 5 (giHash gi) ++ ")"
 
-computeLimit :: Int
-computeLimit = 15 * 10^(6::Int) -- 15 seconds
+-- Seconds of wall time if the render queue is empty.
+totalTimeLimitLong :: NominalDiffTime
+totalTimeLimitLong = 30
+
+-- Seconds of wall time if the render queue is full.
+totalTimeLimitShort :: NominalDiffTime
+totalTimeLimitShort = 5
+
+frameTimeLimit = 5
+
+-- Disk space limit in MiB
+diskSpaceLimit :: Double
+diskSpaceLimit = 50
+
+-- Limit animation runtimes to 1 minute.
+maxAnimationDuration :: Double
+maxAnimationDuration = 60
 
 -- Maximum size of error messages
 charLimit :: Int
@@ -151,6 +176,7 @@ requestHandler backend conn = loop =<< newMVar True
             , renderFrameCount = \i -> sendWebMessage conn (WebFrameCount i)
             , renderFrameReady = \i path -> sendWebMessage conn (WebFrame i path)
             , renderError      = \msg -> sendWebMessage conn (WebError msg)
+            , renderWarning    = \msg -> sendWebMessage conn (WebWarning msg)
             , renderWanted     = wantThisRequest
             }
       loop wantThisRequest
@@ -191,6 +217,7 @@ data Render = Render
   , renderFrameCount :: Int -> IO ()
   , renderFrameReady :: Int -> FilePath -> IO ()
   , renderError      :: String -> IO ()
+  , renderWarning    :: String -> IO ()
   , renderWanted     :: MVar Bool
   }
 
@@ -210,7 +237,7 @@ requestRender backend render = do
       forM_ (IntSet.toList frameSet) $ \i -> do
         let path = renderHash render </> show i <.> "svg"
         renderFrameReady render i path
-      void $ forkIO $ putMVar (backendQueue backend) render
+      void $ forkIO $ putMVar (backendQueue backend) render{ renderFrameCount = \_ -> return () }
 
 newGhci :: IO Ghci
 newGhci = do
@@ -225,51 +252,106 @@ newBackend :: IO Backend
 newBackend = do
   ghciRef <- newMVar =<< newGhci
   queue <- newEmptyMVar
+  root <- cacheDir
   tid <- forkIO $ forever $ do
     req <- takeMVar queue
-    guardWanted req $ withHaskellFile (renderCode req) $ \hs -> do
-      ghci <- readMVar ghciRef
-      catch @GhciError (loadAndRender req ghci hs) (\_ -> restartGhci ghciRef req)
+    let svgFolder = root </> renderHash req
+    createDirectoryIfMissing True svgFolder
+    startTime <- getCurrentTime
+    ghci <- readMVar ghciRef
+    let guardTimeout action = do
+          now <- getCurrentTime
+          emptyQueue <- isEmptyMVar queue
+          let timeLimit = if emptyQueue then totalTimeLimitLong else totalTimeLimitShort
+          if (diffUTCTime now startTime < timeLimit)
+            then action
+            else do
+              renderWarning req "Render timed out"
+              logMsg "Request timed out"
+        guardFileSize action = do
+          size <- getDirectorySize svgFolder
+          if size < round (diskSpaceLimit*1024*1024)
+            then action
+            else do
+              renderWarning req "Disk space limit hit"
+              logMsg "Disk space limit hit"
+        guardWanted action = do
+          wanted <- readMVar (renderWanted req)
+          if wanted
+            then action
+            else logMsg "Results no longer wanted"
+        guardGhci cmd action = do
+          mbValue <- timeout (round (frameTimeLimit * 1e6)) $
+            splitGhciOutput ghci cmd
+          case mbValue of
+            Nothing -> do
+              renderWarning req "Frame render timed out."
+              forkIO $ stopGhci ghci
+              modifyMVar_ ghciRef (const newGhci)
+            Just (err, out)
+              | null err -> action out
+              | otherwise -> do
+                  logMsg $ "Error:\n" ++ take charLimit (unlines err)
+                  renderError req (take charLimit (unlines err))
+        restartGhci = do
+          renderWarning req "Ghci crashed. Restarting."
+          logMsg "Ghci crashed. Restarting."
+          forkIO $ stopGhci ghci
+          modifyMVar_ ghciRef (const newGhci)
+        
+        loadAndRender hs =
+          guardGhci (":load " ++ hs) $ \_ -> guardWanted $
+            guardGhci "Reanimate.duration animation" $ \out -> do
+              let dur = max 1 (min maxAnimationDuration (read (unlines out))) :: Double
+                  frameCount = round (dur * fromIntegral frameRate) :: Int
+                  durFile = root </> renderHash req </> "frames"
+              writeFile durFile (show frameCount)
+              renderFrameCount req frameCount
+              renderFrames dur
+        renderFrames dur = guardWanted $ guardTimeout $ guardFileSize $ do
+          createDirectoryIfMissing True svgFolder
+          let cmd = printf
+                "Reanimate.renderLimitedFrames \"%s\" 0 False %d \
+                \(Reanimate.setDuration %f animation)"
+                svgFolder frameRate dur
+          done <- newIORef False
+          err <- newIORef []
+          ret <- timeout (round (frameTimeLimit * 1e6)) $ execStream ghci cmd $ \strm msg ->
+            case strm of
+              Stdout ->
+                case msg of
+                  "Done" -> writeIORef done True 
+                  _      -> do
+                    let frameIdx = read msg
+                        path = renderHash req </> show frameIdx <.> "svg"
+                    renderFrameReady req frameIdx path
+              Stderr -> modifyIORef err (++[msg])
+          errMsgs <- readIORef err
+          isDone <- readIORef done
+          if isNothing ret
+            then do
+              renderWarning req "Frame render timed out."
+              forkIO $ stopGhci ghci
+              modifyMVar_ ghciRef (const newGhci)
+            else
+              if null errMsgs
+                then if isDone
+                  then logMsg "Render finished."
+                  else renderFrames dur
+                else do
+                  logMsg $ "Error:\n" ++ take charLimit (unlines errMsgs)
+                  renderError req (take charLimit (unlines errMsgs))
+    
+    guardWanted $ withHaskellFile (renderCode req) $ \hs -> do
+      catch @GhciError
+        (loadAndRender hs)
+        (\_ -> restartGhci)
   return $ Backend ghciRef queue
-  where
-    restartGhci ghciRef req = do
-      renderError req "Ghci crashed. Restarting."
-      modifyMVar_ ghciRef (const newGhci)
-    loadAndRender req ghci hs =
-      guardGhci req ghci (":load " ++ hs) $ \_ -> guardWanted req $
-        guardGhci req ghci "Reanimate.duration animation" $ \out -> do
-          root <- cacheDir
-          let dur = read (unlines out) :: Double
-              frameCount = round (dur * fromIntegral frameRate) :: Int
-              durFile = root </> renderHash req </> "frames"
-          createDirectoryIfMissing True (root </> renderHash req)
-          writeFile durFile (show frameCount)
-          renderFrameCount req frameCount
-          renderFrames req ghci
-    renderFrames req ghci = guardWanted req $ do
-      root <- cacheDir
-      let svgFolder = root </> renderHash req
-      createDirectoryIfMissing True svgFolder
-      let cmd = printf "Reanimate.renderOneFrame \"%s\" 0 False %d animation" svgFolder frameRate
-      guardGhci req ghci cmd $ \out ->
-        case unlines out of
-          "Done\n" -> return ()
-          _ -> do
-            let frameIdx = read (unlines out)
-                path = renderHash req </> show frameIdx <.> "svg"
-            renderFrameReady req frameIdx path
-            renderFrames req ghci
-    guardGhci req ghci cmd action = do
-      (err, out) <- splitGhciOutput ghci cmd
-      if not (null err)
-        then do
-          logMsg $ "Error:\n" ++ unlines err
-          renderError req (unlines err)
-        else action out
-    guardWanted req action = do
-      wanted <- readMVar (renderWanted req)
-      unless wanted $ logMsg "Results no longer wanted"
-      when wanted action
+
+getDirectorySize :: FilePath -> IO Integer
+getDirectorySize root = do
+  files <- getDirectoryContents root
+  sum <$> mapM getFileSize [ root </> file | file <- files, takeExtension file == ".svg" ]
 
 cacheDir :: IO FilePath
 cacheDir = do
@@ -302,6 +384,9 @@ withHaskellFile m action = withSystemTempFile "playground.hs" $ \target h -> do
       \import Linear.Vector\n\
       \import Text.Printf\n\
       \import Codec.Picture.Types\n\
+      \import System.IO.Unsafe\n\
+      \import Control.Concurrent\n\
+      \import Control.Exception\n\
       \{-# LINE 1 \"playground\" #-}\n"
     T.appendFile target $ T.pack $ prettyPrint m
     action target
@@ -357,6 +442,7 @@ parseHaskell txt =
 data WebMessage
   = WebStatus String
   | WebError String
+  | WebWarning String
   | WebFrameCount Int
   | WebFrame Int FilePath
 
@@ -365,6 +451,7 @@ sendWebMessage conn msg = sendTextData conn $
   case msg of
     WebStatus txt   -> T.pack "status\n" <> T.pack txt
     WebError txt    -> T.pack "error\n" <> T.pack txt
+    WebWarning txt  -> T.pack "warning\n" <> T.pack txt
     WebFrameCount n -> T.pack $ "frame_count\n" ++ show n
     WebFrame n path -> T.pack $ "frame\n" ++ show n ++ "\n" ++ path
 

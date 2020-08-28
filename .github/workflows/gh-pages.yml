@@ -85,9 +85,9 @@ jobs:
       run: |
         CWD=`pwd`
         stack build
-        cd reanimate-playground
+        cd playground
         stack build
-        stack exec --cwd ../ playground snippets reanimate-playground/snippets > viewer-elm/dist/snippets.js
+        stack exec --cwd ../ playground snippets playground/snippets > viewer-elm/dist/snippets.js
         cd viewer-elm
         npm install
         npm run build

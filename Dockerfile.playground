@@ -23,8 +23,8 @@ ADD reanimate.cabal stack.yaml ./
 RUN stack build --only-dependencies --no-install-ghc --system-ghc --haddock
 
 # Install discord-bot dependencies and cache the layer
-ADD reanimate-playground/playground.cabal reanimate-playground/stack.yaml ./reanimate-playground/
-RUN cd reanimate-playground && \
+ADD playground/playground.cabal playground/stack.yaml ./playground/
+RUN cd playground && \
     stack build --only-dependencies --no-install-ghc --system-ghc
 
 # Add source after dependencies have been installed as to not invalidate the caches
@@ -38,8 +38,8 @@ ADD Setup.hs ./
 RUN stack build --no-install-ghc --system-ghc
 
 # Add bot sources and build it
-ADD reanimate-playground reanimate-playground
-RUN (cd reanimate-playground && \
+ADD playground playground
+RUN (cd playground && \
     stack install --no-install-ghc --system-ghc) && \
     playground test
 
