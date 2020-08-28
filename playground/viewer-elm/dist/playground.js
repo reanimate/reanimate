@@ -58,6 +58,7 @@ function playgroundInit(elt) {
     node: elt
   });
   app.ports.sendSocketCommand.subscribe(sendSocketCommand);
+  var tHandler = setTimeout(function(){},0);
   return {
     play: function () {
       app.ports.receiveControlMsg.send('play');
@@ -78,8 +79,11 @@ function playgroundInit(elt) {
       app.ports.receiveControlMsg.send('seek-10');
     },
     newCode: function(code) {
-      lastScript = code;
-      app.ports.receiveEditorMsg.send(code);
+      clearTimeout(tHandler);
+      tHandler = setTimeout(function() {
+        lastScript = code;
+        app.ports.receiveEditorMsg.send(code);
+      }, 500);
     }
   };
 }
