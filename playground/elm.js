@@ -784,11 +784,11 @@ function _Debug_crash_UNUSED(identifier, fact1, fact2, fact3, fact4)
 
 function _Debug_regionToString(region)
 {
-	if (region.O.E === region.T.E)
+	if (region.P.E === region.U.E)
 	{
-		return 'on line ' + region.O.E;
+		return 'on line ' + region.P.E;
 	}
-	return 'on lines ' + region.O.E + ' through ' + region.T.E;
+	return 'on lines ' + region.P.E + ' through ' + region.U.E;
 }
 
 
@@ -1857,9 +1857,9 @@ var _Platform_worker = F4(function(impl, flagDecoder, debugMetadata, args)
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.aD,
-		impl.aL,
-		impl.aJ,
+		impl.aE,
+		impl.aM,
+		impl.aK,
 		function() { return function() {} }
 	);
 });
@@ -2705,8 +2705,8 @@ var _VirtualDom_mapEventRecord = F2(function(func, record)
 {
 	return {
 		p: func(record.p),
-		P: record.P,
-		M: record.M
+		Q: record.Q,
+		N: record.N
 	}
 });
 
@@ -2975,10 +2975,10 @@ function _VirtualDom_makeCallback(eventNode, initialHandler)
 
 		var value = result.a;
 		var message = !tag ? value : tag < 3 ? value.a : value.p;
-		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.P;
+		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.Q;
 		var currentEventNode = (
 			stopPropagation && event.stopPropagation(),
-			(tag == 2 ? value.b : tag == 3 && value.M) && event.preventDefault(),
+			(tag == 2 ? value.b : tag == 3 && value.N) && event.preventDefault(),
 			eventNode
 		);
 		var tagger;
@@ -3928,11 +3928,11 @@ var _Browser_element = _Debugger_element || F4(function(impl, flagDecoder, debug
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.aD,
-		impl.aL,
-		impl.aJ,
+		impl.aE,
+		impl.aM,
+		impl.aK,
 		function(sendToApp, initialModel) {
-			var view = impl.aM;
+			var view = impl.aN;
 			/**/
 			var domNode = args['node'];
 			//*/
@@ -3964,12 +3964,12 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.aD,
-		impl.aL,
-		impl.aJ,
+		impl.aE,
+		impl.aM,
+		impl.aK,
 		function(sendToApp, initialModel) {
-			var divertHrefToApp = impl.N && impl.N(sendToApp)
-			var view = impl.aM;
+			var divertHrefToApp = impl.O && impl.O(sendToApp)
+			var view = impl.aN;
 			var title = _VirtualDom_doc.title;
 			var bodyNode = _VirtualDom_doc.body;
 			var currNode = _VirtualDom_virtualize(bodyNode);
@@ -3977,12 +3977,12 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 			{
 				_VirtualDom_divertHrefToApp = divertHrefToApp;
 				var doc = view(model);
-				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.at);
+				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.au);
 				var patches = _VirtualDom_diff(currNode, nextNode);
 				bodyNode = _VirtualDom_applyPatches(bodyNode, currNode, patches, sendToApp);
 				currNode = nextNode;
 				_VirtualDom_divertHrefToApp = 0;
-				(title !== doc.aK) && (_VirtualDom_doc.title = title = doc.aK);
+				(title !== doc.aL) && (_VirtualDom_doc.title = title = doc.aL);
 			});
 		}
 	);
@@ -4038,12 +4038,12 @@ function _Browser_makeAnimator(model, draw)
 
 function _Browser_application(impl)
 {
-	var onUrlChange = impl.aE;
-	var onUrlRequest = impl.aF;
+	var onUrlChange = impl.aF;
+	var onUrlRequest = impl.aG;
 	var key = function() { key.a(onUrlChange(_Browser_getUrl())); };
 
 	return _Browser_document({
-		N: function(sendToApp)
+		O: function(sendToApp)
 		{
 			key.a = sendToApp;
 			_Browser_window.addEventListener('popstate', key);
@@ -4059,9 +4059,9 @@ function _Browser_application(impl)
 					var next = $elm$url$Url$fromString(href).a;
 					sendToApp(onUrlRequest(
 						(next
-							&& curr.aH === next.aH
-							&& curr.X === next.X
-							&& curr.ad.a === next.ad.a
+							&& curr.aI === next.aI
+							&& curr.Y === next.Y
+							&& curr.ae.a === next.ae.a
 						)
 							? $elm$browser$Browser$Internal(next)
 							: $elm$browser$Browser$External(href)
@@ -4069,13 +4069,13 @@ function _Browser_application(impl)
 				}
 			});
 		},
-		aD: function(flags)
+		aE: function(flags)
 		{
-			return A3(impl.aD, flags, _Browser_getUrl(), key);
+			return A3(impl.aE, flags, _Browser_getUrl(), key);
 		},
+		aN: impl.aN,
 		aM: impl.aM,
-		aL: impl.aL,
-		aJ: impl.aJ
+		aK: impl.aK
 	});
 }
 
@@ -4141,17 +4141,17 @@ var _Browser_decodeEvent = F2(function(decoder, event)
 function _Browser_visibilityInfo()
 {
 	return (typeof _VirtualDom_doc.hidden !== 'undefined')
-		? { aB: 'hidden', au: 'visibilitychange' }
+		? { aC: 'hidden', av: 'visibilitychange' }
 		:
 	(typeof _VirtualDom_doc.mozHidden !== 'undefined')
-		? { aB: 'mozHidden', au: 'mozvisibilitychange' }
+		? { aC: 'mozHidden', av: 'mozvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.msHidden !== 'undefined')
-		? { aB: 'msHidden', au: 'msvisibilitychange' }
+		? { aC: 'msHidden', av: 'msvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.webkitHidden !== 'undefined')
-		? { aB: 'webkitHidden', au: 'webkitvisibilitychange' }
-		: { aB: 'hidden', au: 'visibilitychange' };
+		? { aC: 'webkitHidden', av: 'webkitvisibilitychange' }
+		: { aC: 'hidden', av: 'visibilitychange' };
 }
 
 
@@ -4232,12 +4232,12 @@ var _Browser_call = F2(function(functionName, id)
 function _Browser_getViewport()
 {
 	return {
-		aj: _Browser_getScene(),
-		am: {
-			ao: _Browser_window.pageXOffset,
-			ap: _Browser_window.pageYOffset,
-			an: _Browser_doc.documentElement.clientWidth,
-			W: _Browser_doc.documentElement.clientHeight
+		ak: _Browser_getScene(),
+		an: {
+			ap: _Browser_window.pageXOffset,
+			aq: _Browser_window.pageYOffset,
+			ao: _Browser_doc.documentElement.clientWidth,
+			X: _Browser_doc.documentElement.clientHeight
 		}
 	};
 }
@@ -4247,8 +4247,8 @@ function _Browser_getScene()
 	var body = _Browser_doc.body;
 	var elem = _Browser_doc.documentElement;
 	return {
-		an: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
-		W: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
+		ao: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
+		X: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
 	};
 }
 
@@ -4271,15 +4271,15 @@ function _Browser_getViewportOf(id)
 	return _Browser_withNode(id, function(node)
 	{
 		return {
-			aj: {
-				an: node.scrollWidth,
-				W: node.scrollHeight
+			ak: {
+				ao: node.scrollWidth,
+				X: node.scrollHeight
 			},
-			am: {
-				ao: node.scrollLeft,
-				ap: node.scrollTop,
-				an: node.clientWidth,
-				W: node.clientHeight
+			an: {
+				ap: node.scrollLeft,
+				aq: node.scrollTop,
+				ao: node.clientWidth,
+				X: node.clientHeight
 			}
 		};
 	});
@@ -4309,18 +4309,18 @@ function _Browser_getElement(id)
 		var x = _Browser_window.pageXOffset;
 		var y = _Browser_window.pageYOffset;
 		return {
-			aj: _Browser_getScene(),
-			am: {
-				ao: x,
-				ap: y,
-				an: _Browser_doc.documentElement.clientWidth,
-				W: _Browser_doc.documentElement.clientHeight
+			ak: _Browser_getScene(),
+			an: {
+				ap: x,
+				aq: y,
+				ao: _Browser_doc.documentElement.clientWidth,
+				X: _Browser_doc.documentElement.clientHeight
 			},
-			ay: {
-				ao: x + rect.left,
-				ap: y + rect.top,
-				an: rect.width,
-				W: rect.height
+			az: {
+				ap: x + rect.left,
+				aq: y + rect.top,
+				ao: rect.width,
+				X: rect.height
 			}
 		};
 	});
@@ -4905,7 +4905,7 @@ var $elm$url$Url$Http = 0;
 var $elm$url$Url$Https = 1;
 var $elm$url$Url$Url = F6(
 	function (protocol, host, port_, path, query, fragment) {
-		return {V: fragment, X: host, ab: path, ad: port_, aH: protocol, ag: query};
+		return {W: fragment, Y: host, ac: path, ae: port_, aI: protocol, ah: query};
 	});
 var $elm$core$String$contains = _String_contains;
 var $elm$core$String$length = _String_length;
@@ -5214,13 +5214,13 @@ var $bburdette$websocket$WebSocket$encodeCmd = function (wsc) {
 						$elm$json$Json$Encode$string('connect')),
 						_Utils_Tuple2(
 						'name',
-						$elm$json$Json$Encode$string(msg._)),
+						$elm$json$Json$Encode$string(msg.aa)),
 						_Utils_Tuple2(
 						'address',
-						$elm$json$Json$Encode$string(msg.ar)),
+						$elm$json$Json$Encode$string(msg.as)),
 						_Utils_Tuple2(
 						'protocol',
-						$elm$json$Json$Encode$string(msg.aH))
+						$elm$json$Json$Encode$string(msg.aI))
 					]));
 		case 1:
 			var msg = wsc.a;
@@ -5232,10 +5232,10 @@ var $bburdette$websocket$WebSocket$encodeCmd = function (wsc) {
 						$elm$json$Json$Encode$string('send')),
 						_Utils_Tuple2(
 						'name',
-						$elm$json$Json$Encode$string(msg._)),
+						$elm$json$Json$Encode$string(msg.aa)),
 						_Utils_Tuple2(
 						'content',
-						$elm$json$Json$Encode$string(msg.av))
+						$elm$json$Json$Encode$string(msg.aw))
 					]));
 		default:
 			var msg = wsc.a;
@@ -5247,7 +5247,7 @@ var $bburdette$websocket$WebSocket$encodeCmd = function (wsc) {
 						$elm$json$Json$Encode$string('close')),
 						_Utils_Tuple2(
 						'name',
-						$elm$json$Json$Encode$string(msg._))
+						$elm$json$Json$Encode$string(msg.aa))
 					]));
 	}
 };
@@ -5271,7 +5271,7 @@ var $author$project$Main$connectCommand = A2(
 	$bburdette$websocket$WebSocket$send,
 	$author$project$Ports$sendSocketCommand,
 	$bburdette$websocket$WebSocket$Connect(
-		{ar: $author$project$Main$wsBackend, _: 'TheSocket', aH: ''}));
+		{as: $author$project$Main$wsBackend, aa: 'TheSocket', aI: ''}));
 var $author$project$Main$init = function (_v0) {
 	return _Utils_Tuple2($author$project$Main$Disconnected, $author$project$Main$connectCommand);
 };
@@ -5296,7 +5296,7 @@ var $elm$time$Time$Every = F2(
 	});
 var $elm$time$Time$State = F2(
 	function (taggers, processes) {
-		return {af: processes, al: taggers};
+		return {ag: processes, am: taggers};
 	});
 var $elm$core$Dict$RBEmpty_elm_builtin = {$: -2};
 var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
@@ -5588,7 +5588,7 @@ var $elm$time$Time$spawnHelp = F3(
 	});
 var $elm$time$Time$onEffects = F3(
 	function (router, subs, _v0) {
-		var processes = _v0.af;
+		var processes = _v0.ag;
 		var rightStep = F3(
 			function (_v6, id, _v7) {
 				var spawns = _v7.a;
@@ -5657,7 +5657,7 @@ var $elm$time$Time$millisToPosix = $elm$core$Basics$identity;
 var $elm$time$Time$now = _Time_now($elm$time$Time$millisToPosix);
 var $elm$time$Time$onSelfMsg = F3(
 	function (router, interval, state) {
-		var _v0 = A2($elm$core$Dict$get, interval, state.al);
+		var _v0 = A2($elm$core$Dict$get, interval, state.am);
 		if (_v0.$ === 1) {
 			return $elm$core$Task$succeed(state);
 		} else {
@@ -5709,7 +5709,7 @@ var $elm$browser$Browser$AnimationManager$Delta = function (a) {
 };
 var $elm$browser$Browser$AnimationManager$State = F3(
 	function (subs, request, oldTime) {
-		return {L: oldTime, ai: request, ak: subs};
+		return {M: oldTime, aj: request, al: subs};
 	});
 var $elm$browser$Browser$AnimationManager$init = $elm$core$Task$succeed(
 	A3($elm$browser$Browser$AnimationManager$State, _List_Nil, $elm$core$Maybe$Nothing, 0));
@@ -5717,8 +5717,8 @@ var $elm$browser$Browser$AnimationManager$now = _Browser_now(0);
 var $elm$browser$Browser$AnimationManager$rAF = _Browser_rAF(0);
 var $elm$browser$Browser$AnimationManager$onEffects = F3(
 	function (router, subs, _v0) {
-		var request = _v0.ai;
-		var oldTime = _v0.L;
+		var request = _v0.aj;
+		var oldTime = _v0.M;
 		var _v1 = _Utils_Tuple2(request, subs);
 		if (_v1.a.$ === 1) {
 			if (!_v1.b.b) {
@@ -5764,8 +5764,8 @@ var $elm$browser$Browser$AnimationManager$onEffects = F3(
 	});
 var $elm$browser$Browser$AnimationManager$onSelfMsg = F3(
 	function (router, newTime, _v0) {
-		var subs = _v0.ak;
-		var oldTime = _v0.L;
+		var subs = _v0.al;
+		var oldTime = _v0.M;
 		var send = function (sub) {
 			if (!sub.$) {
 				var tagger = sub.a;
@@ -5873,7 +5873,7 @@ var $bburdette$websocket$WebSocket$decodeMsg = A2(
 					F2(
 						function (a, b) {
 							return $bburdette$websocket$WebSocket$Error(
-								{az: b, _: a});
+								{aA: b, aa: a});
 						}),
 					A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
 					A2($elm$json$Json$Decode$field, 'error', $elm$json$Json$Decode$string));
@@ -5883,7 +5883,7 @@ var $bburdette$websocket$WebSocket$decodeMsg = A2(
 					F2(
 						function (a, b) {
 							return $bburdette$websocket$WebSocket$Data(
-								{aw: b, _: a});
+								{ax: b, aa: a});
 						}),
 					A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
 					A2($elm$json$Json$Decode$field, 'data', $elm$json$Json$Decode$string));
@@ -6085,14 +6085,15 @@ var $author$project$Main$initAnimation = function (frameCount) {
 		J: $author$project$Fps$init,
 		t: 0,
 		y: $elm$core$Dict$empty,
-		m: $author$project$Main$Playing(0)
+		m: $author$project$Main$Playing(0),
+		K: $elm$core$Maybe$Nothing
 	};
 };
 var $elm$core$String$lines = _String_lines;
 var $author$project$Main$processMessage = F2(
 	function (data, model) {
 		var _v0 = $elm$core$String$lines(data);
-		_v0$6:
+		_v0$7:
 		while (true) {
 			if (_v0.b) {
 				switch (_v0.a) {
@@ -6100,13 +6101,13 @@ var $author$project$Main$processMessage = F2(
 						if (!_v0.b.b) {
 							return $author$project$Main$Connected;
 						} else {
-							break _v0$6;
+							break _v0$7;
 						}
 					case 'connection failed':
 						if (!_v0.b.b) {
 							return $author$project$Main$Problem($author$project$Main$ConnectionFailed);
 						} else {
-							break _v0$6;
+							break _v0$7;
 						}
 					case 'status':
 						if (_v0.b.b && (!_v0.b.b.b)) {
@@ -6122,20 +6123,39 @@ var $author$project$Main$processMessage = F2(
 										$author$project$Main$UnexpectedMessage('Unknown status: \'' + (status + '\'')));
 							}
 						} else {
-							break _v0$6;
+							break _v0$7;
 						}
 					case 'error':
 						var errorLines = _v0.b;
 						return $author$project$Main$Problem(
 							$author$project$Main$CompilationError(
 								A2($elm$core$String$join, '\n', errorLines)));
-					case 'frame_count':
+					case 'warning':
 						if (_v0.b.b && (!_v0.b.b.b)) {
 							var _v3 = _v0.b;
-							var n = _v3.a;
-							var _v4 = $elm$core$String$toInt(n);
-							if (!_v4.$) {
-								var frameCount = _v4.a;
+							var warning = _v3.a;
+							if (model.$ === 3) {
+								var animation = model.a;
+								return $author$project$Main$Animating(
+									_Utils_update(
+										animation,
+										{
+											K: $elm$core$Maybe$Just(warning)
+										}));
+							} else {
+								return $author$project$Main$Problem(
+									$author$project$Main$CompilationError(warning));
+							}
+						} else {
+							break _v0$7;
+						}
+					case 'frame_count':
+						if (_v0.b.b && (!_v0.b.b.b)) {
+							var _v5 = _v0.b;
+							var n = _v5.a;
+							var _v6 = $elm$core$String$toInt(n);
+							if (!_v6.$) {
+								var frameCount = _v6.a;
 								return $author$project$Main$Animating(
 									$author$project$Main$initAnimation(frameCount));
 							} else {
@@ -6143,17 +6163,17 @@ var $author$project$Main$processMessage = F2(
 									$author$project$Main$UnexpectedMessage('frame_count wasn\'t number, but \'' + (n + '\'')));
 							}
 						} else {
-							break _v0$6;
+							break _v0$7;
 						}
 					case 'frame':
 						if ((_v0.b.b && _v0.b.b.b) && (!_v0.b.b.b.b)) {
-							var _v5 = _v0.b;
-							var n = _v5.a;
-							var _v6 = _v5.b;
-							var svgUrl = _v6.a;
-							var _v7 = $elm$core$String$toInt(n);
-							if (!_v7.$) {
-								var frameIndex = _v7.a;
+							var _v7 = _v0.b;
+							var n = _v7.a;
+							var _v8 = _v7.b;
+							var svgUrl = _v8.a;
+							var _v9 = $elm$core$String$toInt(n);
+							if (!_v9.$) {
+								var frameIndex = _v9.a;
 								if (model.$ === 3) {
 									var animation = model.a;
 									return $author$project$Main$Animating(
@@ -6171,13 +6191,13 @@ var $author$project$Main$processMessage = F2(
 									$author$project$Main$UnexpectedMessage('Frame index wasn\'t number, but \'' + (n + '\'')));
 							}
 						} else {
-							break _v0$6;
+							break _v0$7;
 						}
 					default:
-						break _v0$6;
+						break _v0$7;
 				}
 			} else {
-				break _v0$6;
+				break _v0$7;
 			}
 		}
 		return $author$project$Main$Problem(
@@ -6192,11 +6212,11 @@ var $author$project$Main$processResult = F2(
 		} else {
 			var wsMsg = result.a;
 			if (!wsMsg.$) {
-				var error = wsMsg.a.az;
+				var error = wsMsg.a.aA;
 				return $author$project$Main$Problem(
 					$author$project$Main$UnexpectedMessage(error));
 			} else {
-				var data = wsMsg.a.aw;
+				var data = wsMsg.a.ax;
 				return A2($author$project$Main$processMessage, data, model);
 			}
 		}
@@ -6209,7 +6229,7 @@ var $author$project$Main$sendSource = function (txt) {
 		$bburdette$websocket$WebSocket$send,
 		$author$project$Ports$sendSocketCommand,
 		$bburdette$websocket$WebSocket$Send(
-			{av: txt, _: 'TheSocket'}));
+			{aw: txt, aa: 'TheSocket'}));
 };
 var $author$project$Fps$addToHead = F2(
 	function (dt, fps) {
@@ -6480,6 +6500,7 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
 var $elm$html$Html$div = _VirtualDom_node('div');
 var $elm$html$Html$img = _VirtualDom_node('img');
+var $elm$html$Html$span = _VirtualDom_node('span');
 var $elm$html$Html$Attributes$src = function (url) {
 	return A2(
 		$elm$html$Html$Attributes$stringProperty,
@@ -6496,31 +6517,49 @@ var $author$project$Main$webBackend = function () {
 		return 'http://localhost:10162/';
 	}
 }();
-var $author$project$Main$frameView = function (bestFrame) {
-	var image = function () {
-		if (!bestFrame.$) {
-			var svgUrl = bestFrame.a;
-			return A2(
-				$elm$html$Html$img,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$src(
-						_Utils_ap($author$project$Main$webBackend, svgUrl))
-					]),
-				_List_Nil);
-		} else {
-			return $elm$html$Html$text('');
-		}
-	}();
-	return A2(
-		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$class('viewer')
-			]),
-		_List_fromArray(
-			[image]));
-};
+var $author$project$Main$frameView = F2(
+	function (bestFrame, mbWarning) {
+		var warn = function () {
+			if (!mbWarning.$) {
+				var txt = mbWarning.a;
+				return A2(
+					$elm$html$Html$span,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('warning')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text(txt)
+						]));
+			} else {
+				return A2($elm$html$Html$span, _List_Nil, _List_Nil);
+			}
+		}();
+		var image = function () {
+			if (!bestFrame.$) {
+				var svgUrl = bestFrame.a;
+				return A2(
+					$elm$html$Html$img,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$src(
+							_Utils_ap($author$project$Main$webBackend, svgUrl))
+						]),
+					_List_Nil);
+			} else {
+				return $elm$html$Html$text('');
+			}
+		}();
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('viewer')
+				]),
+			_List_fromArray(
+				[image, warn]));
+	});
 var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$pre = _VirtualDom_node('pre');
@@ -6595,13 +6634,14 @@ var $author$project$Main$view = function (model) {
 								return $author$project$Main$problemView(problem);
 							default:
 								var bestFrame = model.a.C;
-								return $author$project$Main$frameView(bestFrame);
+								var warning = model.a.K;
+								return A2($author$project$Main$frameView, bestFrame, warning);
 						}
 					}()
 					]))
 			]));
 };
 var $author$project$Main$main = $elm$browser$Browser$element(
-	{aD: $author$project$Main$init, aJ: $author$project$Main$subscriptions, aL: $author$project$Main$update, aM: $author$project$Main$view});
+	{aE: $author$project$Main$init, aK: $author$project$Main$subscriptions, aM: $author$project$Main$update, aN: $author$project$Main$view});
 _Platform_export({'Main':{'init':$author$project$Main$main(
 	$elm$json$Json$Decode$succeed(0))(0)}});}(this));
