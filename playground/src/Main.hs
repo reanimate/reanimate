@@ -192,6 +192,12 @@ data CacheResult
   | CacheHitPartial Int IntSet
   deriving (Show)
 
+ppCacheResult :: CacheResult -> String
+ppCacheResult CacheMiss = "CacheMiss"
+ppCacheResult (CacheHit frames) = "CacheHit " ++ show frames
+ppCacheResult (CacheHitPartial frames partial) =
+  "CacheHitPartial " ++ show (IntSet.size partial) ++ "/" ++ show frames
+
 checkCache :: String -> IO CacheResult
 checkCache key = handle (\SomeException{} -> pure CacheMiss) $ do
   root <- cacheDir
@@ -224,7 +230,7 @@ data Render = Render
 requestRender :: Backend -> Render -> IO ()
 requestRender backend render = do
   cache <- checkCache (renderHash render)
-  logMsg $ "Cache: " ++ show cache
+  logMsg $ "Cache: " ++ ppCacheResult cache
   case cache of
     CacheMiss -> void $ forkIO $ putMVar (backendQueue backend) render
     CacheHit frames -> do
@@ -384,9 +390,11 @@ withHaskellFile m action = withSystemTempFile "playground.hs" $ \target h -> do
       \import Linear.Vector\n\
       \import Text.Printf\n\
       \import Codec.Picture.Types\n\
-      \import System.IO.Unsafe\n\
-      \import Control.Concurrent\n\
-      \import Control.Exception\n\
+      \-- Used for testing:\n\
+      \-- import System.IO.Unsafe\n\
+      \-- import Control.Concurrent\n\
+      \-- import Control.Exception\n\
+      \-- svgDelay d = unsafePerformIO (threadDelay d >> evaluate SVG.None)\n\
       \{-# LINE 1 \"playground\" #-}\n"
     T.appendFile target $ T.pack $ prettyPrint m
     action target
