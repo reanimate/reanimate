@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE TypeApplications #-}
 module Main (main) where
 
 import           Control.Applicative
@@ -10,6 +11,7 @@ import           Data.Bits
 import           Data.ByteString                (ByteString)
 import qualified Data.ByteString                as BS
 import           Data.Char                      (toLower)
+import           Data.Either                    (isLeft)
 import           Data.Hashable
 import           Data.IntSet                    (IntSet)
 import qualified Data.IntSet as IntSet
@@ -227,6 +229,13 @@ newBackend = do
     req <- takeMVar queue
     guardWanted req $ withHaskellFile (renderCode req) $ \hs -> do
       ghci <- readMVar ghciRef
+      catch @GhciError (loadAndRender req ghci hs) (\_ -> restartGhci ghciRef req)
+  return $ Backend ghciRef queue
+  where
+    restartGhci ghciRef req = do
+      renderError req "Ghci crashed. Restarting."
+      modifyMVar_ ghciRef (const newGhci)
+    loadAndRender req ghci hs =
       guardGhci req ghci (":load " ++ hs) $ \_ -> guardWanted req $
         guardGhci req ghci "Reanimate.duration animation" $ \out -> do
           root <- cacheDir
@@ -237,8 +246,6 @@ newBackend = do
           writeFile durFile (show frameCount)
           renderFrameCount req frameCount
           renderFrames req ghci
-  return $ Backend ghciRef queue
-  where
     renderFrames req ghci = guardWanted req $ do
       root <- cacheDir
       let svgFolder = root </> renderHash req
