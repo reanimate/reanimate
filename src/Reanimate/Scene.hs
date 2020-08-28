@@ -610,7 +610,7 @@ spriteMap sprite@(Sprite born _) fn = do
 --   Example:
 --
 -- @
--- do s \<- 'fork' $ 'newSpriteA' 'drawCircle'
+-- do s \<- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawCircle'
 --    'spriteTween' s 1 $ \val -> 'translate' ('Reanimate.Constants.screenWidth'*0.3*val) 0
 -- @
 --

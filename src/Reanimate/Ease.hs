@@ -22,7 +22,9 @@ type Signal = Double -> Double
 --
 --   Example:
 --
---   > signalA (constantS 0.5) drawProgress
+-- @
+-- 'Reanimate.signalA' ('constantS' 0.5) 'Reanimate.Builtin.Documentation.drawProgress'
+-- @
 --
 --   <<docs/gifs/doc_constantS.gif>>
 constantS :: Double -> Signal
@@ -32,7 +34,9 @@ constantS = const
 --
 --   Example:
 --
---   > signalA (fromToS 0.8 0.2) drawProgress
+-- @
+-- 'Reanimate.signalA' ('fromToS' 0.8 0.2) 'Reanimate.Builtin.Documentation.drawProgress'
+-- @
 --
 --   <<docs/gifs/doc_fromToS.gif>>
 fromToS :: Double -> Double -> Signal
@@ -42,7 +46,9 @@ fromToS from to t = from + (to-from)*t
 --
 --   Example:
 --
---   > signalA reverseS drawProgress
+-- @
+-- 'Reanimate.signalA' 'reverseS' 'Reanimate.Builtin.Documentation.drawProgress'
+-- @
 --
 --   <<docs/gifs/doc_reverseS.gif>>
 reverseS :: Signal
@@ -52,7 +58,9 @@ reverseS t = 1-t
 --
 --   Example:
 --
---   > signalA (curveS 2) drawProgress
+-- @
+-- 'Reanimate.signalA' ('curveS' 2) 'Reanimate.Builtin.Documentation.drawProgress'
+-- @
 --
 --   <<docs/gifs/doc_curveS.gif>>
 curveS :: Double -> Signal
@@ -65,7 +73,9 @@ curveS steepness s =
 --
 --   Example:
 --
---   > signalA (powerS 2) drawProgress
+-- @
+-- 'Reanimate.signalA' ('powerS' 2) 'Reanimate.Builtin.Documentation.drawProgress'
+-- @
 --
 --   <<docs/gifs/doc_powerS.gif>>
 powerS :: Double -> Signal
@@ -75,7 +85,9 @@ powerS steepness s = s**steepness
 --
 --   Example:
 --
---   > signalA oscillateS drawProgress
+-- @
+-- 'Reanimate.signalA' 'oscillateS' 'Reanimate.Builtin.Documentation.drawProgress'
+-- @
 --
 --   <<docs/gifs/doc_oscillateS.gif>>
 oscillateS :: Signal
@@ -88,7 +100,9 @@ oscillateS t =
 --
 --   Example:
 --
---   > signalA (bellS 2) drawProgress
+-- @
+-- 'Reanimate.signalA' ('bellS' 2) 'Reanimate.Builtin.Documentation.drawProgress'
+-- @
 --
 --   <<docs/gifs/doc_bellS.gif>>
 bellS :: Double -> Signal
@@ -99,7 +113,9 @@ bellS steepness = curveS steepness . oscillateS
 --
 --   Example:
 --
---   > signalA (cubicBezierS (0.0, 0.8, 0.9, 1.0)) drawProgress
+-- @
+-- 'Reanimate.signalA' ('cubicBezierS' (0.0, 0.8, 0.9, 1.0)) 'Reanimate.Builtin.Documentation.drawProgress'
+-- @
 --   
 --   <<docs/gifs/doc_cubicBezierS.gif>>
 cubicBezierS :: (Double, Double, Double, Double) -> Signal

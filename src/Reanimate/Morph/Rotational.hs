@@ -29,11 +29,13 @@ type Origin = (Double, Double)
 --
 --   Example:
 --
---   > playThenReverseA $ pauseAround 0.5 0.5 $ mkAnimation 3 $ \t ->
---   >   withStrokeLineJoin JoinRound $
---   >   let src = scale 8 $ center $ latex "X"
---   >       dst = scale 8 $ center $ latex "H"
---   >   in morph linear{morphTrajectory=rotationalTrajectory (0.5,0.5)} src dst t
+-- @
+-- 'Reanimate.playThenReverseA' $ 'Reanimate.pauseAround' 0.5 0.5 $ 'Reanimate.mkAnimation' 3 $ \\t ->
+--   'Reanimate.withStrokeLineJoin' 'Graphics.SvgTree.JoinRound' $
+--   let src = 'Reanimate.scale' 8 $ 'Reanimate.center' $ 'Reanimate.LaTeX.latex' \"X\"
+--       dst = 'Reanimate.scale' 8 $ 'Reanimate.center' $ 'Reanimate.LaTeX.latex' \"H\"
+--   in 'morph' 'Reanimate.Morph.Linear.linear'{'morphTrajectory'='rotationalTrajectory' (0.5,0.5)} src dst t
+-- @
 --
 --   <<docs/gifs/doc_rotationalTrajectory.gif>>
 rotationalTrajectory :: Origin -> Trajectory

@@ -38,11 +38,13 @@ type CCoord = Double
 --
 --   Example:
 --
---   > ternaryPlot 100 $ \aCoord bCoord cCoord -> promotePixel $
---   >   let red   = round $ aCoord*255
---   >       green = round $ bCoord*255
---   >       blue  = round $ cCoord*255
---   >   in PixelRGB8 red green blue
+-- @
+-- 'ternaryPlot' 100 $ \\aCoord bCoord cCoord -> 'Codec.Picture.Types.promotePixel' $
+--   let red   = round $ aCoord*255
+--       green = round $ bCoord*255
+--       blue  = round $ cCoord*255
+--   in PixelRGB8 red green blue
+-- @
 --
 --   <<docs/gifs/doc_ternaryPlot.gif>>
 ternaryPlot :: Int -- ^ Pixels in the X-axis. More pixels => higher quality.

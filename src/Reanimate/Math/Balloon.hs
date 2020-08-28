@@ -31,7 +31,9 @@ import           Reanimate.Svg.Constructors
 --
 --   Example:
 --
---   > animate $ balloon (scale 8 $ center $ latex "X")
+-- @
+-- 'animate' $ 'balloon' ('scale' 8 $ 'center' $ 'Reanimate.LaTeX.latex' \"X\")
+-- @
 --
 --   <<docs/gifs/doc_balloon.gif>>
 balloon :: SVG -> (Double -> SVG)

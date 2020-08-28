@@ -71,7 +71,9 @@ import           System.IO.Unsafe
 --
 --   Example:
 --
---   > mkImage screenWidth screenHeight "../data/haskell.svg"
+-- @
+-- 'mkImage' 'screenWidth' 'screenHeight' \"..\/data\/haskell.svg\"
+-- @
 --
 --   <<docs/gifs/doc_mkImage.gif>>
 mkImage

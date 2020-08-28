@@ -35,7 +35,9 @@ mapT fn t a b = fn (t a b)
 --
 --   Example:
 --
---   > overlapT 0.5 fadeT drawBox drawCircle
+-- @
+-- 'overlapT' 0.5 'fadeT' 'Reanimate.Builtin.Documentation.drawBox' 'Reanimate.Builtin.Documentation.drawCircle'
+-- @
 --
 --   <<docs/gifs/doc_overlapT.gif>>
 overlapT :: Double -> Transition -> Transition
@@ -58,7 +60,9 @@ effectT eA eB a b = applyE eA a `parA` applyE eB b
 --
 --   Example:
 --
---   > chainT (overlapT 0.5 fadeT) [drawBox, drawCircle, drawProgress]
+-- @
+-- 'chainT' ('overlapT' 0.5 'fadeT') ['Reanimate.Builtin.Documentation.drawBox', 'Reanimate.Builtin.Documentation.drawCircle', 'Reanimate.Builtin.Documentation.drawProgress']
+-- @
 --
 --   <<docs/gifs/doc_chainT.gif>>
 chainT :: Transition -> [Animation] -> Animation
@@ -69,7 +73,9 @@ chainT t (x:xs) = foldl t x xs
 --
 --   Example:
 --
---   > drawBox `fadeT` drawCircle
+-- @
+-- 'Reanimate.Builtin.Documentation.drawBox' `'fadeT'` 'Reanimate.Builtin.Documentation.drawCircle'
+-- @
 --
 --   <<docs/gifs/doc_fadeT.gif>>
 fadeT :: Transition

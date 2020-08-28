@@ -347,7 +347,9 @@ mkLinePathClosed ((startX, startY):rest) =
 --
 --   Example:
 --
---   > animate $ const $ mkBackground "yellow"
+-- @
+-- 'Reanimate.animate' $ 'const' $ 'mkBackground' "yellow"
+-- @
 --
 --   <<docs/gifs/doc_mkBackground.gif>>
 mkBackground :: String -> Tree
@@ -382,7 +384,9 @@ gridLayout rows = mkGroup
 --
 --   Example:
 --
---   > mkAnimation 2 $ \t -> scale 2 $ withStrokeWidth 0.05 $ mkText (T.take (round $ t*15) "text")
+-- @
+-- 'Reanimate.mkAnimation' 2 $ \\t -> 'scale' 2 $ 'withStrokeWidth' 0.05 $ 'mkText' (T.take (round $ t*15) "text")
+-- @
 --
 --   <<docs/gifs/doc_mkText.gif>>
 mkText :: T.Text -> Tree
@@ -405,7 +409,9 @@ mkText str =
 --
 --   Example:
 --
---   > withViewBox (0,0,1,1) $ mkBackground "yellow"
+-- @
+-- 'withViewBox' (0,0,1,1) $ 'mkBackground' "yellow"
+-- @
 --
 --   <<docs/gifs/doc_withViewBox.gif>>
 withViewBox :: (Double, Double, Double, Double) -> Tree -> Tree
