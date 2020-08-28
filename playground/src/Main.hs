@@ -315,38 +315,31 @@ newBackend = do
               renderFrameCount req frameCount
               renderFrames dur
         renderFrames dur = guardWanted $ guardTimeout $ guardFileSize $ do
-          createDirectoryIfMissing True svgFolder
           let cmd = printf
                 "Reanimate.renderLimitedFrames \"%s\" 0 False %d \
                 \(Reanimate.setDuration %f animation)"
                 svgFolder frameRate dur
           done <- newIORef False
-          err <- newIORef []
-          ret <- timeout (round (frameTimeLimit * 1e6)) $ execStream ghci cmd $ \strm msg ->
-            case strm of
-              Stdout ->
-                case msg of
-                  "Done" -> writeIORef done True 
-                  _      -> do
-                    let frameIdx = read msg
-                        path = renderHash req </> show frameIdx <.> "svg"
-                    renderFrameReady req frameIdx path
-              Stderr -> modifyIORef err (++[msg])
-          errMsgs <- readIORef err
+          mbErrors <- streamGhci ghci cmd $ \msg ->
+            case msg of
+              "Done" -> writeIORef done True 
+              _      -> do
+                let frameIdx = read msg
+                    path = renderHash req </> show frameIdx <.> "svg"
+                renderFrameReady req frameIdx path
           isDone <- readIORef done
-          if isNothing ret
-            then do
+          case mbErrors of
+            Nothing -> do
               renderWarning req "Frame render timed out."
               forkIO $ stopGhci ghci
               modifyMVar_ ghciRef (const newGhci)
-            else
-              if null errMsgs
-                then if isDone
-                  then logMsg "Render finished."
-                  else renderFrames dur
-                else do
-                  logMsg $ "Error:\n" ++ take charLimit (unlines errMsgs)
-                  renderError req (take charLimit (unlines errMsgs))
+            Just [] | isDone ->
+              logMsg "Render finished."
+            Just []  ->
+              renderFrames dur
+            Just errMsgs -> do
+              logMsg $ "Error:\n" ++ take charLimit (unlines errMsgs)
+              renderError req (take charLimit (unlines errMsgs))
     
     guardWanted $ withHaskellFile (renderCode req) $ \hs -> do
       catch @GhciError
@@ -415,6 +408,18 @@ reqGhcOutput ghci cmd = do
   unless (null err) $
     error (unlines err)
   return out
+
+streamGhci :: Ghci -> String -> (String -> IO ()) -> IO (Maybe [String])
+streamGhci ghci cmd cb = do
+  err <- newIORef []
+  ret <- timeout tLimit $ execStream ghci cmd $ \strm msg ->
+            case strm of
+              Stdout -> cb msg
+              Stderr -> modifyIORef err (++[msg])
+  errMsgs <- readIORef err
+  pure  (ret >> pure errMsgs)
+ where
+   tLimit = round (frameTimeLimit * 1e6)
 
 logMsg :: String -> IO ()
 logMsg msg = do
