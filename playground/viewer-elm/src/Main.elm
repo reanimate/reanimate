@@ -131,6 +131,7 @@ type alias Animation =
     , player : Player
     , bestFrame : Maybe String
     , frameDeltas : List Float
+    , warning : Maybe String
     }
 
 
@@ -142,6 +143,7 @@ initAnimation frameCount =
     , player = Playing 0
     , bestFrame = Nothing
     , frameDeltas = Fps.init
+    , warning = Nothing
     }
 
 
@@ -352,6 +354,12 @@ processMessage data model =
         "error" :: errorLines ->
             Problem (CompilationError (String.join "\n" errorLines))
 
+        [ "warning", warning ] ->
+            case model of
+                Animating animation ->
+                    Animating { animation | warning = Just warning }
+                _ -> Problem (CompilationError warning)
+
         [ "frame_count", n ] ->
             case String.toInt n of
                 Just frameCount ->
@@ -396,8 +404,8 @@ view model =
                 Problem problem ->
                     problemView problem
 
-                Animating { bestFrame } ->
-                    frameView bestFrame
+                Animating { bestFrame, warning } ->
+                    frameView bestFrame warning
             ]
         ]
 
@@ -415,8 +423,8 @@ framesPerMillisecond =
 
 
 
-frameView : Maybe String -> Html Msg
-frameView bestFrame =
+frameView : Maybe String -> Maybe String -> Html Msg
+frameView bestFrame mbWarning =
     let
         image =
             case bestFrame of
@@ -425,9 +433,14 @@ frameView bestFrame =
 
                 Nothing ->
                     Html.text ""
+        warn =
+            case mbWarning of
+                Just txt -> Html.span [ class "warning" ] [Html.text txt]
+                Nothing -> Html.span [] []
     in
     Html.div [ class "viewer" ]
         [ image
+        , warn
         ]
 
 
