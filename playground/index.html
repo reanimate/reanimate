@@ -49,7 +49,10 @@
     <div class="edit-box">
       <div class="media-buttons column-header">
         <div style="display: flex;flex-flow:row;justify-content: space-between;">
-          <a href="https://reanimate.github.io/"><img src="home-white-48dp.svg"></a>
+          <div>
+            <a href="https://reanimate.github.io/"><img src="home-white-48dp.svg"></a>
+            <img id="love" src="favorite_border-white-48dp.svg">
+          </div>
           <div>
             <img id="seek-10" src="replay_10-white-48dp.svg">
             <img id="seek-1" src="skip_previous-white-48dp.svg">
@@ -68,19 +71,60 @@
     </div>
   </div>
 
-  <div id="help-modal" class="modal">
+  <div id="love-modal" class="modal">
     <div class="modal-background"></div>
     <div class="modal-card">
       <header class="modal-card-head">
-        <p class="modal-card-title">Reanimate Playground</p>
+        <p class="modal-card-title">Support Reanimate</p>
         <button class="delete" aria-label="close"></button>
       </header>
       <section class="modal-card-body">
         <div class="content">
           <p>
-            This playground is funded by
-            <a href="https://github.com/sponsors/Lemmih">GitHub Sponsors ❤.</a>
+            The playground server is generously funded by
+            <a href="https://github.com/sponsors/Lemmih">❤ GitHub Sponsors ❤.</a>
           </p>
+          <p>
+            If reanimate is useful for you, consider becoming a sponsor or boosting
+            the project's visibility with a
+            <a href="https://github.com/reanimate/reanimate/">GitHub Star.</a>
+          </p>
+          <iframe src="https://github.com/sponsors/Lemmih/card" title="Sponsor Lemmih" height="225" width="600" style="border: 0;"></iframe>
+        </div>
+      </section>
+    </div>
+    <button class="modal-close is-large" area-label="close"></button>
+  </div>
+
+  <div id="help-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Playground Instructions</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        <div class="content">
+          <dl>
+            <dt><b>API Documentation</b></dt>
+            <dd>
+              <a href="https://hackage.haskell.org/package/reanimate/docs/Reanimate.html">
+                hackage.haskell.org/package/reanimate/docs/Reanimate.html
+              </a>
+            </dd>
+            <dt><b>Core Concepts</b></dt>
+            <dd>
+              <a href="https://reanimate.readthedocs.io/en/latest/introduction/">
+                reanimate.rtfd.io/en/latest/introduction/
+              </a>
+            </dd>
+            <dt><b>Repository</b></dt>
+            <dd>
+              <a href="https://github.com/reanimate/reanimate/">
+                github.com/reanimate/reanimate/
+              </a>
+            </dd>
+          </dl>
           <p>
             Animations are rendered with the following restrictions:
           </p>
@@ -191,7 +235,14 @@
     examplesIcon.onclick = function () {
       openModal(examplesModal);
     };
-    configureModal(examplesModal)
+    configureModal(examplesModal);
+
+    const loveIcon = document.getElementById('love');
+    const loveModal = document.querySelector('#love-modal');
+    loveIcon.onclick = function () {
+      openModal(loveModal);
+    };
+    configureModal(loveModal);
 
     Split({ // gutters specified in options
       columnGutters: [{
