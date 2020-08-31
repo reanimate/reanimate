@@ -1,11 +1,13 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RecordWildCards       #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_HADDOCK hide #-}
 module Reanimate.Math.SSSP
   ( -- * Single-Source-Shortest-Path
     SSSP
   , sssp                -- :: (Fractional a, Ord a) => Ring a -> Dual -> SSSP
+  , ssspFinger
   , dual                -- :: Int -> Triangulation -> Dual
   , Dual(..)
   , DualTree(..)
@@ -25,7 +27,7 @@ import           Control.Monad
 -- import           Control.Exception
 import           Control.Monad.ST
 -- import           Data.FingerTree            (SearchResult (..), (|>))
--- import qualified Data.FingerTree            as F
+import qualified Data.FingerTree            as F
 import           Data.Foldable
 import           Data.List
 import qualified Data.Map                   as Map
@@ -260,18 +262,6 @@ dualTree t (a,b) e = -- simplifyDual $
     next x = (x+1) `mod` n
     prev x = (x-1) `mod` n
 
--- data MinMax = MinMax Int Int | MinMaxEmpty deriving (Show)
--- instance Semigroup MinMax where
---   MinMaxEmpty <> b = b
---   a <> MinMaxEmpty = a
---   MinMax a b <> MinMax c d
---     = MinMax (min a c) (max b d)
---     -- = MinMax c b
--- instance Monoid MinMax where
---   mempty = MinMaxEmpty
---
--- instance F.Measured MinMax Int where
---   measure i = MinMax i i
 
 -- dualRoot :: Dual -> Int
 -- dualRoot (Dual (a,_,_) _ _) = a
@@ -341,3 +331,92 @@ sssp p d = toSSSP $
                 (x, cusp::Int) :
                 worker f1 [x] cusp l ++
                 worker [x] f2 cusp r
+
+data MinMax = MinMax Int Int | MinMaxEmpty deriving (Show)
+instance Semigroup MinMax where
+  MinMaxEmpty <> b = b
+  a <> MinMaxEmpty = a
+  MinMax a _b <> MinMax _c d
+    = MinMax a d
+instance Monoid MinMax where
+  mempty = MinMaxEmpty
+
+type Chain = F.FingerTree MinMax Int
+data Funnel = Funnel
+  { funnelLeft  :: Chain
+  , funnelCusp  :: Int
+  , funnelRight :: Chain
+  }
+
+instance F.Measured MinMax Int where
+  measure i = MinMax i i
+
+splitFunnel :: (Epsilon a, Fractional a, Ord a) => Ring a -> Int -> Funnel -> (Int, Funnel, Funnel)
+splitFunnel p x Funnel{..}
+    | isOnLeftChain =
+      case doSearch isRightTurn funnelLeft of
+        (lower, t, upper) ->
+          ( t
+          , Funnel upper t (F.singleton x)
+          , Funnel (lower F.|> t F.|> x) funnelCusp funnelRight)
+    | isOnRightChain =
+      case doSearch isLeftTurn funnelRight of
+        (lower, t, upper) ->
+          ( t
+          , Funnel funnelLeft funnelCusp (lower F.|> t F.|> x)
+          , Funnel (F.singleton x) t upper)
+    | otherwise =
+      ( funnelCusp
+      , Funnel funnelLeft funnelCusp (F.singleton x)
+      , Funnel (F.singleton x) funnelCusp funnelRight)
+  where
+    isOnLeftChain  = fromMaybe False $
+      isLeftTurnOrLinear cuspElt <$> leftElt <*> pure targetElt
+    isOnRightChain = fromMaybe False $
+      isRightTurnOrLinear cuspElt <$> rightElt <*> pure targetElt
+    doSearch fn chain =
+      case F.search (searchChain fn) (chain::Chain) of
+        F.Position lower t upper -> (lower, t, upper)
+        F.OnLeft                 -> error "cannot happen"
+        F.OnRight                -> error "cannot happen"
+        F.Nowhere                -> error "cannot happen"
+    searchChain _ MinMaxEmpty _             = False
+    searchChain _ _ MinMaxEmpty             = True
+    searchChain check (MinMax _ l) (MinMax r _) =
+      check (ringAccess p l) (ringAccess p r) targetElt
+    cuspElt   = ringAccess p funnelCusp
+    targetElt = ringAccess p x
+    leftElt   = ringAccess p <$> chainLeft funnelLeft
+    rightElt  = ringAccess p <$> chainLeft funnelRight
+    chainLeft chain =
+      case F.viewl chain of
+        F.EmptyL   -> Nothing
+        elt F.:< _ -> Just elt
+
+-- O(n)
+ssspFinger :: (Epsilon a, Fractional a, Ord a) => Ring a -> Dual -> SSSP
+ssspFinger p d = toSSSP $
+    case d of
+      Dual (a,b,c) l r ->
+        (a, a) :
+        (b, a) :
+        (c, a) :
+        worker (Funnel (F.singleton c) a (F.singleton b)) r ++
+        loopLeft a c l
+  where
+    toSSSP edges =
+      (V.fromList . map snd . sortOn fst) edges
+    loopLeft a outer l =
+      case l of
+        EmptyDual -> []
+        NodeDual x l' r' ->
+          (x,a) :
+          worker (Funnel (F.singleton x) a (F.singleton outer)) r' ++
+          loopLeft a x l'
+    worker _ EmptyDual = []
+    worker f (NodeDual x l r) =
+      case splitFunnel p x f of
+        (v, fL, fR) ->
+          (x, v) :
+          worker fL l ++
+          worker fR r
