@@ -1,0 +1,229 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>{-# LANGUAGE ScopedTypeVariables #-}
+<span class="lineno">    2 </span>module Reanimate.Driver.Check
+<span class="lineno">    3 </span>  ( checkEnvironment
+<span class="lineno">    4 </span>  , hasRSvg
+<span class="lineno">    5 </span>  , hasInkscape
+<span class="lineno">    6 </span>  , hasMagick
+<span class="lineno">    7 </span>  , hasFFmpegRSvg
+<span class="lineno">    8 </span>  ) where
+<span class="lineno">    9 </span>
+<span class="lineno">   10 </span>import           Control.Exception            (SomeException, handle)
+<span class="lineno">   11 </span>import           Control.Monad
+<span class="lineno">   12 </span>import           Data.Maybe
+<span class="lineno">   13 </span>import           Data.Version
+<span class="lineno">   14 </span>import           Reanimate.Misc               (runCmd_)
+<span class="lineno">   15 </span>import           Reanimate.Driver.Magick      (magickCmd)
+<span class="lineno">   16 </span>import           System.Console.ANSI.Codes
+<span class="lineno">   17 </span>import           System.Directory             (findExecutable)
+<span class="lineno">   18 </span>import           System.IO
+<span class="lineno">   19 </span>import           System.IO.Temp
+<span class="lineno">   20 </span>import           Text.ParserCombinators.ReadP
+<span class="lineno">   21 </span>import           Text.Printf
+<span class="lineno">   22 </span>
+<span class="lineno">   23 </span>--------------------------------------------------------------------------
+<span class="lineno">   24 </span>-- Check environment
+<span class="lineno">   25 </span>
+<span class="lineno">   26 </span>checkEnvironment :: IO ()
+<span class="lineno">   27 </span><span class="decl"><span class="nottickedoff">checkEnvironment = do</span>
+<span class="lineno">   28 </span><span class="spaces">    </span><span class="nottickedoff">putStrLn &quot;reanimate checks:&quot;</span>
+<span class="lineno">   29 </span><span class="spaces">    </span><span class="nottickedoff">runCheck &quot;Has ffmpeg&quot; hasFFmpeg</span>
+<span class="lineno">   30 </span><span class="spaces">    </span><span class="nottickedoff">runCheck &quot;Has ffmpeg(rsvg)&quot; hasFFmpegRSvg</span>
+<span class="lineno">   31 </span><span class="spaces">    </span><span class="nottickedoff">runCheck &quot;Has dvisvgm&quot; hasDvisvgm</span>
+<span class="lineno">   32 </span><span class="spaces">    </span><span class="nottickedoff">runCheck &quot;Has povray&quot; hasPovray</span>
+<span class="lineno">   33 </span><span class="spaces">    </span><span class="nottickedoff">runCheck &quot;Has blender&quot; hasBlender</span>
+<span class="lineno">   34 </span><span class="spaces">    </span><span class="nottickedoff">runCheck &quot;Has rsvg-convert&quot; hasRSvg</span>
+<span class="lineno">   35 </span><span class="spaces">    </span><span class="nottickedoff">runCheck &quot;Has inkscape&quot; hasInkscape</span>
+<span class="lineno">   36 </span><span class="spaces">    </span><span class="nottickedoff">runCheck &quot;Has imagemagick&quot; hasMagick</span>
+<span class="lineno">   37 </span><span class="spaces">    </span><span class="nottickedoff">runCheck &quot;Has LaTeX&quot; hasLaTeX</span>
+<span class="lineno">   38 </span><span class="spaces">    </span><span class="nottickedoff">runCheck (&quot;Has LaTeX package '&quot;++ &quot;babel&quot; ++ &quot;'&quot;) $ hasTeXPackage &quot;latex&quot;</span>
+<span class="lineno">   39 </span><span class="spaces">      </span><span class="nottickedoff">&quot;[english]{babel}&quot;</span>
+<span class="lineno">   40 </span><span class="spaces">    </span><span class="nottickedoff">forM_ latexPackages $ \pkg -&gt;</span>
+<span class="lineno">   41 </span><span class="spaces">      </span><span class="nottickedoff">runCheck (&quot;Has LaTeX package '&quot;++ pkg ++ &quot;'&quot;) $ hasTeXPackage &quot;latex&quot; $</span>
+<span class="lineno">   42 </span><span class="spaces">        </span><span class="nottickedoff">&quot;{&quot;++pkg++&quot;}&quot;</span>
+<span class="lineno">   43 </span><span class="spaces">    </span><span class="nottickedoff">runCheck &quot;Has XeLaTeX&quot; hasXeLaTeX</span>
+<span class="lineno">   44 </span><span class="spaces">    </span><span class="nottickedoff">forM_ xelatexPackages $ \pkg -&gt;</span>
+<span class="lineno">   45 </span><span class="spaces">      </span><span class="nottickedoff">runCheck (&quot;Has XeLaTeX package '&quot;++ pkg ++ &quot;'&quot;) $ hasTeXPackage &quot;xelatex&quot; $</span>
+<span class="lineno">   46 </span><span class="spaces">        </span><span class="nottickedoff">&quot;{&quot;++pkg++&quot;}&quot;</span>
+<span class="lineno">   47 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">   48 </span><span class="spaces">    </span><span class="nottickedoff">latexPackages =</span>
+<span class="lineno">   49 </span><span class="spaces">      </span><span class="nottickedoff">[&quot;preview&quot;</span>
+<span class="lineno">   50 </span><span class="spaces">      </span><span class="nottickedoff">,&quot;amsmath&quot;</span>
+<span class="lineno">   51 </span><span class="spaces">      </span><span class="nottickedoff">--,&quot;amssymb&quot;</span>
+<span class="lineno">   52 </span><span class="spaces">      </span><span class="nottickedoff">--,&quot;dsfont&quot;</span>
+<span class="lineno">   53 </span><span class="spaces">      </span><span class="nottickedoff">--,&quot;setspace&quot;</span>
+<span class="lineno">   54 </span><span class="spaces">      </span><span class="nottickedoff">--,&quot;relsize&quot;</span>
+<span class="lineno">   55 </span><span class="spaces">      </span><span class="nottickedoff">--,&quot;textcomp&quot;</span>
+<span class="lineno">   56 </span><span class="spaces">      </span><span class="nottickedoff">--,&quot;mathrsfs&quot;</span>
+<span class="lineno">   57 </span><span class="spaces">      </span><span class="nottickedoff">--,&quot;calligra&quot;</span>
+<span class="lineno">   58 </span><span class="spaces">      </span><span class="nottickedoff">--,&quot;wasysym&quot;</span>
+<span class="lineno">   59 </span><span class="spaces">      </span><span class="nottickedoff">--,&quot;ragged2e&quot;</span>
+<span class="lineno">   60 </span><span class="spaces">      </span><span class="nottickedoff">--,&quot;physics&quot;</span>
+<span class="lineno">   61 </span><span class="spaces">      </span><span class="nottickedoff">--,&quot;xcolor&quot;</span>
+<span class="lineno">   62 </span><span class="spaces">      </span><span class="nottickedoff">--,&quot;textcomp&quot;</span>
+<span class="lineno">   63 </span><span class="spaces">      </span><span class="nottickedoff">--,&quot;xfrac&quot;</span>
+<span class="lineno">   64 </span><span class="spaces">      </span><span class="nottickedoff">--,&quot;microtype&quot;</span>
+<span class="lineno">   65 </span><span class="spaces">      </span><span class="nottickedoff">]</span>
+<span class="lineno">   66 </span><span class="spaces">    </span><span class="nottickedoff">xelatexPackages =</span>
+<span class="lineno">   67 </span><span class="spaces">      </span><span class="nottickedoff">[&quot;ctex&quot;]</span>
+<span class="lineno">   68 </span><span class="spaces">    </span><span class="nottickedoff">runCheck msg fn = do</span>
+<span class="lineno">   69 </span><span class="spaces">      </span><span class="nottickedoff">printf &quot;  %-35s&quot; (msg ++ &quot;:&quot;)</span>
+<span class="lineno">   70 </span><span class="spaces">      </span><span class="nottickedoff">val &lt;- fn</span>
+<span class="lineno">   71 </span><span class="spaces">      </span><span class="nottickedoff">case val of</span>
+<span class="lineno">   72 </span><span class="spaces">        </span><span class="nottickedoff">Left err -&gt; putStrLnColor Red err</span>
+<span class="lineno">   73 </span><span class="spaces">        </span><span class="nottickedoff">Right ok -&gt; putStrLnColor Green ok</span></span>
+<span class="lineno">   74 </span>
+<span class="lineno">   75 </span>putStrLnColor :: Color -&gt; String -&gt; IO ()
+<span class="lineno">   76 </span><span class="decl"><span class="nottickedoff">putStrLnColor color msg =</span>
+<span class="lineno">   77 </span><span class="spaces">  </span><span class="nottickedoff">putStrLn $ setSGRCode [SetColor Foreground Vivid color] ++ msg ++ setSGRCode [Reset]</span></span>
+<span class="lineno">   78 </span>
+<span class="lineno">   79 </span>-- latex, dvisvgm, xelatex
+<span class="lineno">   80 </span>
+<span class="lineno">   81 </span>hasLaTeX :: IO (Either String String)
+<span class="lineno">   82 </span><span class="decl"><span class="nottickedoff">hasLaTeX = hasProgram &quot;latex&quot;</span></span>
+<span class="lineno">   83 </span>
+<span class="lineno">   84 </span>hasXeLaTeX :: IO (Either String String)
+<span class="lineno">   85 </span><span class="decl"><span class="nottickedoff">hasXeLaTeX = hasProgram &quot;xelatex&quot;</span></span>
+<span class="lineno">   86 </span>
+<span class="lineno">   87 </span>hasDvisvgm :: IO (Either String String)
+<span class="lineno">   88 </span><span class="decl"><span class="nottickedoff">hasDvisvgm = hasProgram &quot;dvisvgm&quot;</span></span>
+<span class="lineno">   89 </span>
+<span class="lineno">   90 </span>hasPovray :: IO (Either String String)
+<span class="lineno">   91 </span><span class="decl"><span class="nottickedoff">hasPovray = hasProgram &quot;povray&quot;</span></span>
+<span class="lineno">   92 </span>
+<span class="lineno">   93 </span>hasFFmpeg :: IO (Either String String)
+<span class="lineno">   94 </span><span class="decl"><span class="nottickedoff">hasFFmpeg = checkMinVersion minVersion &lt;$&gt; ffmpegVersion</span>
+<span class="lineno">   95 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">   96 </span><span class="spaces">    </span><span class="nottickedoff">minVersion = Version [4,1,3] []</span></span>
+<span class="lineno">   97 </span>
+<span class="lineno">   98 </span>hasFFmpegRSvg :: IO (Either String String)
+<span class="lineno">   99 </span><span class="decl"><span class="nottickedoff">hasFFmpegRSvg = do</span>
+<span class="lineno">  100 </span><span class="spaces">  </span><span class="nottickedoff">mbPath &lt;- findExecutable &quot;ffmpeg&quot;</span>
+<span class="lineno">  101 </span><span class="spaces">  </span><span class="nottickedoff">case mbPath of</span>
+<span class="lineno">  102 </span><span class="spaces">    </span><span class="nottickedoff">Nothing -&gt; return $ Left &quot;n/a&quot;</span>
+<span class="lineno">  103 </span><span class="spaces">    </span><span class="nottickedoff">Just path -&gt; do</span>
+<span class="lineno">  104 </span><span class="spaces">      </span><span class="nottickedoff">ret &lt;- runCmd_ path [&quot;-version&quot;]</span>
+<span class="lineno">  105 </span><span class="spaces">      </span><span class="nottickedoff">pure $ case ret of</span>
+<span class="lineno">  106 </span><span class="spaces">        </span><span class="nottickedoff">Right out | &quot;--enable-librsvg&quot; `elem` words out</span>
+<span class="lineno">  107 </span><span class="spaces">          </span><span class="nottickedoff">-&gt; Right &quot;yes&quot;</span>
+<span class="lineno">  108 </span><span class="spaces">        </span><span class="nottickedoff">_ -&gt; Left &quot;no&quot;</span></span>
+<span class="lineno">  109 </span>
+<span class="lineno">  110 </span>hasBlender :: IO (Either String String)
+<span class="lineno">  111 </span><span class="decl"><span class="nottickedoff">hasBlender = checkMinVersion minVersion &lt;$&gt; blenderVersion</span>
+<span class="lineno">  112 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  113 </span><span class="spaces">    </span><span class="nottickedoff">minVersion = Version [2,80] []</span></span>
+<span class="lineno">  114 </span>
+<span class="lineno">  115 </span>hasRSvg :: IO (Either String String)
+<span class="lineno">  116 </span><span class="decl"><span class="nottickedoff">hasRSvg = checkMinVersion minVersion &lt;$&gt; rsvgVersion</span>
+<span class="lineno">  117 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  118 </span><span class="spaces">    </span><span class="nottickedoff">minVersion = Version [2,44,0] []</span></span>
+<span class="lineno">  119 </span>
+<span class="lineno">  120 </span>hasInkscape :: IO (Either String String)
+<span class="lineno">  121 </span><span class="decl"><span class="nottickedoff">hasInkscape = checkMinVersion minVersion &lt;$&gt; inkscapeVersion</span>
+<span class="lineno">  122 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  123 </span><span class="spaces">    </span><span class="nottickedoff">minVersion = Version [0,92] []</span></span>
+<span class="lineno">  124 </span>
+<span class="lineno">  125 </span>hasMagick :: IO (Either String String)
+<span class="lineno">  126 </span><span class="decl"><span class="nottickedoff">hasMagick = checkMinVersion minVersion &lt;$&gt; magickVersion</span>
+<span class="lineno">  127 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  128 </span><span class="spaces">    </span><span class="nottickedoff">minVersion = Version [6,0,0] []</span></span>
+<span class="lineno">  129 </span>
+<span class="lineno">  130 </span>ffmpegVersion :: IO (Maybe Version)
+<span class="lineno">  131 </span><span class="decl"><span class="nottickedoff">ffmpegVersion = extractVersion &quot;ffmpeg&quot; [&quot;-version&quot;] $ \line -&gt;</span>
+<span class="lineno">  132 </span><span class="spaces">      </span><span class="nottickedoff">case take 3 $ words line of</span>
+<span class="lineno">  133 </span><span class="spaces">        </span><span class="nottickedoff">[&quot;ffmpeg&quot;, &quot;version&quot;, vs] -&gt; vs</span>
+<span class="lineno">  134 </span><span class="spaces">        </span><span class="nottickedoff">_                         -&gt; &quot;&quot;</span></span>
+<span class="lineno">  135 </span>
+<span class="lineno">  136 </span>blenderVersion :: IO (Maybe Version)
+<span class="lineno">  137 </span><span class="decl"><span class="nottickedoff">blenderVersion = extractVersion &quot;blender&quot; [&quot;--version&quot;] $ \line -&gt;</span>
+<span class="lineno">  138 </span><span class="spaces">    </span><span class="nottickedoff">case take 2 (words line) of</span>
+<span class="lineno">  139 </span><span class="spaces">      </span><span class="nottickedoff">[&quot;Blender&quot;, vs] -&gt; vs</span>
+<span class="lineno">  140 </span><span class="spaces">      </span><span class="nottickedoff">_               -&gt; &quot;&quot;</span></span>
+<span class="lineno">  141 </span>
+<span class="lineno">  142 </span>rsvgVersion :: IO (Maybe Version)
+<span class="lineno">  143 </span><span class="decl"><span class="nottickedoff">rsvgVersion = extractVersion &quot;rsvg-convert&quot; [&quot;--version&quot;] $ \line -&gt;</span>
+<span class="lineno">  144 </span><span class="spaces">  </span><span class="nottickedoff">case words line of</span>
+<span class="lineno">  145 </span><span class="spaces">    </span><span class="nottickedoff">[&quot;rsvg-convert&quot;, &quot;version&quot;, vs] -&gt; vs</span>
+<span class="lineno">  146 </span><span class="spaces">    </span><span class="nottickedoff">_                               -&gt; &quot;&quot;</span></span>
+<span class="lineno">  147 </span>
+<span class="lineno">  148 </span>inkscapeVersion :: IO (Maybe Version)
+<span class="lineno">  149 </span><span class="decl"><span class="nottickedoff">inkscapeVersion = extractVersion &quot;inkscape&quot; [&quot;--version&quot;] $ \line -&gt;</span>
+<span class="lineno">  150 </span><span class="spaces">    </span><span class="nottickedoff">case take 2 $ words line of</span>
+<span class="lineno">  151 </span><span class="spaces">      </span><span class="nottickedoff">[&quot;Inkscape&quot;, vs] -&gt; vs</span>
+<span class="lineno">  152 </span><span class="spaces">      </span><span class="nottickedoff">_                -&gt; &quot;&quot;</span></span>
+<span class="lineno">  153 </span>
+<span class="lineno">  154 </span>magickVersion :: IO (Maybe Version)
+<span class="lineno">  155 </span><span class="decl"><span class="nottickedoff">magickVersion = extractVersion magickCmd [&quot;-version&quot;] $ \line -&gt;</span>
+<span class="lineno">  156 </span><span class="spaces">    </span><span class="nottickedoff">case take 3 $ words line of</span>
+<span class="lineno">  157 </span><span class="spaces">      </span><span class="nottickedoff">[&quot;Version:&quot;, &quot;ImageMagick&quot;, vs] -&gt; vs</span>
+<span class="lineno">  158 </span><span class="spaces">      </span><span class="nottickedoff">_                               -&gt; &quot;&quot;</span></span>
+<span class="lineno">  159 </span>
+<span class="lineno">  160 </span>checkMinVersion :: Version -&gt; Maybe Version -&gt; Either String String
+<span class="lineno">  161 </span><span class="decl"><span class="nottickedoff">checkMinVersion _minVersion Nothing = Left &quot;no&quot;</span>
+<span class="lineno">  162 </span><span class="spaces"></span><span class="nottickedoff">checkMinVersion minVersion (Just vs)</span>
+<span class="lineno">  163 </span><span class="spaces">  </span><span class="nottickedoff">| vs &lt; minVersion = Left $ &quot;too old: &quot; ++ showVersion vs ++ &quot; &lt; &quot; ++ showVersion minVersion</span>
+<span class="lineno">  164 </span><span class="spaces">  </span><span class="nottickedoff">| otherwise       = Right (showVersion vs)</span></span>
+<span class="lineno">  165 </span>
+<span class="lineno">  166 </span>extractVersion :: FilePath -&gt; [String] -&gt; (String -&gt; String) -&gt; IO (Maybe Version)
+<span class="lineno">  167 </span><span class="decl"><span class="nottickedoff">extractVersion execPath args outputFilter = do</span>
+<span class="lineno">  168 </span><span class="spaces">  </span><span class="nottickedoff">mbPath &lt;- findExecutable execPath</span>
+<span class="lineno">  169 </span><span class="spaces">  </span><span class="nottickedoff">case mbPath of</span>
+<span class="lineno">  170 </span><span class="spaces">    </span><span class="nottickedoff">Nothing -&gt; return Nothing</span>
+<span class="lineno">  171 </span><span class="spaces">    </span><span class="nottickedoff">Just path -&gt; do</span>
+<span class="lineno">  172 </span><span class="spaces">      </span><span class="nottickedoff">ret &lt;- runCmd_ path args</span>
+<span class="lineno">  173 </span><span class="spaces">      </span><span class="nottickedoff">case ret of</span>
+<span class="lineno">  174 </span><span class="spaces">        </span><span class="nottickedoff">Left{} -&gt; return $ Just noVersion</span>
+<span class="lineno">  175 </span><span class="spaces">        </span><span class="nottickedoff">Right out -&gt;</span>
+<span class="lineno">  176 </span><span class="spaces">          </span><span class="nottickedoff">pure $ Just $ fromMaybe noVersion $ parseVS $ outputFilter out</span>
+<span class="lineno">  177 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  178 </span><span class="spaces">    </span><span class="nottickedoff">noVersion = Version [] []</span>
+<span class="lineno">  179 </span><span class="spaces">    </span><span class="nottickedoff">parseVS vs = listToMaybe $ reverse</span>
+<span class="lineno">  180 </span><span class="spaces">      </span><span class="nottickedoff">[ v | (v, _) &lt;- readP_to_S parseVersion vs ]</span></span>
+<span class="lineno">  181 </span>
+<span class="lineno">  182 </span>hasTeXPackage :: FilePath -&gt; String -&gt; IO (Either String String)
+<span class="lineno">  183 </span><span class="decl"><span class="nottickedoff">hasTeXPackage exec pkg = handle (\(_::SomeException) -&gt; return $ Left &quot;n/a&quot;) $</span>
+<span class="lineno">  184 </span><span class="spaces">    </span><span class="nottickedoff">withSystemTempDirectory &quot;reanimate&quot; $ \tmp_dir -&gt; withTempFile tmp_dir &quot;test.tex&quot; $ \tex_file tex_handle -&gt; do</span>
+<span class="lineno">  185 </span><span class="spaces">      </span><span class="nottickedoff">hPutStr tex_handle tex_document</span>
+<span class="lineno">  186 </span><span class="spaces">      </span><span class="nottickedoff">hPutStr tex_handle $ &quot;\\usepackage&quot; ++ pkg ++ &quot;\n&quot;</span>
+<span class="lineno">  187 </span><span class="spaces">      </span><span class="nottickedoff">hPutStr tex_handle &quot;\\begin{document}\n&quot;</span>
+<span class="lineno">  188 </span><span class="spaces">      </span><span class="nottickedoff">hPutStr tex_handle &quot;blah\n&quot;</span>
+<span class="lineno">  189 </span><span class="spaces">      </span><span class="nottickedoff">hPutStr tex_handle tex_epilogue</span>
+<span class="lineno">  190 </span><span class="spaces">      </span><span class="nottickedoff">hClose tex_handle</span>
+<span class="lineno">  191 </span><span class="spaces">      </span><span class="nottickedoff">ret &lt;- runCmd_ exec [&quot;-interaction=batchmode&quot;, &quot;-halt-on-error&quot;, &quot;-output-directory=&quot;++tmp_dir, tex_file]</span>
+<span class="lineno">  192 </span><span class="spaces">      </span><span class="nottickedoff">return $ case ret of</span>
+<span class="lineno">  193 </span><span class="spaces">        </span><span class="nottickedoff">Right{} -&gt; Right &quot;OK&quot;</span>
+<span class="lineno">  194 </span><span class="spaces">        </span><span class="nottickedoff">Left{}  -&gt; Left &quot;missing&quot;</span>
+<span class="lineno">  195 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  196 </span><span class="spaces">    </span><span class="nottickedoff">tex_document = &quot;\\documentclass[preview]{standalone}\n&quot;</span>
+<span class="lineno">  197 </span><span class="spaces">    </span><span class="nottickedoff">tex_epilogue =</span>
+<span class="lineno">  198 </span><span class="spaces">      </span><span class="nottickedoff">&quot;\n\</span>
+<span class="lineno">  199 </span><span class="spaces">      </span><span class="nottickedoff">\\\end{document}&quot;</span></span>
+<span class="lineno">  200 </span>
+<span class="lineno">  201 </span>hasProgram :: String -&gt; IO (Either String String)
+<span class="lineno">  202 </span><span class="decl"><span class="nottickedoff">hasProgram exec = do</span>
+<span class="lineno">  203 </span><span class="spaces">  </span><span class="nottickedoff">mbPath &lt;- findExecutable exec</span>
+<span class="lineno">  204 </span><span class="spaces">  </span><span class="nottickedoff">return $ case mbPath of</span>
+<span class="lineno">  205 </span><span class="spaces">    </span><span class="nottickedoff">Nothing   -&gt; Left $ &quot;'&quot; ++ exec ++ &quot;' not found&quot;</span>
+<span class="lineno">  206 </span><span class="spaces">    </span><span class="nottickedoff">Just path -&gt; Right path</span></span>
+
+</pre>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>module Reanimate.Driver.Magick
+<span class="lineno">    2 </span>  ( magickCmd
+<span class="lineno">    3 </span>  ) where
+<span class="lineno">    4 </span>
+<span class="lineno">    5 </span>import System.IO.Unsafe (unsafePerformIO)
+<span class="lineno">    6 </span>import System.Directory (findExecutable)
+<span class="lineno">    7 </span>
+<span class="lineno">    8 </span>-- |The name of the ImageMagick command. On Unix-like operating systems, the
+<span class="lineno">    9 </span>-- command \'convert\' does not conflict with the name of other commands. On
+<span class="lineno">   10 </span>-- Windows, ImageMagick version 7 is readily available, the command \'magick\'
+<span class="lineno">   11 </span>-- should be present, and is preferred over \'convert\'. If it is not present,
+<span class="lineno">   12 </span>-- \'convert\' is assumed to be the relevant command.
+<span class="lineno">   13 </span>magickCmd :: String
+<span class="lineno">   14 </span>-- The use of 'unsafeperformIO' is justified on the basis that if \'magick\' is
+<span class="lineno">   15 </span>-- found once, it will always be present.
+<span class="lineno">   16 </span><span class="decl"><span class="nottickedoff">magickCmd = unsafePerformIO $ do</span>
+<span class="lineno">   17 </span><span class="spaces">  </span><span class="nottickedoff">mPath &lt;- findExecutable &quot;magick&quot;</span>
+<span class="lineno">   18 </span><span class="spaces">  </span><span class="nottickedoff">pure $ maybe &quot;convert&quot; (const &quot;magick&quot;) mPath</span></span>
+
+</pre>
+</body>
+</html>

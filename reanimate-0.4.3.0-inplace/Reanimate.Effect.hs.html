@@ -1,0 +1,154 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>{-| Effects represent modifications applied to frames of the 'Animation'.
+<span class="lineno">    2 </span>Effects can (and usually do) depend on time.
+<span class="lineno">    3 </span>One or more effects can be applied over the entire duration of animation, or modified to affect
+<span class="lineno">    4 </span>only a specific portion at the beginning \/ middle \/ end of the animation.
+<span class="lineno">    5 </span>-}
+<span class="lineno">    6 </span>module Reanimate.Effect
+<span class="lineno">    7 </span>  ( -- * Primitive Effects
+<span class="lineno">    8 </span>  Effect
+<span class="lineno">    9 </span>  , fadeInE
+<span class="lineno">   10 </span>  , fadeOutE
+<span class="lineno">   11 </span>  , fadeLineInE
+<span class="lineno">   12 </span>  , fadeLineOutE
+<span class="lineno">   13 </span>  , fillInE
+<span class="lineno">   14 </span>  , drawInE
+<span class="lineno">   15 </span>  , drawOutE
+<span class="lineno">   16 </span>  , translateE
+<span class="lineno">   17 </span>  , scaleE
+<span class="lineno">   18 </span>  , constE
+<span class="lineno">   19 </span>  -- * Modifying Effects
+<span class="lineno">   20 </span>  , overBeginning
+<span class="lineno">   21 </span>  , overEnding
+<span class="lineno">   22 </span>  , overInterval
+<span class="lineno">   23 </span>  , reverseE
+<span class="lineno">   24 </span>  , delayE
+<span class="lineno">   25 </span>  , aroundCenterE
+<span class="lineno">   26 </span>  -- * Applying Effects to Animations
+<span class="lineno">   27 </span>  , applyE
+<span class="lineno">   28 </span>  ) where
+<span class="lineno">   29 </span>
+<span class="lineno">   30 </span>import           Graphics.SvgTree    (Tree)
+<span class="lineno">   31 </span>import           Reanimate.Animation
+<span class="lineno">   32 </span>import           Reanimate.Svg
+<span class="lineno">   33 </span>
+<span class="lineno">   34 </span>-- | An Effect represents a modification of a SVG 'Tree' that can vary with time.
+<span class="lineno">   35 </span>type Effect = Duration -- ^ Duration of the effect (in seconds)
+<span class="lineno">   36 </span>           -&gt; Time -- ^ Time elapsed from when the effect started (in seconds)
+<span class="lineno">   37 </span>           -&gt; Tree -- ^ Image to be modified
+<span class="lineno">   38 </span>           -&gt; Tree -- ^ Image after modification
+<span class="lineno">   39 </span>
+<span class="lineno">   40 </span>-- | Modify the effect so that it only applies to the initial part of the animation.
+<span class="lineno">   41 </span>overBeginning :: Duration -- ^ Duration of the initial segment of the animation over which the Effect should be applied
+<span class="lineno">   42 </span>              -&gt; Effect -- ^ The Effect to modify
+<span class="lineno">   43 </span>              -&gt; Effect -- ^ Effect which will only affect the initial segment of the animation
+<span class="lineno">   44 </span><span class="decl"><span class="istickedoff">overBeginning maxT effect _d t =</span>
+<span class="lineno">   45 </span><span class="spaces">  </span><span class="istickedoff">if t &lt; maxT</span>
+<span class="lineno">   46 </span><span class="spaces">    </span><span class="istickedoff">then effect maxT t</span>
+<span class="lineno">   47 </span><span class="spaces">    </span><span class="istickedoff">else id</span></span>
+<span class="lineno">   48 </span>
+<span class="lineno">   49 </span>-- | Modify the effect so that it only applies to the ending part of the animation.
+<span class="lineno">   50 </span>overEnding :: Duration -- ^ Duration of the ending segment of the animation over which the Effect should be applied
+<span class="lineno">   51 </span>           -&gt; Effect  -- ^ The Effect to modify
+<span class="lineno">   52 </span>           -&gt; Effect -- ^ Effect which will only affect the ending segment of the animation
+<span class="lineno">   53 </span><span class="decl"><span class="istickedoff">overEnding minT effect d t =</span>
+<span class="lineno">   54 </span><span class="spaces">  </span><span class="istickedoff">if t &gt;= blankDur</span>
+<span class="lineno">   55 </span><span class="spaces">    </span><span class="istickedoff">then effect minT (t-blankDur)</span>
+<span class="lineno">   56 </span><span class="spaces">    </span><span class="istickedoff">else id</span>
+<span class="lineno">   57 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">   58 </span><span class="spaces">    </span><span class="istickedoff">blankDur = d-minT</span></span>
+<span class="lineno">   59 </span>
+<span class="lineno">   60 </span>-- | Modify the effect so that it only applies within given interval of animation's running time.
+<span class="lineno">   61 </span>overInterval :: Time -- ^ time after start of animation when the effect should start
+<span class="lineno">   62 </span>             -&gt; Time -- ^ time after start of the animation when the effect should finish
+<span class="lineno">   63 </span>             -&gt; Effect  -- ^ The Effect to modify
+<span class="lineno">   64 </span>             -&gt; Effect -- ^ Effect which will only affect the specified interval within the animation
+<span class="lineno">   65 </span><span class="decl"><span class="nottickedoff">overInterval start end effect _d t =</span>
+<span class="lineno">   66 </span><span class="spaces">  </span><span class="nottickedoff">if start &lt;= t &amp;&amp; t &lt;= end</span>
+<span class="lineno">   67 </span><span class="spaces">    </span><span class="nottickedoff">then effect dur ((t - start) / dur)</span>
+<span class="lineno">   68 </span><span class="spaces">    </span><span class="nottickedoff">else id</span>
+<span class="lineno">   69 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">   70 </span><span class="spaces">    </span><span class="nottickedoff">dur = end - start</span></span>
+<span class="lineno">   71 </span>
+<span class="lineno">   72 </span>-- | @reverseE effect@ starts where the @effect@ ends and vice versa.
+<span class="lineno">   73 </span>reverseE :: Effect -&gt; Effect
+<span class="lineno">   74 </span><span class="decl"><span class="istickedoff">reverseE fn d t = fn d (d-t)</span></span>
+<span class="lineno">   75 </span>
+<span class="lineno">   76 </span>-- | Delay the effect so that it only starts after specified duration and then runs till the end of animation.
+<span class="lineno">   77 </span>delayE :: Duration -&gt; Effect -&gt; Effect
+<span class="lineno">   78 </span><span class="decl"><span class="istickedoff">delayE delayT fn d = overEnding (d-delayT) fn d</span></span>
+<span class="lineno">   79 </span>
+<span class="lineno">   80 </span>-- | Modify the animation by applying the effect. If desired, you can apply multiple effects to single animation by calling this function multiple times.
+<span class="lineno">   81 </span>applyE :: Effect -&gt; Animation -&gt; Animation
+<span class="lineno">   82 </span><span class="decl"><span class="istickedoff">applyE fn ani = let d = duration ani</span>
+<span class="lineno">   83 </span><span class="spaces">                </span><span class="istickedoff">in mkAnimation d $ \t -&gt; fn d (d*t) $ frameAt (d*t) ani</span></span>
+<span class="lineno">   84 </span>
+<span class="lineno">   85 </span>-- | Build an effect from an image-modifying function. This effect does not change as time passes.
+<span class="lineno">   86 </span>constE :: (Tree -&gt; Tree) -&gt; Effect
+<span class="lineno">   87 </span><span class="decl"><span class="istickedoff">constE fn _d _t = fn</span></span>
+<span class="lineno">   88 </span>
+<span class="lineno">   89 </span>-- | Change image opacity from 0 to 1.
+<span class="lineno">   90 </span>fadeInE :: Effect
+<span class="lineno">   91 </span><span class="decl"><span class="istickedoff">fadeInE d t = withGroupOpacity (t/d)</span></span>
+<span class="lineno">   92 </span>
+<span class="lineno">   93 </span>-- | Change image opacity from 1 to 0. Reverse of 'fadeInE'.
+<span class="lineno">   94 </span>fadeOutE :: Effect
+<span class="lineno">   95 </span><span class="decl"><span class="istickedoff">fadeOutE = reverseE fadeInE</span></span>
+<span class="lineno">   96 </span>
+<span class="lineno">   97 </span>-- | Change stroke width from 0 to given value.
+<span class="lineno">   98 </span>fadeLineInE :: Double -&gt; Effect
+<span class="lineno">   99 </span><span class="decl"><span class="nottickedoff">fadeLineInE w d t = withStrokeWidth (w*(t/d))</span></span>
+<span class="lineno">  100 </span>
+<span class="lineno">  101 </span>-- | Change stroke width from given value to 0. Reverse of 'fadeLineInE'.
+<span class="lineno">  102 </span>fadeLineOutE :: Double -&gt; Effect
+<span class="lineno">  103 </span><span class="decl"><span class="nottickedoff">fadeLineOutE = reverseE . fadeLineInE</span></span>
+<span class="lineno">  104 </span>
+<span class="lineno">  105 </span>-- | Effect of progressively drawing the image. Note that this will only affect primitive shapes (see 'pathify').
+<span class="lineno">  106 </span>drawInE :: Effect
+<span class="lineno">  107 </span><span class="decl"><span class="nottickedoff">drawInE d t = withFillOpacity 0 . partialSvg (t/d) . pathify</span></span>
+<span class="lineno">  108 </span>
+<span class="lineno">  109 </span>-- | Reverse of 'drawInE'.
+<span class="lineno">  110 </span>drawOutE :: Effect
+<span class="lineno">  111 </span><span class="decl"><span class="nottickedoff">drawOutE = reverseE drawInE</span></span>
+<span class="lineno">  112 </span>
+<span class="lineno">  113 </span>-- | Change fill opacity from 0 to 1.
+<span class="lineno">  114 </span>fillInE :: Effect
+<span class="lineno">  115 </span><span class="decl"><span class="nottickedoff">fillInE d t = withFillOpacity f</span>
+<span class="lineno">  116 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  117 </span><span class="spaces">    </span><span class="nottickedoff">f = t/d</span></span>
+<span class="lineno">  118 </span>
+<span class="lineno">  119 </span>-- | Change scale from 1 to given value.
+<span class="lineno">  120 </span>scaleE :: Double -&gt; Effect
+<span class="lineno">  121 </span><span class="decl"><span class="nottickedoff">scaleE target d t = scale (1 + (target-1) * t/d)</span></span>
+<span class="lineno">  122 </span>
+<span class="lineno">  123 </span>-- | Move the image from its current position to the target x y coordinates.
+<span class="lineno">  124 </span>translateE :: Double -&gt; Double -&gt; Effect
+<span class="lineno">  125 </span><span class="decl"><span class="istickedoff">translateE x y d t = translate (x * t/d) (y * t/d)</span></span>
+<span class="lineno">  126 </span>
+<span class="lineno">  127 </span>-- | Transform the effect so that the image passed to the effect's image-modifying
+<span class="lineno">  128 </span>-- function has coordinates (0, 0) shifted to the center of its bounding box.
+<span class="lineno">  129 </span>-- Also see 'aroundCenter'.
+<span class="lineno">  130 </span>aroundCenterE :: Effect -&gt; Effect
+<span class="lineno">  131 </span><span class="decl"><span class="nottickedoff">aroundCenterE e d t = aroundCenter (e d t)</span></span>
+
+</pre>
+</body>
+</html>

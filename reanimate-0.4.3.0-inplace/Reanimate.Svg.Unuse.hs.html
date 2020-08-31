@@ -1,0 +1,93 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>{-|
+<span class="lineno">    2 </span>Copyright   : Written by David Himmelstrup
+<span class="lineno">    3 </span>License     : Unlicense
+<span class="lineno">    4 </span>Maintainer  : lemmih@gmail.com
+<span class="lineno">    5 </span>Stability   : experimental
+<span class="lineno">    6 </span>Portability : POSIX
+<span class="lineno">    7 </span>-}
+<span class="lineno">    8 </span>module Reanimate.Svg.Unuse
+<span class="lineno">    9 </span>  ( replaceUses
+<span class="lineno">   10 </span>  , unbox
+<span class="lineno">   11 </span>  , embedDocument
+<span class="lineno">   12 </span>  ) where
+<span class="lineno">   13 </span>
+<span class="lineno">   14 </span>import           Control.Lens               ((%~), (&amp;), (.~), (?~), (^.))
+<span class="lineno">   15 </span>import qualified Data.Map                   as Map
+<span class="lineno">   16 </span>import           Data.Maybe
+<span class="lineno">   17 </span>import           Graphics.SvgTree           hiding (line, path, use)
+<span class="lineno">   18 </span>import           Reanimate.Constants
+<span class="lineno">   19 </span>import           Reanimate.Svg.Constructors
+<span class="lineno">   20 </span>
+<span class="lineno">   21 </span>-- | Replace all @&lt;use&gt;@ nodes with their definition.
+<span class="lineno">   22 </span>replaceUses :: Document -&gt; Document
+<span class="lineno">   23 </span><span class="decl"><span class="nottickedoff">replaceUses doc = doc &amp; elements %~ map (mapTree replace)</span>
+<span class="lineno">   24 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">   25 </span><span class="spaces">    </span><span class="nottickedoff">replaceDefinition PathTree{} = None</span>
+<span class="lineno">   26 </span><span class="spaces">    </span><span class="nottickedoff">replaceDefinition t          = t</span>
+<span class="lineno">   27 </span><span class="spaces"></span><span class="nottickedoff"></span>
+<span class="lineno">   28 </span><span class="spaces">    </span><span class="nottickedoff">replace t@DefinitionTree{} = mapTree replaceDefinition t</span>
+<span class="lineno">   29 </span><span class="spaces">    </span><span class="nottickedoff">replace (UseTree _ Just{}) = error &quot;replaceUses: subtree in use?&quot;</span>
+<span class="lineno">   30 </span><span class="spaces">    </span><span class="nottickedoff">replace (UseTree use Nothing) =</span>
+<span class="lineno">   31 </span><span class="spaces">      </span><span class="nottickedoff">case Map.lookup (use^.useName) idMap of</span>
+<span class="lineno">   32 </span><span class="spaces">        </span><span class="nottickedoff">Nothing -&gt; error $ &quot;Unknown id: &quot; ++ (use^.useName)</span>
+<span class="lineno">   33 </span><span class="spaces">        </span><span class="nottickedoff">Just tree -&gt; mapTree replace $</span>
+<span class="lineno">   34 </span><span class="spaces">          </span><span class="nottickedoff">GroupTree $</span>
+<span class="lineno">   35 </span><span class="spaces">          </span><span class="nottickedoff">defaultSvg &amp; groupChildren .~ [tree]</span>
+<span class="lineno">   36 </span><span class="spaces">                     </span><span class="nottickedoff">&amp; transform ?~</span>
+<span class="lineno">   37 </span><span class="spaces">                        </span><span class="nottickedoff">fromMaybe [] (use^.transform) ++</span>
+<span class="lineno">   38 </span><span class="spaces">                        </span><span class="nottickedoff">[baseToTransformation (use^.useBase)]</span>
+<span class="lineno">   39 </span><span class="spaces">    </span><span class="nottickedoff">replace x = x</span>
+<span class="lineno">   40 </span><span class="spaces">    </span><span class="nottickedoff">baseToTransformation (x,y) =</span>
+<span class="lineno">   41 </span><span class="spaces">      </span><span class="nottickedoff">case (toUserUnit defaultDPI x, toUserUnit defaultDPI y) of</span>
+<span class="lineno">   42 </span><span class="spaces">        </span><span class="nottickedoff">(Num a, Num b) -&gt; Translate a b</span>
+<span class="lineno">   43 </span><span class="spaces">        </span><span class="nottickedoff">_              -&gt; TransformUnknown</span>
+<span class="lineno">   44 </span><span class="spaces">    </span><span class="nottickedoff">docTree = mkGroup (doc^.elements)</span>
+<span class="lineno">   45 </span><span class="spaces">    </span><span class="nottickedoff">idMap = foldTree updMap Map.empty docTree</span>
+<span class="lineno">   46 </span><span class="spaces">    </span><span class="nottickedoff">updMap m tree =</span>
+<span class="lineno">   47 </span><span class="spaces">      </span><span class="nottickedoff">case tree^.attrId of</span>
+<span class="lineno">   48 </span><span class="spaces">        </span><span class="nottickedoff">Nothing  -&gt; m</span>
+<span class="lineno">   49 </span><span class="spaces">        </span><span class="nottickedoff">Just tid -&gt; Map.insert tid tree m</span></span>
+<span class="lineno">   50 </span>
+<span class="lineno">   51 </span>-- FIXME: the viewbox is ignored. Can we use the viewbox as a mask?
+<span class="lineno">   52 </span>-- | Transform out viewbox. Definitions and CSS rules are discarded.
+<span class="lineno">   53 </span>unbox :: Document -&gt; Tree
+<span class="lineno">   54 </span><span class="decl"><span class="nottickedoff">unbox doc@Document{_viewBox = Just (_minx, _minw, _width, _height)} =</span>
+<span class="lineno">   55 </span><span class="spaces">  </span><span class="nottickedoff">GroupTree $ defaultSvg</span>
+<span class="lineno">   56 </span><span class="spaces">          </span><span class="nottickedoff">&amp; groupChildren .~ doc^.elements</span>
+<span class="lineno">   57 </span><span class="spaces"></span><span class="nottickedoff">unbox doc =</span>
+<span class="lineno">   58 </span><span class="spaces">  </span><span class="nottickedoff">GroupTree $ defaultSvg</span>
+<span class="lineno">   59 </span><span class="spaces">    </span><span class="nottickedoff">&amp; groupChildren .~ doc^.elements</span></span>
+<span class="lineno">   60 </span>
+<span class="lineno">   61 </span>-- | Embed 'Document'. This keeps the entire document intact but makes
+<span class="lineno">   62 </span>--   it more difficult to use, say, `Reanimate.Svg.pathify` on it.
+<span class="lineno">   63 </span>embedDocument :: Document -&gt; Tree
+<span class="lineno">   64 </span><span class="decl"><span class="istickedoff">embedDocument doc =</span>
+<span class="lineno">   65 </span><span class="spaces">  </span><span class="istickedoff">translate (-screenWidth/2) (screenHeight/2) $</span>
+<span class="lineno">   66 </span><span class="spaces">  </span><span class="istickedoff">withFillOpacity 1 $</span>
+<span class="lineno">   67 </span><span class="spaces">  </span><span class="istickedoff">withStrokeWidth 0 $</span>
+<span class="lineno">   68 </span><span class="spaces">  </span><span class="istickedoff">flipYAxis $</span>
+<span class="lineno">   69 </span><span class="spaces">  </span><span class="istickedoff">SvgTree $ doc &amp; width .~ Nothing</span>
+<span class="lineno">   70 </span><span class="spaces">                </span><span class="istickedoff">&amp; height .~ Nothing</span></span>
+
+</pre>
+</body>
+</html>

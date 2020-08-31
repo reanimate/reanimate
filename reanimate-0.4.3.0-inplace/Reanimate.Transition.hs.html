@@ -1,0 +1,105 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>{-|
+<span class="lineno">    2 </span>Copyright   : Written by David Himmelstrup
+<span class="lineno">    3 </span>License     : Unlicense
+<span class="lineno">    4 </span>Maintainer  : lemmih@gmail.com
+<span class="lineno">    5 </span>Stability   : experimental
+<span class="lineno">    6 </span>Portability : POSIX
+<span class="lineno">    7 </span>-}
+<span class="lineno">    8 </span>module Reanimate.Transition
+<span class="lineno">    9 </span>  ( Transition
+<span class="lineno">   10 </span>  , signalT
+<span class="lineno">   11 </span>  , mapT
+<span class="lineno">   12 </span>  , overlapT
+<span class="lineno">   13 </span>  , chainT
+<span class="lineno">   14 </span>  , effectT
+<span class="lineno">   15 </span>  , fadeT
+<span class="lineno">   16 </span>  ) where
+<span class="lineno">   17 </span>
+<span class="lineno">   18 </span>import Reanimate.Animation
+<span class="lineno">   19 </span>import Reanimate.Ease
+<span class="lineno">   20 </span>import Reanimate.Effect
+<span class="lineno">   21 </span>
+<span class="lineno">   22 </span>-- | A transition transforms one animation into another.
+<span class="lineno">   23 </span>type Transition = Animation -&gt; Animation -&gt; Animation
+<span class="lineno">   24 </span>
+<span class="lineno">   25 </span>-- | Apply a signal to the timing of a transition.
+<span class="lineno">   26 </span>signalT :: Signal -&gt; Transition -&gt; Transition
+<span class="lineno">   27 </span><span class="decl"><span class="istickedoff">signalT = mapT . signalA</span></span>
+<span class="lineno">   28 </span>
+<span class="lineno">   29 </span>-- | Map the result of a transition.
+<span class="lineno">   30 </span>mapT :: (Animation -&gt; Animation) -&gt; Transition -&gt; Transition
+<span class="lineno">   31 </span><span class="decl"><span class="istickedoff">mapT fn t a b = fn (t a b)</span></span>
+<span class="lineno">   32 </span>
+<span class="lineno">   33 </span>-- | Apply transition only to @N@ seconds of the first
+<span class="lineno">   34 </span>--   animation and to the last @N@ seconds of the second animation.
+<span class="lineno">   35 </span>--
+<span class="lineno">   36 </span>--   Example:
+<span class="lineno">   37 </span>--
+<span class="lineno">   38 </span>-- @
+<span class="lineno">   39 </span>-- 'overlapT' 0.5 'fadeT' 'Reanimate.Builtin.Documentation.drawBox' 'Reanimate.Builtin.Documentation.drawCircle'
+<span class="lineno">   40 </span>-- @
+<span class="lineno">   41 </span>--
+<span class="lineno">   42 </span>--   &lt;&lt;docs/gifs/doc_overlapT.gif&gt;&gt;
+<span class="lineno">   43 </span>overlapT :: Double -&gt; Transition -&gt; Transition
+<span class="lineno">   44 </span><span class="decl"><span class="istickedoff">overlapT overlap t a b =</span>
+<span class="lineno">   45 </span><span class="spaces">    </span><span class="istickedoff">aBefore `seqA` t aOverlap bOverlap `seqA` bAfter</span>
+<span class="lineno">   46 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">   47 </span><span class="spaces">    </span><span class="istickedoff">aBefore  = takeA (duration a - overlap) a</span>
+<span class="lineno">   48 </span><span class="spaces">    </span><span class="istickedoff">aOverlap = lastA overlap a</span>
+<span class="lineno">   49 </span><span class="spaces">    </span><span class="istickedoff">bOverlap = takeA overlap b</span>
+<span class="lineno">   50 </span><span class="spaces">    </span><span class="istickedoff">bAfter   = dropA overlap b</span></span>
+<span class="lineno">   51 </span>
+<span class="lineno">   52 </span>
+<span class="lineno">   53 </span>-- | Create a transition between two animations by applying an effect to each respective animation.
+<span class="lineno">   54 </span>effectT :: Effect -- ^ Effect to be applied to the first animation.
+<span class="lineno">   55 </span>        -&gt; Effect -- ^ Effect to be applied to the second animation.
+<span class="lineno">   56 </span>        -&gt; Transition
+<span class="lineno">   57 </span><span class="decl"><span class="istickedoff">effectT eA eB a b = applyE eA a `parA` applyE eB b</span></span>
+<span class="lineno">   58 </span>
+<span class="lineno">   59 </span>-- | Combine a list of animations using a given transition.
+<span class="lineno">   60 </span>--
+<span class="lineno">   61 </span>--   Example:
+<span class="lineno">   62 </span>--
+<span class="lineno">   63 </span>-- @
+<span class="lineno">   64 </span>-- 'chainT' ('overlapT' 0.5 'fadeT') ['Reanimate.Builtin.Documentation.drawBox', 'Reanimate.Builtin.Documentation.drawCircle', 'Reanimate.Builtin.Documentation.drawProgress']
+<span class="lineno">   65 </span>-- @
+<span class="lineno">   66 </span>--
+<span class="lineno">   67 </span>--   &lt;&lt;docs/gifs/doc_chainT.gif&gt;&gt;
+<span class="lineno">   68 </span>chainT :: Transition -&gt; [Animation] -&gt; Animation
+<span class="lineno">   69 </span><span class="decl"><span class="istickedoff">chainT _ [] = <span class="nottickedoff">pause 0</span></span>
+<span class="lineno">   70 </span><span class="spaces"></span><span class="istickedoff">chainT t (x:xs) = foldl t x xs</span></span>
+<span class="lineno">   71 </span>
+<span class="lineno">   72 </span>-- | Fade out left-hand-side animation while fading in right-hand-side animation.
+<span class="lineno">   73 </span>--
+<span class="lineno">   74 </span>--   Example:
+<span class="lineno">   75 </span>--
+<span class="lineno">   76 </span>-- @
+<span class="lineno">   77 </span>-- 'Reanimate.Builtin.Documentation.drawBox' `'fadeT'` 'Reanimate.Builtin.Documentation.drawCircle'
+<span class="lineno">   78 </span>-- @
+<span class="lineno">   79 </span>--
+<span class="lineno">   80 </span>--   &lt;&lt;docs/gifs/doc_fadeT.gif&gt;&gt;
+<span class="lineno">   81 </span>fadeT :: Transition
+<span class="lineno">   82 </span><span class="decl"><span class="istickedoff">fadeT = effectT fadeOutE fadeInE</span></span>
+
+</pre>
+</body>
+</html>
