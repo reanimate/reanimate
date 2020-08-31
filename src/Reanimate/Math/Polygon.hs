@@ -49,8 +49,6 @@ module Reanimate.Math.Polygon
   -- * Single-Source-Shortest-Path
   , ssspVisibility -- :: Polygon -> Polygon
   , ssspWindows -- :: Polygon -> [(V2 Rational, V2 Rational)]
-  -- * Duals
-  , pdualPolygons -- :: Polygon -> PDual -> [Polygon]
   -- * Built-in shapes for testing
   , triangle  -- :: Polygon
   , triangle' -- :: [P]
@@ -796,6 +794,3 @@ ssspWindows p = clearDups $ go (pAccess p 0) [0..pSize p-1]
               in if a /= b
                 then (l, a) : (b, pAccess p yO) : go (pAccess p yO) (y:xs)
                 else go l (y:xs)
-
-pdualPolygons :: Polygon -> PDual -> [Polygon]
-pdualPolygons p pdual = map mkPolygonFromRing (pdualRings (pRing p) pdual)

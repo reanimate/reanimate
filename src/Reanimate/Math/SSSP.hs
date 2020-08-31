@@ -11,12 +11,8 @@ module Reanimate.Math.SSSP
   , dual                -- :: Int -> Triangulation -> Dual
   , Dual(..)
   , DualTree(..)
-  , PDual
-  , toPDual             -- :: Ring Rational -> Dual -> PDual
-  , pdualRings          -- :: Ring Rational -> PDual -> [Ring Rational]
     -- * Misc
   , dualToTriangulation -- :: Ring Rational -> Dual -> Triangulation
-  , pdualReduce         -- :: Ring Rational -> PDual -> Int -> PDual
   , visibilityArray     -- :: Ring Rational -> V.Vector [Int]
   , naive               -- :: Ring Rational -> SSSP
   , naive2              -- :: Ring Rational -> SSSP
@@ -24,15 +20,12 @@ module Reanimate.Math.SSSP
   ) where
 
 import           Control.Monad
--- import           Control.Exception
 import           Control.Monad.ST
--- import           Data.FingerTree            (SearchResult (..), (|>))
 import qualified Data.FingerTree            as F
 import           Data.Foldable
 import           Data.List
 import qualified Data.Map                   as Map
 import           Data.Maybe
-import           Data.Ord
 import           Data.STRef
 import           Data.Tree
 import qualified Data.Vector                as V
@@ -139,54 +132,6 @@ naive2 p = runST $ do
     V.unsafeFreeze parents
   where
     visibility = visibilityArray p
-
-data PDual = PDual (V.Vector Int) Rational [PDual]
-  deriving (Show)
-
-toPDual :: Ring Rational -> Dual -> PDual
-toPDual p d =
-  case d of
-    Dual (a,b,c) l r ->
-      PDual (V.fromList [a,b,c])
-        (area2X (ringAccess p a) (ringAccess p b) (ringAccess p c))
-        (catMaybes [ worker c a l, worker b c r])
-  where
-    worker _ _ EmptyDual = Nothing
-    worker a b (NodeDual x l r) = Just $
-      PDual (V.fromList [a,x,b])
-        (area2X (ringAccess p a) (ringAccess p x) (ringAccess p b))
-        (catMaybes [ worker x b l, worker a x r])
-
-pdualSize :: PDual -> Int
-pdualSize (PDual _ _ children) = 1 + sum (map pdualSize children)
-
-pdualArea :: PDual -> Rational
-pdualArea (PDual _ faceArea _) = faceArea
-
--- FIXME: 'origin' isn't used. Remove.
-pdualReduce :: Ring Rational -> PDual -> Int -> PDual
-pdualReduce origin pdual n
-  | pdualSize pdual <= n = pdual
-  | otherwise =
-    let smallest = minimum $ pAreas pdual
-    in pdualReduce origin (merge smallest pdual) n
-  where
-    merge _s (PDual p faceArea []) = PDual p faceArea []
-    merge s (PDual p faceArea children)
-      | faceArea == s =
-        let (PDual p2 area2 children2:xs) = sortBy (comparing pdualArea) children
-        in PDual (joinP p p2) (faceArea+area2) (children2++xs)
-      | otherwise =
-        let (PDual p2 area2 children2:xs) = sortBy (comparing pdualArea) children
-        in if area2 == s
-            then PDual (joinP p p2) (faceArea+area2) (children2++xs)
-            else PDual p faceArea (map (merge s) children)
-    pAreas (PDual _ faceArea children) = faceArea : concatMap pAreas children
-    joinP a b = V.fromList (sort (V.toList a ++ V.toList b))
-
-pdualRings :: Ring Rational -> PDual -> [Ring Rational]
-pdualRings p (PDual pts _area children) =
-  ringPack (V.map (ringAccess p) pts) : concatMap (pdualRings p) children
 
 -- Dual of triangulated polygon
 data Dual = Dual (Int,Int,Int) -- (a,b,c)
