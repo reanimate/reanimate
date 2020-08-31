@@ -6,6 +6,29 @@ services:
       - .cache:/root/.cache
 #    environment:
 #      DISCORD_TOKEN: ''
+  playground:
+    image: reanimate/playground
+    ports:
+      - "10161:10161"
+      - "10162:10162"
+    volumes:
+      - .cache:/root/.cache
+  nginx:
+    image: reanimate/nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - .cache/reanimate-playground:/var/www/html
+      - ./certbot/conf:/etc/nginx/ssl
+      - ./certbot/data:/var/www/certbot
+  certbot:
+    image: certbot/certbot:latest
+    command: certonly --webroot --webroot-path=/var/www/certbot --email admin@clozecards.com --agree-tos --no-eff-email -d reanimate.clozecards.com
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/logs:/var/log/letsencrypt
+      - ./certbot/data:/var/www/certbot
   watch:
     image: v2tec/watchtower
     volumes:

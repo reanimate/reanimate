@@ -6,8 +6,6 @@ module Main(main) where
 import           Control.Lens                    ((^.))
 import           Control.Monad.State
 import qualified Data.Vector.Unboxed             as V
-import           Geom2D.CubicBezier              (AnyBezier (..), Point (..),
-                                                  evalBezierDeriv)
 import           Graphics.SvgTree                (Coord, Tree (..), mapTree,
                                                   pathDefinition)
 import           Linear.Metric
@@ -15,10 +13,13 @@ import           Linear.V2                       (V2 (..))
 import           Linear.Vector
 import           Reanimate
 import           Reanimate.Builtin.Documentation
+import           Geom2D.CubicBezier.Linear
+
+piSvg :: SVG
+piSvg = pathify $ lowerTransformations $ center $ scale 10 $ latex "s"
 
 main :: IO ()
 main = reanimate $ docEnv $ mkAnimation 30 $ \t ->
-  let piSvg = pathify $ lowerTransformations $ center $ scale 10 $ latex "s" in
   mkGroup
   [ mkBackgroundPixel rtfdBackgroundColor
   , piSvg
@@ -81,7 +82,7 @@ atPartial alpha cmds = evalState (worker 0 cmds) zero
         else do
           let bezier = lineCommandToBezier from cmd
               (pos, tangent) = evalBezierDeriv bezier frac
-          pure $ (fromPoint pos, fromPoint tangent)
+          pure $ (pos, tangent)
     totalLen = evalState (sum <$> mapM lineLength cmds) zero
     targetLen = totalLen * alpha
 
@@ -89,18 +90,12 @@ lineCommandToBezier :: V2 Coord -> LineCommand -> AnyBezier Coord
 lineCommandToBezier from line =
   case line of
     LineBezier [a] ->
-      AnyBezier $ V.fromList [toTuple from, toTuple a]
+      AnyBezier $ V.fromList [from, a]
     LineBezier [a,b] ->
-      AnyBezier $ V.fromList [toTuple from, toTuple a, toTuple b]
+      AnyBezier $ V.fromList [from, a, b]
     LineBezier [a,b,c] ->
-      AnyBezier $ V.fromList [toTuple from, toTuple a, toTuple b, toTuple c]
+      AnyBezier $ V.fromList [from, a, b, c]
     _ -> error (show line)
-
-fromPoint :: Point a -> V2 a
-fromPoint (Point x y) = V2 x y
-
-toTuple :: V2 a -> (a,a)
-toTuple (V2 x y) = (x, y)
 
 unangle :: (Floating a, Ord a) => V2 a -> a
 unangle a@(V2 ax ay) =

@@ -8,8 +8,8 @@ Stability   : experimental
 Portability : POSIX
 
 Reanimate is an animation library based on SVGs. It is designed to act like glue
-between external components such as 'latex', 'ffmpeg', 'gnuplot', 'diagrams',
-and 'povray'.
+between external components such as \'latex\', \'ffmpeg\', \'gnuplot\', \'diagrams\',
+and \'povray\'.
 
 = Canvas
 
@@ -39,7 +39,7 @@ module Reanimate
     SVG,
     Time,
     Duration,
-    Animation(..),
+    Animation,
     mkAnimation,
     animate,
     staticFrame,
@@ -70,12 +70,11 @@ module Reanimate
     fromToS,
     reverseS,
     curveS,
+    powerS,
     bellS,
     oscillateS,
-    fromListS,
     cubicBezierS,
     -- ** Scenes
-    (#),
     Scene
   , ZIndex
   , sceneAnimation    -- :: (forall s. Scene s a) -> Animation
@@ -116,7 +115,8 @@ module Reanimate
   , spriteTween       -- :: Sprite s -> Duration -> (Double -> SVG -> SVG) -> Scene s ()
   , spriteVar         -- :: Sprite s -> a -> (a -> SVG -> SVG) -> Scene s (Var s a)
   , spriteE           -- :: Sprite s -> Effect -> Scene s ()
-  , spriteZ,          -- :: Sprite s -> ZIndex -> Scene s ()
+  , spriteZ           -- :: Sprite s -> ZIndex -> Scene s ()
+  , spriteScope,      -- :: Scene s a -> Scene s a
 
     -- ** Effects
     Effect,

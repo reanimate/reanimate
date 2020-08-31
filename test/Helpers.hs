@@ -15,7 +15,6 @@ import           Test.Tasty.QuickCheck
 
 import           Reanimate.Math.Common
 import           Reanimate.Math.Polygon
-import           Reanimate.Math.EarClip
 import           Reanimate.Math.SSSP
 
 -- [(0.8,1),(0.04,0.1),(0.05,1)]

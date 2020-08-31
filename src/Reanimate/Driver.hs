@@ -65,6 +65,11 @@ formatHeight RenderMp4  = 1440
 formatHeight RenderGif  = 180
 formatHeight RenderWebm = 1440
 
+formatExtension :: Format -> String
+formatExtension RenderMp4  = "mp4"
+formatExtension RenderGif  = "gif"
+formatExtension RenderWebm = "webm"
+
 {-|
 Main entry-point for accessing an animation. Creates a program that takes the
 following command-line arguments:
@@ -82,7 +87,7 @@ following command-line arguments:
 >   view                     Play animation in browser window.
 >   render                   Render animation to file.
 
-Neither the 'check' nor the 'view' command take any additional arguments.
+Neither the \'check\' nor the \'view\' command take any additional arguments.
 Rendering animation can be controlled with these arguments:
 
 > Usage: PROG render [-o|--target FILE] [--fps FPS] [-w|--width PIXELS]
@@ -104,7 +109,9 @@ reanimate :: Animation -> IO ()
 reanimate animation = do
   Options {..} <- getDriverOptions
   case optsCommand of
-    Raw  -> setFPS 60 >> renderSvgs animation
+    Raw {..} -> do
+      setFPS 60
+      renderSvgs rawOutputFolder rawFrameOffset rawPrettyPrint animation
     Test -> do
       setNoExternals True
       -- hSetBinaryMode stdout True
@@ -126,11 +133,10 @@ reanimate animation = do
 
       target <- case renderTarget of
         Nothing -> do
-          self <- findOwnSource
-          pure $ case fmt of
-            RenderMp4  -> replaceExtension self "mp4"
-            RenderGif  -> replaceExtension self "gif"
-            RenderWebm -> replaceExtension self "webm"
+          mbSelf <- findOwnSource
+          let ext = formatExtension fmt
+              self = fromMaybe "output" mbSelf
+          pure $ replaceExtension self ext
         Just target -> makeAbsolute target
 
       let

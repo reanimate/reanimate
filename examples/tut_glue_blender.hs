@@ -3,24 +3,26 @@
 {-# LANGUAGE ApplicativeDo     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE PackageImports    #-}
 module Main (main) where
 
 import           Reanimate
+import           Reanimate.Builtin.Documentation
 
 import           Codec.Picture.Types
-import           Control.Lens          ((^.))
+import           Control.Lens                    ((&), (^.))
 import           Control.Monad
 import           Data.Monoid
-import qualified Data.Text             as T
-import           Graphics.SvgTree      hiding (text)
+import qualified Data.Text                       as T
+import           Graphics.SvgTree                hiding (text)
 import           NeatInterpolation
 import           System.Random
-import           System.Random.Shuffle
+import "random-shuffle" System.Random.Shuffle
 
 -- spritePercent = (/) <$> spriteT <*> spriteDur
 
 main :: IO ()
-main = seq texture $ reanimate $ pauseAtEnd 1 $ parA bg $ sceneAnimation $ do
+main = seq texture $ reanimate $ pauseAtEnd 1 $ addStatic bg $ sceneAnimation $ do
     bend <- newVar 0
     trans <- newVar 0
     rotX <- newVar 0
@@ -50,7 +52,7 @@ main = seq texture $ reanimate $ pauseAtEnd 1 $ parA bg $ sceneAnimation $ do
     wait 1
     wait 2
   where
-    bg = animate $ const $ mkBackgroundPixel (PixelRGBA8 252 252 252 0xFF)
+    bg = mkBackgroundPixel rtfdBackgroundColor
 
 texture :: Double -> FilePath
 texture t = svgAsPngFile $ mkGroup
@@ -66,11 +68,19 @@ script img bend transZ rotX rotY =
       rotX_ = T.pack $ show rotX
       rotY_ = T.pack $ show rotY
       yScale_ = T.pack $ show (fromToS (9/2) 4 bend)
+      pWidthT = T.pack $ show (max 800 pWidth)
+      pHeightT = T.pack $ show (max 450 pHeight)
   in [text|
 import os
 import math
 
 import bpy
+
+light = bpy.data.objects['Light']
+bpy.ops.object.select_all(action='DESELECT')
+light.select_set(True)
+bpy.ops.object.delete()
+
 
 cam = bpy.data.objects['Camera']
 cam.location = (0,0,22.25 + ${transZ_})
@@ -99,9 +109,12 @@ bpy.ops.object.shade_smooth()
 bpy.context.object.active_material = bpy.data.materials['Material']
 mat = bpy.context.object.active_material
 image_node = mat.node_tree.nodes.new('ShaderNodeTexImage')
-texture = mat.node_tree.nodes['Principled BSDF']
-texture.inputs['Roughness'].default_value = 1
-mat.node_tree.links.new(image_node.outputs['Color'], texture.inputs['Base Color'])
+output = mat.node_tree.nodes['Material Output']
+#texture = mat.node_tree.nodes['Principled BSDF']
+#texture.inputs['Roughness'].default_value = 1
+#mat.node_tree.links.new(image_node.outputs['Color'], texture.inputs['Base Color'])
+mat.node_tree.links.new(image_node.outputs['Color'], output.inputs['Surface'])
+
 
 image_node.image = bpy.data.images.load('${img_}')
 
@@ -141,8 +154,13 @@ plane.rotation_euler = (0, ${rotY_}, 0)
 
 scn = bpy.context.scene
 
+scn.view_settings.view_transform = 'Standard'
+
 #scn.render.engine = 'CYCLES'
 #scn.render.resolution_percentage = 10
+
+scn.render.resolution_x = ${pWidthT} #3200
+scn.render.resolution_y = ${pHeightT} #1800
 
 scn.render.film_transparent = True
 
@@ -151,11 +169,11 @@ bpy.ops.render.render( write_still=True )
 
 checker :: Int -> Int -> SVG
 checker w h =
-  withStrokeColor "lightblue" $
+  withStrokeColor "lightgrey" $
   withStrokeWidth (defaultStrokeWidth/2) $
   mkGroup
   [ withStrokeWidth 0 $
-    withFillOpacity 1 $ mkBackground "grey"
+    withFillOpacity 1 $ mkBackground "darkgrey"
   , mkGroup
     [ translate (stepX*x-offsetX + stepX/2) 0 $
       mkLine (0, -screenHeight/2*0.9) (0, screenHeight/2*0.9)
@@ -199,7 +217,7 @@ latexExample = sceneAnimation $ do
     mapM_ destroySprite sprites
     -- Undraw equations
     play $ drawAnimation' (Just 0xdeadbeef) 1 0.1 strokedSvg
-      # reverseA
+      & reverseA
   where
     glyphs = svgGlyphs svg
     strokedSvg =
@@ -241,7 +259,7 @@ drawAnimation' mbSeed fillDur step svg = sceneAnimation $ do
     fork $ do
       wait (n*step)
       play $ mapA fn $ (animate (\t -> withFillOpacity 0 $ partialSvg t tree)
-        # applyE (overEnding fillDur $ fadeLineOutE sWidth))
+        & applyE (overEnding fillDur $ fadeLineOutE sWidth))
     fork $ do
       wait (n*step+(1-fillDur))
       newSprite $ do

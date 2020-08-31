@@ -6,7 +6,7 @@
 module Main (main) where
 
 import           Codec.Picture
-import           Control.Lens             ((^.))
+import           Control.Lens             ((^.),(&))
 import           Control.Monad
 import           Data.Fixed
 import           Data.Maybe
@@ -81,13 +81,13 @@ sphereIntro = sceneAnimation $ do
   --   # setDuration 2
   --   # signalA (powerS 2)
   fork $ play $ rotateWireSphere
-    # setDuration 1
-    # repeatA 10
-    # takeA (2+5)
-    # applyE (delayE 2 fadeOutE)
+    & setDuration 1
+    & repeatA 10
+    & takeA (2+5)
+    & applyE (delayE 2 fadeOutE)
   sphereX <- newVar 0
   sphereS <- newSpriteA $
-    rotateSphere # repeatA (5+3+1+2)
+    rotateSphere & repeatA (5+3+1+2)
   -- sphereS <- newSprite $ do
   --   -- xValue <- freezeVar sphereX
   --   let a = rotateSphere # setDuration 1 # repeatA (5+3+1+2)
@@ -173,11 +173,11 @@ featSVG = animate $ const $ scale 0.4 $ svgLogo
 
 feat3D :: Animation
 feat3D = rotateSphere
-  # mapA (scale 0.5)
-  # repeatA 10
+  & mapA (scale 0.5)
+  & repeatA 10
 
 frameAtT :: Double -> Animation -> SVG
-frameAtT t (Animation d f) = f t
+frameAtT t ani = getAnimationFrame SyncStretch ani t 1
 
 featLaTeX :: Animation
 featLaTeX = animate $ \t ->
@@ -210,11 +210,11 @@ featLaTeX = animate $ \t ->
 fadeTransition :: Double -> Animation -> Animation -> Animation
 fadeTransition overlap a b =
   (a
-  # pauseAtEnd overlap
-  # applyE (overEnding overlap $ fadeOutE)
+  & pauseAtEnd overlap
+  & applyE (overEnding overlap $ fadeOutE)
   ) `seqA` (
   b
-  # applyE (overBeginning overlap $ fadeInE)
+  & applyE (overBeginning overlap $ fadeInE)
   )
 
 fadeTransitions :: Double -> [Animation] -> Animation
@@ -222,9 +222,9 @@ fadeTransitions overlap = foldl (fadeTransition overlap) (pause 0)
 
 featWireSphere :: Animation
 featWireSphere = rotateWireSphere
-  # mapA (scale 0.5)
-  # reverseA
-  # repeatA 10
+  & mapA (scale 0.5)
+  & reverseA
+  & repeatA 10
 
 introSVG :: Animation
 introSVG = sceneAnimation $ do
@@ -300,7 +300,7 @@ drawAnimation' fillDur step svg = sceneAnimation $ do
     fork $ do
       wait (n*step)
       play $ mapA fn $ (animate (\t -> withFillOpacity 0 $ partialSvg t tree)
-        # applyE (overEnding fillDur $ fadeLineOutE sWidth))
+        & applyE (overEnding fillDur $ fadeLineOutE sWidth))
     fork $ do
       wait (n*step+(1-fillDur))
       newSprite $ do

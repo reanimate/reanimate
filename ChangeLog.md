@@ -1,6 +1,28 @@
 # Revision history for reanimate
 
-## 0.4.0.0
+## 0.4.4.0
+
+## 0.4.3.0 -- 2020-08-29
+
+* Improve documentation.
+
+## 0.4.2.0 -- 2020-08-27
+
+* Web-viewer: Use GHCi to reload code, reducing latency by ~100x.
+* Improve caching for blender and povray.
+* Hide many internal modules.
+* Move hmatrix dependency to a separate package.
+* Use hgeometry instead of broken C++ code.
+* Introduce the basics for a new graphical object system.
+* Introduce online playground.
+* Introduce interactive embedded player.
+* Hide internal modules and bring documentation coverage up to 100%.
+
+## 0.4.1.0 -- 2020-07-30
+
+* Slightly improved error messages.
+
+## 0.4.0.0 -- 2020-07-28
 
 * Show progress when running ffmpeg.
 * Small improvements to the scene API.
@@ -9,6 +31,11 @@
 * Improved Windows build support.
 * Improved error reporting in web-viewer.
 * Improved error messages when ffmpeg doesn't support SVGs.
+* Improved filter-effect support.
+* Generalized LaTeX support.
+* New experimental object system.
+* Discord bot capable of rendering animations in chat.
+* Lots of assorted bug fixes and minor improvements.
 
 ## 0.3.3.0 -- 2020-05-22
 

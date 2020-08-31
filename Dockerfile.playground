@@ -1,0 +1,49 @@
+FROM haskell:8.8.3
+
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    PATH=/root/.local/bin:$PATH \
+    CUDA_PATH=/usr/local/cuda-$CUDA_VERSION \
+    CPATH=$JVM_PATH/include:$JVM_PATH/include/linux:$LLVM_PATH/include \
+    DEBIAN_FRONTEND=noninteractive
+
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      libblas-dev liblapack-dev ffmpeg \
+      curl blender povray texlive texlive-latex-base texlive-latex-extra \
+      texlive-fonts-extra texlive-science texlive-xetex \
+      texlive-latex-recommended texlive-lang-english \
+      texlive-lang-chinese texlive-plain-generic
+
+WORKDIR /src
+
+# Install reanimate dependencies and cache the layer
+ADD reanimate.cabal stack.yaml ./
+RUN stack build --only-dependencies --no-install-ghc --system-ghc --haddock
+
+# Install discord-bot dependencies and cache the layer
+ADD playground/playground.cabal playground/stack.yaml ./playground/
+RUN cd playground && \
+    stack build --only-dependencies --no-install-ghc --system-ghc
+
+# Add source after dependencies have been installed as to not invalidate the caches
+ADD data data
+ADD src src
+ADD .git .git
+ADD viewer-elm viewer-elm
+ADD Setup.hs ./
+
+# Build reanimate
+RUN stack build --no-install-ghc --system-ghc
+
+# Add bot sources and build it
+ADD playground playground
+RUN (cd playground && \
+    stack install --no-install-ghc --system-ghc) && \
+    playground test
+
+EXPOSE 10161/tcp
+EXPOSE 10162/tcp
+
+ENTRYPOINT playground

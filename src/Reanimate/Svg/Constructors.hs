@@ -108,6 +108,7 @@ aroundCenter fn t =
     offsetY = -y-h/2
     (x,y,w,h) = boundingBox t
 
+-- | Same as 'aroundCenter' but only for the Y-axis.
 aroundCenterY :: (Tree -> Tree) -> Tree -> Tree
 aroundCenterY fn t =
     translate 0 (-offsetY) $ fn $ translate 0 offsetY t
@@ -115,6 +116,7 @@ aroundCenterY fn t =
     offsetY = -y-h/2
     (_x,y,_w,h) = boundingBox t
 
+-- | Same as 'aroundCenter' but only for the X-axis.
 aroundCenterX :: (Tree -> Tree) -> Tree -> Tree
 aroundCenterX fn t =
     translate (-offsetX) 0 $ fn $ translate offsetX 0 t
@@ -185,6 +187,7 @@ centerY t = translate 0 (-y-h/2) t
   where
     (_x, y, _w, h) = boundingBox t
 
+-- | Center the second argument using the bounding-box of the first.
 centerUsing :: Tree -> Tree -> Tree
 centerUsing a = translate (-x-w/2) (-y-h/2)
   where
@@ -203,9 +206,11 @@ mkColor name =
 withStrokeColor :: String -> Tree -> Tree
 withStrokeColor color = strokeColor .~ pure (mkColor color)
 
+-- | See <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke>
 withStrokeColorPixel :: PixelRGBA8 -> Tree -> Tree
 withStrokeColorPixel color = strokeColor .~ pure (ColorRef color)
 
+-- | See <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke-dasharray>
 withStrokeDashArray :: [Double] -> Tree -> Tree
 withStrokeDashArray arr = strokeDashArray .~ pure (map Num arr)
 
@@ -217,6 +222,7 @@ withStrokeLineJoin ljoin = strokeLineJoin .~ pure ljoin
 withFillColor :: String -> Tree -> Tree
 withFillColor color = fillColor .~ pure (mkColor color)
 
+-- | See <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/fill>
 withFillColorPixel :: PixelRGBA8 -> Tree -> Tree
 withFillColorPixel color = fillColor .~ pure (ColorRef color)
 
@@ -224,6 +230,7 @@ withFillColorPixel color = fillColor .~ pure (ColorRef color)
 withFillOpacity :: Double -> Tree -> Tree
 withFillOpacity opacity = fillOpacity ?~ realToFrac opacity
 
+-- | See <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/opacity>
 withGroupOpacity :: Double -> Tree -> Tree
 withGroupOpacity opacity = groupOpacity ?~ realToFrac opacity
 
@@ -340,13 +347,16 @@ mkLinePathClosed ((startX, startY):rest) =
 --
 --   Example:
 --
---   > animate $ const $ mkBackground "yellow"
+-- @
+-- 'Reanimate.animate' $ 'const' $ 'mkBackground' "yellow"
+-- @
 --
 --   <<docs/gifs/doc_mkBackground.gif>>
 mkBackground :: String -> Tree
 mkBackground color = withFillOpacity 1 $  withStrokeWidth 0 $
   withFillColor color $ mkRect screenWidth screenHeight
 
+-- | Rectangle with a uniform color and the same size as the screen.
 mkBackgroundPixel :: PixelRGBA8 -> Tree
 mkBackgroundPixel pixel =
     withFillOpacity 1 $ withStrokeWidth 0 $
@@ -374,7 +384,9 @@ gridLayout rows = mkGroup
 --
 --   Example:
 --
---   > mkAnimation 2 $ \t -> scale 2 $ withStrokeWidth 0.05 $ mkText (T.take (round $ t*15) "text")
+-- @
+-- 'Reanimate.mkAnimation' 2 $ \\t -> 'scale' 2 $ 'withStrokeWidth' 0.05 $ 'mkText' (T.take (round $ t*15) "text")
+-- @
 --
 --   <<docs/gifs/doc_mkText.gif>>
 mkText :: T.Text -> Tree
@@ -397,7 +409,9 @@ mkText str =
 --
 --   Example:
 --
---   > withViewBox (0,0,1,1) $ mkBackground "yellow"
+-- @
+-- 'withViewBox' (0,0,1,1) $ 'mkBackground' "yellow"
+-- @
 --
 --   <<docs/gifs/doc_withViewBox.gif>>
 withViewBox :: (Double, Double, Double, Double) -> Tree -> Tree

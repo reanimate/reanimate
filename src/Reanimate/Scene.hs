@@ -1,11 +1,9 @@
 {-# LANGUAGE ApplicativeDo             #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE RankNTypes                #-}
-{-# LANGUAGE TemplateHaskell           #-}
 {-# LANGUAGE RecordWildCards           #-}
 {-|
 Module      : Reanimate.Scene
-Description : Imperative animation API
 Copyright   : Written by David Himmelstrup
 License     : Unlicense
 Maintainer  : lemmih@gmail.com
@@ -19,6 +17,7 @@ module Reanimate.Scene
   ( -- * Scenes
     Scene
   , ZIndex
+  , scene             -- :: (forall s. Scene s a) -> Animation
   , sceneAnimation    -- :: (forall s. Scene s a) -> Animation
   , play              -- :: Animation -> Scene s ()
   , fork              -- :: Scene s a -> Scene s a
@@ -61,9 +60,19 @@ module Reanimate.Scene
   , spriteScope       -- :: Scene s a -> Scene s a
 
   -- * Object API
-  , Renderable(..)
   , Object
   , ObjectData
+  , oNew
+  , newObject
+  , oModify
+  , oModifyS
+  , oRead
+  , oTween
+  , oTweenS
+  , oTweenV
+  , oTweenVS
+  , Renderable(..)
+  -- ** Object Properties
   , oTranslate
   , oSVG
   , oContext
@@ -88,15 +97,7 @@ module Reanimate.Scene
   , oLeftX
   , oRightX
   , oCenterXY
-  , newObject
   , oValue
-  , oModify
-  , oModifyS
-  , oRead
-  , oTween
-  , oTweenS
-  , oTweenV
-  , oTweenVS
 
   -- ** Graphics object methods
   , oShow
@@ -127,7 +128,6 @@ module Reanimate.Scene
 
   -- * ST internals
   , liftST
-  , asAnimation       -- :: (forall s. Scene s a) -> Scene s Animation
   , transitionO
   , evalScene
   )
@@ -159,6 +159,8 @@ type ZIndex = Int
 -- [(Time, Animation, ZIndex)]
 -- Map Time [(Animation, ZIndex)]
 type Gen s = ST s (Duration -> Time -> (SVG, ZIndex))
+-- | A 'Scene' represents a sequence of animations and variables
+--   that change over time.
 newtype Scene s a = M { unM :: Time -> ST s (a, Duration, Duration, [Gen s]) }
 
 instance Functor (Scene s) where
@@ -183,14 +185,21 @@ instance Monad (Scene s) where
 instance MonadFix (Scene s) where
   mfix fn = M $ \t -> mfix (\v -> let (a, _s, _p, _gens) = v in unM (fn a) t)
 
+-- | Lift an ST action into the Scene monad.
 liftST :: ST s a -> Scene s a
 liftST action = M $ \_ -> action >>= \a -> return (a, 0, 0, [])
 
+-- | Evaluate the value of a scene.
 evalScene :: (forall s . Scene s a) -> a
 evalScene action = runST $ do
   (val, _, _ , _) <- unM action 0
   return val
 
+-- | Render a 'Scene' to an 'Animation'.
+scene :: (forall s . Scene s a) -> Animation
+scene = sceneAnimation
+
+-- | Render a 'Scene' to an 'Animation'.
 sceneAnimation :: (forall s . Scene s a) -> Animation
 sceneAnimation action = runST
   (do
@@ -210,8 +219,10 @@ sceneAnimation action = runST
 --
 --   Example:
 --
---   > do fork $ play drawBox
---   >    play drawCircle
+-- @
+-- do 'fork' $ 'play' 'Reanimate.Builtin.Documentation.drawBox'
+--    'play' 'Reanimate.Builtin.Documentation.drawCircle'
+-- @
 --
 --   <<docs/gifs/doc_fork.gif>>
 fork :: Scene s a -> Scene s a
@@ -224,8 +235,10 @@ fork (M action) = M $ \t -> do
 --
 --   Example:
 --
---   > do play drawBox
---   >    play drawCircle
+-- @
+-- do 'play' 'Reanimate.Builtin.Documentation.drawBox'
+--    'play' 'Reanimate.Builtin.Documentation.drawCircle'
+-- @
 --
 --   <<docs/gifs/doc_play.gif>>
 play :: Animation -> Scene s ()
@@ -235,9 +248,11 @@ play ani = newSpriteA ani >>= destroySprite
 --
 --   Example:
 --
---   > do now <- play drawCircle *> queryNow
---   >    play $ staticFrame 1 $ scale 2 $ withStrokeWidth 0.05 $
---   >      mkText $ "Now=" <> T.pack (show now)
+-- @
+-- do now \<- 'play' 'Reanimate.Builtin.Documentation.drawCircle' *\> 'queryNow'
+--    'play' $ 'staticFrame' 1 $ 'scale' 2 $ 'withStrokeWidth' 0.05 $
+--      'mkText' $ "Now=" <> T.pack (show now)
+-- @
 --
 --   <<docs/gifs/doc_queryNow.gif>>
 queryNow :: Scene s Time
@@ -247,9 +262,11 @@ queryNow = M $ \t -> return (t, 0, 0, [])
 --
 --   Example:
 --
---   > do fork $ play drawBox
---   >    wait 1
---   >    play drawCircle
+-- @
+-- do 'fork' $ 'play' 'Reanimate.Builtin.Documentation.drawBox'
+--    'wait' 1
+--    'play' 'Reanimate.Builtin.Documentation.drawCircle'
+-- @
 --
 --   <<docs/gifs/doc_wait.gif>>
 wait :: Duration -> Scene s ()
@@ -265,8 +282,10 @@ waitUntil tNew = do
 --
 --   Example:
 --
---   > do waitOn $ fork $ play drawBox
---   >    play drawCircle
+-- @
+-- do 'waitOn' $ 'fork' $ 'play' 'Reanimate.Builtin.Documentation.drawBox'
+--    'play' 'Reanimate.Builtin.Documentation.drawCircle'
+-- @
 --
 --   <<docs/gifs/doc_waitOn.gif>>
 waitOn :: Scene s a -> Scene s a
@@ -302,9 +321,11 @@ newtype Var s a = Var (STRef s (Time -> a))
 --   Variables always have a defined value even if they are read at a timestamp that is
 --   earlier than when the variable was created. For example:
 --
---   > do v <- fork (wait 10 >> newVar 0) -- Create a variable at timestamp '10'.
---   >    readVar v                       -- Read the variable at timestamp '0'.
---   >                                    -- The value of the variable will be '0'.
+-- @
+-- do v \<- 'fork' ('wait' 10 \>\> 'newVar' 0) -- Create a variable at timestamp '10'.
+--    'readVar' v                       -- Read the variable at timestamp '0'.
+--                                    -- The value of the variable will be '0'.
+-- @
 newVar :: a -> Scene s (Var s a)
 newVar def = Var <$> liftST (newSTRef (const def))
 
@@ -316,11 +337,13 @@ readVar (Var ref) = liftST (readSTRef ref) <*> queryNow
 --
 --   Example:
 --
---   > do v <- newVar 0
---   >    newSprite $ mkCircle <$> unVar v
---   >    writeVar v 1; wait 1
---   >    writeVar v 2; wait 1
---   >    writeVar v 3; wait 1
+-- @
+-- do v \<- 'newVar' 0
+--    'newSprite' $ 'mkCircle' \<$\> 'unVar' v
+--    'writeVar' v 1; 'wait' 1
+--    'writeVar' v 2; 'wait' 1
+--    'writeVar' v 3; 'wait' 1
+-- @
 --
 --   <<docs/gifs/doc_writeVar.gif>>
 writeVar :: Var s a -> a -> Scene s ()
@@ -358,8 +381,10 @@ tweenVarUnclamped (Var ref) dur fn = do
 --
 --   Example:
 --
---   > do var <- simpleVar mkCircle 0
---   >    tweenVar var 2 $ \val -> fromToS val (screenHeight/2)
+-- @
+-- do var \<- 'simpleVar' 'mkCircle' 0
+--    'tweenVar' var 2 $ \val -> 'fromToS' val ('Reanimate.Constants.screenHeight'/2)
+-- @
 --
 --   <<docs/gifs/doc_simpleVar.gif>>
 simpleVar :: (a -> SVG) -> a -> Scene s (Var s a)
@@ -398,10 +423,12 @@ instance Applicative (Frame s) where
 --
 --   Example:
 --
---   > do v <- newVar 0
---   >    newSprite $ mkCircle <$> unVar v
---   >    tweenVar v 1 $ \val -> fromToS val 3
---   >    tweenVar v 1 $ \val -> fromToS val 0
+-- @
+-- do v \<- 'newVar' 0
+--    'newSprite' $ 'mkCircle' \<$\> 'unVar' v
+--    'tweenVar' v 1 $ \val -> 'fromToS' val 3
+--    'tweenVar' v 1 $ \val -> 'fromToS' val 0
+-- @
 --
 --   <<docs/gifs/doc_unVar.gif>>
 unVar :: Var s a -> Frame s a
@@ -423,8 +450,10 @@ spriteDuration = Frame $ return (\_real_t d _t -> d)
 --
 --   Example:
 --
---   > do newSprite $ mkCircle <$> spriteT -- Circle sprite where radius=time.
---   >    wait 2
+-- @
+-- do 'newSprite' $ 'mkCircle' \<$\> 'spriteT' -- Circle sprite where radius=time.
+--    'wait' 2
+-- @
 --
 --   <<docs/gifs/doc_newSprite.gif>>
 newSprite :: Frame s SVG -> Scene s (Sprite s)
@@ -465,9 +494,11 @@ newSprite_ = void . newSprite
 --
 --   Example:
 --
---   > do fork $ newSpriteA drawCircle
---   >    play drawBox
---   >    play $ reverseA drawBox
+-- @
+-- do 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawCircle'
+--    'play' 'Reanimate.Builtin.Documentation.drawBox'
+--    'play' $ 'reverseA' 'Reanimate.Builtin.Documentation.drawBox'
+-- @
 --
 --   <<docs/gifs/doc_newSpriteA.gif>>
 newSpriteA :: Animation -> Scene s (Sprite s)
@@ -478,9 +509,11 @@ newSpriteA = newSpriteA' SyncStretch
 --
 --   Example:
 --
---   > do fork $ newSpriteA' SyncFreeze drawCircle
---   >    play drawBox
---   >    play $ reverseA drawBox
+-- @
+-- do 'fork' $ 'newSpriteA'' 'SyncFreeze' 'Reanimate.Builtin.Documentation.drawCircle'
+--    'play' 'Reanimate.Builtin.Documentation.drawBox'
+--    'play' $ 'reverseA' 'Reanimate.Builtin.Documentation.drawBox'
+-- @
 --
 --   <<docs/gifs/doc_newSpriteA'.gif>>
 newSpriteA' :: Sync -> Animation -> Scene s (Sprite s)
@@ -492,8 +525,10 @@ newSpriteA' sync animation =
 --
 --   Example:
 --
---   > do newSpriteSVG $ mkBackground "lightblue"
---   >    play drawCircle
+-- @
+-- do 'newSpriteSVG' $ 'mkBackground' "lightblue"
+--    'play' 'Reanimate.Builtin.Documentation.drawCircle'
+-- @
 --
 --   <<docs/gifs/doc_newSpriteSVG.gif>>
 newSpriteSVG :: SVG -> Scene s (Sprite s)
@@ -509,10 +544,12 @@ newSpriteSVG_ = void . newSpriteSVG
 --
 --   Example:
 --
---   > do s <- fork $ newSpriteA drawBox
---   >    v <- newVar 0
---   >    applyVar v s rotate
---   >    tweenVar v 2 $ \val -> fromToS val 90
+-- @
+-- do s \<- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawBox'
+--    v \<- 'newVar' 0
+--    'applyVar' v s 'rotate'
+--    'tweenVar' v 2 $ \val -> 'fromToS' val 90
+-- @
 --
 --   <<docs/gifs/doc_applyVar.gif>>
 applyVar :: Var s a -> Sprite s -> (a -> SVG -> SVG) -> Scene s ()
@@ -525,9 +562,11 @@ applyVar var sprite fn = spriteModify sprite $ do
 --
 --   Example:
 --
---   > do s <- newSpriteSVG $ withFillOpacity 1 $ mkCircle 1
---   >    fork $ wait 1 >> destroySprite s
---   >    play drawBox
+-- @
+-- do s <- 'newSpriteSVG' $ 'withFillOpacity' 1 $ 'mkCircle' 1
+--    'fork' $ 'wait' 1 \>\> 'destroySprite' s
+--    'play' 'Reanimate.Builtin.Documentation.drawBox'
+-- @
 --
 --   <<docs/gifs/doc_destroySprite.gif>>
 destroySprite :: Sprite s -> Scene s ()
@@ -551,9 +590,11 @@ spriteModify (Sprite born ref) modFn = liftST $ modifySTRef ref $ \(ttl, renderG
 --
 --   Example:
 --
---   > do s <- fork $ newSpriteA drawCircle
---   >    wait 1
---   >    spriteMap s flipYAxis
+-- @
+-- do s \<- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawCircle'
+--    'wait' 1
+--    'spriteMap' s 'flipYAxis'
+-- @
 --
 --   <<docs/gifs/doc_spriteMap.gif>>
 spriteMap :: Sprite s -> (SVG -> SVG) -> Scene s ()
@@ -568,8 +609,10 @@ spriteMap sprite@(Sprite born _) fn = do
 --
 --   Example:
 --
---   > do s <- fork $ newSpriteA drawCircle
---   >    spriteTween s 1 $ \val -> translate (screenWidth*0.3*val) 0
+-- @
+-- do s \<- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawCircle'
+--    'spriteTween' s 1 $ \val -> 'translate' ('Reanimate.Constants.screenWidth'*0.3*val) 0
+-- @
 --
 --   <<docs/gifs/doc_spriteTween.gif>>
 spriteTween :: Sprite s -> Duration -> (Double -> SVG -> SVG) -> Scene s ()
@@ -589,9 +632,11 @@ spriteTween sprite@(Sprite born _) dur fn = do
 --
 --   Example:
 --
---   > do s <- fork $ newSpriteA drawBox
---   >    v <- spriteVar s 0 rotate
---   >    tweenVar v 2 $ \val -> fromToS val 90
+-- @
+-- do s \<- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawBox'
+--    v \<- 'spriteVar' s 0 'rotate'
+--    'tweenVar' v 2 $ \val -> 'fromToS' val 90
+-- @
 --
 --   <<docs/gifs/doc_spriteVar.gif>>
 spriteVar :: Sprite s -> a -> (a -> SVG -> SVG) -> Scene s (Var s a)
@@ -604,9 +649,11 @@ spriteVar sprite def fn = do
 --
 --   Example:
 --
---   > do s <- fork $ newSpriteA drawCircle
---   >    spriteE s $ overBeginning 1 fadeInE
---   >    spriteE s $ overEnding 0.5 fadeOutE
+-- @
+-- do s <- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawCircle'
+--    'spriteE' s $ 'overBeginning' 1 'fadeInE'
+--    'spriteE' s $ 'overEnding' 0.5 'fadeOutE'
+-- @
 --
 --   <<docs/gifs/doc_spriteE.gif>>
 spriteE :: Sprite s -> Effect -> Scene s ()
@@ -625,11 +672,13 @@ spriteE (Sprite born ref) effect = do
 --
 --   Example:
 --
---   > do s1 <- newSpriteSVG $ withFillOpacity 1 $ withFillColor "blue" $ mkCircle 3
---   >    newSpriteSVG $ withFillOpacity 1 $ withFillColor "red" $ mkRect 8 3
---   >    wait 1
---   >    spriteZ s1 1
---   >    wait 1
+-- @
+-- do s1 \<- 'newSpriteSVG' $ 'withFillOpacity' 1 $ 'withFillColor' "blue" $ 'mkCircle' 3
+--    'newSpriteSVG' $ 'withFillOpacity' 1 $ 'withFillColor' "red" $ 'mkRect' 8 3
+--    'wait' 1
+--    'spriteZ' s1 1
+--    'wait' 1
+-- @
 --
 --   <<docs/gifs/doc_spriteZ.gif>>
 spriteZ :: Sprite s -> ZIndex -> Scene s ()
@@ -643,7 +692,24 @@ spriteZ (Sprite born ref) zindex = do
         let (svg', z) = render d t svg in (svg', if t < now - born then z else zindex)
     )
 
--- Destroy all local sprites at the end of a scene.
+-- | Destroy all local sprites at the end of a scene.
+--
+--   Example:
+--
+-- @
+-- do -- the rect lives through the entire 3s animation
+--    'newSpriteSVG_' $ 'translate' (-3) 0 $ 'mkRect' 4 4
+--    'wait' 1
+--    'spriteScope' $ do
+--      -- the circle only lives for 1 second.
+--      local \<- 'newSpriteSVG' $ 'translate' 3 0 $ 'mkCircle' 2
+--      'spriteE' local $ 'overBeginning' 0.3 'fadeInE'
+--      'spriteE' local $ 'overEnding' 0.3 'fadeOutE'
+--      'wait' 1
+--    'wait' 1
+-- @
+--
+--   <<docs/gifs/doc_spriteScope.gif>>
 spriteScope :: Scene s a -> Scene s a
 spriteScope (M action) = M $ \t -> do
   (a, s, p, gens) <- action t
@@ -657,10 +723,13 @@ spriteScope (M action) = M $ \t -> do
         else (None, 0)
 
 asAnimation :: (forall s'. Scene s' a) -> Scene s Animation
-asAnimation scene = do
+asAnimation s = do
   now <- queryNow
-  return $ dropA now (sceneAnimation (wait now >> scene))
+  return $ dropA now (sceneAnimation (wait now >> s))
 
+-- | Apply a transformation with a given overlap. This makes sure
+--   to keep timestamps intact such that events can still be timed
+--   by transcripts.
 transitionO :: Transition -> Double -> (forall s'. Scene s' a) -> (forall s'. Scene s' b) -> Scene s ()
 transitionO t o a b = do
   aA <- asAnimation a
@@ -675,16 +744,22 @@ transitionO t o a b = do
 -------------------------------------------------------
 -- Objects
 
+-- | Objects can be any Haskell structure as long as it can be rendered to SVG.
 class Renderable a where
   toSVG :: a -> SVG
 
 instance Renderable Tree where
   toSVG = id
 
+-- | Objects are SVG nodes (represented as Haskell values) with
+--   identity, location, and several other properties that can
+--   change over time.
 data Object s a = Object
   { objectSprite :: Sprite s
   , objectData   :: Var s (ObjectData a)
   }
+
+-- | Container for object properties.
 data ObjectData a = ObjectData
   { _oTranslate   :: (Double, Double)
   , _oValueRef    :: a
@@ -703,41 +778,60 @@ data ObjectData a = ObjectData
 
 -- Basic lenses
 
+-- FIXME: Maybe 'position' is a better name.
+-- | Object position. Default: \<0,0\>
 oTranslate :: Lens' (ObjectData a) (Double, Double)
 oTranslate = lens _oTranslate $ \obj val -> obj { _oTranslate = val }
 
+-- | Rendered SVG node of an object. Does not include context
+--   or object properties. Read-only.
 oSVG :: Getter (ObjectData a) SVG
 oSVG = to _oSVG
 
+-- | Custom render context. Is applied to the object for every
+--   frame that it is shown.
 oContext :: Lens' (ObjectData a) (SVG -> SVG)
 oContext = lens _oContext $ \obj val -> obj { _oContext = val  }
 
+-- | Object margins (top, right, bottom, left) in local units.
 oMargin :: Lens' (ObjectData a) (Double, Double, Double, Double)
 oMargin = lens _oMargin $ \obj val -> obj { _oMargin = val }
 
+-- | Object bounding-box (minimal X-coordinate, minimal Y-coordinate,
+--   width, height). Uses `Reanimate.Svg.BoundingBox.boundingBox`
+--   and has the same limitations.
 oBB :: Getter (ObjectData a) (Double, Double, Double, Double)
 oBB = to _oBB
 
+-- | Object opacity. Default: 1
 oOpacity :: Lens' (ObjectData a) Double
 oOpacity = lens _oOpacity $ \obj val -> obj { _oOpacity = val }
 
+-- | Toggle for whether or not the object should be rendered.
+--   Default: False
 oShown :: Lens' (ObjectData a) Bool
 oShown = lens _oShown $ \obj val -> obj { _oShown = val }
 
+-- | Object's z-index.
 oZIndex :: Lens' (ObjectData a) Int
 oZIndex = lens _oZIndex $ \obj val -> obj { _oZIndex = val }
 
+-- | Easing function used when modifying object properties.
+--   Default: @'Reanimate.Ease.curveS' 2@
 oEasing :: Lens' (ObjectData a) Signal
 oEasing = lens _oEasing $ \obj val -> obj { _oEasing = val }
 
+-- | Object's scale. Default: 1
 oScale :: Lens' (ObjectData a) Double
 oScale = lens _oScale $ \obj val -> obj { _oScale = val }
 
+-- | Origin point for scaling. Default: \<0,0\>
 oScaleOrigin :: Lens' (ObjectData a) (Double, Double)
 oScaleOrigin = lens _oScaleOrigin $ \obj val -> obj { _oScaleOrigin = val }
 
 -- Smart lenses
 
+-- | Lens for the source value contained in an object.
 oValue :: Renderable a => Lens' (ObjectData a) a
 oValue = lens _oValueRef $ \obj newVal ->
     let svg = toSVG newVal
@@ -746,6 +840,7 @@ oValue = lens _oValueRef $ \obj newVal ->
     , _oSVG      = svg
     , _oBB       = boundingBox svg }
 
+-- | Derived location of the top-most point of an object + margin.
 oTopY :: Lens' (ObjectData a) Double
 oTopY = lens getter setter
   where
@@ -758,6 +853,7 @@ oTopY = lens getter setter
     setter obj val =
       obj & (oTranslate . _2) +~ val-getter obj
 
+-- | Derived location of the bottom-most point of an object + margin.
 oBottomY :: Lens' (ObjectData a) Double
 oBottomY = lens getter setter
   where
@@ -769,6 +865,7 @@ oBottomY = lens getter setter
     setter obj val = 
       obj & (oTranslate . _2) +~ val-getter obj
 
+-- | Derived location of the left-most point of an object + margin.
 oLeftX :: Lens' (ObjectData a) Double
 oLeftX = lens getter setter
   where
@@ -780,6 +877,7 @@ oLeftX = lens getter setter
     setter obj val =
       obj & (oTranslate . _1) +~ val-getter obj
 
+-- | Derived location of the right-most point of an object + margin.
 oRightX :: Lens' (ObjectData a) Double
 oRightX = lens getter setter
   where
@@ -792,6 +890,7 @@ oRightX = lens getter setter
     setter obj val =
       obj & (oTranslate . _1) +~ val-getter obj
 
+-- | Derived location of an object's center point.
 oCenterXY :: Lens' (ObjectData a) (Double, Double)
 oCenterXY = lens getter setter
   where
@@ -807,59 +906,80 @@ oCenterXY = lens getter setter
       obj & (oTranslate . _1) +~ dx-x
           & (oTranslate . _2) +~ dy-y
 
+-- | Object's top margin.
 oMarginTop :: Lens' (ObjectData a) Double
 oMarginTop = oMargin . _1
 
+-- | Object's right margin.
 oMarginRight :: Lens' (ObjectData a) Double
 oMarginRight = oMargin . _2
 
+-- | Object's bottom margin.
 oMarginBottom :: Lens' (ObjectData a) Double
 oMarginBottom = oMargin . _3
 
+-- | Object's left margin.
 oMarginLeft :: Lens' (ObjectData a) Double
 oMarginLeft = oMargin . _4
 
+-- | Object's minimal X-coordinate..
 oBBMinX :: Getter (ObjectData a) Double
 oBBMinX = oBB . _1
 
+-- | Object's minimal Y-coordinate..
 oBBMinY :: Getter (ObjectData a) Double
 oBBMinY = oBB . _2
 
+-- | Object's width without margin.
 oBBWidth :: Getter (ObjectData a) Double
 oBBWidth = oBB . _3
 
+-- | Object's height without margin.
 oBBHeight :: Getter (ObjectData a) Double
 oBBHeight = oBB . _4
 
+-------------------------------------------------------------------------------
+-- Object modifiers
+
+-- | Modify object properties.
 oModify :: Object s a -> (ObjectData a -> ObjectData a) -> Scene s ()
 oModify o fn = modifyVar (objectData o) fn
 
+-- | Modify object properties using a stateful API.
 oModifyS :: Object s a -> (State (ObjectData a) b) -> Scene s ()
 oModifyS o fn = oModify o (execState fn)
 
+-- | Query object property.
 oRead :: Object s a -> Getting b (ObjectData a) b -> Scene s b
-oRead o l = do
-  v <- readVar (objectData o)
-  return $ view l v
+oRead o l = view l <$> readVar (objectData o)
 
+-- | Modify object properties over a set duration.
 oTween :: Object s a -> Duration -> (Double -> ObjectData a -> ObjectData a) -> Scene s ()
 oTween o d fn = do
   -- Read 'easing' var here instead of taking it from 'v'.
   -- This allows different easing functions even at the same timestamp.
   ease <- oRead o oEasing
   tweenVar (objectData o) d (\v t -> fn (ease t) v)
-  -- tweenVar ref d (\v t -> fn t v)
 
--- oTweenS :: Object s a -> Duration -> (Double -> ObjectData a -> ObjectData a) -> Scene s ()
+-- | Modify object properties over a set duration using a stateful API.
 oTweenS :: Object s a -> Duration -> (Double -> State (ObjectData a) b) -> Scene s ()
 oTweenS o d fn = oTween o d (\t -> execState (fn t))
 
+-- | Modify object value over a set duration. This is a convenience function
+--   for modifying `oValue`.
 oTweenV :: Renderable a => Object s a -> Duration -> (Double -> a -> a) -> Scene s ()
 oTweenV o d fn = oTween o d (\t -> oValue %~ fn t)
 
+-- | Modify object value over a set duration using a stateful API. This is a
+--   convenience function for modifying `oValue`.
 oTweenVS :: Renderable a => Object s a -> Duration -> (Double -> State a b) -> Scene s ()
 oTweenVS o d fn = oTween o d (\t -> oValue %~ execState (fn t))
 
+-- | Create new object.
+oNew :: Renderable a => a -> Scene s (Object s a)
+oNew = newObject
+
+-- | Create new object.
 newObject :: Renderable a => a -> Scene s (Object s a)
 newObject val = do
   ref <- newVar ObjectData
@@ -888,82 +1008,27 @@ newObject val = do
           withGroupOpacity _oOpacity $
           _oContext _oSVG
         else None
+  spriteModify sprite $ do
+    ~ObjectData{_oZIndex=z} <- unVar ref
+    pure $ \(img,_) -> (img,z)
   return Object
     { objectSprite = sprite
     , objectData   = ref }
   where
     svg = toSVG val
 
-newtype Circle = Circle {_circleRadius :: Double}
-instance Renderable Circle where
-  toSVG (Circle r) = mkCircle r
+-------------------------------------------------------------------------------
+-- Graphical transformations
 
-data Rectangle = Rectangle { _rectWidth :: Double, _rectHeight :: Double }
-instance Renderable Rectangle where
-  toSVG (Rectangle w h) = mkRect w h
-
-data Morph = Morph { _morphDelta :: Double, _morphSrc :: SVG, _morphDst :: SVG }
-instance Renderable Morph where
-  toSVG (Morph t src dst) = morph linear src dst t
-
-data Camera = Camera
-instance Renderable Camera where
-  toSVG Camera = None
-
-cameraAttach :: Object s Camera -> Object s a -> Scene s ()
-cameraAttach cam obj =
-  spriteModify (objectSprite obj) $ do
-    camData <- unVar (objectData cam)
-    return $ \(svg,zindex) ->
-      let (x,y) = camData^.oTranslate
-          ctx =
-            translate (-x) (-y) .
-            uncurry translate (camData^.oScaleOrigin) .
-            scale (camData^.oScale) .
-            uncurry translate (camData^.oScaleOrigin & both %~ negate)
-      in (ctx svg, zindex)
-
-cameraFocus :: Object s Camera -> (Double, Double) -> Scene s ()
-cameraFocus cam (x,y) = do
-  (ox, oy) <- oRead cam oScaleOrigin
-  (tx, ty) <- oRead cam oTranslate
-  s <- oRead cam oScale
-  let newLocation = (x-((x-ox)*s+ox-tx), y-((y-oy)*s+oy-ty))
-  oModifyS cam $ do
-    oTranslate .= newLocation
-    oScaleOrigin .= (x,y)
-
-cameraSetZoom :: Object s Camera -> Double -> Scene s ()
-cameraSetZoom cam s =
-  oModifyS cam $
-    oScale .= s
-
-cameraZoom :: Object s Camera -> Duration -> Double -> Scene s ()
-cameraZoom cam d s =
-  oTweenS cam d $ \t ->
-    oScale %= \v -> fromToS v s t
-
-cameraSetPan :: Object s Camera -> (Double, Double) -> Scene s ()
-cameraSetPan cam location =
-  oModifyS cam $ do
-    oTranslate .= location
-
-cameraPan :: Object s Camera -> Duration -> (Double, Double) -> Scene s ()
-cameraPan cam d (x,y) =
-  oTweenS cam d $ \t -> do
-    oTranslate._1 %= \v -> fromToS v x t
-    oTranslate._2 %= \v -> fromToS v y t
-
-makeLenses ''Circle
-makeLenses ''Rectangle
-makeLenses ''Morph
-
+-- | Instantly show object.
 oShow :: Object s a -> Scene s ()
 oShow o = oModify o $ oShown .~ True
 
+-- | Instantly hide object.
 oHide :: Object s a -> Scene s ()
 oHide o = oModify o $ oShown .~ False
 
+-- | Fade in object over a set duration.
 oFadeIn :: Object s a -> Duration -> Scene s ()
 oFadeIn o d = do
   oModify o $ 
@@ -971,6 +1036,7 @@ oFadeIn o d = do
   oTweenS o d $ \t ->
     oOpacity *= t
 
+-- | Fade out object over a set duration.
 oFadeOut :: Object s a -> Duration -> Scene s ()
 oFadeOut o d = do
   oModify o $ 
@@ -978,6 +1044,7 @@ oFadeOut o d = do
   oTweenS o d $ \t ->
     oOpacity *= 1-t
 
+-- | Scale in object over a set duration.
 oGrow :: Object s a -> Duration -> Scene s ()
 oGrow o d = do
   oModify o $ 
@@ -985,12 +1052,14 @@ oGrow o d = do
   oTweenS o d $ \t ->
     oScale *= t
 
+-- | Scale out object over a set duration.
 oShrink :: Object s a -> Duration -> Scene s ()
 oShrink o d =
   oTweenS o d $ \t ->
     oScale *= 1-t
 
 -- FIXME: Also transform attributes: 'opacity', 'scale', 'scaleOrigin'.
+-- | Morph source object into target object over a set duration.
 oTransform :: Object s a -> Object s b -> Duration -> Scene s ()
 oTransform src dst d = do
     srcSvg <- oRead src oSVG
@@ -1015,3 +1084,143 @@ oTransform src dst d = do
   where
     moveTo t (dstX, dstY) (srcX, srcY) =
       (fromToS srcX dstX t, fromToS srcY dstY t)
+
+
+-------------------------------------------------------------------------------
+-- Built-in objects
+
+-- | Basic object mapping to \<circle\/\> in SVG.
+newtype Circle = Circle {_circleRadius :: Double}
+
+-- | Circle radius in local units.
+circleRadius :: Lens' Circle Double
+circleRadius = iso _circleRadius Circle
+
+instance Renderable Circle where
+  toSVG (Circle r) = mkCircle r
+
+-- | Basic object mapping to \<rect\/\> in SVG.
+data Rectangle = Rectangle { _rectWidth :: Double, _rectHeight :: Double }
+
+-- | Rectangle width in local units.
+rectWidth :: Lens' Rectangle Double
+rectWidth = lens _rectWidth $ \obj val -> obj{_rectWidth=val}
+
+-- | Rectangle height in local units.
+rectHeight :: Lens' Rectangle Double
+rectHeight = lens _rectHeight $ \obj val -> obj{_rectHeight=val}
+
+instance Renderable Rectangle where
+  toSVG (Rectangle w h) = mkRect w h
+
+-- | Object representing an interpolation between SVG nodes.
+data Morph = Morph { _morphDelta :: Double, _morphSrc :: SVG, _morphDst :: SVG }
+
+-- | Control variable for the interpolation. A value of 0 gives the
+--   source SVG and 1 gives the target svg.
+morphDelta :: Lens' Morph Double
+morphDelta = lens _morphDelta $ \obj val -> obj{_morphDelta = val}
+
+-- | Source shape.
+morphSrc :: Lens' Morph SVG
+morphSrc = lens _morphSrc $ \obj val -> obj{_morphSrc = val}
+
+-- | Target shape.
+morphDst :: Lens' Morph SVG
+morphDst = lens _morphDst $ \obj val -> obj{_morphDst = val}
+
+instance Renderable Morph where
+  toSVG (Morph t src dst) = morph linear src dst t
+
+-- | Cameras can take control of objects and manipulate them
+--   with convenient pan and zoom operations.
+data Camera = Camera
+instance Renderable Camera where
+  toSVG Camera = None
+
+-- | Connect an object to a camera such that
+--   camera settings (position, zoom, and rotation) is
+--   applied to the object.
+--
+--   Example
+--
+-- @
+-- do cam \<- 'newObject' 'Camera'
+--    circ \<- 'newObject' $ 'Circle' 2
+--    'oModifyS' circ $
+--      'oContext' .= 'withFillOpacity' 1 . 'withFillColor' "blue"
+--    'oShow' circ
+--    'cameraAttach' cam circ
+--    'cameraZoom' cam 1 2
+--    'cameraZoom' cam 1 1
+-- @
+--
+--   <<docs/gifs/doc_cameraAttach.gif>>
+cameraAttach :: Object s Camera -> Object s a -> Scene s ()
+cameraAttach cam obj =
+  spriteModify (objectSprite obj) $ do
+    camData <- unVar (objectData cam)
+    return $ \(svg,zindex) ->
+      let (x,y) = camData^.oTranslate
+          ctx =
+            translate (-x) (-y) .
+            uncurry translate (camData^.oScaleOrigin) .
+            scale (camData^.oScale) .
+            uncurry translate (camData^.oScaleOrigin & both %~ negate)
+      in (ctx svg, zindex)
+
+-- |
+--
+--   Example
+--
+-- @
+-- do cam \<- 'newObject' 'Camera'
+--    circ \<- 'newObject' $ 'Circle' 2; 'oShow' circ
+--    'oModify' circ $ 'oTranslate' .~ (-3,0)
+--    box \<- 'newObject' $ 'Rectangle' 4 4; 'oShow' box
+--    'oModify' box $ 'oTranslate' .~ (3,0)
+--    'cameraAttach' cam circ
+--    'cameraAttach' cam box
+--    'cameraFocus' cam (-3,0)
+--    'cameraZoom' cam 2 2      -- Zoom in
+--    'cameraZoom' cam 2 1      -- Zoom out
+--    'cameraFocus' cam (3,0)
+--    'cameraZoom' cam 2 2      -- Zoom in
+--    'cameraZoom' cam 2 1      -- Zoom out
+-- @
+--
+--   <<docs/gifs/doc_cameraFocus.gif>>
+cameraFocus :: Object s Camera -> (Double, Double) -> Scene s ()
+cameraFocus cam (x,y) = do
+  (ox, oy) <- oRead cam oScaleOrigin
+  (tx, ty) <- oRead cam oTranslate
+  s <- oRead cam oScale
+  let newLocation = (x-((x-ox)*s+ox-tx), y-((y-oy)*s+oy-ty))
+  oModifyS cam $ do
+    oTranslate .= newLocation
+    oScaleOrigin .= (x,y)
+
+-- | Instantaneously set camera zoom level.
+cameraSetZoom :: Object s Camera -> Double -> Scene s ()
+cameraSetZoom cam s =
+  oModifyS cam $
+    oScale .= s
+
+-- | Change camera zoom level over a set duration.
+cameraZoom :: Object s Camera -> Duration -> Double -> Scene s ()
+cameraZoom cam d s =
+  oTweenS cam d $ \t ->
+    oScale %= \v -> fromToS v s t
+
+-- | Instantaneously set camera location.
+cameraSetPan :: Object s Camera -> (Double, Double) -> Scene s ()
+cameraSetPan cam location =
+  oModifyS cam $ do
+    oTranslate .= location
+
+-- | Change camera location over a set duration.
+cameraPan :: Object s Camera -> Duration -> (Double, Double) -> Scene s ()
+cameraPan cam d (x,y) =
+  oTweenS cam d $ \t -> do
+    oTranslate._1 %= \v -> fromToS v x t
+    oTranslate._2 %= \v -> fromToS v y t

@@ -20,7 +20,7 @@ visibility _        = undefined
 --   v is visible: zsv is a left-turn
 --   v moves in front of the stack: s'sv is right turn
 --   v moves behind stack:
-go :: (Ord a, Fractional a) => V2 a -> [V2 a] -> [V2 a] -> [V2 a]
+go :: (Ord a, Fractional a, Epsilon a) => V2 a -> [V2 a] -> [V2 a] -> [V2 a]
 go _z stack [] = stack
 go z stack@(s:s':_ss) (v:vs)
   | isLeftTurn z s v  = {-trace ("Left: " ++ show (z,s,v)) $ -}go z (v:stack) vs
@@ -34,7 +34,7 @@ stack: [1,1  2,6]
 v: 0,1
 -}
 
-rightTurn :: (Ord a, Fractional a) => V2 a -> [V2 a] -> V2 a -> [V2 a] -> [V2 a]
+rightTurn :: (Ord a, Fractional a, Epsilon a) => V2 a -> [V2 a] -> V2 a -> [V2 a] -> [V2 a]
 rightTurn z stack' v (v1:vs)
   | isRightTurn z v v1 = {-trace ("Double right: " ++ show (v,v1)) $ -}rightTurn z stack v1 vs
   | isLeftTurn z v v1 && isRightTurn (head stack') v v1
@@ -46,7 +46,7 @@ rightTurn z stack' v (v1:vs)
 rightTurn z stack v [] = unwindStack z stack v []
 
 -- scan forwards until edge intersects zv ray
-scanc :: (Ord a, Fractional a) => V2 a -> [V2 a] -> V2 a -> [V2 a] -> [V2 a]
+scanc :: (Ord a, Fractional a, Epsilon a) => V2 a -> [V2 a] -> V2 a -> [V2 a] -> [V2 a]
 scanc z stack v (v1:v2:vs)
   | isBetween u (v1,v2) = -- trace ("Found: " ++ show (u, stack)) $
     go z (u:stack) (v2:vs)
@@ -56,7 +56,7 @@ scanc z stack v (v1:v2:vs)
     Just u = rayIntersect (z,v) (v1,v2)
 scanc _z stack _v _vs = stack
 
-unwindStack :: (Ord a, Fractional a) => V2 a -> [V2 a] -> V2 a -> t -> [V2 a]
+unwindStack :: (Ord a, Fractional a, Epsilon a) => V2 a -> [V2 a] -> V2 a -> t -> [V2 a]
 unwindStack z (s1:s2:ss) v vs
   | isRightTurn z s1 v && isLeftTurn z s2 v = (u:s2:ss)
   | otherwise                               = unwindStack z (s2:ss) v vs
@@ -71,7 +71,7 @@ unwindStack _z stack _v _vs = stack
 --     unwind stack
 --  3. Find edge that crosses zv from left to right and is below v
 
-fastForward :: (Ord a, Fractional a) => V2 a -> [V2 a] -> V2 a -> [V2 a] -> [V2 a]
+fastForward :: (Ord a, Fractional a, Epsilon a) => V2 a -> [V2 a] -> V2 a -> [V2 a] -> [V2 a]
 fastForward z stack v (v1:v2:vs)
   | isNothing i || not (isBetween u (v1, v2))        = {-trace ("FF past: " ++ show (z,v,v1,v2)) $ -}fastForward z stack v (v2:vs)
   | distSquared v u > distSquared z u = {-trace ("FF skip: " ++ show (z,v,v1,v2)) $ -}fastForward z stack v (v2:vs)

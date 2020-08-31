@@ -1,5 +1,13 @@
+{-|
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+-}
 module Reanimate.Morph.Rotational
-  ( rotationalTrajectory
+  ( Origin
+  , rotationalTrajectory
   , polygonOrigin
   ) where
 
@@ -12,8 +20,24 @@ import           Reanimate.Ease
 import           Reanimate.Morph.Common
 import           Reanimate.Math.Polygon
 
+-- | Rotational origin relative to polygon center.
+--   (0.5, 0.5) is center of polygon. Top right is (1,1) and
+--   bottom left is (0,0)
 type Origin = (Double, Double)
 
+-- | Interpolation by rotating around an origin point.
+--
+--   Example:
+--
+-- @
+-- 'Reanimate.playThenReverseA' $ 'Reanimate.pauseAround' 0.5 0.5 $ 'Reanimate.mkAnimation' 3 $ \\t ->
+--   'Reanimate.withStrokeLineJoin' 'Graphics.SvgTree.JoinRound' $
+--   let src = 'Reanimate.scale' 8 $ 'Reanimate.center' $ 'Reanimate.LaTeX.latex' \"X\"
+--       dst = 'Reanimate.scale' 8 $ 'Reanimate.center' $ 'Reanimate.LaTeX.latex' \"H\"
+--   in 'morph' 'Reanimate.Morph.Linear.linear'{'morphTrajectory'='rotationalTrajectory' (0.5,0.5)} src dst t
+-- @
+--
+--   <<docs/gifs/doc_rotationalTrajectory.gif>>
 rotationalTrajectory :: Origin -> Trajectory
 rotationalTrajectory origin (src,dst) =
     \t ->
@@ -34,6 +58,7 @@ rotationalTrajectory origin (src,dst) =
 
     originAngle o = lineAngle (o + V2 1 0) o
 
+-- | Compute the absolute position of rotational origin point in polygon.
 polygonOrigin :: Polygon -> Origin -> V2 Double
 polygonOrigin poly (originX, originY) =
   case pBoundingBox poly of

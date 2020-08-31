@@ -6,6 +6,7 @@
 module Main(main) where
 
 import           Codec.Picture
+import           Control.Lens               ((&))
 import           Data.List                  (transpose)
 import qualified Data.Vector                as V
 import           Graphics.SvgTree           (LineJoin (..))
@@ -84,9 +85,9 @@ main = reanimate $
     showPair originVar from to =
       waitOn $ do
         fork $ play $ mkAnimation 2 (morph linear (polygonShape from) (polygonShape to))
-          # mapA (translate (-4) (-0.5))
-          # mapA (withFillColor "lightgreen")
-          # signalA (curveS 4)
+          & mapA (translate (-4) (-0.5))
+          & mapA (withFillColor "lightgreen")
+          & signalA (curveS 4)
         s <- fork $ newSprite $ do
           origin <- unVar originVar
           t <- spriteT

@@ -4,11 +4,11 @@
 {-# LANGUAGE RecursiveDo       #-}
 module Main (main) where
 
-import           Reanimate
-
+import           Codec.Picture
+import           Control.Lens
 import           Control.Monad    (forM_)
 import           Graphics.SvgTree (Tree)
-import           Codec.Picture
+import           Reanimate
 
 main :: IO ()
 main = reanimate $ bg `parA` mainScene
@@ -18,30 +18,30 @@ main = reanimate $ bg `parA` mainScene
 mainScene :: Animation
 mainScene = sceneAnimation $ mdo
     play $ drawCircle
-      # setDuration drawCircleT
-      # applyE (constE flipXAxis)
-      # signalA (curveS 2)
+      & setDuration drawCircleT
+      & applyE (constE flipXAxis)
+      & signalA (curveS 2)
     fork $ play $ drawCircle
-      # freezeAtPercentage 1
-      # setDuration rotDur
+      & freezeAtPercentage 1
+      & setDuration rotDur
     rotDur <- withSceneDuration $ waitOn $
       forM_ svgs $ \svg -> do
         fork $ play $ drawTick
-          # setDuration rotateT
-          # repeatA rotateN
-          # applyE (overBeginning 0.5 drawInE)
-          # applyE (overEnding 0.5 drawOutE)
+          & setDuration rotateT
+          & repeatA rotateN
+          & applyE (overBeginning 0.5 drawInE)
+          & applyE (overEnding 0.5 drawOutE)
         fork $ play $ drawSVG svg
-          # setDuration rotateT
-          # repeatA rotateN
-          # applyE (overBeginning rotateT drawInE)
-          # applyE (delayE rotateT $ overBeginning 1 fillInE)
-          # applyE (overEnding 0.5 fadeOutE)
+          & setDuration rotateT
+          & repeatA rotateN
+          & applyE (overBeginning rotateT drawInE)
+          & applyE (delayE rotateT $ overBeginning 1 fillInE)
+          & applyE (overEnding 0.5 fadeOutE)
         wait (rotateT / fromIntegral (1+length svgs))
     play $ drawCircle
-      # setDuration drawCircleT
-      # reverseA
-      # signalA (curveS 2)
+      & setDuration drawCircleT
+      & reverseA
+      & signalA (curveS 2)
     return ()
   where
     drawCircleT = 2.5

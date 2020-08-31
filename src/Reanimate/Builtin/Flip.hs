@@ -1,26 +1,34 @@
+{-# LANGUAGE ApplicativeDo     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE ApplicativeDo     #-}
 {- HLINT ignore -}
+{-|
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+-}
 module Reanimate.Builtin.Flip
   ( FlipSprite(..)
   , flipSprite
   , flipTransition
-  , flipTransitionOpts
   ) where
 
-import           Reanimate.Animation
-import           Reanimate.Blender
-import           Reanimate.Raster
-import           Reanimate.Scene
-import           Reanimate.Ease
-import           Reanimate.Transition
-import           Reanimate.Svg.Constructors
+import           Reanimate.Animation        (Animation, duration, frameAt, setDuration)
+import           Reanimate.Blender          (blender)
+import           Reanimate.Ease             (fromToS, oscillateS)
+import           Reanimate.Raster           (svgAsPngFile)
+import           Reanimate.Scene            (Scene, Sprite, Var, fork, newSprite, newVar, scene,
+                                             spriteDuration, spriteT, tweenVar, unVar)
+import           Reanimate.Svg.Constructors (flipXAxis)
+import           Reanimate.Transition       (Transition)
 
-import           NeatInterpolation (text)
-import qualified Data.Text           as T
+import qualified Data.Text                  as T
+import           NeatInterpolation          (text)
 
+-- | Control structure with parameters for the blender script.
 data FlipSprite s = FlipSprite
   { fsSprite :: Sprite s
   , fsBend   :: Var s Double
@@ -28,6 +36,8 @@ data FlipSprite s = FlipSprite
   , fsWobble :: Var s Double
   }
 
+-- | Project two animations on each side of a plane and flip the plane
+--   upside down.
 flipSprite :: Animation -> Animation -> Scene s (FlipSprite s)
 flipSprite front back = do
     bend <- newVar 0
@@ -53,7 +63,7 @@ flipSprite front back = do
       , fsWobble = rotX }
 
 flipTransitionOpts :: Double -> Double -> Double -> Transition
-flipTransitionOpts bend zoom wobble a b = sceneAnimation $ do
+flipTransitionOpts bend zoom wobble a b = scene $ do
     FlipSprite{..} <- flipSprite a b
     fork $ tweenVar fsZoom dur   $ \v -> fromToS v zoom . oscillateS
     fork $ tweenVar fsBend dur   $ \v -> fromToS v bend . oscillateS
@@ -61,6 +71,7 @@ flipTransitionOpts bend zoom wobble a b = sceneAnimation $ do
   where
     dur = max (duration a) (duration b)
 
+-- | 3D flip transition.
 flipTransition :: Transition
 flipTransition = flipTransitionOpts bend zoom wobble
   where

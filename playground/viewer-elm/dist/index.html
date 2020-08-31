@@ -1,0 +1,259 @@
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>Reanimate - viewer</title>
+  <script src="https://unpkg.com/split-grid/dist/split-grid.js"></script>
+  <script type="text/javascript" src="elm.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/codemirror.min.js"
+    integrity="sha512-H5RyE1jRbGn8d0dsSstZi0SSs23X6Hkkf5hLneEIFyCfP/cBwJ/jFJESBuFBiUyzbGZGa06tnrvw1SboRKdwcA=="
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/mode/haskell/haskell.min.js"
+    integrity="sha512-oOdg3fdacCLYkvreThQx4i+lslUn27SGRFyjQOyE5M+KaM3vPJNyLDjU82LEkMup6PTWPrpFt7zkiBBGSZLEbg=="
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+    integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg=="
+    crossorigin="anonymous"></script>
+
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/codemirror.min.css"
+    integrity="sha512-/BlxZbYLtYGExexketXsTi47eHp+r2kTeq2OHecQPZlfbc7WFXVrwbVW9HOYjI6c9Ti+P60ASmVLxittZ0EBGw=="
+    crossorigin="anonymous" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
+  <link rel="stylesheet" href="style.css">
+
+  <script src="snippets.js"></script>
+  <script src="playground.js"></script>
+</head>
+
+<body>
+  <!-- <a href="https://github.com/reanimate/reanimate" class="github-corner" aria-label="View source on GitHub"><svg
+      width="80" height="80" viewBox="0 0 250 250"
+      style="fill:#64CEAA; color:#fff; position: fixed; top: 0; border: 0; right: 0;" aria-hidden="true">
+      <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
+      <path
+        d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2"
+        fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path>
+      <path
+        d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z"
+        fill="currentColor" class="octo-body"></path>
+    </svg>
+  </a> -->
+
+  <div class="grid">
+    <div class="edit-box">
+      <div id="editor"></div>
+    </div>
+    <div class="gutter-column-1"></div>
+    <div class="edit-box">
+      <div class="media-buttons column-header">
+        <div style="display: flex;flex-flow:row;justify-content: space-between;">
+          <div>
+            <a href="https://reanimate.github.io/"><img src="home-white-48dp.svg"></a>
+            <img id="love" src="favorite_border-white-48dp.svg">
+          </div>
+          <div>
+            <img id="seek-10" src="replay_10-white-48dp.svg">
+            <img id="seek-1" src="skip_previous-white-48dp.svg">
+            <img id="play" src="play_circle_outline-white-48dp.svg">
+            <img id="pause" src="pause_circle_outline-white-48dp.svg">
+            <img id="seek1" src="skip_next-white-48dp.svg">
+            <img id="seek10" src="forward_10-white-48dp.svg">
+          </div>
+          <div>
+            <img id="examples" src="collections-white-48dp.svg">
+            <img id="help" src="help_outline-white-48dp.svg">
+          </div>
+        </div>
+      </div>
+      <div id="elm"></div>
+    </div>
+  </div>
+
+  <div id="love-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Support Reanimate</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        <div class="content">
+          <p>
+            The playground server is generously funded by
+            <a href="https://github.com/sponsors/Lemmih">❤ GitHub Sponsors ❤.</a>
+          </p>
+          <p>
+            If reanimate is useful for you, consider becoming a sponsor or boosting
+            the project's visibility with a
+            <a href="https://github.com/reanimate/reanimate/">GitHub Star.</a>
+          </p>
+          <iframe src="https://github.com/sponsors/Lemmih/card" title="Sponsor Lemmih" height="225" width="600" style="border: 0;"></iframe>
+        </div>
+      </section>
+    </div>
+    <button class="modal-close is-large" area-label="close"></button>
+  </div>
+
+  <div id="help-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Playground Instructions</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        <div class="content">
+          <dl>
+            <dt><b>API Documentation</b></dt>
+            <dd>
+              <a href="https://hackage.haskell.org/package/reanimate/docs/Reanimate.html">
+                hackage.haskell.org/package/reanimate/docs/Reanimate.html
+              </a>
+            </dd>
+            <dt><b>Core Concepts</b></dt>
+            <dd>
+              <a href="https://reanimate.readthedocs.io/en/latest/introduction/">
+                reanimate.rtfd.io/en/latest/introduction/
+              </a>
+            </dd>
+            <dt><b>Repository</b></dt>
+            <dd>
+              <a href="https://github.com/reanimate/reanimate/">
+                github.com/reanimate/reanimate/
+              </a>
+            </dd>
+          </dl>
+          <p>
+            Animations are rendered with the following restrictions:
+          </p>
+          <ul>
+            <li>Frame-rate is limited to 30 fps.</li>
+            <li>Animation are capped at 60 seconds.</li>
+            <li>Disk storage is capped at 5 megs per animation.</li>
+            <li>CPU time is capped at 30 seconds if the server is below capacity</li>
+            <li>CPU time is capped at 5 seconds if the server is at capacity.</li>
+            <li>Template Haskell is forbidden.</li>
+          </ul>
+          <p>
+            Animations are rendered incrementally with increasing frame-rate, starting
+            at 1fps and ending at 30fps. If an animation requires 10 seconds to render
+            but is only allocated 5, this animation will still be watchable in its entirety
+            but will play at 15fps rather than 30fps.
+          </p>
+          <p>
+            <script>
+              document.write('Playground version: ' + playgroundVersion);
+            </script>
+          </p>
+        </div>
+      </section>
+      <!-- <footer class="modal-card-foot">
+      </footer> -->
+    </div>
+    <button class="modal-close is-large" area-label="close"></button>
+  </div>
+
+  <div id="examples-modal" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Reanimate Examples</p>
+        <button class="delete" aria-label="close"></button>
+      </header>
+      <section class="modal-card-body">
+        <div class="snippet-container">
+        </div>
+      </section>
+      <!-- <footer class="modal-card-foot">
+      </footer> -->
+    </div>
+    <button class="modal-close is-large" area-label="close"></button>
+  </div>
+
+  <script type="text/javascript">
+    var app = playgroundInit(document.getElementById('elm'));
+
+    var myCodeMirror = CodeMirror(document.querySelector('#editor'), {
+      lineNumbers: true,
+      value: '',
+      mode: "haskell",
+      lineWrapping: true
+    });
+
+    myCodeMirror.setValue(snippets[0].code);
+    app.newCode(snippets[0].code);
+
+    const mediaButtons = document.querySelector('.media-buttons');
+
+    myCodeMirror.on('change', function () {
+      mediaButtons.classList.remove('paused');
+      app.pause();
+      app.newCode(myCodeMirror.getValue());
+    });
+
+    renderSnippets(document.querySelector('.snippet-container'), myCodeMirror);
+
+    document.getElementById('play').onclick = function () {
+      mediaButtons.classList.toggle('paused');
+      app.play();
+    };
+    document.getElementById('pause').onclick = function () {
+      mediaButtons.classList.toggle('paused');
+      app.pause();
+    };
+    document.getElementById('seek1').onclick = function () {
+      mediaButtons.classList.add('paused');
+      app.pause();
+      app.seek1();
+    };
+    document.getElementById('seek10').onclick = function () {
+      mediaButtons.classList.add('paused');
+      app.pause();
+      app.seek10();
+    };
+    document.getElementById('seek-1').onclick = function () {
+      mediaButtons.classList.add('paused');
+      app.pause();
+      app.seek_1();
+    };
+    document.getElementById('seek-10').onclick = function () {
+      mediaButtons.classList.add('paused');
+      app.pause();
+      app.seek_10();
+    };
+    const helpIcon = document.getElementById('help');
+    const helpModal = document.querySelector('#help-modal');
+    helpIcon.onclick = function () {
+      openModal(helpModal);
+    };
+    configureModal(helpModal);
+
+    const examplesIcon = document.getElementById('examples')
+    const examplesModal = document.getElementById('examples-modal')
+    examplesIcon.onclick = function () {
+      openModal(examplesModal);
+    };
+    configureModal(examplesModal);
+
+    const loveIcon = document.getElementById('love');
+    const loveModal = document.querySelector('#love-modal');
+    loveIcon.onclick = function () {
+      openModal(loveModal);
+    };
+    configureModal(loveModal);
+
+    Split({ // gutters specified in options
+      columnGutters: [{
+        track: 1,
+        element: document.querySelector('.gutter-column-1'),
+      }],
+      onDragEnd: function () {
+        myCodeMirror.refresh();
+      }
+    });
+  </script>
+</body>
+
+</html>

@@ -1,8 +1,20 @@
 {-# LANGUAGE MultiWayIf #-}
+{-|
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+
+Internal tools for rastering SVGs and rendering videos. You are unlikely
+to ever directly use the functions in this module.
+
+-}
 module Reanimate.Render
   ( render
-  , renderSvgs            -- :: Animation -> IO ()
+  , renderSvgs
   , renderSnippets        -- :: Animation -> IO ()
+  , renderLimitedFrames
   , Format(..)
   , Raster(..)
   , Width, Height, FPS
@@ -13,13 +25,13 @@ module Reanimate.Render
 
 import           Control.Concurrent
 import           Control.Exception
-import           Control.Monad          (forM_, forever, unless, void, when)
+import           Control.Monad             (forM_, forever, unless, void, when)
 import           Data.Either
 import           Data.Function
-import qualified Data.Text              as T
-import qualified Data.Text.IO           as T
+import qualified Data.Text                 as T
+import qualified Data.Text.IO              as T
 import           Data.Time
-import           Graphics.SvgTree       (Number (..))
+import           Graphics.SvgTree          (Number (..))
 import           Numeric
 import           Reanimate.Animation
 import           Reanimate.Driver.Check
@@ -28,24 +40,40 @@ import           Reanimate.Misc
 import           Reanimate.Parameters
 import           System.Console.ANSI.Codes
 import           System.Exit
-import           System.FilePath        ((</>), replaceExtension)
+import           System.FileLock (withTryFileLock, SharedExclusive(..), unlockFile)
+import           System.Directory
+import           System.FilePath           (replaceExtension, (<.>), (</>))
 import           System.IO
-import           Text.Printf            (printf)
+import           Text.Printf               (printf)
 
-renderSvgs :: Animation -> IO ()
-renderSvgs ani = do
+idempotentFile :: FilePath -> IO () -> IO ()
+idempotentFile path action = do
+    _ <- withTryFileLock lockFile Exclusive $ \lock -> do
+      haveFile <- doesFileExist path
+      unless haveFile action
+      unlockFile lock
+      _ <- try (removeFile lockFile) :: IO (Either SomeException ())
+      return ()
+    return ()
+  where
+    lockFile = path <.> "lock"
+
+-- | Generate SVGs at 60fps and put them in a folder.
+renderSvgs :: FilePath -> Int -> Bool -> Animation -> IO ()
+renderSvgs folder offset _prettyPrint ani = do
   print frameCount
   lock <- newMVar ()
 
-  handle errHandler $ concurrentForM_ (frameOrder rate frameCount) $ \nth -> do
-    let -- frame = frameAt (recip (fromIntegral rate-1) * fromIntegral nth) ani
+  handle errHandler $ concurrentForM_ (frameOrder rate frameCount) $ \nth' -> do
+    let nth = (nth'+offset) `mod` frameCount
         now = (duration ani / (fromIntegral frameCount - 1)) * fromIntegral nth
         frame = frameAt (if frameCount <= 1 then 0 else now) ani
         svg = renderSvg Nothing Nothing frame
-    _ <- evaluate (length svg)
+        path = folder </> show nth <.> "svg"
+
+    idempotentFile path $ writeFile path svg
     withMVar lock $ \_ -> do
-      putStr (show nth)
-      T.putStrLn $ T.concat . T.lines . T.pack $ svg
+      print nth
       hFlush stdout
  where
   rate       = 60
@@ -54,7 +82,41 @@ renderSvgs ani = do
     hPutStrLn stderr msg
     exitWith (ExitFailure 1)
 
+-- | Render as many frames as possible in 2 seconds. Limited to 20 frames.
+renderLimitedFrames :: FilePath -> Int -> Bool -> Int -> Animation -> IO ()
+renderLimitedFrames folder offset _prettyPrint rate ani = do
+    now <- getCurrentTime
+    worker (addUTCTime timeLimit now) frameLimit (frameOrder rate frameCount)
+  where
+    timeLimit = 2
+    frameLimit = 20 :: Int
+    worker _ 0 _ = return ()
+    worker _ _ [] = putStrLn "Done"
+    worker localTimeLimit l (x:xs) = do
+      curTime <- getCurrentTime
+      if curTime > localTimeLimit
+        then return ()
+        else do
+          let nth = (x+offset) `mod` frameCount
+              now = (duration ani / (fromIntegral frameCount - 1)) * fromIntegral nth
+              frame = frameAt (if frameCount <= 1 then 0 else now) ani
+              svg = renderSvg Nothing Nothing frame
+              path = folder </> show nth <.> "svg"
+              tmpPath = path <.> "tmp"
+          haveFile <- doesFileExist path
+          if haveFile
+            then worker localTimeLimit l xs
+            else do
+              writeFile tmpPath svg
+              renameOrCopyFile tmpPath path
+              print nth
+              worker localTimeLimit (l-1) xs
+    frameCount = round (duration ani * fromIntegral rate) :: Int
+
 -- XXX: Merge with 'renderSvgs'
+-- | Render 10 frames and print them to stdout. Used for testing.
+--
+--   XXX: Not related to the snippets in the playground.
 renderSnippets :: Animation -> IO ()
 renderSnippets ani = forM_ [0 .. frameCount - 1] $ \nth -> do
   let now   = (duration ani / (fromIntegral frameCount - 1)) * fromIntegral nth
@@ -76,6 +138,7 @@ filterFrameList seen nthFrame nFrames = filter (not . isSeen)
                                                [0, nthFrame .. nFrames - 1]
   where isSeen x = any (\y -> x `mod` y == 0) seen
 
+-- | Video formats supported by reanimate.
 data Format = RenderMp4 | RenderGif | RenderWebm
   deriving (Show)
 
@@ -106,6 +169,7 @@ mp4Arguments fps progress template target =
 -- gifArguments :: FPS -> FilePath -> FilePath -> FilePath -> [String]
 -- gifArguments fps progress template target =
 
+-- | Render animation to a video file with given parameters.
 render
   :: Animation
   -> FilePath
@@ -246,7 +310,7 @@ generateFrames raster ani width_ height_ rate partial action = withTempDir $ \tm
         writeFile (frameName n) $ renderSvg width height $ nthFrame n
         modifyMVar_ done $ \nDone -> return (nDone + 1)
 
-  when (raster /= RasterNone)
+  when (isValidRaster raster)
     $ progressPrinter "rastered" frameCount
     $ \done -> handle h $ concurrentForM_ frames $ \n -> do
         applyRaster raster (frameName n)
@@ -254,6 +318,9 @@ generateFrames raster ani width_ height_ rate partial action = withTempDir $ \tm
 
   action (tmp </> rasterTemplate raster)
  where
+  isValidRaster RasterNone = False
+  isValidRaster RasterAuto = False
+  isValidRaster _          = True
 
   width  = Just $ Px $ fromIntegral width_
   height = Just $ Px $ fromIntegral height_
@@ -284,8 +351,11 @@ ppDiff diff | hours == 0 && mins == 0 = show secs ++ "s"
 
 rasterTemplate :: Raster -> String
 rasterTemplate RasterNone = "render-%05d.svg"
+rasterTemplate RasterAuto = "render-%05d.svg"
 rasterTemplate _          = "render-%05d.png"
 
+-- | Resolve RasterNone and RasterAuto. If no valid raster can
+--   be found, exit with an error message.
 requireRaster :: Raster -> IO Raster
 requireRaster raster = do
   raster' <- selectRaster (if raster == RasterNone then RasterAuto else raster)
@@ -298,6 +368,8 @@ requireRaster raster = do
       exitWith (ExitFailure 1)
     _ -> pure raster'
 
+-- | Resolve RasterNone and RasterAuto. If no valid raster can
+--   be found, return RasterNone.
 selectRaster :: Raster -> IO Raster
 selectRaster RasterAuto = do
   rsvg   <- hasRSvg
@@ -310,6 +382,8 @@ selectRaster RasterAuto = do
     | otherwise      -> pure RasterNone
 selectRaster r = pure r
 
+-- | Convert SVG file to a PNG file with selected raster engine. If
+--   raster engine is RasterAuto or RasterNone, do nothing.
 applyRaster :: Raster -> FilePath -> IO ()
 applyRaster RasterNone     _    = return ()
 applyRaster RasterAuto     _    = return ()

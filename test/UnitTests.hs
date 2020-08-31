@@ -10,15 +10,28 @@ import qualified Data.ByteString.Lazy as LBS
 import           Data.List            (sort)
 import qualified Data.Text            as T
 import qualified Data.Text.IO         as T
-import           Reanimate.Misc       (runCmd, withTempDir, withTempFile)
 import           System.Directory
 import           System.Exit
 import           System.FilePath
 import           System.IO
+import           System.IO.Temp
+import           System.IO.Unsafe
 import           System.Process
 import           Test.Tasty
 import           Test.Tasty.Golden
 import           Test.Tasty.HUnit
+
+data BuildSystem
+  = Cabal
+  | Stack
+
+buildSystem :: BuildSystem
+buildSystem = unsafePerformIO $ do
+  newbuild <- doesDirectoryExist "dist-newstyle"
+  stack <- doesDirectoryExist ".stack-work"
+  if newbuild then pure Cabal
+    else if stack then pure Stack
+    else error "Unknown build system."
 
 unitTestFolder :: FilePath -> IO TestTree
 unitTestFolder path = do
@@ -36,31 +49,41 @@ unitTestFolder path = do
     ]
 
 genGolden :: FilePath -> IO LBS.ByteString
-genGolden path = withTempDir $ \tmpDir -> withTempFile ".exe" $ \tmpExecutable -> do
-  let ghcOpts = ["-rtsopts", "--make", "-O0", "-Werror", "-Wall"] ++
-                ["-odir", tmpDir, "-hidir", tmpDir, "-o", tmpExecutable]
-      runOpts = ["+RTS", "-M1G"]
-  -- XXX: Check for errors.
-  runCmd "stack" $ ["ghc","--", path] ++ ghcOpts
+genGolden path =
+  withTempDir $ \tmpDir ->
+  withTempFile tmpDir "reanimate.exe" $ \tmpExecutable hd -> do
+    hClose hd
+    let ghcOpts = ["-rtsopts", "--make", "-O0", "-Werror", "-Wall"] ++
+                  ["-odir", tmpDir, "-hidir", tmpDir, "-o", tmpExecutable] ++
+                  ["-v0"]
+        runOpts = ["+RTS", "-M1G"]
+    -- XXX: Check for errors.
+    case buildSystem of
+      Stack -> callProcess "stack" $ ["ghc","--", path] ++ ghcOpts
+      Cabal -> callProcess "cabal" $ ["v2-exec", "ghc","--", "-package", "reanimate", path] ++ ghcOpts
 
-  (inh, outh, errh, pid) <- runInteractiveProcess tmpExecutable (["test"] ++ runOpts)
-    Nothing Nothing
-  -- hSetBinaryMode outh True
-  -- hSetNewlineMode outh universalNewlineMode
-  hClose inh
-  out <- BS.hGetContents outh
-  err <- T.hGetContents errh
-  code <- waitForProcess pid
-  case code of
-    ExitSuccess   -> return $ LBS.fromChunks [out]
-    ExitFailure{} -> error $ "Failed to run: " ++ T.unpack err
+    (inh, outh, errh, pid) <- runInteractiveProcess tmpExecutable (["test"] ++ runOpts)
+      Nothing Nothing
+    -- hSetBinaryMode outh True
+    -- hSetNewlineMode outh universalNewlineMode
+    hClose inh
+    out <- BS.hGetContents outh
+    err <- T.hGetContents errh
+    code <- waitForProcess pid
+    case code of
+      ExitSuccess   -> return $ LBS.fromChunks [out]
+      ExitFailure{} -> error $ "Failed to run: " ++ T.unpack err
 
 compileTestFolder :: FilePath -> IO TestTree
 compileTestFolder path = do
   files <- sort <$> getDirectoryContents path
   return $ testGroup "compile"
     [ testCase file $ do
-        (ret, _stdout, err) <- readProcessWithExitCode "stack" (["ghc","--", fullPath] ++ ghcOpts) ""
+        (ret, _stdout, err) <-
+          case buildSystem of
+            Stack -> readProcessWithExitCode "stack" (["ghc","--", fullPath] ++ ghcOpts) ""
+            Cabal -> readProcessWithExitCode "cabal"
+              (["v2-exec","ghc","--", "-package", "reanimate", fullPath] ++ ghcOpts) ""
         _ <- evaluate (length err)
         case ret of
           ExitFailure{} -> assertFailure $ "Failed to compile:\n" ++ err
@@ -81,7 +104,10 @@ compileVideoFolder path = do
       files <- sort <$> getDirectoryContents path
       return $ testGroup "videos"
         [ testCase dir $ do
-            (ret, _stdout, err) <- readProcessWithExitCode "stack" (["ghc","--", "-i"++path</>dir, fullPath] ++ ghcOpts) ""
+            (ret, _stdout, err) <-
+              case buildSystem of
+                Stack  -> readProcessWithExitCode "stack" (["ghc","--", "-i"++path</>dir, fullPath] ++ ghcOpts) ""
+                Cabal  -> readProcessWithExitCode "cabal" (["v2-exec", "ghc","--", "-package", "reanimate", "-i"++path</>dir, fullPath] ++ ghcOpts) ""
             _ <- evaluate (length err)
             case ret of
               ExitFailure{} -> assertFailure $ "Failed to compile:\n" ++ err
@@ -117,3 +143,6 @@ compileVideoFolder path = do
 -- assertMaybe :: String -> Maybe a -> IO a
 -- assertMaybe _ (Just a)  = return a
 -- assertMaybe msg Nothing = assertFailure msg
+
+withTempDir :: (FilePath -> IO a) -> IO a
+withTempDir = withSystemTempDirectory "reanimate"

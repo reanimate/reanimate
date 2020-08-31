@@ -1,6 +1,19 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash    #-}
 {-# LANGUAGE MultiWayIf   #-}
+{-|
+Module      : Reanimate.GeoProjection
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+
+This module provides functions for mapping the surface of
+a sphere on to a 2D plane. It also has convenience functions
+for loading GeoJSON data.
+
+-}
 module Reanimate.GeoProjection
   ( Projection(..)
   , XYCoord(..)
@@ -108,143 +121,8 @@ srcPixelFast src wMax hMax (LonLat lam phi) = unsafeIOToST $
     !xPx = round $ ((lam+pi)/tau) * wMax
     !yPx = round $ (1-((phi+halfPi)/pi)) * hMax
 
-{- HLINT ignore -}
--- findValidCoord :: Int -> Int -> Double -> Double -> (XYCoord -> LonLat) -> XYCoord -> XYCoord
--- findValidCoord !w !h !wMax !hMax !p_inv (XYCoord x y) = foldr const (XYCoord x y)
---     [ XYCoord x' y'
---     | let !xi = round $ x * wMax
---           !yi = round $ y * hMax
---     , !ax <- [xi, xi-1, xi+1]
---     , ax >= 0
---     , ax < w
---     , let !x' = fromIntegral ax / wMax
---     , !ay <- [yi, yi-1, yi+1]
---     , ay >= 0
---     , ay < h
---     , let !y' = fromIntegral ay / hMax
---     , validLonLat $! p_inv $! XYCoord x' y'
---     ]
-
--- isInWorld :: Projection -> XYCoord -> Bool
--- isInWorld p coord =
---     odd $ length $ isInWorld' p coord
---
--- isInWorld' :: Projection -> XYCoord -> [(Double, Double)]
--- isInWorld' p (XYCoord x y) =
---     [ (x1, y1)
---     | (XYCoord x1 y1, XYCoord x2 y2) <- world
---     , (y1 > y) /= (y2 > y) -- y is between y1 and y2
---     , x < (x2 - x1) * (y - y1) / (y2 - y1) + x1 -- x is to the left of the line
---     ]
---   where
---     world = worldPolygon p
---
--- worldPolygon :: Projection -> [(XYCoord, XYCoord)]
--- worldPolygon p =
---     interp (-pi, -halfPi) (-pi, halfPi) ++
---     interp (-pi, halfPi) (pi, halfPi) ++
---     interp (pi, halfPi) (pi, -halfPi) ++
---     interp (pi, -halfPi) (-pi, -halfPi)
---   where
---     apply (lam, phi) = projectionForward p $ LonLat lam phi
---     steps = 100
---     interp (x1, y1) (x2,y2) =
---       [ ( apply (fromToS x1 x2 (n/steps), fromToS y1 y2 (n/steps))
---         , apply (fromToS x1 x2 ((n+1)/steps), fromToS y1 y2 ((n+1)/steps)))
---       | n <- [0..steps-1]]
-
--- findNearestPixel :: MutableImage s PixelRGBA8 -> Int -> Int -> Int -> Int -> ST s PixelRGBA8
--- findNearestPixel src w h srcX srcY = worker $ take 20
---     [ (x, y)
---     | n <- [1..]
---     , x <- [srcX-n .. srcY+n]
---     , y <- if x == srcX-n || x == srcX+n then [srcY-n,srcY+n] else [srcY-n .. srcY+n]
---     , x >= 0
---     , y >= 0
---     , x < w
---     , y < h
---     ]
---   where
---     worker [] = pure $ PixelRGBA8 0xFF 0x00 0x00 0xFF
---     worker ((x,y):rest) = do
---       this <- readPixel src x y
---       if this == blank
---         then worker rest
---         else return this
---     blank = PixelRGBA8 0x00 0x00 0x00 0x00
-
-
--- Original version:        134,925 pixels/second
--- Inlined projections:     136,332 pixels/second
--- TEST: no write pixels:   134,288 pixels/second !!!
--- Fast theta:            1,489,719 pixels/second
--- Cached theta:          3,622,254 pixels/second
-
--- to equirectangularP:   9,015,326 pixels/second
---                        9,680,217
---                        9,466,744
---                       14,830,330
--- to lambertP:           6,735,973
--- to mercatorP:          4,248,927
--- to mollweideP:         3,593,545
--- to hammerP:            3,237,699
--- to bottomleyP:         3,864,848
--- to sinusoidalP:        7,020,756
--- to wernerP:            4,433,295
--- to bonneP:             4,071,187
--- to augustP:            2,553,177
--- to collignonP:         5,486,849
--- to eckert1P:           7,428,849
--- to eckert3P:           6,666,936
--- to eckert5P:           6,106,492
--- to faheyP:             5,137,291
--- to foucautP:           3,983,151
--- to lagrangeP:          3,850,611
--- interpFastP :: Image PixelRGBA8 -> Projection -> Projection -> Double -> Image PixelRGBA8
--- interpFastP !src (Projection _ p1 p1_inv) (Projection _ p2 p2_inv) !t = runST $ do
---     unsafeIOToST $ putStrLn "Allocating new array"
---     !img <- newMutableImage w h
---     unsafeIOToST $ putStrLn "done"
---     start <- unsafeIOToST $ getCurrentTime
---     let factor = 2
---         total = w*factor * h*factor
---     let l1 =
---           loopTo (w*factor) $ \x -> do
---             loopTo (h*factor) $ \y -> do
---               let thisIndex = (x*h*factor+y)
---               when (thisIndex `mod` 1000000 == 0) $ unsafeIOToST $ do
---                 now <- getCurrentTime
---                 let diff = realToFrac (diffUTCTime now start):: Double
---                 printf "%.2f pixels/second\n" (fromIntegral (total-thisIndex) / diff)
---               let !x1' = fromIntegral x / (wMax*fromIntegral factor)
---                   !y1' = fromIntegral y / (hMax*fromIntegral factor)
---                   !lonlat = p1_inv $! XYCoord x1' y1'
---                   -- p = srcPixel src lonlat
---               -- unsafeIOToST (evaluate lonlat)
---
---               when (validLonLat lonlat) $ do
---                 p <- srcPixelFast src wMax hMax lonlat
---                 when (pixelOpacity p /= 0) $ do
---                   let XYCoord !x1 !y1 = p1 lonlat
---                       -- !coord = p2 lonlat
---                       XYCoord !x2 !y2 = p2 lonlat -- findValidCoord w h wMax hMax p2_inv $ p2 lonlat
---                       !x3 = round $ fromToS x1 x2 t * wMax
---                       !y3 = round $ (1 - fromToS y1 y2 t) * hMax :: Int
---                   -- unsafeIOToST (evaluate coord)
---                   -- return ()
---                   when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $
---                     writePixel img x3 y3 p
---     l1
---     unsafeFreezeImage img
---   where
---     loopTo m fn = go m
---       where go 0 = return ()
---             go n = fn (n-1) >> go (n-1)
---     !w = imageWidth src
---     !h = imageHeight src
---     !wMax = fromIntegral (w-1)
---     !hMax = fromIntegral (h-1)
-
+-- | Interpolate between two projections and apply the result to an image in
+--   equirectangular format. The source image must have an aspect ratio of 2:1.
 interpP :: Image PixelRGBA8 -> Projection -> Projection -> Double -> Image PixelRGBA8
 interpP src p1 _ 0 = project src p1
 interpP src _ p2 1 = project src p2
@@ -252,49 +130,32 @@ interpP !src (Projection _label1 p1 p1_inv) !(Projection _label2 p2 p2_inv) !t =
     !img <- newMutableImage w h
 
     let factor = 2
-        -- total = w*factor * h*factor
     let l1 = do
-          -- start <- unsafeIOToST $ getCurrentTime
           loopTo (w*factor) $ \x -> do
             loopTo (h*factor) $ \y -> do
-              -- let thisIndex = (x*h*factor+y)
-              -- when (thisIndex `mod` 1000000 == 0) $ unsafeIOToST $ do
-              --   now <- getCurrentTime
-              --   let diff = realToFrac (diffUTCTime now start):: Double
-              --   printf "%.2f pixels/second: %s\n" (fromIntegral (total-thisIndex) / diff) label1
               let !x1' = fromIntegral x / (wMax*fromIntegral factor)
                   !y1' = fromIntegral y / (hMax*fromIntegral factor)
                   !lonlat = p1_inv $! XYCoord x1' y1'
-                  -- p = srcPixel src lonlat
 
               when (validLonLat lonlat) $ do
                 p <- srcPixelFast src wMax hMax lonlat
                 when (pixelOpacity p /= 0) $ do
                   let XYCoord x1 y1 = p1 lonlat
-                      -- XYCoord x2 y2 = findValidCoord w h wMax hMax p2_inv $ p2 lonlat
                       XYCoord x2 y2 = p2 lonlat
                       !x3 = round $ fromToS x1 x2 t * wMax
                       !y3 = round $ (1 - fromToS y1 y2 t) * hMax
                   when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $
                     writePixel img x3 y3 p
         l2 = do
-          -- start <- unsafeIOToST $ getCurrentTime
           loopTo (w*factor) $ \x ->
             loopTo (h*factor) $ \y -> do
-              -- let thisIndex = (x*h*factor+y)
-              -- when (thisIndex `mod` 1000000 == 0) $ unsafeIOToST $ do
-              --   now <- getCurrentTime
-              --   let diff = realToFrac (diffUTCTime now start):: Double
-              --   printf "%.2f pixels/second: %s\n" (fromIntegral (total-thisIndex) / diff) label2
               let !x2' = fromIntegral x / (wMax*fromIntegral factor)
                   !y2' = fromIntegral y / (hMax*fromIntegral factor)
                   !lonlat = p2_inv (XYCoord x2' y2')
-                  -- p = srcPixel src lonlat
               when (validLonLat lonlat) $ do
                 p <- srcPixelFast src wMax hMax lonlat
                 when (pixelOpacity p /= 0) $ do
                   let XYCoord x2 y2 = p2 lonlat
-                      -- XYCoord x1 y1 = findValidCoord w h wMax hMax p1_inv $ p1 lonlat
                       XYCoord x1 y1 = p1 lonlat
                       !x3 = round $ fromToS x1 x2 t * wMax
                       !y3 = round $ (1 - fromToS y1 y2 t) * hMax
@@ -313,6 +174,11 @@ interpP !src (Projection _label1 p1 p1_inv) !(Projection _label2 p2 p2_inv) !t =
     !wMax = fromIntegral (w-1)
     !hMax = fromIntegral (h-1)
 
+-- | Interpolate between two projections and apply the result to an image in
+--   equirectangular format. The source image must have an aspect ratio of 2:1.
+--   Only the areas inside of the two bounding boxes (applying to the source and
+--   target projection, respectively) are mapped. Pixels outside of these bounding-boxes
+--   are undefined.
 interpBBP :: Image PixelRGBA8 -> Projection -> Projection ->
             (Double,Double,Double,Double) -> (Double,Double,Double,Double) -> Double -> Image PixelRGBA8
 interpBBP !src (Projection _ p1 p1_inv) !(Projection _ p2 p2_inv) (fx,fy,fw,fh) (tx, ty, tw, th) !t = runST $ do
@@ -325,18 +191,12 @@ interpBBP !src (Projection _ p1 p1_inv) !(Projection _ p2 p2_inv) (fx,fy,fw,fh) 
                   !y1' = fromIntegral y / (hMax*fromIntegral factor)
               when (x1' >= fx && x1' <= fx+fw && y1' >= fy && y1' <= fy+fh) $ do
                 let !lonlat = p1_inv $! XYCoord x1' y1'
-                      -- p = srcPixel src lonlat
 
                 when (validLonLat lonlat) $ do
-                    -- let LonLat lam phi = lonlat
-                    --     !xPx = ((lam+pi)/tau)
-                    --     !yPx = (((phi+halfPi)/pi))
-                    -- when (xPx >= fx && xPx <= fx+fw && yPx >= fy && yPx <= fy+fh) $ do
                     p <- srcPixelFast src wMax hMax lonlat
                     when (pixelOpacity p /= 0) $ do
                       let XYCoord x1 y1 = p1 lonlat
                           XYCoord x2 y2 = p2 lonlat
-                          -- XYCoord x2 y2 = findValidCoord w h wMax hMax p2_inv $ p2 lonlat
                           !x3 = round $ fromToS x1 x2 t * wMax
                           !y3 = round $ (1 - fromToS y1 y2 t) * hMax
                       when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $
@@ -348,12 +208,10 @@ interpBBP !src (Projection _ p1 p1_inv) !(Projection _ p2 p2_inv) (fx,fy,fw,fh) 
                   !y2' = fromIntegral y / (hMax*fromIntegral factor)
               when (x2' >= tx && x2' <= tx+tw && y2' >= ty && y2' <= ty+th) $ do
                 let !lonlat = p2_inv (XYCoord x2' y2')
-                    -- p = srcPixel src lonlat
                 when (validLonLat lonlat) $ do
                   p <- srcPixelFast src wMax hMax lonlat
                   when (pixelOpacity p /= 0) $ do
                     let XYCoord x2 y2 = p2 lonlat
-                        -- XYCoord x1 y1 = findValidCoord w h wMax hMax p1_inv $ p1 lonlat
                         XYCoord x1 y1 = p1 lonlat
                         !x3 = round $ fromToS x1 x2 t * wMax
                         !y3 = round $ (1 - fromToS y1 y2 t) * hMax
@@ -363,15 +221,6 @@ interpBBP !src (Projection _ p1 p1_inv) !(Projection _ p2 p2_inv) (fx,fy,fw,fh) 
       then l1 >> l2
       else l2 >> l1
 
-    -- when False $
-    --   forM_ [0..w-1] $ \x ->
-    --     forM_ [0..h-1] $ \y -> do
-    --       let x1 = fromIntegral x / (wMax)
-    --           y1 = 1 - fromIntegral y / (hMax)
-    --       this <- readPixel img x y
-    --       when (isBlank this) $
-    --         when (isInWorld (mergeP p1 p2 t) (XYCoord x1 y1)) $
-    --           writePixel img x y =<< findNearestPixel img w h x y
     unsafeFreezeImage img
   where
     loopTo m fn = go m
@@ -394,21 +243,32 @@ eqCoords (XYCoord x1 y1) (XYCoord x2 y2)
 eqDouble :: Double -> Double -> Bool
 eqDouble a b = abs (a-b) < epsilon
 
+-- | XY coordinates on a 2D plane. Valid ranges go from 0 to 1, inclusive.
 data XYCoord = XYCoord !Double !Double -- 0 to 1
   deriving (Read,Show,Eq,Ord)
+
+-- | Longitude and latitude. Valid range for longitude is -pi to +pi.
+--   Valid range for latitude is -pi/2 to +pi/2.
 data LonLat = LonLat !Double !Double -- -pi to +pi, -halfPi to +halfPi
   deriving (Read,Show,Eq,Ord)
 instance Hashable LonLat where
   hashWithSalt s (LonLat a b) = hashWithSalt s (a,b)
+
+-- | Projections are named bi-directional mappings between a sphere
+--   and a 2D plane.
 data Projection = Projection
-  { projectionLabel   :: String
+  { projectionLabel   :: String -- ^ Name of the projection.
   , projectionForward :: !(LonLat -> XYCoord)
-    --
-    -- (Double# -> Double# -> (# Double#, Double# #))
+    -- ^ Mapping from longitude and latitude on a sphere to
+    --   XY coordinates on a 2D plane.
   , projectionInverse :: !(XYCoord -> LonLat)
+    -- ^ Mapping from XY coordinates on a 2D plane to longitude
+    --   and latitude on a sphere.
   }
 
 -- FIXME: Verify that 'src' has an aspect ratio of 2:1.
+-- | Apply on an image in equirectangular format. The source image
+--   therfore must have an aspect ratio of 2:1.
 project :: Image PixelRGBA8 -> Projection -> Image PixelRGBA8
 project src (Projection _label _ pInv) = generateImage fn w h
   where
@@ -430,6 +290,7 @@ validLonLat (LonLat lam phi) =
 _validXYCoord :: XYCoord -> Bool
 _validXYCoord (XYCoord x y) = x >= 0 && x <= 1 && y >= 0 && y <= 1
 
+-- | Returns @True@ iff a projection is consistent and complete.
 isValidP :: Projection -> Bool
 isValidP (Projection _label p pInv) = and
     [ check x y
@@ -446,6 +307,7 @@ isValidP (Projection _label p pInv) = and
       in not (validLonLat lonlat) || eqLonLat lonlat lonlat2
           || trace (show (lonlat, lonlat2)) False
 
+-- | Translate the lower-most point of a projection by an offset.
 moveBottomP :: Double -> Projection -> Projection
 moveBottomP offset (Projection label p pInv) = Projection label p' pInv'
   where
@@ -454,9 +316,11 @@ moveBottomP offset (Projection label p pInv) = Projection label p' pInv'
         XYCoord x y -> XYCoord x (fromToS offset 1 y)
     pInv' (XYCoord x y) = pInv (XYCoord x ((y-offset)/(1-offset)))
 
+-- | Translate the top-most point of a projection by an offset.
 moveTopP :: Double -> Projection -> Projection
 moveTopP offset = flipYAxisP . moveBottomP offset . flipYAxisP
 
+-- | Invert the Y axis of projection.
 flipYAxisP :: Projection -> Projection
 flipYAxisP (Projection label p pInv) = Projection label p' pInv'
   where
@@ -467,6 +331,7 @@ flipYAxisP (Projection label p pInv) = Projection label p' pInv'
       let LonLat lam phi = pInv (XYCoord x (1-y))
       in LonLat lam (negate phi)
 
+-- | Scale X and Y axis of projection.
 scaleP :: Double -> Double -> Projection -> Projection
 scaleP xScale yScale (Projection label p pInv) = Projection label forward inverse
   where
@@ -476,7 +341,8 @@ scaleP xScale yScale (Projection label p pInv) = Projection label forward invers
     inverse (XYCoord x y) =
       pInv $ XYCoord ((x-0.5)/xScale+0.5) ((y-0.5)/yScale+0.5)
 
-
+-- | Attempt to smoothly interpolate two projections. The result may not be continuous
+--   and 'interpP' may give prettier results.
 mergeP :: Projection -> Projection -> Double -> Projection
 mergeP p1 p2 t = Projection (projectionLabel p1 ++ "/" ++ projectionLabel p2) p pInv
   where
@@ -587,6 +453,7 @@ hammerP = Projection "hammer" forward inverse
         lam = 2 * atan2 (z*x) (2*(2*z**2-1))
         phi = asin (z*y)
 
+-- | <<docs/gifs/doc_cylindricalEqualAreaP.gif>>
 cylindricalEqualAreaP :: Double -> Projection
 cylindricalEqualAreaP phi0 = Projection "lambert" forward inverse
   where
@@ -723,6 +590,7 @@ orthoP (LonLat lam_0 phi_0) = Projection "ortho" forward inverse
           | v < lower = v+upper-lower
           | otherwise = v
 
+-- | <<docs/gifs/doc_cassiniP.gif>>
 cassiniP :: Projection
 cassiniP = Projection "cassini" forward inverse
   where
@@ -735,7 +603,7 @@ cassiniP = Projection "cassini" forward inverse
         lam = atan2 (tan x) (cos y)
         phi = asin (sin y * cos x)
 
-
+-- | <<docs/gifs/doc_augustP.gif>>
 augustP :: Projection
 augustP = scaleP 0.70 0.70 $ Projection "august"  forward inverse
   where
@@ -875,6 +743,7 @@ faheyP = Projection "fahey" forward inverse
         phi = 2 * atan2 y (1 + faheyK)
 
 {-# INLINE foucautP #-}
+-- | <<docs/gifs/doc_foucautP.gif>>
 foucautP :: Projection
 foucautP = Projection "foucaut" forward inverse
   where
@@ -898,6 +767,7 @@ foucautP = Projection "foucaut" forward inverse
         lam = x * sqrtPi / 2 / (cos phi * cosk * cosk)
 
 {-# INLINE lagrangeP #-}
+-- | <<docs/gifs/doc_lagrangeP.gif>>
 lagrangeP :: Projection
 lagrangeP = Projection "lagrange" forward inverse
   where
@@ -944,7 +814,7 @@ lagrangeP = Projection "lagrange" forward inverse
 
 
 
-
+-- | Map for all features and render the geometry.
 drawFeatureCollection :: GeoFeatureCollection a -> (a -> SVG -> SVG) -> SVG
 drawFeatureCollection geo fn = mkGroup
   [ fn (feature ^. properties) $ renderGeometry (feature ^. geometry)
@@ -952,6 +822,7 @@ drawFeatureCollection geo fn = mkGroup
   ]
 
 {-# INLINE loadFeatureCollection #-}
+-- | Load GeoJSON from a filepath and render the geometry.
 loadFeatureCollection :: FromJSON a => FilePath -> (a -> SVG -> SVG) -> SVG
 loadFeatureCollection path = unsafePerformIO $ do
   mbGeo <- decodeFileStrict path
@@ -965,6 +836,7 @@ loadFeatureCollection path = unsafePerformIO $ do
 -- pointsToRadians :: SVG -> SVG
 -- applyProjection :: Projection -> SVG -> SVG
 
+-- | Render GeoJSON geometry as SVG.
 renderGeometry :: GeospatialGeometry -> SVG
 renderGeometry shape =
   case shape of
@@ -988,9 +860,15 @@ renderGeometry shape =
     _ -> None
 
 
+-- | Apply a projection to an SVG image. This is a lossy transformation
+--   but the default tolerance is low enough that inaccuracies should not
+--   be visible.
 applyProjection :: Projection -> SVG -> SVG
 applyProjection = applyProjection' 1e-2
 
+-- | Apply a projection to an SVG image with a specified tolerance.
+--   Projections may turn straight lines into disjointed curves and
+--   the tolerance argument determined the accuracy of this transformation.
 applyProjection' :: Double -> Projection -> SVG -> SVG
 applyProjection' tolerance p = mapSvgLines start
   where

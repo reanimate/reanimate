@@ -1,3 +1,7 @@
+{-|
+  Easing functions modify the rate of change in animations.
+  More examples can be seen here: <https://easings.net/>.
+-}
 module Reanimate.Ease
   ( Signal
   , constantS
@@ -7,7 +11,6 @@ module Reanimate.Ease
   , powerS
   , bellS
   , oscillateS
-  , fromListS
   , cubicBezierS
   ) where
 
@@ -15,20 +18,13 @@ module Reanimate.Ease
 --   composition.
 type Signal = Double -> Double
 
-fromListS :: [(Double, Signal)] -> Signal
-fromListS fns t = worker 0 fns
-  where
-    worker _ [] = 0
-    worker now [(len, fn)] = fn (min 1 ((t-now) / min (1-now) len))
-    worker now ((len, fn):rest)
-      | now+len < t = worker (now+len) rest
-      | otherwise = fn ((t-now) / len)
-
 -- | Constant signal.
 --
 --   Example:
 --
---   > signalA (constantS 0.5) drawProgress
+-- @
+-- 'Reanimate.signalA' ('constantS' 0.5) 'Reanimate.Builtin.Documentation.drawProgress'
+-- @
 --
 --   <<docs/gifs/doc_constantS.gif>>
 constantS :: Double -> Signal
@@ -38,7 +34,9 @@ constantS = const
 --
 --   Example:
 --
---   > signalA (fromToS 0.8 0.2) drawProgress
+-- @
+-- 'Reanimate.signalA' ('fromToS' 0.8 0.2) 'Reanimate.Builtin.Documentation.drawProgress'
+-- @
 --
 --   <<docs/gifs/doc_fromToS.gif>>
 fromToS :: Double -> Double -> Signal
@@ -48,7 +46,9 @@ fromToS from to t = from + (to-from)*t
 --
 --   Example:
 --
---   > signalA reverseS drawProgress
+-- @
+-- 'Reanimate.signalA' 'reverseS' 'Reanimate.Builtin.Documentation.drawProgress'
+-- @
 --
 --   <<docs/gifs/doc_reverseS.gif>>
 reverseS :: Signal
@@ -58,7 +58,9 @@ reverseS t = 1-t
 --
 --   Example:
 --
---   > signalA (curveS 2) drawProgress
+-- @
+-- 'Reanimate.signalA' ('curveS' 2) 'Reanimate.Builtin.Documentation.drawProgress'
+-- @
 --
 --   <<docs/gifs/doc_curveS.gif>>
 curveS :: Double -> Signal
@@ -67,6 +69,15 @@ curveS steepness s =
     then 0.5 * (2*s)**steepness
     else 1-0.5 * (2 - 2*s)**steepness
 
+-- | Power curve signal. Takes a steepness parameter. 2 is a good default.
+--
+--   Example:
+--
+-- @
+-- 'Reanimate.signalA' ('powerS' 2) 'Reanimate.Builtin.Documentation.drawProgress'
+-- @
+--
+--   <<docs/gifs/doc_powerS.gif>>
 powerS :: Double -> Signal
 powerS steepness s = s**steepness
 
@@ -74,7 +85,9 @@ powerS steepness s = s**steepness
 --
 --   Example:
 --
---   > signalA oscillateS drawProgress
+-- @
+-- 'Reanimate.signalA' 'oscillateS' 'Reanimate.Builtin.Documentation.drawProgress'
+-- @
 --
 --   <<docs/gifs/doc_oscillateS.gif>>
 oscillateS :: Signal
@@ -87,18 +100,22 @@ oscillateS t =
 --
 --   Example:
 --
---   > signalA (bellS 2) drawProgress
+-- @
+-- 'Reanimate.signalA' ('bellS' 2) 'Reanimate.Builtin.Documentation.drawProgress'
+-- @
 --
 --   <<docs/gifs/doc_bellS.gif>>
 bellS :: Double -> Signal
 bellS steepness = curveS steepness . oscillateS
 
 -- | Cubic Bezier signal. Gives you a fair amount of control over how the
---   signal will 'curve'.
+--   signal will curve.
 --
 --   Example:
 --
---   > signalA (cubicBezierS (0.0, 0.8, 0.9, 1.0)) drawProgress
+-- @
+-- 'Reanimate.signalA' ('cubicBezierS' (0.0, 0.8, 0.9, 1.0)) 'Reanimate.Builtin.Documentation.drawProgress'
+-- @
 --   
 --   <<docs/gifs/doc_cubicBezierS.gif>>
 cubicBezierS :: (Double, Double, Double, Double) -> Signal

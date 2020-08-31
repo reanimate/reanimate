@@ -1,3 +1,14 @@
+{-|
+Module      : Reanimate.Builtin.CirclePlot
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+
+Convenience module for rendering circle plots.
+
+-}
 module Reanimate.Builtin.CirclePlot where
 
 import           Codec.Picture
@@ -10,8 +21,10 @@ import           Reanimate.Constants
 --
 --   Example:
 --
---   > circlePlot 500 $ \ang r ->
---   >   promotePixel $ toRGB8 $ uncurryRGB sRGB $ hsv (ang/pi*180) r 1
+-- @
+-- 'circlePlot' 500 $ \ang r ->
+--   'Codec.Picture.Types.promotePixel' $ toRGB8 $ uncurryRGB sRGB $ hsv (ang/pi*180) r 1
+-- @
 --
 --   <<docs/gifs/doc_circlePlot.gif>>
 circlePlot :: Int -- ^ Number of diagonal pixels. Only affects quality, not size.

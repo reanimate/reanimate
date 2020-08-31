@@ -1,6 +1,13 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections   #-}
 {-# LANGUAGE UnicodeSyntax   #-}
+{-|
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+-}
 module Reanimate.Morph.Common
   ( PointCorrespondence
   , Trajectory
@@ -26,9 +33,9 @@ import           Linear.V2
 import           Reanimate.Animation
 import           Reanimate.ColorComponents
 import           Reanimate.Ease
-import           Reanimate.Math.Polygon    (Polygon, mkPolygon, pAddPoints,
-                                            pCentroid, pCutEqual, pSize,
-                                            polygonPoints)
+import           Reanimate.Math.Polygon    (APolygon, Epsilon, Polygon,
+                                            mkPolygon, pAddPoints, pCentroid,
+                                            pCutEqual, pSize, polygonPoints)
 import           Reanimate.PolyShape
 import           Reanimate.Svg
 
@@ -43,18 +50,35 @@ import           Reanimate.Svg
 -- Graphical polygon? FIXME: Come up with a better name.
 type GPolygon = (DrawAttributes, Polygon)
 
+-- | Method determining how points in the source polygon align with
+--   points in the target polygon.
 type PointCorrespondence = Polygon → Polygon → (Polygon, Polygon)
+
+-- | Method for interpolating between two aligned polygons.
 type Trajectory = (Polygon, Polygon) → (Double → Polygon)
+
+-- | Method for pairing sets of polygons.
 type ObjectCorrespondence = [GPolygon] → [GPolygon] → [(GPolygon, GPolygon)]
 
+-- | Morphing strategy
 data Morph = Morph
   { morphTolerance            :: Double
+    -- ^ Morphing curves is not always possible and
+    --   sometimes shapes are reduced to polygons or meta-curves.
+    --   This parameter determined the accuracy of this transformation.
   , morphColorComponents      :: ColorComponents
+    -- ^ Color components used for color interpolation. LAB is usually
+    --   the best option here.
   , morphPointCorrespondence  :: PointCorrespondence
+    -- ^ Desired point-correspondence algorithm.
   , morphTrajectory           :: Trajectory
+    -- ^ Desired interpolation algorithm.
   , morphObjectCorrespondence :: ObjectCorrespondence
+    -- ^ Desired object-correspondence algorithm.
   }
 
+{-# INLINE morph #-}
+-- | Apply morphing strategy to interpolate between two SVG images.
 morph :: Morph -> SVG -> SVG -> Double -> SVG
 morph Morph{..} src dst = \t ->
   case t of
@@ -77,7 +101,8 @@ morph Morph{..} src dst = \t ->
       , let arranged = morphPointCorrespondence srcPoly' dstPoly'
       ]
 
-normalizePolygons :: Polygon -> Polygon -> (Polygon, Polygon)
+-- | Add points to each polygon such that they end up with same size.
+normalizePolygons :: (Real a, Fractional a, Epsilon a) => APolygon a -> APolygon a -> (APolygon a, APolygon a)
 normalizePolygons src dst =
     (pAddPoints (max 0 $ dstN-srcN) src
     ,pAddPoints (max 0 $ srcN-dstN) dst)
@@ -99,6 +124,7 @@ interpolateAttrs colorComps src dst t =
     interpColor a _ = a
     interpOpacity a b = realToFrac (fromToS (realToFrac a) (realToFrac b) t)
 
+-- | Object-correspondence algorithm that spawn objects as necessary.
 genesisObjectCorrespondence :: ObjectCorrespondence
 genesisObjectCorrespondence left right =
   case (left, right) of
@@ -112,6 +138,7 @@ genesisObjectCorrespondence left right =
   where
     emptyFrom a b = mkPolygon $ V.map (const $ pCentroid a) (polygonPoints b)
 
+-- | Object-correspondence algorithm that duplicate objects as necessary.
 dupObjectCorrespondence :: ObjectCorrespondence
 dupObjectCorrespondence left right =
   case (left, right) of
@@ -128,6 +155,8 @@ dupObjectCorrespondence left right =
     (x:xs, y:ys) ->
       (x, y) : dupObjectCorrespondence xs ys
 
+-- | Object-correspondence algorithm that splits objects in smaller pieces
+--   as necessary.
 splitObjectCorrespondence :: ObjectCorrespondence
 -- splitObjectCorrespondence = dupObjectCorrespondence
 splitObjectCorrespondence left right =
@@ -168,6 +197,7 @@ splitPolygon n p =
 -- joinPairs _ _ _ = []
 
 -- FIXME: sort by size, smallest to largest
+-- | Extract shapes and their graphical attributes from an SVG node.
 toShapes :: Double -> SVG -> [(DrawAttributes, Polygon)]
 toShapes tol src =
   [ (attrs, plToPolygon tol shape)
@@ -175,9 +205,12 @@ toShapes tol src =
   , shape <- map mergePolyShapeHoles $ plGroupShapes $ svgToPolyShapes glyph
   ]
 
+-- | Extract the first polygon in an SVG node. Will fail if there
+--   are no acceptable shapes.
 unsafeSVGToPolygon :: Double -> SVG -> Polygon
 unsafeSVGToPolygon tol src = snd $ head $ toShapes tol src
 
+-- | Map over each polygon in an SVG node.
 annotatePolygons :: (Polygon -> SVG) -> SVG -> SVG
 annotatePolygons fn svg = mkGroup
   [ fn poly & drawAttributes .~ attr

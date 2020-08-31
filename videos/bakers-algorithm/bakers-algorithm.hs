@@ -38,9 +38,9 @@ drawBox = mkAnimation 5 $ \t ->
   [ withFillColor "white" $
     translate 0 (-70) $
     scale 2 $ center $ latex "Baker's Algorithm"
-  , let s    = fromListS    [(0.7, constantS 0), (1, id)] t
-        d    = fromListS    [(0.7, constantS 0), (1, id)] t
-        draw = fromListS [(0.5, id), (1, constantS 1)] t
+  , let s    = undefined -- fromListS    [(0.7, constantS 0), (1, id)] t
+        d    = undefined -- fromListS    [(0.7, constantS 0), (1, id)] t
+        draw = undefined -- fromListS [(0.5, id), (1, constantS 1)] t
         mlc  = MemoryLineChart
                { mlcWidth = 230
                , mlcHeight = 50 + s*50
@@ -59,7 +59,7 @@ highlightBox = mkAnimation 2 $ \t ->
         boxY = negate mlcHeight / 2
         mlcWidth = 230
         mlcHeight = 50
-        s = fromListS [(0.0, constantS 0), (1, bellS 2)] t
+        s = undefined -- fromListS [(0.0, constantS 0), (1, bellS 2)] t
     in
     withStrokeColor "white" $
     withStrokeWidth (0.5 + s) $

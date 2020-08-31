@@ -6,7 +6,8 @@ module Main(main) where
 
 import           Codec.Picture
 import           Codec.Picture.Types
-import           Graphics.SvgTree         (LineJoin (..))
+import           Control.Lens           ((&))
+import           Graphics.SvgTree       (LineJoin (..))
 import           Reanimate
 import           Reanimate.Morph.Common
 import           Reanimate.Morph.Linear
@@ -31,8 +32,8 @@ main = reanimate $
         spriteE toS $ overBeginning 0.2 fadeInE
         spriteE toS $ overEnding 0.2 fadeOutE
         m <- fork $ newSpriteA $ animate (morph linear from to)
-          # signalA (curveS 4)
-          # mapA (translate (-4) 0)
+          & signalA (curveS 4)
+          & mapA (translate (-4) 0)
         wait 4
         destroySprite m
         destroySprite toS

@@ -1,8 +1,20 @@
+{-|
+Module      : Reanimate.Animation
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+
+Declarative animation API based on combinators. For a higher-level interface,
+see 'Reanimate.Scene'.
+
+-}
 module Reanimate.Animation
   ( Duration
   , Time
   , SVG
-  , Animation(..) -- TODO should this be exposed? The constructor is used directly in Effect.hs
+  , Animation
   -- * Creating animations
   , mkAnimation
   , animate
@@ -27,7 +39,6 @@ module Reanimate.Animation
   , pauseAtEnd
   , pauseAtBeginning
   , pauseAround
-  , pauseUntil
   , repeatA
   , reverseA
   , playThenReverseA
@@ -35,7 +46,6 @@ module Reanimate.Animation
   , freezeAtPercentage
   , addStatic
   -- * Misc
-  , (#)
   , getAnimationFrame
   , Sync(..)
   -- * Rendering
@@ -60,11 +70,13 @@ type Duration = Double
 -- | Time signal. Goes from 0 to 1, inclusive.
 type Time = Double
 
+-- | SVG node.
 type SVG = Tree
 
 -- | Animations are SVGs over a finite time.
 data Animation = Animation Duration (Time -> SVG)
 
+-- | Construct an animation with a given duration.
 mkAnimation :: Duration -> (Time -> SVG) -> Animation
 mkAnimation = Animation
 
@@ -85,7 +97,7 @@ duration (Animation d _) = d
 --
 --   Example:
 --
---   > drawBox `seqA` drawCircle
+--   @'Reanimate.Builtin.Documentation.drawBox' `'seqA'` 'Reanimate.Builtin.Documentation.drawCircle'@
 --
 --   <<docs/gifs/doc_seqA.gif>>
 seqA :: Animation -> Animation -> Animation
@@ -102,7 +114,7 @@ seqA (Animation d1 f1) (Animation d2 f2) =
 --
 --   Example:
 --
---   > drawBox `parA` adjustDuration (*2) drawCircle
+--   @'Reanimate.Builtin.Documentation.drawBox' `'parA'` 'adjustDuration' (*2) 'Reanimate.Builtin.Documentation.drawCircle'@
 --
 --   <<docs/gifs/doc_parA.gif>>
 parA :: Animation -> Animation -> Animation
@@ -121,7 +133,7 @@ parA (Animation d1 f1) (Animation d2 f2) =
 --
 --   Example:
 --
---   > drawBox `parLoopA` adjustDuration (*2) drawCircle
+--   @'Reanimate.Builtin.Documentation.drawBox' `'parLoopA'` 'adjustDuration' (*2) 'Reanimate.Builtin.Documentation.drawCircle'@
 --
 --   <<docs/gifs/doc_parLoopA.gif>>
 parLoopA :: Animation -> Animation -> Animation
@@ -140,7 +152,7 @@ parLoopA (Animation d1 f1) (Animation d2 f2) =
 --
 --   Example:
 --
---   > drawBox `parLoopA` adjustDuration (*2) drawCircle
+--   @'Reanimate.Builtin.Documentation.drawBox' `'parLoopA'` 'adjustDuration' (*2) 'Reanimate.Builtin.Documentation.drawCircle'@
 --
 --   <<docs/gifs/doc_parDropA.gif>>
 parDropA :: Animation -> Animation -> Animation
@@ -158,7 +170,7 @@ parDropA (Animation d1 f1) (Animation d2 f2) =
 --
 --   Example:
 --
---   > pause 1 `seqA` drawProgress
+--   @'pause' 1 `'seqA'` 'Reanimate.Builtin.Documentation.drawProgress'@
 --
 --   <<docs/gifs/doc_pause.gif>>
 pause :: Duration -> Animation
@@ -169,7 +181,7 @@ pause d = Animation d (const None)
 --
 --   Example:
 --
---   > drawBox `andThen` drawCircle
+--   @'Reanimate.Builtin.Documentation.drawBox' `'andThen'` 'Reanimate.Builtin.Documentation.drawCircle'@
 --
 --   <<docs/gifs/doc_andThen.gif>>
 andThen :: Animation -> Animation -> Animation
@@ -183,9 +195,11 @@ frameAt t (Animation d f) = f t'
   where
     t' = clamp 0 1 (t/d)
 
+-- | Helper function for pretty-printing SVG nodes.
 renderTree :: SVG -> String
 renderTree t = maybe "" ppElement $ xmlOfTree t
 
+-- | Helper function for pretty-printing SVG nodes as SVG documents.
 renderSvg :: Maybe Number -- ^ The number to use as value of the @width@ attribute of the resulting top-level svg element. If @Nothing@, the width attribute won't be rendered.
           -> Maybe Number -- ^ Similar to previous argument, but for @height@ attribute.
           -> SVG          -- ^ SVG to render
@@ -209,7 +223,7 @@ renderSvg w h t = ppDocument doc
 --
 --   Example:
 --
---   > mapA (scale 0.5) drawCircle
+--   @'mapA' ('scale' 0.5) 'Reanimate.Builtin.Documentation.drawCircle'@
 --
 --   <<docs/gifs/doc_mapA.gif>>
 
@@ -220,7 +234,7 @@ mapA fn (Animation d f) = Animation d (fn . f)
 --
 --   Example:
 --
---   > pauseAtEnd 1 drawProgress
+--   @'pauseAtEnd' 1 'Reanimate.Builtin.Documentation.drawProgress'@
 --
 --   <<docs/gifs/doc_pauseAtEnd.gif>>
 pauseAtEnd :: Duration -> Animation -> Animation
@@ -230,7 +244,7 @@ pauseAtEnd t a = a `andThen` pause t
 --
 --   Example:
 --
---   > pauseAtBeginning 1 drawProgress
+--   @'pauseAtBeginning' 1 'Reanimate.Builtin.Documentation.drawProgress'@
 --
 --   <<docs/gifs/doc_pauseAtBeginning.gif>>
 pauseAtBeginning :: Duration -> Animation -> Animation
@@ -241,16 +255,11 @@ pauseAtBeginning t a =
 --
 --   Example:
 --
---   > pauseAround 1 1 drawProgress
+--   @'pauseAround' 1 1 'Reanimate.Builtin.Documentation.drawProgress'@
 --
 --   <<docs/gifs/doc_pauseAround.gif>>
 pauseAround :: Duration -> Duration -> Animation -> Animation
 pauseAround start end = pauseAtEnd end . pauseAtBeginning start
-
--- XXX: Rename to 'setDurationFreeze'. Add 'setDurationDrop' and
---      'setDurationLoop'.
-pauseUntil :: Duration -> Animation -> Animation
-pauseUntil d a = pauseAtEnd (d-duration a) a
 
 -- Freeze frame at time @t@.
 freezeFrame :: Time -> Animation -> (Time -> SVG)
@@ -272,7 +281,7 @@ setDuration newD = adjustDuration (const newD)
 --
 --   Example:
 --
---   > reverseA drawCircle
+--   @'reverseA' 'Reanimate.Builtin.Documentation.drawCircle'@
 --
 --   <<docs/gifs/doc_reverseA.gif>>
 reverseA :: Animation -> Animation
@@ -283,7 +292,7 @@ reverseA = signalA reverseS
 --
 --   Example:
 --
---   > playThenReverseA drawCircle
+--   @'playThenReverseA' 'Reanimate.Builtin.Documentation.drawCircle'@
 --
 --   <<docs/gifs/doc_playThenReverseA.gif>>
 playThenReverseA :: Animation -> Animation
@@ -295,7 +304,7 @@ playThenReverseA a = a `seqA` reverseA a
 --
 --   Example:
 --
---   > repeatA 1.5 drawCircle
+--   @'repeatA' 1.5 'Reanimate.Builtin.Documentation.drawCircle'@
 --
 --   <<docs/gifs/doc_repeatA.gif>>
 repeatA :: Double -> Animation -> Animation
@@ -316,7 +325,7 @@ freezeAtPercentage frac (Animation d genFrame) =
 --
 --  Example:
 --
---  > addStatic (mkBackground "lightblue") drawCircle
+--  @'addStatic' ('mkBackground' "lightblue") 'Reanimate.Builtin.Documentation.drawCircle'@
 --
 --  <<docs/gifs/doc_addStatic.gif>>
 addStatic :: SVG -> Animation -> Animation
@@ -326,7 +335,7 @@ addStatic static = mapA (\frame -> mkGroup [static, frame])
 --
 --   Example:
 --
---   > signalA (fromToS 0.25 0.75) drawCircle
+--   @'signalA' ('fromToS' 0.25 0.75) 'Reanimate.Builtin.Documentation.drawCircle'@
 --
 --   <<docs/gifs/doc_signalA.gif>>
 signalA :: Signal -> Animation -> Animation
@@ -354,6 +363,7 @@ dropA len (Animation d gen) = Animation len' $ \t ->
   where
     len' = d - clamp 0 d len
 
+-- | @lastA duration animation@ return the last @duration@ seconds of the animation.
 lastA :: Duration -> Animation -> Animation
 lastA len a = dropA (duration a - len) a
 
@@ -362,9 +372,10 @@ clamp a b number
   | a < b     = max a (min b number)
   | otherwise = max b (min a number)
 
-(#) :: a -> (a -> b) -> b
-o # f = f o
+-- (#) :: a -> (a -> b) -> b
+-- o # f = f o
 
+-- | Ask for an animation frame using a given synchronization policy.
 getAnimationFrame :: Sync -> Animation -> Time -> Duration -> SVG
 getAnimationFrame sync (Animation aDur aGen) t d =
   case sync of
@@ -375,6 +386,7 @@ getAnimationFrame sync (Animation aDur aGen) t d =
   where
     takeFrac f = snd (properFraction f :: (Int, Double))
 
+-- | Animation synchronization policies.
 data Sync
   = SyncStretch
   | SyncLoop

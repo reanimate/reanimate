@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_HADDOCK hide #-}
 module Reanimate.Math.SSSP
   ( -- * Single-Source-Shortest-Path
     SSSP
@@ -276,7 +277,7 @@ dualTree t (a,b) e = -- simplifyDual $
 -- dualRoot (Dual (a,_,_) _ _) = a
 
 -- O(n*ln n), could be O(n) if I could figure out how to use fingertrees...
-sssp :: (Fractional a, Ord a) => Ring a -> Dual -> SSSP
+sssp :: (Fractional a, Ord a, Epsilon a) => Ring a -> Dual -> SSSP
 sssp p d = toSSSP $
     case d of
       Dual (a,b,c) l r ->

@@ -5,6 +5,7 @@
 [![Documentation Status](https://readthedocs.org/projects/reanimate/badge/?version=latest)](https://reanimate.readthedocs.io/en/latest/?badge=latest)
 ![Platforms](https://img.shields.io/badge/platform-linux%20%7C%20osx%20%7C%20windows-informational)
 ![GitHub repo size](https://img.shields.io/github/repo-size/reanimate/reanimate)
+[![API docs coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Freanimate.github.io%2Freanimate%2Fhaddock_badge.json)](https://reanimate.github.io/reanimate/haddock.txt)
 [![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/reanimate/discord-bot?label=discord-bot)](https://hub.docker.com/repository/docker/reanimate/discord-bot)
 [![Discord](https://img.shields.io/discord/731822102935502908)](https://discord.gg/Qs28Dv6)
 
@@ -77,6 +78,17 @@ $ stack ./examples/doc_drawCircle.hs
 
 This should render the `doc_drawCircle` example in a new browser window. If you then change the
 animation source code, the browser window will automatically reload and show the updated animation.
+
+It's also possible to use cabal instead of stack:
+
+```console
+$ git clone https://github.com/reanimate/reanimate.git
+$ cd reanimate/
+$ cabal v2-build
+$ # Workaround for a cabal bug: https://github.com/haskell/cabal/issues/6235
+$ export reanimate_datadir=`pwd` 
+$ cabal v2-exec -- runhaskell examples/doc_drawCircle.hs --ghc ghc
+```
 
 # Documentation
 

@@ -1,0 +1,172 @@
+body {
+  padding: 0;
+  margin: 0;
+}
+
+.app {
+  height: 100vh;
+  background-color: #282c34;
+  color: white;
+  font-family: monospace;
+  overflow: hidden;
+}
+.media-buttons {
+  background-color: #282c34;
+}
+
+.viewer {
+  position: static;
+}
+
+.viewer img {
+  max-width: 100vw;
+  max-height: 100vh;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+pre {
+  white-space: pre-wrap;
+}
+.bar {
+  display: none;
+  /* position: absolute; */
+  /* top: 0; */
+  margin-top: 0;
+  width: 100%;
+  /* background: rgba(0,0,0,0.5); */
+}
+
+.bar progress {
+  background-color: #eee;
+  border: 1px solid white;
+}
+
+.media-controls {
+  display: none;
+}
+
+.help-button {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.help-dialog {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: white;
+  background-color: #555;
+  padding: 30px;
+}
+
+.help-dialog table {
+  color: white;
+}
+
+#play-or-pause {
+  text-align: center;
+  width: 60px;
+}
+
+.gutter-column-1 {
+  cursor: ew-resize;
+  background: lightgrey;
+}
+.gutter.gutter-horizontal {
+  cursor: ew-resize;
+}
+.grid {
+  grid-template-columns: 3fr 10px 4fr;
+  display: grid;
+}
+.grid textarea {
+  width: 100%;
+  height: 100%;
+  resize: none;
+}
+.CodeMirror {
+  border: 0px solid #eee;
+  height: auto;
+}
+.edit-box {
+  display: flex;
+  flex-flow: column;
+  height: 100vh;
+}
+.edit-box .column-header {
+  flex: 0 1 auto;
+}
+.edit-box #editor {
+  flex: 1 1 auto;
+  max-height: 100vh;
+}
+.edit-box .app {
+  flex: 1 1 auto;
+}
+
+.media-buttons.paused #pause {
+  display: none;
+}
+.media-buttons:not(.paused) #play {
+  display: none;
+}
+.media-buttons img:hover {
+  cursor: pointer;
+}
+
+.snippet-container {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+}
+.snippet-container > div {
+  width: 16em;
+  height: 9em;
+  margin: 1em;
+  position: relative;
+}
+.snippet-container > div:hover {
+  cursor: pointer;
+}
+.snippet-container > div > span {
+  position: absolute;
+  display: block;
+  background-color: rgba(255,255,255,0.3);
+  padding: 0.2em;
+}
+.snippet-container > div > img {
+  border: 1px solid black;
+}
+
+.github-corner:hover .octo-arm {
+  animation: octocat-wave 560ms ease-in-out
+}
+
+@keyframes octocat-wave {
+
+  0%,
+  100% {
+    transform: rotate(0)
+  }
+
+  20%,
+  60% {
+    transform: rotate(-25deg)
+  }
+
+  40%,
+  80% {
+    transform: rotate(10deg)
+  }
+}
+
+@media (max-width:500px) {
+  .github-corner:hover .octo-arm {
+    animation: none
+  }
+
+  .github-corner .octo-arm {
+    animation: octocat-wave 560ms ease-in-out
+  }
+}

@@ -3,6 +3,7 @@
 {-# LANGUAGE ApplicativeDo     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE PackageImports    #-}
 module Main (main) where
 
 import           Reanimate
@@ -10,7 +11,7 @@ import           Reanimate.Povray
 
 import           Codec.Picture
 import           Codec.Picture.Types
-import           Control.Lens          ((^.))
+import           Control.Lens          ((^.),(&))
 import           Control.Monad
 import           Data.Monoid
 import           Data.Text             (Text)
@@ -18,7 +19,7 @@ import qualified Data.Text             as T
 import           Graphics.SvgTree      hiding (Text,text)
 import           NeatInterpolation
 import           System.Random
-import           System.Random.Shuffle
+import "random-shuffle" System.Random.Shuffle
 
 
 main :: IO ()
@@ -88,7 +89,7 @@ sphere {
   <0,0,0>, 4
   texture {
     uv_mapping pigment{
-      image_map{ png ${png_} }
+      image_map{ png "${png_}" }
     }
   }
   rotate <0,${rotY_},${rotZ_}>
@@ -147,7 +148,7 @@ latexExample = sceneAnimation $ do
     mapM_ destroySprite sprites
     -- Undraw equations
     play $ drawAnimation' (Just 0xdeadbeef) 1 0.1 strokedSvg
-      # reverseA
+      & reverseA
   where
     glyphs = svgGlyphs svg
     strokedSvg =
@@ -189,7 +190,7 @@ drawAnimation' mbSeed fillDur step svg = sceneAnimation $ do
     fork $ do
       wait (n*step)
       play $ mapA fn $ (animate (\t -> withFillOpacity 0 $ partialSvg t tree)
-        # applyE (overEnding fillDur $ fadeLineOutE sWidth))
+        & applyE (overEnding fillDur $ fadeLineOutE sWidth))
     fork $ do
       wait (n*step+(1-fillDur))
       newSprite $ do

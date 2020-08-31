@@ -1,4 +1,11 @@
 {-# LANGUAGE LambdaCase #-}
+{-|
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+-}
 module Reanimate.Svg
   ( module Reanimate.Svg
   , module Reanimate.Svg.Constructors
@@ -20,6 +27,13 @@ import           Reanimate.Svg.BoundingBox
 import           Reanimate.Svg.Unuse
 import qualified Reanimate.Transform          as Transform
 
+-- | Remove transformations (such as translations, rotations, scaling)
+--   and apply them directly to the SVG nodes. Note, this function
+--   may convert nodes (such as Circle or Rect) to paths. Also note
+--   that /does/ change how the SVG is rendered. Particularly, stroke
+--   width is affected by directly applying scaling.
+--
+--   @lowerTransformations (scale 2 (mkCircle 1)) = mkCircle 2@
 lowerTransformations :: Tree -> Tree
 lowerTransformations = worker False Transform.identity
   where
@@ -55,6 +69,7 @@ lowerTransformations = worker False Transform.identity
         -- If we haven't tried to pathify, run pathify only once.
         _ -> worker True m (pathify t)
 
+-- | Remove all @id@ attributes.
 lowerIds :: Tree -> Tree
 lowerIds = mapTree worker
   where
@@ -62,6 +77,7 @@ lowerIds = mapTree worker
     worker t@PathTree{}  = t & attrId .~ Nothing
     worker t             = t
 
+-- | Optimize SVG tree without affecting how it is rendered.
 simplify :: Tree -> Tree
 simplify root =
   case worker root of
@@ -89,6 +105,11 @@ simplify root =
       | null (g^.groupChildren) = []
     dropNulls t = [t]
 
+-- | Separate grouped items. This is required by clip nodes.
+--
+-- @removeGroups (withFillColor "blue" $ mkGroup [mkCircle 1, mkRect 1 1])
+--    = [ withFillColor "blue" $ mkCircle 1
+--      , withFillColor "blue" $ mkRect 1 1 ]@
 removeGroups :: Tree -> [Tree]
 removeGroups = worker defaultSvg
   where
@@ -111,6 +132,7 @@ removeGroups = worker defaultSvg
       | null (g^.groupChildren) = []
     dropNulls t = [t]
 
+-- | Extract all path commands from a node (and its children) and concatenate them.
 extractPath :: Tree -> [PathCommand]
 extractPath = worker . simplify . lowerTransformations . pathify
   where
@@ -118,6 +140,10 @@ extractPath = worker . simplify . lowerTransformations . pathify
     worker (PathTree p)  = p^.pathDefinition
     worker _             = []
 
+-- | Map over indexed symbols.
+--
+--   @withSubglyphs [0,2] (scale 2) (mkGroup [mkCircle 1, mkRect 2, mkEllipse 1 2])
+--      = mkGroup [scale 2 (mkCircle 1), mkRect 2, scale 2 (mkEllipse 1 2)]@
 withSubglyphs :: [Int] -> (Tree -> Tree) -> Tree -> Tree
 withSubglyphs target fn = \t -> evalState (worker t) 0
   where
@@ -142,6 +168,10 @@ withSubglyphs target fn = \t -> evalState (worker t) 0
         then return $ fn svg
         else return svg
 
+-- | Split symbols.
+--
+--   @splitGlyphs [0,2] (mkGroup [mkCircle 1, mkRect 2, mkEllipse 1 2])
+--      = ([mkRect 2], [mkCircle 1, mkEllipse 1 2])@
 splitGlyphs :: [Int] -> Tree -> (Tree, Tree)
 splitGlyphs target = \t ->
     let (_, l, r) = execState (worker id t) (0, [], [])
@@ -182,6 +212,7 @@ splitGlyphs target = \t ->
 [ (\svg -> <g transform="translate(10,10)"><g transform="scale(2)">svg</g></g>, <circle/>)
 , (\svg -> <g transform="translate(10,10)"><g transform="scale(0.5)">svg</g></g>, <rect/>)]
 -}
+-- | Split symbols and include their context and drawing attributes.
 svgGlyphs :: Tree -> [(Tree -> Tree, DrawAttributes, Tree)]
 svgGlyphs = worker id defaultSvg
   where
@@ -287,6 +318,7 @@ pathify = mapTree worker
         Num d -> Just d
         _     -> Nothing
 
+-- | Map over all recursively-found path commands.
 mapSvgPaths :: ([PathCommand] -> [PathCommand]) -> SVG -> SVG
 mapSvgPaths fn = mapTree worker
   where
@@ -296,10 +328,12 @@ mapSvgPaths fn = mapTree worker
           path & pathDefinition %~ fn
         t -> t
 
+-- | Map over all recursively-found line commands.
 mapSvgLines :: ([LineCommand] -> [LineCommand]) -> SVG -> SVG
 mapSvgLines fn = mapSvgPaths (lineToPath . fn . toLineCommands)
 
 -- Only maps points in paths
+-- | Map over all line command control points.
 mapSvgPoints :: (RPoint -> RPoint) -> SVG -> SVG
 mapSvgPoints fn = mapSvgLines (map worker)
   where
@@ -307,6 +341,7 @@ mapSvgPoints fn = mapSvgLines (map worker)
     worker (LineBezier ps) = LineBezier (map fn ps)
     worker (LineEnd p) = LineEnd (fn p)
 
+-- | Convert coordinate system from degrees to radians.
 svgPointsToRadians :: SVG -> SVG
 svgPointsToRadians = mapSvgPoints worker
   where

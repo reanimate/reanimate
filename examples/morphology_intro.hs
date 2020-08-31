@@ -5,6 +5,7 @@
 module Main(main) where
 
 import           Codec.Picture
+import           Control.Lens           ((&))
 import           Reanimate
 import           Reanimate.Morph.Common
 import           Reanimate.Morph.Linear
@@ -23,7 +24,7 @@ main = reanimate $
       play $ step stage2 stage3
       play $ step stage3 stage4
       play $ step stage4 stage1
-        # setDuration 5
+        & setDuration 5
   where
     radius = 2.5
     step from to =

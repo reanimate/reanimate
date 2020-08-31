@@ -3,26 +3,26 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
+import           Codec.Picture
+import           Control.Lens
 import           Data.Complex
 import           Graphics.SvgTree
 import           Linear.V2
 import           Reanimate
-import           Reanimate.Ease
-import           Codec.Picture
 
 -- layer 3
 main :: IO ()
 main = reanimate $ setDuration 30 $ sceneAnimation $ do
     _ <- newSpriteSVG $ mkBackgroundPixel (PixelRGBA8 252 252 252 0xFF)
     play $ fourierA (fromToS 0 5)      -- Rotate 15 times
-      # setDuration 50
-      # signalA (reverseS . powerS 2 . reverseS) -- Start fast, end slow
-      # pauseAtEnd 2
+      & setDuration 50
+      & signalA (reverseS . powerS 2 . reverseS) -- Start fast, end slow
+      & pauseAtEnd 2
     play $ fourierA (constantS 0)       -- Don't rotate at all
-      # setDuration 10
-      # reverseA
-      # signalA (powerS 2)                       -- Start slow, end fast
-      # pauseAtEnd 2
+      & setDuration 10
+      & reverseA
+      & signalA (powerS 2)                       -- Start slow, end fast
+      & pauseAtEnd 2
 
 -- layer 2
 fourierA :: (Double -> Double) -> Animation

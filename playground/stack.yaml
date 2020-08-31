@@ -1,0 +1,8 @@
+resolver: lts-16.0
+
+allow-newer: false
+
+packages:
+- .
+
+extra-deps: []

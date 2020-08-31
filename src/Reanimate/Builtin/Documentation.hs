@@ -1,3 +1,15 @@
+{-|
+Module      : Reanimate.Builtin.Documentation
+Copyright   : Written by David Himmelstrup
+License     : Unlicense
+Maintainer  : lemmih@gmail.com
+Stability   : experimental
+Portability : POSIX
+
+This module contains convenience functions used in documention
+GIFs for a consistent look and feel.
+
+-}
 module Reanimate.Builtin.Documentation where
 
 import Reanimate.Animation
@@ -6,6 +18,7 @@ import Reanimate.Raster
 import Reanimate.Constants
 import Codec.Picture
 
+-- | Default environment for API documentation GIFs.
 docEnv :: Animation -> Animation
 docEnv = mapA $ \svg -> mkGroup
   [ mkBackground "white"
@@ -25,11 +38,6 @@ drawCircle = mkAnimation 2 $ \t ->
   partialSvg t $ pathify $
   mkCircle (screenHeight/3)
 
-drawBall :: Animation
-drawBall = mkAnimation 2 $ \t ->
-  scale t $ withFillOpacity 1 $ withFillColor "red" $
-  mkCircle (screenHeight/3)
-
 -- | <<docs/gifs/doc_drawProgress.gif>>
 drawProgress :: Animation
 drawProgress = mkAnimation 2 $ \t ->
@@ -41,6 +49,7 @@ drawProgress = mkAnimation 2 $ \t ->
   where
     widthP = 0.8
 
+-- | Render a full-screen view of a color-map.
 showColorMap :: (Double -> PixelRGB8) -> SVG
 showColorMap f = center $ scaleToSize screenWidth screenHeight $ embedImage img
   where
@@ -49,5 +58,6 @@ showColorMap f = center $ scaleToSize screenWidth screenHeight $ embedImage img
     img = generateImage pixelRenderer width height
     pixelRenderer x _y = f (fromIntegral x / fromIntegral (width-1))
 
+-- | Default background color for videos on reanimate.rtfd.io
 rtfdBackgroundColor :: PixelRGBA8
 rtfdBackgroundColor = PixelRGBA8 252 252 252 0xFF

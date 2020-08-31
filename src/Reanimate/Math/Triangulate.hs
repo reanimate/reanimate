@@ -1,18 +1,32 @@
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_HADDOCK hide #-}
 module Reanimate.Math.Triangulate
   ( Triangulation
   , edgesToTriangulation
   , edgesToTriangulationM
   , trianglesToTriangulation
   , trianglesToTriangulationM
+  , triangulate
   )
 where
 
+import           Algorithms.Geometry.PolygonTriangulation.Triangulate (triangulate')
+import           Algorithms.Geometry.PolygonTriangulation.Types
+import           Control.Lens
 import           Control.Monad
-import qualified Data.IntSet                   as ISet
-import qualified Data.Vector                   as V
-import qualified Data.Vector.Mutable           as MV
 import           Control.Monad.ST
-
+import           Data.Ext
+import           Data.Geometry.PlanarSubdivision                      (PolygonFaceData)
+import           Data.Geometry.Point
+import           Data.Geometry.Polygon
+import qualified Data.IntSet                                          as ISet
+import qualified Data.PlaneGraph as Geo
+import           Data.Proxy
+import qualified Data.Vector                                          as V
+import qualified Data.Vector.Mutable                                  as MV
+import           Linear.V2
+import           Reanimate.Math.Common
 -- Max edges: n-2
 -- Each edge is represented twice: 2n-4
 -- Flat structure:
@@ -52,3 +66,20 @@ trianglesToTriangulationM size trigs = do
     MV.modify v (\x -> a : b : x) c
   forM_ [0 .. size - 1] $ \i -> MV.modify v (ISet.toList . ISet.fromList) i
   return v
+
+
+triangulate :: forall a. (Fractional a, Ord a) => Ring a -> Triangulation
+triangulate r = edgesToTriangulation (ringSize r) ds
+  where
+    ds :: [(Int,Int)]
+    ds =
+      [ (a^.Geo.vData, b^.Geo.vData)
+      | (d, Diagonal) <- V.toList (Geo.edges pg)
+      , let (a,b) = Geo.endPointData d pg ]
+    pg :: Geo.PlaneGraph () Int PolygonEdgeType PolygonFaceData a
+    pg = triangulate' Proxy p
+    p :: SimplePolygon Int a
+    p = fromPoints $
+      [ Point2 x y :+ n
+      | (n,V2 x y) <- zip [0..] (V.toList (ringUnpack r)) ]
+    -- ringUnpack

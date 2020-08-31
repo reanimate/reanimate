@@ -1,0 +1,29 @@
+cabal-version: >=1.10
+name: playground
+version: 0.1.0.0
+license-file: LICENSE
+maintainer: lemmih@gmail.com
+author: David Himmelstrup
+build-type: Simple
+
+executable playground
+    main-is: Main.hs
+    hs-source-dirs: src
+    default-language: Haskell2010
+    build-depends:
+        base >=4.10 && <5,
+        process -any,
+        directory -any,
+        text -any,
+        bytestring -any,
+        ghcid -any,
+        filepath -any,
+        containers -any,
+        hashable -any,
+        githash -any,
+        time -any,
+        haskell-src-exts -any,
+        temporary,
+        websockets -any,
+        warp,
+        wai-app-static

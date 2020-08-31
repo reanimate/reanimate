@@ -6,9 +6,10 @@ module Main(main) where
 
 import           Codec.Picture
 import           Codec.Picture.Types
-import           Control.Monad                   (replicateM_)
-import qualified Data.Text                       as T
-import qualified Data.Vector                     as V
+import           Control.Lens           ((&))
+import           Control.Monad          (replicateM_)
+import qualified Data.Text              as T
+import qualified Data.Vector            as V
 import           Linear.V2
 import           Linear.Vector
 import           Reanimate
@@ -52,7 +53,7 @@ main = reanimate $
       replicateM_ 8 $ do
         offsetVal <- readVar offset
         play $ step pl1 (pl2 offsetVal 0)
-          # setDuration 3
+          & setDuration 3
         slideLeft
   where
     step from to =
