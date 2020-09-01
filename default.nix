@@ -1,7 +1,7 @@
 let
   haskellNixSrc = fetchTarball {
-    url = "https://github.com/input-output-hk/haskell.nix/tarball/878121ff8e5a8a51ffb46f57d4b3b6d8e32bfb2e";
-    sha256 = "0p18izavpwmhxz5x3crdcgk16rjz6ghm6cr136h52wa1nwahk1jk";
+    url = "https://github.com/input-output-hk/haskell.nix/tarball/403b1a1b848295b907f4ceaeb0b6508c3f97e3a3";
+    sha256 = "1m32hz6zalfhywrzjir4gn81xbwp9vmxqgv3x746gb1zzmjqdhhs";
   };
   # haskellSrcMaster = builtins.fetchTarball https://github.com/input-output-hk/haskell.nix/archive/master.tar.gz;
   haskellNix = import haskellNixSrc {};
