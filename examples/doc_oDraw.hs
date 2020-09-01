@@ -17,4 +17,4 @@ main = reanimate $ docEnv $ scene $ do
   oModify txt $ oEasing .~ id
   oShowWith txt oDraw
   wait 1
-  oFadeOut txt 1
+  oShowWith txt oFadeOut

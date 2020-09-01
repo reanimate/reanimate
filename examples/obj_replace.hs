@@ -5,8 +5,6 @@ module Main(main) where
 
 import Reanimate
 import Reanimate.Scene
-import Reanimate.Builtin.Documentation
-import Control.Lens
 
 main :: IO ()
 main = reanimate $ scene $ do
@@ -18,6 +16,7 @@ main = reanimate $ scene $ do
   replace t1 t2; wait 1
   replace t2 t1; wait 1
 
+replace :: Object s a -> Object s b -> Scene s ()
 replace a b = do
   fork $ oHideWith a $ adjustDuration (*3) . oScaleOut
   wait 0.2
