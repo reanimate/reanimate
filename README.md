@@ -79,6 +79,9 @@ $ stack ./examples/doc_drawCircle.hs
 This should render the `doc_drawCircle` example in a new browser window. If you then change the
 animation source code, the browser window will automatically reload and show the updated animation.
 
+
+## Using Cabal
+
 It's also possible to use cabal instead of stack:
 
 ```console
@@ -86,9 +89,33 @@ $ git clone https://github.com/reanimate/reanimate.git
 $ cd reanimate/
 $ cabal v2-build
 $ # Workaround for a cabal bug: https://github.com/haskell/cabal/issues/6235
-$ export reanimate_datadir=`pwd` 
+$ export reanimate_datadir=`pwd`
 $ cabal v2-exec -- runhaskell examples/doc_drawCircle.hs --ghc ghc
 ```
+
+## Using Nix
+
+If you'd rather use nix to build an environment with all of the system dependencies mentioned previously do:
+
+```console
+$ git clone https://github.com/reanimate/reanimate.git
+$ cd reanimate/
+$ nix-shell
+[nix-shell:./reanimate]$ cabal v2-build --write-ghc-environment-files=always
+```
+
+If you have cachix available run `cachix use cdodev` before you drop into the nix shell. This will significantly speed things up!
+
+This will write a file in the working directory like
+`.ghc.environment.x86_64-linux-8.8.3` which will enable commands like `runhaskell`
+to pick up reanimate.
+
+Now, still within the `nix-shell` you can run:
+
+```console
+[nix-shell:./reanimate]$ reanimate_datadir=. runhaskell examples/doc_drawCircle.hs --ghc `which ghc`
+```
+
 
 # Documentation
 
