@@ -1022,7 +1022,7 @@ newObject val = do
           scale _oScale $
           uncurry translate _oScaleOrigin $
           withGroupOpacity _oOpacity $
-          _oContext _oSVG
+          mkGroup [_oContext _oSVG]
         else None
   spriteModify sprite $ do
     ~ObjectData{_oZIndex=z} <- unVar ref
