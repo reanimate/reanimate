@@ -12,6 +12,6 @@ animation = env $
     oModify box $
       oContext .~ withFillColor "lightblue"
   
-    oGrow circ 1; wait 1
+    oShowWith circ oGrow; wait 1
     oTransform circ box 1; wait 1
-    oFadeOut box 1; wait 1
+    oHideWith box oFadeOut; wait 1

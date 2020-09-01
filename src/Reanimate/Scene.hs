@@ -107,6 +107,20 @@ module Reanimate.Scene
   , oGrow
   , oShrink
   , oTransform
+  , oShowWith
+  , oHideWith
+  , Origin
+  , oScaleIn
+  , oScaleIn'
+  , oScaleOut
+  , oScaleOut'
+  , oSim
+  , oStagger
+  , oStaggerRev
+  , oStagger'
+  , oStaggerRev'
+  , oDraw
+  -- , oBalloon
 
   -- ** Pre-defined objects
   , Circle(..)
@@ -134,21 +148,23 @@ module Reanimate.Scene
 where
 
 import           Control.Lens
-import           Control.Monad              (void)
+import           Control.Monad          (forM_, void)
 import           Control.Monad.Fix
 import           Control.Monad.ST
-import           Control.Monad.State (execState, State)
+import           Control.Monad.State    (State, execState)
 import           Data.List
+import           Data.Monoid
 import           Data.STRef
-import           Graphics.SvgTree           (Tree (None))
+import           Graphics.SvgTree       (Number (..), Tree (None), strokeWidth, toUserUnit)
 import           Reanimate.Animation
-import           Reanimate.Ease             (Signal, curveS, fromToS)
+import           Reanimate.Constants
+import           Reanimate.Ease         (Signal, curveS, fromToS)
 import           Reanimate.Effect
-import           Reanimate.Svg.Constructors
-import           Reanimate.Svg.BoundingBox
-import           Reanimate.Transition
+import           Reanimate.Math.Balloon
 import           Reanimate.Morph.Common (morph)
 import           Reanimate.Morph.Linear (linear)
+import           Reanimate.Svg
+import           Reanimate.Transition
 
 -- | The ZIndex property specifies the stack order of sprites and animations. Elements
 --   with a higher ZIndex will be drawn on top of elements with a lower index.
@@ -844,7 +860,7 @@ oValue = lens _oValueRef $ \obj newVal ->
 oTopY :: Lens' (ObjectData a) Double
 oTopY = lens getter setter
   where
-    getter obj = 
+    getter obj =
       let top  = obj ^. oMarginTop
           miny = obj ^. oBBMinY
           h    = obj ^. oBBHeight
@@ -857,12 +873,12 @@ oTopY = lens getter setter
 oBottomY :: Lens' (ObjectData a) Double
 oBottomY = lens getter setter
   where
-    getter obj = 
+    getter obj =
       let bot  = obj ^. oMarginBottom
           miny = obj ^. oBBMinY
           dy   = obj ^. oTranslate . _2
       in dy+miny-bot
-    setter obj val = 
+    setter obj val =
       obj & (oTranslate . _2) +~ val-getter obj
 
 -- | Derived location of the left-most point of an object + margin.
@@ -1028,35 +1044,113 @@ oShow o = oModify o $ oShown .~ True
 oHide :: Object s a -> Scene s ()
 oHide o = oModify o $ oShown .~ False
 
+oShowWith :: Object s a -> (SVG -> Animation) -> Scene s ()
+oShowWith o fn = do
+  oModify o $ oShown .~ True
+  initSVG <- oRead o oSVG
+  let ani = fn initSVG
+  oTween o (duration ani) $ \t obj ->
+    obj{ _oSVG = getAnimationFrame SyncStretch ani t 1 }
+  oModify o $ \obj -> obj { _oSVG = initSVG }
+
+oHideWith :: Object s a -> (SVG -> Animation) -> Scene s ()
+oHideWith o fn = do
+  initSVG <- oRead o oSVG
+  let ani = fn initSVG
+  oTween o (duration ani) $ \t obj ->
+    obj{ _oSVG = getAnimationFrame SyncStretch ani t 1 }
+  oModify o $ \obj -> obj { _oSVG = initSVG }
+  oModify o $ oShown .~ False
+
 -- | Fade in object over a set duration.
-oFadeIn :: Object s a -> Duration -> Scene s ()
-oFadeIn o d = do
-  oModify o $ 
-    oShown   .~ True
-  oTweenS o d $ \t ->
-    oOpacity *= t
+oFadeIn :: SVG -> Animation
+oFadeIn svg = animate $ \t -> withGroupOpacity t svg
 
 -- | Fade out object over a set duration.
-oFadeOut :: Object s a -> Duration -> Scene s ()
-oFadeOut o d = do
-  oModify o $ 
-    oShown   .~ True
-  oTweenS o d $ \t ->
-    oOpacity *= 1-t
+oFadeOut :: SVG -> Animation
+oFadeOut = reverseA . oFadeIn
 
 -- | Scale in object over a set duration.
-oGrow :: Object s a -> Duration -> Scene s ()
-oGrow o d = do
-  oModify o $ 
-    oShown .~ True
-  oTweenS o d $ \t ->
-    oScale *= t
+oGrow :: SVG -> Animation
+oGrow svg = animate $ \t -> scale t svg
 
 -- | Scale out object over a set duration.
-oShrink :: Object s a -> Duration -> Scene s ()
-oShrink o d =
-  oTweenS o d $ \t ->
-    oScale *= 1-t
+oShrink :: SVG -> Animation
+oShrink = reverseA . oGrow
+
+type Origin = (Double, Double)
+
+svgOrigin :: SVG -> Origin -> (Double, Double)
+svgOrigin svg (originX, originY) =
+  case boundingBox svg of
+    (polyX, polyY, polyWidth, polyHeight) ->
+      ( polyX + polyWidth * originX
+      , polyY + polyHeight * originY)
+
+oScaleIn :: SVG -> Animation
+oScaleIn = oScaleIn' (curveS 2) (0.5,1)
+
+oScaleIn' :: Signal -> Origin -> SVG -> Animation
+oScaleIn' easing origin = oStagger' 0.05 $ \svg ->
+  let (cx, cy) = svgOrigin svg origin
+  in signalA easing $ mkAnimation 0.3 $ \t ->
+    translate cx cy $
+    scale t $
+    translate (-cx) (-cy) $
+    svg
+
+oScaleOut :: SVG -> Animation
+oScaleOut = reverseA . oStaggerRev' 0.05 (oScaleIn' (curveS 2) (0.5,0))
+
+oScaleOut' :: Signal -> Origin -> SVG -> Animation
+oScaleOut' easing origin = reverseA . oStaggerRev' 0.05 (oScaleIn' easing origin)
+
+oSim :: (SVG -> Animation) -> SVG -> Animation
+oSim = oStagger' 0
+
+-- oSim (oStagger fn) = oSim fn
+-- oStagger (oStagger fn) = oStagger fn
+oStagger :: (SVG -> Animation) -> SVG -> Animation
+oStagger = oStagger' 0.2
+
+oStaggerRev :: (SVG -> Animation) -> SVG -> Animation
+oStaggerRev = oStaggerRev' 0.2
+
+oStagger' :: Duration -> (SVG -> Animation) -> SVG -> Animation
+oStagger' staggerDelay fn svg = scene $
+  forM_ (svgGlyphs svg) $ \(ctx, _attr, node) -> do
+    void $ fork $ newSpriteA' SyncFreeze (fn $ ctx node)
+    wait staggerDelay
+
+oStaggerRev' :: Duration -> (SVG -> Animation) -> SVG -> Animation
+oStaggerRev' staggerDelay fn svg = scene $
+  forM_ (reverse $ svgGlyphs svg) $ \(ctx, _attr, node) -> do
+    void $ fork $ newSpriteA' SyncFreeze (fn $ ctx node)
+    wait staggerDelay
+
+oDraw :: SVG -> Animation
+oDraw = oStagger $ \svg -> scene $ do
+  forM_ (svgGlyphs $ pathify svg) $ \(ctx, attr, node) -> do
+    let sWidth =
+          case toUserUnit defaultDPI <$> getLast (attr ^. strokeWidth) of
+            Just (Num d) -> max defaultStrokeWidth d
+            _            -> defaultStrokeWidth
+    -- wait 1
+    play $
+      mapA ctx $
+      applyE (overEnding fillDur $ fadeLineOutE sWidth) $
+      animate $ \t -> withStrokeWidth sWidth $
+      mkGroup
+      [withFillOpacity 0 $ partialSvg t node]
+    wait (-fillDur)
+    newSpriteA' SyncFreeze $ mkAnimation fillDur $ \t ->
+      withGroupOpacity t $
+      mkGroup [ ctx node ]
+  where
+    fillDur = 0.3
+
+_oBalloon :: SVG -> Animation
+_oBalloon = animate . balloon
 
 -- FIXME: Also transform attributes: 'opacity', 'scale', 'scaleOrigin'.
 -- | Morph source object into target object over a set duration.
@@ -1067,7 +1161,7 @@ oTransform src dst d = do
     srcEase <- oRead src oEasing
     srcLoc <- oRead src oTranslate
     oModify src $ oShown .~ False
-    
+
     dstSvg <- oRead dst oSVG
     dstCtx <- oRead dst oContext
     dstLoc <- oRead dst oTranslate
