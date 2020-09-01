@@ -1041,7 +1041,7 @@ span.spaces    { background: white }
 <span class="lineno"> 1022 </span><span class="spaces">          </span><span class="nottickedoff">scale _oScale $</span>
 <span class="lineno"> 1023 </span><span class="spaces">          </span><span class="nottickedoff">uncurry translate _oScaleOrigin $</span>
 <span class="lineno"> 1024 </span><span class="spaces">          </span><span class="nottickedoff">withGroupOpacity _oOpacity $</span>
-<span class="lineno"> 1025 </span><span class="spaces">          </span><span class="nottickedoff">_oContext _oSVG</span>
+<span class="lineno"> 1025 </span><span class="spaces">          </span><span class="nottickedoff">mkGroup [_oContext _oSVG]</span>
 <span class="lineno"> 1026 </span><span class="spaces">        </span><span class="nottickedoff">else None</span>
 <span class="lineno"> 1027 </span><span class="spaces">  </span><span class="nottickedoff">spriteModify sprite $ do</span>
 <span class="lineno"> 1028 </span><span class="spaces">    </span><span class="nottickedoff">~ObjectData{_oZIndex=z} &lt;- unVar ref</span>
