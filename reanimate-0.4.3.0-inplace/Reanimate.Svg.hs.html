@@ -53,7 +53,7 @@ span.spaces    { background: white }
 <span class="lineno">   34 </span>--   width is affected by directly applying scaling.
 <span class="lineno">   35 </span>--
 <span class="lineno">   36 </span>--   @lowerTransformations (scale 2 (mkCircle 1)) = mkCircle 2@
-<span class="lineno">   37 </span>lowerTransformations :: Tree -&gt; Tree
+<span class="lineno">   37 </span>lowerTransformations :: SVG -&gt; SVG
 <span class="lineno">   38 </span><span class="decl"><span class="istickedoff">lowerTransformations = worker <span class="nottickedoff">False</span> Transform.identity</span>
 <span class="lineno">   39 </span><span class="spaces">  </span><span class="istickedoff">where</span>
 <span class="lineno">   40 </span><span class="spaces">    </span><span class="istickedoff">updLineCmd m cmd =</span>
@@ -89,7 +89,7 @@ span.spaces    { background: white }
 <span class="lineno">   70 </span><span class="spaces">        </span><span class="istickedoff">_ -&gt; <span class="nottickedoff">worker True m (pathify t)</span></span></span>
 <span class="lineno">   71 </span>
 <span class="lineno">   72 </span>-- | Remove all @id@ attributes.
-<span class="lineno">   73 </span>lowerIds :: Tree -&gt; Tree
+<span class="lineno">   73 </span>lowerIds :: SVG -&gt; SVG
 <span class="lineno">   74 </span><span class="decl"><span class="nottickedoff">lowerIds = mapTree worker</span>
 <span class="lineno">   75 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
 <span class="lineno">   76 </span><span class="spaces">    </span><span class="nottickedoff">worker t@GroupTree{} = t &amp; attrId .~ Nothing</span>
@@ -97,7 +97,7 @@ span.spaces    { background: white }
 <span class="lineno">   78 </span><span class="spaces">    </span><span class="nottickedoff">worker t             = t</span></span>
 <span class="lineno">   79 </span>
 <span class="lineno">   80 </span>-- | Optimize SVG tree without affecting how it is rendered.
-<span class="lineno">   81 </span>simplify :: Tree -&gt; Tree
+<span class="lineno">   81 </span>simplify :: SVG -&gt; SVG
 <span class="lineno">   82 </span><span class="decl"><span class="istickedoff">simplify root =</span>
 <span class="lineno">   83 </span><span class="spaces">  </span><span class="istickedoff">case worker root of</span>
 <span class="lineno">   84 </span><span class="spaces">    </span><span class="istickedoff">[]  -&gt; <span class="nottickedoff">None</span></span>
@@ -129,7 +129,7 @@ span.spaces    { background: white }
 <span class="lineno">  110 </span>-- @removeGroups (withFillColor &quot;blue&quot; $ mkGroup [mkCircle 1, mkRect 1 1])
 <span class="lineno">  111 </span>--    = [ withFillColor &quot;blue&quot; $ mkCircle 1
 <span class="lineno">  112 </span>--      , withFillColor &quot;blue&quot; $ mkRect 1 1 ]@
-<span class="lineno">  113 </span>removeGroups :: Tree -&gt; [Tree]
+<span class="lineno">  113 </span>removeGroups :: SVG -&gt; [SVG]
 <span class="lineno">  114 </span><span class="decl"><span class="nottickedoff">removeGroups = worker defaultSvg</span>
 <span class="lineno">  115 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
 <span class="lineno">  116 </span><span class="spaces">    </span><span class="nottickedoff">worker _attr None = []</span>
@@ -152,7 +152,7 @@ span.spaces    { background: white }
 <span class="lineno">  133 </span><span class="spaces">    </span><span class="nottickedoff">dropNulls t = [t]</span></span>
 <span class="lineno">  134 </span>
 <span class="lineno">  135 </span>-- | Extract all path commands from a node (and its children) and concatenate them.
-<span class="lineno">  136 </span>extractPath :: Tree -&gt; [PathCommand]
+<span class="lineno">  136 </span>extractPath :: SVG -&gt; [PathCommand]
 <span class="lineno">  137 </span><span class="decl"><span class="istickedoff">extractPath = worker . simplify . lowerTransformations . pathify</span>
 <span class="lineno">  138 </span><span class="spaces">  </span><span class="istickedoff">where</span>
 <span class="lineno">  139 </span><span class="spaces">    </span><span class="istickedoff">worker (GroupTree g) = <span class="nottickedoff">concatMap worker (g^.groupChildren)</span></span>
@@ -163,7 +163,7 @@ span.spaces    { background: white }
 <span class="lineno">  144 </span>--
 <span class="lineno">  145 </span>--   @withSubglyphs [0,2] (scale 2) (mkGroup [mkCircle 1, mkRect 2, mkEllipse 1 2])
 <span class="lineno">  146 </span>--      = mkGroup [scale 2 (mkCircle 1), mkRect 2, scale 2 (mkEllipse 1 2)]@
-<span class="lineno">  147 </span>withSubglyphs :: [Int] -&gt; (Tree -&gt; Tree) -&gt; Tree -&gt; Tree
+<span class="lineno">  147 </span>withSubglyphs :: [Int] -&gt; (SVG -&gt; SVG) -&gt; SVG -&gt; SVG
 <span class="lineno">  148 </span><span class="decl"><span class="nottickedoff">withSubglyphs target fn = \t -&gt; evalState (worker t) 0</span>
 <span class="lineno">  149 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
 <span class="lineno">  150 </span><span class="spaces">    </span><span class="nottickedoff">worker :: Tree -&gt; State Int Tree</span>
@@ -191,18 +191,18 @@ span.spaces    { background: white }
 <span class="lineno">  172 </span>--
 <span class="lineno">  173 </span>--   @splitGlyphs [0,2] (mkGroup [mkCircle 1, mkRect 2, mkEllipse 1 2])
 <span class="lineno">  174 </span>--      = ([mkRect 2], [mkCircle 1, mkEllipse 1 2])@
-<span class="lineno">  175 </span>splitGlyphs :: [Int] -&gt; Tree -&gt; (Tree, Tree)
+<span class="lineno">  175 </span>splitGlyphs :: [Int] -&gt; SVG -&gt; (SVG, SVG)
 <span class="lineno">  176 </span><span class="decl"><span class="nottickedoff">splitGlyphs target = \t -&gt;</span>
 <span class="lineno">  177 </span><span class="spaces">    </span><span class="nottickedoff">let (_, l, r) = execState (worker id t) (0, [], [])</span>
 <span class="lineno">  178 </span><span class="spaces">    </span><span class="nottickedoff">in (mkGroup l, mkGroup r)</span>
 <span class="lineno">  179 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  180 </span><span class="spaces">    </span><span class="nottickedoff">handleGlyph :: Tree -&gt; State (Int, [Tree], [Tree]) ()</span>
+<span class="lineno">  180 </span><span class="spaces">    </span><span class="nottickedoff">handleGlyph :: SVG -&gt; State (Int, [SVG], [SVG]) ()</span>
 <span class="lineno">  181 </span><span class="spaces">    </span><span class="nottickedoff">handleGlyph t = do</span>
 <span class="lineno">  182 </span><span class="spaces">      </span><span class="nottickedoff">(n, l, r) &lt;- get</span>
 <span class="lineno">  183 </span><span class="spaces">      </span><span class="nottickedoff">if n `elem` target</span>
 <span class="lineno">  184 </span><span class="spaces">        </span><span class="nottickedoff">then put (n+1, l, t:r)</span>
 <span class="lineno">  185 </span><span class="spaces">        </span><span class="nottickedoff">else put (n+1, t:l, r)</span>
-<span class="lineno">  186 </span><span class="spaces">    </span><span class="nottickedoff">worker :: (Tree -&gt; Tree) -&gt; Tree -&gt; State (Int, [Tree], [Tree]) ()</span>
+<span class="lineno">  186 </span><span class="spaces">    </span><span class="nottickedoff">worker :: (SVG -&gt; SVG) -&gt; SVG -&gt; State (Int, [SVG], [SVG]) ()</span>
 <span class="lineno">  187 </span><span class="spaces">    </span><span class="nottickedoff">worker acc t =</span>
 <span class="lineno">  188 </span><span class="spaces">      </span><span class="nottickedoff">case t of</span>
 <span class="lineno">  189 </span><span class="spaces">        </span><span class="nottickedoff">GroupTree g -&gt; do</span>
@@ -232,7 +232,7 @@ span.spaces    { background: white }
 <span class="lineno">  213 </span>, (\svg -&gt; &lt;g transform=&quot;translate(10,10)&quot;&gt;&lt;g transform=&quot;scale(0.5)&quot;&gt;svg&lt;/g&gt;&lt;/g&gt;, &lt;rect/&gt;)]
 <span class="lineno">  214 </span>-}
 <span class="lineno">  215 </span>-- | Split symbols and include their context and drawing attributes.
-<span class="lineno">  216 </span>svgGlyphs :: Tree -&gt; [(Tree -&gt; Tree, DrawAttributes, Tree)]
+<span class="lineno">  216 </span>svgGlyphs :: SVG -&gt; [(SVG -&gt; SVG, DrawAttributes, SVG)]
 <span class="lineno">  217 </span><span class="decl"><span class="istickedoff">svgGlyphs = worker <span class="nottickedoff">id</span> defaultSvg</span>
 <span class="lineno">  218 </span><span class="spaces">  </span><span class="istickedoff">where</span>
 <span class="lineno">  219 </span><span class="spaces">    </span><span class="istickedoff">worker acc attr =</span>
@@ -262,7 +262,7 @@ span.spaces    { background: white }
 <span class="lineno">  243 </span>
 <span class="lineno">  244 </span>    &lt;&lt;docs/gifs/doc_pathify.gif&gt;&gt;
 <span class="lineno">  245 </span> -}
-<span class="lineno">  246 </span>pathify :: Tree -&gt; Tree
+<span class="lineno">  246 </span>pathify :: SVG -&gt; SVG
 <span class="lineno">  247 </span><span class="decl"><span class="istickedoff">pathify = mapTree worker</span>
 <span class="lineno">  248 </span><span class="spaces">  </span><span class="istickedoff">where</span>
 <span class="lineno">  249 </span><span class="spaces">    </span><span class="istickedoff">worker =</span>
