@@ -129,7 +129,7 @@ main = do
 genSnippet :: Ghci -> FilePath -> IO (String, String, Text)
 genSnippet ghci path = do
     inp <- T.readFile path
-    let ParseOk m = parseHaskell inp
+    let m = fromParseResult $ parseHaskell inp
         h = sourceHash m
     withHaskellFile m $ \hsFile -> do
       _ <- reqGhcOutput ghci $ ":load " ++ hsFile
