@@ -31,6 +31,8 @@ executable discord-bot
                        hashable,
                        githash,
                        time,
+                       mtl,
+                       unliftio,
                        haskell-src-exts,
                        discord-haskell
   hs-source-dirs:      src
