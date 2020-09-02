@@ -133,12 +133,13 @@ Now, still within the `nix-shell` you can run:
 - [x] Voice control: Align animation timings with a transcript.
 - [x] 3D graphics: Built-in support for integrating povray and blender.
 - [x] Mapping: Built-in support for GeoJSON and map projections.
+- [x] Online playground for toying with reanimate scripts.
 
 # Roadmap
 
-- Online playground for toying with reanimate scripts.
 - Easy-to-use font selection when using latex/xelatex/luatex.
 - Polygon morphing framework with support for several algorithms, including: linear interpolation, as-rigid-as-possible interpolation, and intersection-free interpolation.
+- Built-in tools for creating presentations.
 
 # Authors
 
