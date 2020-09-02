@@ -372,8 +372,6 @@ modifyVar (Var ref) fn = do
   liftST $ modifySTRef ref $ \prev t -> if t < now then prev t else fn (prev t)
 
 -- | Modify a variable between @now@ and @now+duration@.
---   Note: The modification function is invoked for past timestamps (with a time value of 0) and
---         for timestamps after @now+duration@ (with a time value of 1). See 'tweenVarUnclamped'.
 tweenVar :: Var s a -> Duration -> (a -> Time -> a) -> Scene s ()
 tweenVar (Var ref) dur fn = do
   now <- queryNow
