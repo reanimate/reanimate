@@ -839,11 +839,11 @@ oEasing = lens _oEasing $ \obj val -> obj { _oEasing = val }
 
 -- | Object's scale. Default: 1
 oScale :: Lens' (ObjectData a) Double
-oScale = lens _oScale $ \obj val -> obj { _oScale = val }
+oScale = lens _oScale $ \obj val -> oComputeBB obj { _oScale = val }
 
 -- | Origin point for scaling. Default: \<0,0\>
 oScaleOrigin :: Lens' (ObjectData a) (Double, Double)
-oScaleOrigin = lens _oScaleOrigin $ \obj val -> obj { _oScaleOrigin = val }
+oScaleOrigin = lens _oScaleOrigin $ \obj val -> oComputeBB obj { _oScaleOrigin = val }
 
 -- Smart lenses
 
@@ -851,10 +851,13 @@ oScaleOrigin = lens _oScaleOrigin $ \obj val -> obj { _oScaleOrigin = val }
 oValue :: Renderable a => Lens' (ObjectData a) a
 oValue = lens _oValueRef $ \obj newVal ->
     let svg = toSVG newVal
-    in obj
+    in oComputeBB obj
     { _oValueRef = newVal
-    , _oSVG      = svg
-    , _oBB       = boundingBox svg }
+    , _oSVG      = svg }
+
+oComputeBB :: ObjectData a -> ObjectData a
+oComputeBB obj = obj
+  { _oBB = boundingBox $ oScaleApply obj (_oSVG obj) }
 
 -- | Derived location of the top-most point of an object + margin.
 oTopY :: Lens' (ObjectData a) Double
@@ -1013,14 +1016,12 @@ newObject val = do
     , _oScaleOrigin = (0,0)
     }
   sprite <- newSprite $ do
-    ~ObjectData{..} <- unVar ref
+    ~obj@ObjectData{..} <- unVar ref
     pure $
       if _oShown
         then
           uncurry translate _oTranslate $
-          uncurry translate (_oScaleOrigin & both %~ negate) $
-          scale _oScale $
-          uncurry translate _oScaleOrigin $
+          oScaleApply obj $
           withGroupOpacity _oOpacity $
           mkGroup [_oContext _oSVG]
         else None
@@ -1032,6 +1033,12 @@ newObject val = do
     , objectData   = ref }
   where
     svg = toSVG val
+
+oScaleApply :: ObjectData a -> (SVG -> SVG)
+oScaleApply ObjectData{..} =
+  uncurry translate (_oScaleOrigin & both %~ negate) .
+  scale _oScale .
+  uncurry translate _oScaleOrigin
 
 -------------------------------------------------------------------------------
 -- Graphical transformations
