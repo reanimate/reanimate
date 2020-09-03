@@ -43,7 +43,7 @@ jobs:
 
     - name: Playground
       run: |
-        sudo apt-get install texlive texlive-latex-base
+        sudo apt-get -y install texlive texlive-latex-base texlive-latex-extra
         CWD=`pwd`
         stack build
         cd playground
