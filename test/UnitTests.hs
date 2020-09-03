@@ -135,5 +135,5 @@ compileVideoFolder path = do
 -- assertMaybe _ (Just a)  = return a
 -- assertMaybe msg Nothing = assertFailure msg
 
-withTempDir :: (FilePath -> IO a) -> IO a
-withTempDir = withSystemTempDirectory "reanimate"
+-- withTempDir :: (FilePath -> IO a) -> IO a
+-- withTempDir = withSystemTempDirectory "reanimate"
