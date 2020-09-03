@@ -83,12 +83,13 @@ jobs:
 
     - name: Playground
       run: |
+        apt-get install texlive texlive-latex-base
         CWD=`pwd`
         stack build
         cd playground
         stack build
         # We need to install latex before we can generate the snippets.
-        # stack exec --cwd ../ playground snippets playground/snippets > viewer-elm/dist/snippets.js
+        stack exec --cwd ../ playground snippets playground/snippets > viewer-elm/dist/snippets.js
         cd viewer-elm
         npm install
         npm run build
