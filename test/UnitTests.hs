@@ -14,7 +14,6 @@ import           System.Directory
 import           System.Exit
 import           System.FilePath
 import           System.IO
-import           System.IO.Temp
 import           System.IO.Unsafe
 import           System.Process
 import           Test.Tasty
@@ -49,30 +48,21 @@ unitTestFolder path = do
     ]
 
 genGolden :: FilePath -> IO LBS.ByteString
-genGolden path =
-  withTempDir $ \tmpDir ->
-  withTempFile tmpDir "reanimate.exe" $ \tmpExecutable hd -> do
-    hClose hd
-    let ghcOpts = ["-rtsopts", "--make", "-O0", "-Werror", "-Wall"] ++
-                  ["-odir", tmpDir, "-hidir", tmpDir, "-o", tmpExecutable] ++
-                  ["-v0"]
-        runOpts = ["+RTS", "-M1G"]
-    -- XXX: Check for errors.
-    case buildSystem of
-      Stack -> callProcess "stack" $ ["ghc","--", path] ++ ghcOpts
-      Cabal -> callProcess "cabal" $ ["v2-exec", "ghc","--", "-package", "reanimate", path] ++ ghcOpts
-
-    (inh, outh, errh, pid) <- runInteractiveProcess tmpExecutable (["test"] ++ runOpts)
+genGolden path = do
+  (inh, outh, errh, pid) <- case buildSystem of
+    Stack -> runInteractiveProcess "stack" ["runhaskell", path, "test"]
       Nothing Nothing
-    -- hSetBinaryMode outh True
-    -- hSetNewlineMode outh universalNewlineMode
-    hClose inh
-    out <- BS.hGetContents outh
-    err <- T.hGetContents errh
-    code <- waitForProcess pid
-    case code of
-      ExitSuccess   -> return $ LBS.fromChunks [out]
-      ExitFailure{} -> error $ "Failed to run: " ++ T.unpack err
+    Cabal -> runInteractiveProcess "cabal" ["v2-exec", "runhaskell", path, "test"]
+      Nothing Nothing
+  -- hSetBinaryMode outh True
+  -- hSetNewlineMode outh universalNewlineMode
+  hClose inh
+  out <- BS.hGetContents outh
+  err <- T.hGetContents errh
+  code <- waitForProcess pid
+  case code of
+    ExitSuccess   -> return $ LBS.fromChunks [out]
+    ExitFailure{} -> error $ "Failed to run: " ++ T.unpack err
 
 compileTestFolder :: FilePath -> IO TestTree
 compileTestFolder path = do
@@ -144,5 +134,5 @@ compileVideoFolder path = do
 -- assertMaybe _ (Just a)  = return a
 -- assertMaybe msg Nothing = assertFailure msg
 
-withTempDir :: (FilePath -> IO a) -> IO a
-withTempDir = withSystemTempDirectory "reanimate"
+-- withTempDir :: (FilePath -> IO a) -> IO a
+-- withTempDir = withSystemTempDirectory "reanimate"
