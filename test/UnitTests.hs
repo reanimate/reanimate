@@ -49,24 +49,21 @@ unitTestFolder path = do
     ]
 
 genGolden :: FilePath -> IO LBS.ByteString
-genGolden path =
-  withTempDir $ \tmpDir ->
-  withTempFile tmpDir "reanimate.exe" $ \tmpExecutable hd -> do
-    hClose hd
-    (inh, outh, errh, pid) <- case buildSystem of
-      Stack -> runInteractiveProcess "stack" ["runhaskell", path, "test"]
-        Nothing Nothing
-      Cabal -> runInteractiveProcess "cabal" ["v2-exec", "runhaskell", path, "test"]
-        Nothing Nothing
-    -- hSetBinaryMode outh True
-    -- hSetNewlineMode outh universalNewlineMode
-    hClose inh
-    out <- BS.hGetContents outh
-    err <- T.hGetContents errh
-    code <- waitForProcess pid
-    case code of
-      ExitSuccess   -> return $ LBS.fromChunks [out]
-      ExitFailure{} -> error $ "Failed to run: " ++ T.unpack err
+genGolden path = do
+  (inh, outh, errh, pid) <- case buildSystem of
+    Stack -> runInteractiveProcess "stack" ["runhaskell", path, "test"]
+      Nothing Nothing
+    Cabal -> runInteractiveProcess "cabal" ["v2-exec", "runhaskell", path, "test"]
+      Nothing Nothing
+  -- hSetBinaryMode outh True
+  -- hSetNewlineMode outh universalNewlineMode
+  hClose inh
+  out <- BS.hGetContents outh
+  err <- T.hGetContents errh
+  code <- waitForProcess pid
+  case code of
+    ExitSuccess   -> return $ LBS.fromChunks [out]
+    ExitFailure{} -> error $ "Failed to run: " ++ T.unpack err
 
 compileTestFolder :: FilePath -> IO TestTree
 compileTestFolder path = do
