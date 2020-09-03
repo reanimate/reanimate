@@ -53,17 +53,11 @@ genGolden path =
   withTempDir $ \tmpDir ->
   withTempFile tmpDir "reanimate.exe" $ \tmpExecutable hd -> do
     hClose hd
-    let ghcOpts = ["-rtsopts", "--make", "-O0", "-Werror", "-Wall"] ++
-                  ["-odir", tmpDir, "-hidir", tmpDir, "-o", tmpExecutable] ++
-                  ["-v0"]
-        runOpts = ["+RTS", "-M1G"]
-    -- XXX: Check for errors.
-    case buildSystem of
-      Stack -> callProcess "stack" $ ["ghc","--", path] ++ ghcOpts
-      Cabal -> callProcess "cabal" $ ["v2-exec", "ghc","--", "-package", "reanimate", path] ++ ghcOpts
-
-    (inh, outh, errh, pid) <- runInteractiveProcess tmpExecutable (["test"] ++ runOpts)
-      Nothing Nothing
+    (inh, outh, errh, pid) <- case buildSystem of
+      Stack -> runInteractiveProcess "stack" ["runhaskell", path, "test"]
+        Nothing Nothing
+      Cabal -> runInteractiveProcess "cabal" ["v2-exec", "runhaskell", path, "test"]
+        Nothing Nothing
     -- hSetBinaryMode outh True
     -- hSetNewlineMode outh universalNewlineMode
     hClose inh
