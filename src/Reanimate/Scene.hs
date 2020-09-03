@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ApplicativeDo             #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE RankNTypes                #-}
@@ -130,6 +131,9 @@ module Reanimate.Scene
   , liftST
   , transitionO
   , evalScene
+
+  , efficiencyTesterVar
+  , efficiencyTesterEVar
   )
 where
 
@@ -139,6 +143,8 @@ import           Control.Monad.Fix
 import           Control.Monad.ST
 import           Control.Monad.State (execState, State)
 import           Data.List
+import qualified Data.Map                   as M
+import           Data.Maybe                 (fromMaybe)
 import           Data.STRef
 import           Graphics.SvgTree           (Tree (None))
 import           Reanimate.Animation
@@ -325,24 +331,105 @@ newtype EVar s a = EVar (STRef s (EVarData a))
 
 data EVarData a = EVarData
   { evarDefault   :: a
-  , evarTimeline  :: ()
-  , evarLastValue :: () -- this might not be necessary
+  , evarTimeline  :: Timeline a
+  , evarLastTime  :: Maybe Time
+  , evarLastValue :: a
   }
 
+data Modifier a = StaticValue a | TweenValue Duration (a -> Time -> a)
+
+type Timeline a = M.Map Time (Modifier a)
+
 newEVar :: a -> Scene s (EVar s a)
-newEVar = undefined
+newEVar def = EVar <$> liftST (newSTRef $ EVarData def M.empty Nothing def)
 
 readEVar :: EVar s a -> Scene s a
-readEVar = undefined
+readEVar (EVar ref) = readEVarData <$> liftST (readSTRef ref) <*> queryNow
 
-writeEVar :: EVar s a -> a -> Scene s a
-writeEVar = undefined
+writeEVar :: EVar s a -> a -> Scene s ()
+writeEVar var val = modifyEVar var (const val)
 
-modifyEVar :: EVar s a -> (a -> a) -> Scene s a
-modifyEVar = undefined
+modifyEVar :: EVar s a -> (a -> a) -> Scene s ()
+modifyEVar (EVar ref) fn = do
+  now <- queryNow
+  liftST $ modifySTRef ref $ modifyEVarData now fn
 
-tweenEVar :: EVar s a -> Duration -> (a -> Time -> a) -> Scene s a
-tweenEVar = undefined
+tweenEVar :: EVar s a -> Duration -> (a -> Time -> a) -> Scene s ()
+tweenEVar (EVar ref) dur fn = do
+  now <- queryNow
+  liftST $ modifySTRef ref $ tweenEVarData now dur fn
+  wait dur
+
+readEVarData :: EVarData a -> Time -> a
+readEVarData (EVarData def _ Nothing _) _ = def
+readEVarData (EVarData def timeline (Just lastTime) lastValue) now
+  | now < lastTime = lookupTimeline timeline def now
+  | otherwise = lastValue
+
+lookupTimeline :: Timeline a -> a -> Time -> a
+lookupTimeline timeline def now = case M.lookupLE now timeline of
+  Just (_, StaticValue sVal) -> sVal
+  Just (t, TweenValue dur f)
+    | t + dur > now -> f def now
+  _ -> def
+
+modifyEVarData :: Time -> (a -> a) -> EVarData a -> EVarData a
+modifyEVarData now fn var =
+  let before = keepBefore now var
+      currentVal = readEVarData var now
+      after = EVarData (evarDefault var) M.empty (Just now) (fn currentVal)
+  in after `elseVar` before
+
+-- Note: The function passed here takes time on the scale 0 to 1
+--       while the function in `TweenValue` takes time on an absolute scale.
+tweenEVarData :: Time -> Duration -> (a -> Time -> a) -> EVarData a -> EVarData a
+tweenEVarData st dur fn var@EVarData{..} =
+  let nd = st + dur
+      before = keepBefore st var
+      during = keepInRange (Just st) (Just nd) var
+      tweenFn a t = fn (readEVarData (during {evarDefault = a}) t) $ (t - st) / dur
+      valueTweenEnd = tweenFn evarDefault nd -- we'll never use the def here, replace with error?
+      after = EVarData evarDefault (M.singleton st $ TweenValue dur tweenFn) (Just nd) valueTweenEnd
+  in after `elseVar` before
+
+-- Returns the union of two vars such that we use the second var if first var doesn't have a value.
+-- Assumes both vars have same default value.
+elseVar :: EVarData a -> EVarData a -> EVarData a
+elseVar after before
+  | Just t <- evarLastTime after =
+    let afterTimeline = evarTimeline after 
+        joinAt = fromMaybe t . fmap fst $ M.lookupMin afterTimeline
+        beforeTimeline = evarTimeline . keepBefore joinAt $ before
+     in after {evarTimeline = M.union afterTimeline beforeTimeline}
+  | otherwise = before
+
+-- Restrict a var to a given time interval.
+keepInRange :: Maybe Time -> Maybe Time -> EVarData a -> EVarData a
+keepInRange st nd = fromMaybe id (keepFrom <$> st) . fromMaybe id (keepBefore <$> nd)
+
+-- Restrict a var to start at given timestamp.
+keepFrom :: Time -> EVarData a -> EVarData a
+keepFrom st evar@EVarData{..} =
+  let timeline' = M.dropWhileAntitone (< st) evarTimeline
+      -- if there is no modifier in timeline starting at st,
+      -- we must get the modifier that starts before and truncate it to start at st.
+      timeline'' = case M.lookupLE st evarTimeline of
+        Just (t, val@(StaticValue _))
+          | t < st -> M.insert st val timeline'
+        Just (t, TweenValue dur fn)
+          | t < st, t + dur > st -> M.insert t (TweenValue (t + dur - st) fn) timeline'
+        _ -> timeline'
+  in EVarData evarDefault timeline'' (max st <$> evarLastTime) evarLastValue
+
+-- Restrict a var to end(clamp) at given timestamp.
+keepBefore :: Time -> EVarData a -> EVarData a
+keepBefore nd var@EVarData{..} =
+  let timeline' = M.takeWhileAntitone (< nd) evarTimeline
+      timeline'' = case M.lookupMax timeline' of
+        Just (t, TweenValue dur fn)
+          | t + dur > nd -> M.insert t (TweenValue (nd - t) fn) timeline'
+        _ -> timeline'
+  in EVarData evarDefault timeline'' (Just nd) (readEVarData var nd)
 
 -- If this prints 'expensive' twice then Var is not efficient.
 efficiencyTesterVar :: Int
