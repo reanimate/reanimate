@@ -14,7 +14,6 @@ import           System.Directory
 import           System.Exit
 import           System.FilePath
 import           System.IO
-import           System.IO.Temp
 import           System.IO.Unsafe
 import           System.Process
 import           Test.Tasty
