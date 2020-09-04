@@ -134,6 +134,7 @@ module Reanimate.Scene
 
   , efficiencyTesterVar
   , efficiencyTesterEVar
+  , testVarsEqual
   )
 where
 
@@ -329,6 +330,12 @@ addGen gen = M $ \_ -> return ((), 0, 0, [gen])
 -- Efficient time variable
 newtype EVar s a = EVar (STRef s (EVarData a))
 
+
+-- Note: We must ensure that upon transforming an EVarData, 
+--       1. evarDefault old == evarDefault new
+--       2. isNothing (evarLastTime old) || isJust (evarLastTime new) i.e. once evarLastValue has a Just value,
+--          it shouldn't be Nothing again.
+--       3. isNothing (evarLastTime var) => M.null (evarTimeline var)
 data EVarData a = EVarData
   { evarDefault   :: a
   , evarTimeline  :: Timeline a
@@ -347,7 +354,9 @@ readEVar :: EVar s a -> Scene s a
 readEVar (EVar ref) = readEVarData <$> liftST (readSTRef ref) <*> queryNow
 
 writeEVar :: EVar s a -> a -> Scene s ()
-writeEVar var val = modifyEVar var (const val)
+writeEVar (EVar ref) val = do
+  now <- queryNow
+  liftST $ modifySTRef ref $ writeEVarData now val
 
 modifyEVar :: EVar s a -> (a -> a) -> Scene s ()
 modifyEVar (EVar ref) fn = do
@@ -373,12 +382,20 @@ lookupTimeline timeline def now = case M.lookupLE now timeline of
     | t + dur > now -> f def now
   _ -> def
 
+writeEVarData :: Time -> a -> EVarData a -> EVarData a
+writeEVarData now x var =
+  let before = keepBefore now var
+      after = EVarData (evarDefault var) M.empty (Just now) x
+  in after `elseVar` before
+
 modifyEVarData :: Time -> (a -> a) -> EVarData a -> EVarData a
 modifyEVarData now fn var =
   let before = keepBefore now var
-      currentVal = readEVarData var now
-      after = EVarData (evarDefault var) M.empty (Just now) (fn currentVal)
-  in after `elseVar` before
+      after = keepFrom now var
+      timeline = flip M.map (evarTimeline after) $ \case
+        StaticValue s -> StaticValue $ fn s
+        TweenValue dur f -> TweenValue dur $ \a t -> fn (f a t)
+   in  after {evarTimeline = timeline, evarLastValue = fn $ evarLastValue after} `elseVar` before
 
 -- Note: The function passed here takes time on the scale 0 to 1
 --       while the function in `TweenValue` takes time on an absolute scale.
@@ -390,18 +407,20 @@ tweenEVarData st dur fn var@EVarData{..} =
       tweenFn a t = fn (readEVarData (during {evarDefault = a}) t) $ (t - st) / dur
       valueTweenEnd = tweenFn evarDefault nd -- we'll never use the def here, replace with error?
       after = EVarData evarDefault (M.singleton st $ TweenValue dur tweenFn) (Just nd) valueTweenEnd
-  in after `elseVar` before
+  in  after `elseVar` before
 
 -- Returns the union of two vars such that we use the second var if first var doesn't have a value.
 -- Assumes both vars have same default value.
 elseVar :: EVarData a -> EVarData a -> EVarData a
-elseVar after before
-  | Just t <- evarLastTime after =
-    let afterTimeline = evarTimeline after 
+elseVar var1 var2
+  | Just t <- evarLastTime var1 =
+    let afterTimeline = evarTimeline var1
         joinAt = fromMaybe t . fmap fst $ M.lookupMin afterTimeline
-        beforeTimeline = evarTimeline . keepBefore joinAt $ before
-     in after {evarTimeline = M.union afterTimeline beforeTimeline}
-  | otherwise = before
+        beforeTimeline = case keepBefore joinAt var2 of
+          x | Just lastTime <- evarLastTime x, lastTime < joinAt -> M.insert lastTime (StaticValue $ evarLastValue x) $ evarTimeline x
+            | otherwise -> evarTimeline x
+     in var1 {evarTimeline = M.union afterTimeline beforeTimeline}
+  | otherwise = var2
 
 -- Restrict a var to a given time interval.
 keepInRange :: Maybe Time -> Maybe Time -> EVarData a -> EVarData a
@@ -409,7 +428,7 @@ keepInRange st nd = fromMaybe id (keepFrom <$> st) . fromMaybe id (keepBefore <$
 
 -- Restrict a var to start at given timestamp.
 keepFrom :: Time -> EVarData a -> EVarData a
-keepFrom st evar@EVarData{..} =
+keepFrom st EVarData{..} =
   let timeline' = M.dropWhileAntitone (< st) evarTimeline
       -- if there is no modifier in timeline starting at st,
       -- we must get the modifier that starts before and truncate it to start at st.
@@ -417,19 +436,23 @@ keepFrom st evar@EVarData{..} =
         Just (t, val@(StaticValue _))
           | t < st -> M.insert st val timeline'
         Just (t, TweenValue dur fn)
-          | t < st, t + dur > st -> M.insert t (TweenValue (t + dur - st) fn) timeline'
+          | t < st, t + dur > st -> M.insert st (TweenValue (t + dur - st) fn) timeline'
         _ -> timeline'
-  in EVarData evarDefault timeline'' (max st <$> evarLastTime) evarLastValue
+  in EVarData evarDefault timeline'' (max evarLastTime $ Just st) evarLastValue
 
 -- Restrict a var to end(clamp) at given timestamp.
 keepBefore :: Time -> EVarData a -> EVarData a
 keepBefore nd var@EVarData{..} =
   let timeline' = M.takeWhileAntitone (< nd) evarTimeline
-      timeline'' = case M.lookupMax timeline' of
+      lastModifier = M.lookupMax timeline'
+      timeline'' = case lastModifier of
         Just (t, TweenValue dur fn)
           | t + dur > nd -> M.insert t (TweenValue (nd - t) fn) timeline'
         _ -> timeline'
-  in EVarData evarDefault timeline'' (Just nd) (readEVarData var nd)
+      lastTime = case lastModifier of
+        Just (t, TweenValue dur _) -> Just $ min nd (t + dur)
+        _ -> min nd <$> evarLastTime
+  in EVarData evarDefault timeline'' lastTime (fromMaybe evarDefault $ fmap (readEVarData var) lastTime)
 
 -- If this prints 'expensive' twice then Var is not efficient.
 efficiencyTesterVar :: Int
