@@ -28,6 +28,7 @@ import           Control.Exception
 import           Control.Monad             (forM_, forever, unless, void, when)
 import           Data.Either
 import           Data.Function
+import qualified Data.HashMap.Strict              as M
 import qualified Data.Text                 as T
 import qualified Data.Text.IO              as T
 import           Data.Time
@@ -63,15 +64,20 @@ renderSvgs :: FilePath -> Int -> Bool -> Animation -> IO ()
 renderSvgs folder offset _prettyPrint ani = do
   print frameCount
   lock <- newMVar ()
-
+  hashedFrames <- newMVar M.empty
   handle errHandler $ concurrentForM_ (frameOrder rate frameCount) $ \nth' -> do
     let nth = (nth'+offset) `mod` frameCount
         now = (duration ani / (fromIntegral frameCount - 1)) * fromIntegral nth
         frame = frameAt (if frameCount <= 1 then 0 else now) ani
-        svg = renderSvg Nothing Nothing frame
         path = folder </> show nth <.> "svg"
-
-    idempotentFile path $ writeFile path svg
+    cachedFrame <- M.lookup frame <$> readMVar hashedFrames
+    idempotentFile path $
+      case cachedFrame of 
+        Nothing -> do
+          let svg = renderSvg Nothing Nothing frame
+          writeFile path svg
+          modifyMVar_ hashedFrames $ \hm -> pure $ M.insert frame path hm
+        Just frameFile -> copyFile frameFile path
     withMVar lock $ \_ -> do
       print nth
       hFlush stdout

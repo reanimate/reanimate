@@ -73,6 +73,7 @@ type Time = Double
 -- | SVG node.
 type SVG = Tree
 
+
 -- | Animations are SVGs over a finite time.
 data Animation = Animation Duration (Time -> SVG)
 
