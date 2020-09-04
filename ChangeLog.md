@@ -1,8 +1,10 @@
 # Revision history for reanimate
 
-## 0.4.3.0
+## 0.4.4.0
 
+## 0.4.3.0 -- 2020-08-29
 
+* Improve documentation.
 
 ## 0.4.2.0 -- 2020-08-27
 

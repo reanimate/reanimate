@@ -1,5 +1,10 @@
-#!/usr/bin/env stack
--- stack runghc --package reanimate
+#!/usr/bin/env cabal
+{- cabal:
+build-depends: base
+            , reanimate
+            , reanimate-svg
+            , JuicyPixels
+-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo       #-}
 module Main (main) where

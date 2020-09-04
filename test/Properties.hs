@@ -62,6 +62,12 @@ prop_ssspEq p =
   pSize p < 20 ==>
   naive (pRing p) == polygonSSSP p V.! 0
 
+prop_ssspEq2 :: Polygon -> Bool
+prop_ssspEq2 p =
+  let t = polygonTriangulation p
+      d = dual (polygonOffset p) t
+  in sssp (pRing p) d == ssspFinger (pRing p) d
+
 prop_ssspSize :: Polygon -> Bool
 prop_ssspSize p =
   length (sssp (pRing p) (dual 0 $ polygonTriangulation p)) == pSize p

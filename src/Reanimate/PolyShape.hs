@@ -138,26 +138,6 @@ plPartial delta pl = PolyShape $ curvesToClosed (lineOut ++ [joinB] ++ lineIn)
         then [bezierSubsegment c 0 (arcLengthParam c l polyShapeTolerance)]
         else c : takeLen (l-cLen) cs
 
--- earClip :: Polygon -> Triangulation
--- dual :: Triangulation -> Dual
--- toPDual :: Polygon -> Dual -> PDual
--- pdualReduce :: Polygon -> PDual -> Int -> PDual
--- pdualPolygons :: Polygon -> PDual -> [Polygon]
--- splitPolyShape :: Double -> Int -> PolyShape -> [PolyShape]
--- splitPolyShape tol n poly =
---     let polygon = toPolygon (plPolygonify tol poly)
---         trig = triangulate $ pRing polygon
---         d = dual 0 trig
---         pd = toPDual (pRing polygon) d
---         reduced = pdualReduce (pRing polygon) pd n
---         polygons = pdualPolygons polygon reduced
---     in map toPolyShape polygons
---   where
---     toPolygon :: [RPoint] -> Polygon
---     toPolygon = mkPolygon . V.fromList . nub . map (fmap realToFrac)
---     toPolyShape :: Polygon -> PolyShape
---     toPolyShape = plFromPolygon . map (fmap realToFrac) . V.toList . polygonPoints
-
 -- plPartial' :: Double -> ([RPoint], PolyShape) -> PolyShape
 -- plPartial' delta (seen', PolyShape (ClosedPath lst)) =
 --   case lst of
@@ -215,7 +195,7 @@ decomposePolygon :: [RPoint] -> [[RPoint]]
 decomposePolygon poly =
   [ [ V2 x y
     | v <- V.toList (Geo.boundaryVertices f pg)
-    , let Geo.Point2 x y =(pg^.Geo.vertexDataOf v) ^. Geo.location ]
+    , let Geo.Point2 x y = pg^.Geo.vertexDataOf v . Geo.location ]
   | (f, Inside) <- V.toList (Geo.internalFaces pg) ]
 
   where

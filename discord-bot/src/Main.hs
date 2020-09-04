@@ -3,9 +3,10 @@
 module Main (main) where
 
 import           Control.Applicative
-import           Control.Concurrent           (forkIO)
+import           UnliftIO.Concurrent           (forkIO)
 import           Control.Exception
 import           Control.Monad
+import           Control.Monad.Trans
 import           Data.Bits
 import           Data.ByteString              (ByteString)
 import qualified Data.ByteString              as BS
@@ -129,47 +130,62 @@ main = forever $ do
       hPutStrLn stderr "Invalid arguments"
       exitWith (ExitFailure 1)
 
-startHandler :: DiscordHandle -> IO ()
-startHandler _dis = putStrLn "Ready!"
+startHandler :: DiscordHandler ()
+startHandler = liftIO $ putStrLn "Ready!"
 
 -- If an event handler throws an exception, discord-haskell will continue to run
-eventHandler :: Ghci -> Ghci -> DiscordHandle -> Event -> IO ()
-eventHandler fastGhci slowGhci dis event = case event of
+eventHandler :: Ghci -> Ghci -> Event -> DiscordHandler ()
+eventHandler fastGhci slowGhci event = case event of
   MessageCreate m | Just cmd <- parseCmd m, fromHuman m -> do
     case cmd of
       Animate script | not (isValidHaskell script) -> do
-        putStrLn "Video failed!"
-        void $ restCall dis (R.CreateReaction (messageChannel m, messageId m) "poop")
-        void $ restCall dis (R.DeleteOwnReaction (messageChannel m, messageId m) "eyes")
-        Right dm <- restCall dis (R.CreateDM (userId $ messageAuthor m))
-        void $ restCall dis (R.CreateMessage (channelId dm) "Invalid Haskell expression")
+        liftIO $ putStrLn "Video failed!"
+        void $ restCall (R.CreateReaction (messageChannel m, messageId m) "poop")
+        void $ restCall (R.DeleteOwnReaction (messageChannel m, messageId m) "eyes")
+        Right dm <- restCall (R.CreateDM (userId $ messageAuthor m))
+        void $ restCall (R.CreateMessage (channelId dm) "Invalid Haskell expression")
       Animate script -> do
-        putStrLn $ "Running script: " ++ T.unpack script
-        _ <- forkIO $ void $ restCall dis (R.CreateReaction (messageChannel m, messageId m) "eyes")
-        ret <- cachedRender fastGhci script
+        liftIO $ putStrLn $ "Running script: " ++ T.unpack script
+        _ <- forkIO $ void $ restCall (R.CreateReaction (messageChannel m, messageId m) "eyes")
+        ret <- liftIO $ cachedRender fastGhci script
         case ret of
           Right vid -> do
-            putStrLn "Video rendered!"
-            void $ restCall dis (R.CreateMessageUploadFile (messageChannel m) "video.mp4" vid)
-            void $ restCall dis (R.DeleteOwnReaction (messageChannel m, messageId m) "eyes")
+            liftIO $ putStrLn "Video rendered!"
+            void $ restCall (R.CreateMessageUploadFile (messageChannel m) "video.mp4" vid)
+            -- let embed = CreateEmbed
+            --       { createEmbedAuthorName = "" :: Text 
+            --       , createEmbedAuthorUrl = "" :: Text 
+            --       , createEmbedAuthorIcon = Nothing
+            --       , createEmbedTitle = ""
+            --       , createEmbedUrl = ""
+            --       , createEmbedThumbnail = Nothing
+            --       , createEmbedDescription = ""
+            --       , createEmbedFields = []
+            --       , createEmbedImage = Nothing
+            --       , createEmbedFooterText = ""
+            --       , createEmbedFooterIcon = Nothing
+            --       , createEmbedVideo = Just (CreateEmbedVideoUpload vid)
+            --       }
+            -- void $ restCall (R.CreateMessageEmbed (messageChannel m) "video.mp4" embed)
+            void $ restCall (R.DeleteOwnReaction (messageChannel m, messageId m) "eyes")
             return ()
           Left err -> do
-            putStrLn "Video failed!"
-            Right dm <- restCall dis (R.CreateDM (userId $ messageAuthor m))
-            void $ restCall dis (R.CreateMessage (channelId dm) err)
-            void $ restCall dis (R.CreateReaction (messageChannel m, messageId m) "poop")
-            void $ restCall dis (R.DeleteOwnReaction (messageChannel m, messageId m) "eyes")
+            liftIO $ putStrLn "Video failed!"
+            Right dm <- restCall (R.CreateDM (userId $ messageAuthor m))
+            void $ restCall (R.CreateMessage (channelId dm) err)
+            void $ restCall (R.CreateReaction (messageChannel m, messageId m) "poop")
+            void $ restCall (R.DeleteOwnReaction (messageChannel m, messageId m) "eyes")
       Version ->
-        void $ restCall dis (R.CreateMessage (messageChannel m) botVersion)
+        void $ restCall (R.CreateMessage (messageChannel m) botVersion)
       Doc expr -> do
-        doc <- askDoc slowGhci expr
-        void $ restCall dis (R.CreateMessage (messageChannel m) doc)
+        doc <- liftIO $ askDoc slowGhci expr
+        void $ restCall (R.CreateMessage (messageChannel m) doc)
       Type expr -> do
-        ty <- askType slowGhci expr
-        void $ restCall dis (R.CreateMessage (messageChannel m) ty)
+        ty <- liftIO $ askType slowGhci expr
+        void $ restCall (R.CreateMessage (messageChannel m) ty)
       Restart -> do
-        void $ restCall dis (R.CreateMessage (messageChannel m) "Restarting...")
-        stopDiscord dis
+        void $ restCall (R.CreateMessage (messageChannel m) "Restarting...")
+        stopDiscord
   _ -> pure ()
 
 fromHuman :: Message -> Bool

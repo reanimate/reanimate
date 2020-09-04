@@ -5,6 +5,7 @@ module Reanimate.Driver.Magick
 import System.IO.Unsafe (unsafePerformIO)
 import System.Directory (findExecutable)
 
+{-# NOINLINE magickCmd #-}
 -- |The name of the ImageMagick command. On Unix-like operating systems, the
 -- command \'convert\' does not conflict with the name of other commands. On
 -- Windows, ImageMagick version 7 is readily available, the command \'magick\'

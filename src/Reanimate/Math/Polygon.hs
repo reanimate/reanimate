@@ -49,8 +49,6 @@ module Reanimate.Math.Polygon
   -- * Single-Source-Shortest-Path
   , ssspVisibility -- :: Polygon -> Polygon
   , ssspWindows -- :: Polygon -> [(V2 Rational, V2 Rational)]
-  -- * Duals
-  , pdualPolygons -- :: Polygon -> PDual -> [Polygon]
   -- * Built-in shapes for testing
   , triangle  -- :: Polygon
   , triangle' -- :: [P]
@@ -587,21 +585,7 @@ pCircumference' p = sum
 
 -- Add points by splitting the longest lines in half repeatedly.
 pAddPoints :: PolyCtx a => Int -> APolygon a -> APolygon a
-pAddPoints n p | n <= 0 = p
-pAddPoints n p = pAddPoints (n-1) $
-    mkPolygon $ V.fromList $ concatMap worker [0 .. pSize p-1]
-  where
-    worker idx
-      | idx == longestEdge =
-        let start = pAccess p idx
-            end = pAccess p $ idx+1
-            middle = lerp 0.5 end start
-        in [start, middle]
-      | otherwise = [pAccess p idx]
-    longestEdge = maximumBy cmpLength [0 .. pSize p-1]
-    cmpLength a b =
-      distSquared (pAccess p a) (pAccess p $ a+1) `compare`
-      distSquared (pAccess p b) (pAccess p $ b+1)
+pAddPoints = pAddPointsRestricted []
 
 pAddPointsRestricted :: PolyCtx a => [(V2 a, V2 a)] -> Int -> APolygon a -> APolygon a
 pAddPointsRestricted _immutableEdges n p | n <= 0 = p
@@ -613,10 +597,7 @@ pAddPointsRestricted immutableEdges n p = pAddPointsRestricted immutableEdges (n
       (pAccess p $ idx+1, pAccess p idx) `elem` immutableEdges
     worker idx
       | idx == longestEdge && not (isImmutable idx) =
-        let start = pAccess p idx
-            end = pAccess p $ idx+1
-            middle = lerp 0.5 end start
-        in [start, middle]
+        [pAccess p idx, pMiddlePoint p idx]
       | otherwise = [pAccess p idx]
     longestEdge = maximumBy cmpLength [0 .. pSize p-1]
     cmpLength a _ | isImmutable a = LT
@@ -625,6 +606,10 @@ pAddPointsRestricted immutableEdges n p = pAddPointsRestricted immutableEdges (n
       distSquared (pAccess p a) (pAccess p $ a+1) `compare`
       distSquared (pAccess p b) (pAccess p $ b+1)
 
+pMiddlePoint :: PolyCtx a => APolygon a -> Int -> V2 a
+pMiddlePoint p idx
+  = lerp 0.5 (pAccess p $ idx+1) (pAccess p idx)
+
 pAddPointsBetween :: PolyCtx a => (Int, Int) -> Int -> APolygon a -> APolygon a
 pAddPointsBetween _ n p | n <= 0 = p
 pAddPointsBetween (i,l) n p = pAddPointsBetween (i,l+1) (n-1) $
@@ -632,10 +617,7 @@ pAddPointsBetween (i,l) n p = pAddPointsBetween (i,l+1) (n-1) $
   where
     worker idx
       | idx == longestEdge =
-        let start = pAccess p idx
-            end = pAccess p $ idx+1
-            middle = lerp 0.5 end start
-        in [start, middle]
+        [pAccess p idx, pMiddlePoint p idx]
       | otherwise = [pAccess p idx]
     longestEdge = maximumBy cmpLength [i .. i+l-1]
     cmpLength a b =
@@ -796,6 +778,3 @@ ssspWindows p = clearDups $ go (pAccess p 0) [0..pSize p-1]
               in if a /= b
                 then (l, a) : (b, pAccess p yO) : go (pAccess p yO) (y:xs)
                 else go l (y:xs)
-
-pdualPolygons :: Polygon -> PDual -> [Polygon]
-pdualPolygons p pdual = map mkPolygonFromRing (pdualRings (pRing p) pdual)

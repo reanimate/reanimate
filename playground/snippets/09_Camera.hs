@@ -7,14 +7,12 @@ animation = docEnv $ mapA (withFillOpacity 1) $ sceneAnimation $ do
     oTopY   .= screenTop 
     oZIndex .= 2
 
-  circle <- newObject $ Circle 1
+  circle <- newObject $ withFillColor "blue" $ mkCircle 1
   cameraAttach cam circle
-  oModify circle $ oContext .~ withFillColor "blue"
   circleRight <- oRead circle oRightX
 
-  box <- newObject $ Rectangle 2 2
+  box <- newObject $ withFillColor "green" $ mkRect 2 2
   cameraAttach cam box
-  oModify box $ oContext .~ withFillColor "green"
   oModify box $ oLeftX .~ circleRight
   boxCenter <- oRead box oCenterXY
 

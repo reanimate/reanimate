@@ -81,12 +81,15 @@ jobs:
             \"color\": \"success\" \
           }" > hpc/haddock_badge.json
 
+    # Is there a way to reuse the script from playground.yml?
     - name: Playground
       run: |
+        sudo apt-get -y install texlive texlive-latex-base texlive-latex-extra
         CWD=`pwd`
         stack build
         cd playground
         stack build
+        # We need to install latex before we can generate the snippets.
         stack exec --cwd ../ playground snippets playground/snippets > viewer-elm/dist/snippets.js
         cd viewer-elm
         npm install

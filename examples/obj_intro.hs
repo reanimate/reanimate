@@ -1,13 +1,14 @@
--- This is the interactive Reanimate Playground
+#!/usr/bin/env stack
+-- stack runghc --package reanimate
+{-# LANGUAGE OverloadedStrings #-}
+module Main(main) where
 
--- Here you can write Haskell code and have it
--- render directly to your browser.
+import Reanimate
+import Reanimate.Scene
+import Control.Lens
 
--- There are more examples available if you click
--- on the 'collections' icon to the far right
-
-animation :: Animation
-animation = scene $ do
+main :: IO ()
+main = reanimate $ scene $ do
   newSpriteSVG_ $ mkBackground "white"
   logo <- oNew $ center $ latex "Reanimate"
   oModify logo $ oScale .~ 3

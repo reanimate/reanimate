@@ -37,9 +37,8 @@ animation = env $
     switchTo topL txt
 
 switchTo src dst = do
-  fork $ oFadeOut src 1
-  oModify dst $ oOpacity .~ 1
-  oFadeIn dst 1
+  fork $ oHideWith src oFadeOut
+  oShowWith dst oFadeIn
   wait 1
 
 newText txt =
