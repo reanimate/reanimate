@@ -474,6 +474,82 @@ efficiencyTesterEVar = evalScene $ do
   at1 <- readEVar v
   pure $ at0+at1
 
+testVarsEqual :: Bool
+testVarsEqual = all id $
+  [ -- check new
+    (evalScene $ do
+      var <- newVar (0 :: Double)
+      evar <- newEVar 0
+      isSameAsVar evar var
+    ),
+    -- Read/write static values.
+    (evalScene $ do
+      var <- newVar (0 :: Double)
+      wait 1 >> writeVar var 2 >> wait 1 >> writeVar var 3 >> wait (-2)
+      evar <- newEVar 0
+      wait 1 >> writeEVar evar 2 >> wait 1 >> writeEVar evar 3 >> wait (-2)
+      isSameAsVar evar var
+    ),
+    -- Read/write static values with time-travel (waiting with negative values)
+    (evalScene $ do
+      var <- newVar (0 :: Double)
+      wait (-1) >> writeVar var 3 >> wait 1
+      evar <- newEVar 0
+      wait (-1) >> writeEVar evar 3 >> wait 1
+      isSameAsVar evar var
+    ),
+    -- Read/write values that change over time.
+    (evalScene $ do
+      var <- newVar (0 :: Double)
+      wait 1 >> modifyVar var (+1) >> tweenVar var 2 (\a t -> a + t) >> wait (-3)
+      evar <- newEVar 0
+      wait 1 >> modifyEVar evar (+1) >> tweenEVar evar 2 (\a t -> a + t) >> wait (-3)
+      isSameAsVar evar var
+    ),
+    -- Change a value over 1 second. Go back 0.5 seconds and modify the value at that timestamp.
+    (evalScene $ do
+      var <- newVar (0 :: Double)
+      wait 1 >> tweenVar var 1 (\a t -> a + t) >> wait (-0.5) >> modifyVar var (+3) >> wait (-1.5)
+      evar <- newEVar 0
+      wait 1 >> tweenEVar evar 1 (\a t -> a + t) >> wait (-0.5) >> modifyEVar evar (+3) >> wait (-1.5)
+      isSameAsVar evar var
+    ),
+    -- Change a value over 1 second. Go back 0.5 seconds and change the value over 1 second from that timestamp.
+    (evalScene $ do
+      var <- newVar (0 :: Double)
+      wait 1 >> tweenVar var 1 (\a t -> a + t) >> wait (-0.5) >> tweenVar var 1 (\a t -> a + 2 * t) >> wait (-2.5)
+      evar <- newEVar 0
+      wait 1 >> tweenEVar evar 1 (\a t -> a + t) >> wait (-0.5) >> tweenEVar evar 1 (\a t -> a + 2 * t) >> wait (-2.5)
+      isSameAsVar evar var
+    ),
+    -- Write a static value, go back 0.5 seconds, change the value over 1 second from that timestamp.
+    (evalScene $ do
+      var <- newVar (0 :: Double)
+      wait 1 >> writeVar var 42 >> wait (-0.5) >> tweenVar var 1 (\a t -> a + t) >> wait (-1.5)
+      evar <- newEVar 0
+      wait 1 >> writeEVar evar 42 >> wait (-0.5) >> tweenEVar evar 1 (\a t -> a + t) >> wait (-1.5)
+      isSameAsVar evar var
+    )
+  ]
+  where
+    varVals :: (Show a) => Var s a -> [Time] -> Scene s [a]
+    varVals var points =
+      flip mapM points $ \t -> do
+        wait t
+        x <- readVar var
+        wait (-t)
+        pure x
+    evarVals :: (Show a) => EVar s a -> [Time] -> Scene s [a]
+    evarVals var points =
+      flip mapM points $ \t -> do
+        wait t
+        x <- readEVar var
+        wait (-t)
+        pure x
+    isSameAsVar ::  (Show a, Eq a) => EVar s a -> Var s a -> Scene s Bool
+    isSameAsVar evar var = let points = fmap (/2) [-40..40]
+                           in (==) <$> varVals var points <*> evarVals evar points
+
 -- | Time dependent variable.
 newtype Var s a = Var (STRef s (Time -> a))
 
