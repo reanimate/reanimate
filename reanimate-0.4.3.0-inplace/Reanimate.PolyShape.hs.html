@@ -214,7 +214,7 @@ span.spaces    { background: white }
 <span class="lineno">  195 </span><span class="decl"><span class="nottickedoff">decomposePolygon poly =</span>
 <span class="lineno">  196 </span><span class="spaces">  </span><span class="nottickedoff">[ [ V2 x y</span>
 <span class="lineno">  197 </span><span class="spaces">    </span><span class="nottickedoff">| v &lt;- V.toList (Geo.boundaryVertices f pg)</span>
-<span class="lineno">  198 </span><span class="spaces">    </span><span class="nottickedoff">, let Geo.Point2 x y =(pg^.Geo.vertexDataOf v) ^. Geo.location ]</span>
+<span class="lineno">  198 </span><span class="spaces">    </span><span class="nottickedoff">, let Geo.Point2 x y = pg^.Geo.vertexDataOf v . Geo.location ]</span>
 <span class="lineno">  199 </span><span class="spaces">  </span><span class="nottickedoff">| (f, Inside) &lt;- V.toList (Geo.internalFaces pg) ]</span>
 <span class="lineno">  200 </span><span class="spaces"></span><span class="nottickedoff"></span>
 <span class="lineno">  201 </span><span class="spaces">  </span><span class="nottickedoff">where</span>

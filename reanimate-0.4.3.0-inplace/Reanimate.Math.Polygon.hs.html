@@ -604,215 +604,199 @@ span.spaces    { background: white }
 <span class="lineno">  585 </span>
 <span class="lineno">  586 </span>-- Add points by splitting the longest lines in half repeatedly.
 <span class="lineno">  587 </span>pAddPoints :: PolyCtx a =&gt; Int -&gt; APolygon a -&gt; APolygon a
-<span class="lineno">  588 </span><span class="decl"><span class="istickedoff">pAddPoints n p | <span class="tickonlytrue">n &lt;= 0</span> = p</span>
-<span class="lineno">  589 </span><span class="spaces"></span><span class="istickedoff">pAddPoints n p = <span class="nottickedoff">pAddPoints (n-1) $</span></span>
-<span class="lineno">  590 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">mkPolygon $ V.fromList $ concatMap worker [0 .. pSize p-1]</span></span>
-<span class="lineno">  591 </span><span class="spaces">  </span><span class="istickedoff">where</span>
-<span class="lineno">  592 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">worker idx</span></span>
-<span class="lineno">  593 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">| idx == longestEdge =</span></span>
-<span class="lineno">  594 </span><span class="spaces">        </span><span class="istickedoff"><span class="nottickedoff">let start = pAccess p idx</span></span>
-<span class="lineno">  595 </span><span class="spaces">            </span><span class="istickedoff"><span class="nottickedoff">end = pAccess p $ idx+1</span></span>
-<span class="lineno">  596 </span><span class="spaces">            </span><span class="istickedoff"><span class="nottickedoff">middle = lerp 0.5 end start</span></span>
-<span class="lineno">  597 </span><span class="spaces">        </span><span class="istickedoff"><span class="nottickedoff">in [start, middle]</span></span>
-<span class="lineno">  598 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">| otherwise = [pAccess p idx]</span></span>
-<span class="lineno">  599 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">longestEdge = maximumBy cmpLength [0 .. pSize p-1]</span></span>
-<span class="lineno">  600 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">cmpLength a b =</span></span>
-<span class="lineno">  601 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">distSquared (pAccess p a) (pAccess p $ a+1) `compare`</span></span>
-<span class="lineno">  602 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">distSquared (pAccess p b) (pAccess p $ b+1)</span></span></span>
-<span class="lineno">  603 </span>
-<span class="lineno">  604 </span>pAddPointsRestricted :: PolyCtx a =&gt; [(V2 a, V2 a)] -&gt; Int -&gt; APolygon a -&gt; APolygon a
-<span class="lineno">  605 </span><span class="decl"><span class="nottickedoff">pAddPointsRestricted _immutableEdges n p | n &lt;= 0 = p</span>
-<span class="lineno">  606 </span><span class="spaces"></span><span class="nottickedoff">pAddPointsRestricted immutableEdges n p = pAddPointsRestricted immutableEdges (n-1) $</span>
-<span class="lineno">  607 </span><span class="spaces">    </span><span class="nottickedoff">mkPolygon $ V.fromList $ concatMap worker [0 .. pSize p-1]</span>
-<span class="lineno">  608 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  609 </span><span class="spaces">    </span><span class="nottickedoff">isImmutable idx =</span>
-<span class="lineno">  610 </span><span class="spaces">      </span><span class="nottickedoff">(pAccess p idx, pAccess p $ idx+1) `elem` immutableEdges ||</span>
-<span class="lineno">  611 </span><span class="spaces">      </span><span class="nottickedoff">(pAccess p $ idx+1, pAccess p idx) `elem` immutableEdges</span>
-<span class="lineno">  612 </span><span class="spaces">    </span><span class="nottickedoff">worker idx</span>
-<span class="lineno">  613 </span><span class="spaces">      </span><span class="nottickedoff">| idx == longestEdge &amp;&amp; not (isImmutable idx) =</span>
-<span class="lineno">  614 </span><span class="spaces">        </span><span class="nottickedoff">let start = pAccess p idx</span>
-<span class="lineno">  615 </span><span class="spaces">            </span><span class="nottickedoff">end = pAccess p $ idx+1</span>
-<span class="lineno">  616 </span><span class="spaces">            </span><span class="nottickedoff">middle = lerp 0.5 end start</span>
-<span class="lineno">  617 </span><span class="spaces">        </span><span class="nottickedoff">in [start, middle]</span>
-<span class="lineno">  618 </span><span class="spaces">      </span><span class="nottickedoff">| otherwise = [pAccess p idx]</span>
-<span class="lineno">  619 </span><span class="spaces">    </span><span class="nottickedoff">longestEdge = maximumBy cmpLength [0 .. pSize p-1]</span>
-<span class="lineno">  620 </span><span class="spaces">    </span><span class="nottickedoff">cmpLength a _ | isImmutable a = LT</span>
-<span class="lineno">  621 </span><span class="spaces">    </span><span class="nottickedoff">cmpLength _ b | isImmutable b = GT</span>
-<span class="lineno">  622 </span><span class="spaces">    </span><span class="nottickedoff">cmpLength a b =</span>
-<span class="lineno">  623 </span><span class="spaces">      </span><span class="nottickedoff">distSquared (pAccess p a) (pAccess p $ a+1) `compare`</span>
-<span class="lineno">  624 </span><span class="spaces">      </span><span class="nottickedoff">distSquared (pAccess p b) (pAccess p $ b+1)</span></span>
-<span class="lineno">  625 </span>
-<span class="lineno">  626 </span>pAddPointsBetween :: PolyCtx a =&gt; (Int, Int) -&gt; Int -&gt; APolygon a -&gt; APolygon a
-<span class="lineno">  627 </span><span class="decl"><span class="nottickedoff">pAddPointsBetween _ n p | n &lt;= 0 = p</span>
-<span class="lineno">  628 </span><span class="spaces"></span><span class="nottickedoff">pAddPointsBetween (i,l) n p = pAddPointsBetween (i,l+1) (n-1) $</span>
-<span class="lineno">  629 </span><span class="spaces">    </span><span class="nottickedoff">mkPolygon $ V.fromList $ concatMap worker [0 .. pSize p-1]</span>
-<span class="lineno">  630 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  631 </span><span class="spaces">    </span><span class="nottickedoff">worker idx</span>
-<span class="lineno">  632 </span><span class="spaces">      </span><span class="nottickedoff">| idx == longestEdge =</span>
-<span class="lineno">  633 </span><span class="spaces">        </span><span class="nottickedoff">let start = pAccess p idx</span>
-<span class="lineno">  634 </span><span class="spaces">            </span><span class="nottickedoff">end = pAccess p $ idx+1</span>
-<span class="lineno">  635 </span><span class="spaces">            </span><span class="nottickedoff">middle = lerp 0.5 end start</span>
-<span class="lineno">  636 </span><span class="spaces">        </span><span class="nottickedoff">in [start, middle]</span>
-<span class="lineno">  637 </span><span class="spaces">      </span><span class="nottickedoff">| otherwise = [pAccess p idx]</span>
-<span class="lineno">  638 </span><span class="spaces">    </span><span class="nottickedoff">longestEdge = maximumBy cmpLength [i .. i+l-1]</span>
-<span class="lineno">  639 </span><span class="spaces">    </span><span class="nottickedoff">cmpLength a b =</span>
-<span class="lineno">  640 </span><span class="spaces">      </span><span class="nottickedoff">distSquared (pAccess p a) (pAccess p $ a+1) `compare`</span>
-<span class="lineno">  641 </span><span class="spaces">      </span><span class="nottickedoff">distSquared (pAccess p b) (pAccess p $ b+1)</span></span>
-<span class="lineno">  642 </span>
-<span class="lineno">  643 </span>-- addPoints :: Int -&gt; Polygon -&gt; Polygon
-<span class="lineno">  644 </span>-- addPoints n p = mkPolygon $ V.fromList $ worker n 0 (map (pAccess p) [0..s])
-<span class="lineno">  645 </span>--   where
-<span class="lineno">  646 </span>--     worker 0 _ rest = init rest
-<span class="lineno">  647 </span>--     worker i acc (x:y:xs) =
-<span class="lineno">  648 </span>--       let xy = approxDist x y in
-<span class="lineno">  649 </span>--       if acc + xy &gt; limit
-<span class="lineno">  650 </span>--         then x : worker (i-1) 0 (lerp ((limit-acc)/xy) y x : y:xs)
-<span class="lineno">  651 </span>--         else x : worker i (acc+xy) (y:xs)
-<span class="lineno">  652 </span>--     worker _ _ [_] = []
-<span class="lineno">  653 </span>--     worker _ _ _ = error &quot;addPoints: invalid polygon&quot;
-<span class="lineno">  654 </span>--     s = pSize p
-<span class="lineno">  655 </span>--     len = polygonLength p
-<span class="lineno">  656 </span>--     limit = len / fromIntegral (n+1)
-<span class="lineno">  657 </span>
-<span class="lineno">  658 </span>pIsConvex :: Polygon -&gt; Bool
-<span class="lineno">  659 </span><span class="decl"><span class="nottickedoff">pIsConvex p = and</span>
-<span class="lineno">  660 </span><span class="spaces">  </span><span class="nottickedoff">[ area2X (pAccess p i) (pAccess p j) (pAccess p k) &gt; 0</span>
-<span class="lineno">  661 </span><span class="spaces">  </span><span class="nottickedoff">| i &lt;- [0..n-1]</span>
-<span class="lineno">  662 </span><span class="spaces">  </span><span class="nottickedoff">, j &lt;- [i+1..n-1]</span>
-<span class="lineno">  663 </span><span class="spaces">  </span><span class="nottickedoff">, k &lt;- [j+1..n-1]</span>
-<span class="lineno">  664 </span><span class="spaces">  </span><span class="nottickedoff">]</span>
-<span class="lineno">  665 </span><span class="spaces">  </span><span class="nottickedoff">where n = pSize p</span></span>
-<span class="lineno">  666 </span>
-<span class="lineno">  667 </span>pIsCCW :: Polygon -&gt; Bool
-<span class="lineno">  668 </span><span class="decl"><span class="istickedoff">pIsCCW p | <span class="tickonlyfalse">pNull p</span> = <span class="nottickedoff">False</span></span>
-<span class="lineno">  669 </span><span class="spaces"></span><span class="istickedoff">pIsCCW p = V.sum (pMapEdges fn p) &lt; 0</span>
-<span class="lineno">  670 </span><span class="spaces">  </span><span class="istickedoff">where</span>
-<span class="lineno">  671 </span><span class="spaces">    </span><span class="istickedoff">fn (V2 x1 y1) (V2 x2 y2) = (x2-x1)*(y2+y1)</span></span>
-<span class="lineno">  672 </span>
-<span class="lineno">  673 </span>{-# INLINE pRayIntersect #-}
-<span class="lineno">  674 </span>pRayIntersect :: PolyCtx a =&gt; APolygon a -&gt; (Int, Int) -&gt; (Int,Int) -&gt; Maybe (V2 a)
-<span class="lineno">  675 </span><span class="decl"><span class="nottickedoff">pRayIntersect p (a,b) (c,d) =</span>
-<span class="lineno">  676 </span><span class="spaces">  </span><span class="nottickedoff">rayIntersect (pAccess p a, pAccess p b) (pAccess p c, pAccess p d)</span></span>
-<span class="lineno">  677 </span>
-<span class="lineno">  678 </span>pCuts :: (Real a, Fractional a, Epsilon a) =&gt; APolygon a -&gt; [(APolygon a,APolygon a)]
-<span class="lineno">  679 </span><span class="decl"><span class="nottickedoff">pCuts p =</span>
-<span class="lineno">  680 </span><span class="spaces">  </span><span class="nottickedoff">[ pCutAt (pAdjustOffset p i) (j-i)</span>
-<span class="lineno">  681 </span><span class="spaces">  </span><span class="nottickedoff">| i &lt;- [0 .. pSize p-1 ]</span>
-<span class="lineno">  682 </span><span class="spaces">  </span><span class="nottickedoff">, j &lt;- [i+2 .. pSize p-1 ]</span>
-<span class="lineno">  683 </span><span class="spaces">  </span><span class="nottickedoff">, (j+1) `mod` pSize p /= i</span>
-<span class="lineno">  684 </span><span class="spaces">  </span><span class="nottickedoff">, pParent p i j == i ]</span></span>
-<span class="lineno">  685 </span>
-<span class="lineno">  686 </span>pCutEqual :: PolyCtx a =&gt; APolygon a -&gt; (APolygon a, APolygon a)
-<span class="lineno">  687 </span><span class="decl"><span class="nottickedoff">pCutEqual p =</span>
-<span class="lineno">  688 </span><span class="spaces">    </span><span class="nottickedoff">fromMaybe (p,p) $ listToMaybe $ sortOn f $ pCuts p</span>
-<span class="lineno">  689 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  690 </span><span class="spaces">    </span><span class="nottickedoff">f (a,b) = abs (pArea a - pArea b)</span></span>
-<span class="lineno">  691 </span>
-<span class="lineno">  692 </span>-- FIXME: This should be more efficient
-<span class="lineno">  693 </span>pCutAt :: PolyCtx a =&gt; APolygon a -&gt; Int -&gt; (APolygon a, APolygon a)
-<span class="lineno">  694 </span><span class="decl"><span class="nottickedoff">pCutAt p i = (mkPolygon $ V.fromList left, mkPolygon $ V.fromList right)</span>
-<span class="lineno">  695 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  696 </span><span class="spaces">    </span><span class="nottickedoff">n     = pSize p</span>
-<span class="lineno">  697 </span><span class="spaces">    </span><span class="nottickedoff">left  = map (pAccess p) [0 .. i]</span>
-<span class="lineno">  698 </span><span class="spaces">    </span><span class="nottickedoff">right = map (pAccess p) (0:[i..n-1])</span></span>
-<span class="lineno">  699 </span>
-<span class="lineno">  700 </span>pOverlap :: PolyCtx a =&gt; APolygon a -&gt; APolygon a -&gt; APolygon a
-<span class="lineno">  701 </span><span class="decl"><span class="nottickedoff">pOverlap a b = mkPolygon $ V.fromList $ clearDups $ concatMap edgeIntersect [0 .. pSize a-1]</span>
-<span class="lineno">  702 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  703 </span><span class="spaces">    </span><span class="nottickedoff">clearDups (x:y:xs)</span>
-<span class="lineno">  704 </span><span class="spaces">      </span><span class="nottickedoff">| x == y = clearDups (y:xs)</span>
-<span class="lineno">  705 </span><span class="spaces">      </span><span class="nottickedoff">| otherwise = x : clearDups (y:xs)</span>
-<span class="lineno">  706 </span><span class="spaces">    </span><span class="nottickedoff">clearDups xs = xs</span>
-<span class="lineno">  707 </span><span class="spaces">    </span><span class="nottickedoff">edgeIntersect edge =</span>
-<span class="lineno">  708 </span><span class="spaces">      </span><span class="nottickedoff">sortOn (distSquared (pAccess a edge)) $ catMaybes</span>
-<span class="lineno">  709 </span><span class="spaces">      </span><span class="nottickedoff">[ lineIntersect (aP, aP') (bP, bP')</span>
-<span class="lineno">  710 </span><span class="spaces">      </span><span class="nottickedoff">| i &lt;- [0 .. pSize b-1]</span>
-<span class="lineno">  711 </span><span class="spaces">      </span><span class="nottickedoff">, let aP = pAccess a edge</span>
-<span class="lineno">  712 </span><span class="spaces">            </span><span class="nottickedoff">aP' = pAccess a (edge+1)</span>
-<span class="lineno">  713 </span><span class="spaces">            </span><span class="nottickedoff">bP = pAccess b i</span>
-<span class="lineno">  714 </span><span class="spaces">            </span><span class="nottickedoff">bP' = pAccess b (i+1)</span>
-<span class="lineno">  715 </span><span class="spaces">      </span><span class="nottickedoff">]</span></span>
-<span class="lineno">  716 </span>
-<span class="lineno">  717 </span>---------------------------------------------------------
-<span class="lineno">  718 </span>-- SSSP visibility and SSSP windows
-<span class="lineno">  719 </span>
-<span class="lineno">  720 </span>ssspVisibility :: PolyCtx a =&gt; APolygon a -&gt; APolygon a
-<span class="lineno">  721 </span><span class="decl"><span class="nottickedoff">ssspVisibility p = mkPolygon $</span>
-<span class="lineno">  722 </span><span class="spaces">    </span><span class="nottickedoff">V.fromList $ clearDups $ go [0 .. pSize p-1] -- ([root..pSize p-1]  ++ [0 .. root-1])</span>
-<span class="lineno">  723 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  724 </span><span class="spaces">    </span><span class="nottickedoff">clearDups (x:y:xs)</span>
-<span class="lineno">  725 </span><span class="spaces">      </span><span class="nottickedoff">| x == y = clearDups (y:xs)</span>
-<span class="lineno">  726 </span><span class="spaces">      </span><span class="nottickedoff">| otherwise = x : clearDups (y:xs)</span>
-<span class="lineno">  727 </span><span class="spaces">    </span><span class="nottickedoff">clearDups xs = xs</span>
-<span class="lineno">  728 </span><span class="spaces">    </span><span class="nottickedoff">obstructedBy n =</span>
-<span class="lineno">  729 </span><span class="spaces">      </span><span class="nottickedoff">case pParent p 0 n of</span>
-<span class="lineno">  730 </span><span class="spaces">        </span><span class="nottickedoff">0 -&gt; n</span>
-<span class="lineno">  731 </span><span class="spaces">        </span><span class="nottickedoff">i -&gt; obstructedBy i</span>
-<span class="lineno">  732 </span><span class="spaces">    </span><span class="nottickedoff">go [] = []</span>
-<span class="lineno">  733 </span><span class="spaces">    </span><span class="nottickedoff">go [x] = [pAccess p x]</span>
-<span class="lineno">  734 </span><span class="spaces">    </span><span class="nottickedoff">go (x:y:xs) =</span>
-<span class="lineno">  735 </span><span class="spaces">      </span><span class="nottickedoff">let xO = obstructedBy x</span>
-<span class="lineno">  736 </span><span class="spaces">          </span><span class="nottickedoff">yO = obstructedBy y</span>
-<span class="lineno">  737 </span><span class="spaces">      </span><span class="nottickedoff">in case () of</span>
-<span class="lineno">  738 </span><span class="spaces">          </span><span class="nottickedoff">()</span>
-<span class="lineno">  739 </span><span class="spaces">            </span><span class="nottickedoff">-- Both ends are visible.</span>
-<span class="lineno">  740 </span><span class="spaces">            </span><span class="nottickedoff">| xO == x &amp;&amp; yO == y -&gt; pAccess p x : go (y:xs)</span>
-<span class="lineno">  741 </span><span class="spaces">            </span><span class="nottickedoff">-- X is visible, x to intersect (0,yO) (x,y)</span>
-<span class="lineno">  742 </span><span class="spaces">            </span><span class="nottickedoff">| xO == x   -&gt;</span>
-<span class="lineno">  743 </span><span class="spaces">              </span><span class="nottickedoff">pAccess p x : fromMaybe (pAccess p y) (pRayIntersect p (0,yO) (x,y)) : go (y:xs)</span>
-<span class="lineno">  744 </span><span class="spaces">            </span><span class="nottickedoff">-- Y is visible</span>
-<span class="lineno">  745 </span><span class="spaces">            </span><span class="nottickedoff">| yO == y   -&gt; fromMaybe (pAccess p x) (pRayIntersect p (0,xO) (x,y)) : pAccess p y : go (y:xs)</span>
-<span class="lineno">  746 </span><span class="spaces">            </span><span class="nottickedoff">-- Neither is visible and they've obstructed by the same point</span>
-<span class="lineno">  747 </span><span class="spaces">            </span><span class="nottickedoff">-- so the entire edge is hidden.</span>
-<span class="lineno">  748 </span><span class="spaces">            </span><span class="nottickedoff">| xO == yO -&gt; go (y:xs)</span>
-<span class="lineno">  749 </span><span class="spaces">            </span><span class="nottickedoff">-- Neither is visible. Cast shadow from obstruction points to</span>
-<span class="lineno">  750 </span><span class="spaces">            </span><span class="nottickedoff">-- find if a subsection of the edge is visible.</span>
-<span class="lineno">  751 </span><span class="spaces">            </span><span class="nottickedoff">| otherwise -&gt;</span>
-<span class="lineno">  752 </span><span class="spaces">              </span><span class="nottickedoff">let a = fromMaybe (error &quot;a&quot;) (pRayIntersect p (0,xO) (x,y))</span>
-<span class="lineno">  753 </span><span class="spaces">                  </span><span class="nottickedoff">b = fromMaybe (error &quot;b&quot;) (pRayIntersect p (0,yO) (x,y))</span>
-<span class="lineno">  754 </span><span class="spaces">              </span><span class="nottickedoff">in if a /= b</span>
-<span class="lineno">  755 </span><span class="spaces">                </span><span class="nottickedoff">then a : b : go (y:xs)</span>
-<span class="lineno">  756 </span><span class="spaces">                </span><span class="nottickedoff">else go (y:xs)</span></span>
-<span class="lineno">  757 </span>
-<span class="lineno">  758 </span>ssspWindows :: Polygon -&gt; [(V2 Rational, V2 Rational)]
-<span class="lineno">  759 </span><span class="decl"><span class="nottickedoff">ssspWindows p = clearDups $ go (pAccess p 0) [0..pSize p-1]</span>
-<span class="lineno">  760 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  761 </span><span class="spaces">    </span><span class="nottickedoff">clearDups (x:y:xs)</span>
-<span class="lineno">  762 </span><span class="spaces">      </span><span class="nottickedoff">| x == y = clearDups (y:xs)</span>
-<span class="lineno">  763 </span><span class="spaces">      </span><span class="nottickedoff">| otherwise = x : clearDups (y:xs)</span>
-<span class="lineno">  764 </span><span class="spaces">    </span><span class="nottickedoff">clearDups xs = xs</span>
-<span class="lineno">  765 </span><span class="spaces">    </span><span class="nottickedoff">obstructedBy n =</span>
-<span class="lineno">  766 </span><span class="spaces">      </span><span class="nottickedoff">case pParent p 0 n of</span>
-<span class="lineno">  767 </span><span class="spaces">        </span><span class="nottickedoff">0 -&gt; n</span>
-<span class="lineno">  768 </span><span class="spaces">        </span><span class="nottickedoff">i -&gt; obstructedBy i</span>
-<span class="lineno">  769 </span><span class="spaces">    </span><span class="nottickedoff">go _ [] = []</span>
-<span class="lineno">  770 </span><span class="spaces">    </span><span class="nottickedoff">go _ [_] = []</span>
-<span class="lineno">  771 </span><span class="spaces">    </span><span class="nottickedoff">go l (x:y:xs) =</span>
-<span class="lineno">  772 </span><span class="spaces">      </span><span class="nottickedoff">let xO = obstructedBy x</span>
-<span class="lineno">  773 </span><span class="spaces">          </span><span class="nottickedoff">yO = obstructedBy y</span>
-<span class="lineno">  774 </span><span class="spaces">      </span><span class="nottickedoff">in case () of</span>
-<span class="lineno">  775 </span><span class="spaces">          </span><span class="nottickedoff">()</span>
-<span class="lineno">  776 </span><span class="spaces">            </span><span class="nottickedoff">-- Both ends are visible.</span>
-<span class="lineno">  777 </span><span class="spaces">            </span><span class="nottickedoff">| xO == x &amp;&amp; yO == y -&gt; go (pAccess p x) (y:xs)</span>
-<span class="lineno">  778 </span><span class="spaces">            </span><span class="nottickedoff">-- X is visible, x to intersect (0,yO) (x,y)</span>
-<span class="lineno">  779 </span><span class="spaces">            </span><span class="nottickedoff">| xO == x   -&gt;</span>
-<span class="lineno">  780 </span><span class="spaces">              </span><span class="nottickedoff">go (fromMaybe (pAccess p y) (pRayIntersect p (0,yO) (x,y))) (y:xs)</span>
-<span class="lineno">  781 </span><span class="spaces">            </span><span class="nottickedoff">-- Y is visible</span>
-<span class="lineno">  782 </span><span class="spaces">            </span><span class="nottickedoff">| yO == y   -&gt;</span>
-<span class="lineno">  783 </span><span class="spaces">              </span><span class="nottickedoff">let newL = fromMaybe (pAccess p x) (pRayIntersect p (0,xO) (x,y)) in</span>
-<span class="lineno">  784 </span><span class="spaces">              </span><span class="nottickedoff">(l, newL) :</span>
-<span class="lineno">  785 </span><span class="spaces">              </span><span class="nottickedoff">go newL (y:xs)</span>
-<span class="lineno">  786 </span><span class="spaces">            </span><span class="nottickedoff">-- Neither is visible and they've obstructed by the same point</span>
-<span class="lineno">  787 </span><span class="spaces">            </span><span class="nottickedoff">-- so the entire edge is hidden.</span>
-<span class="lineno">  788 </span><span class="spaces">            </span><span class="nottickedoff">| xO == yO -&gt; go l (y:xs)</span>
-<span class="lineno">  789 </span><span class="spaces">            </span><span class="nottickedoff">-- Neither is visible. Cast shadow from obstruction points to</span>
-<span class="lineno">  790 </span><span class="spaces">            </span><span class="nottickedoff">-- find if a subsection of the edge is visible.</span>
-<span class="lineno">  791 </span><span class="spaces">            </span><span class="nottickedoff">| otherwise -&gt;</span>
-<span class="lineno">  792 </span><span class="spaces">              </span><span class="nottickedoff">let a = fromMaybe (error &quot;a&quot;) (pRayIntersect p (0,xO) (x,y))</span>
-<span class="lineno">  793 </span><span class="spaces">                  </span><span class="nottickedoff">b = fromMaybe (error &quot;b&quot;) (pRayIntersect p (0,yO) (x,y))</span>
-<span class="lineno">  794 </span><span class="spaces">              </span><span class="nottickedoff">in if a /= b</span>
-<span class="lineno">  795 </span><span class="spaces">                </span><span class="nottickedoff">then (l, a) : (b, pAccess p yO) : go (pAccess p yO) (y:xs)</span>
-<span class="lineno">  796 </span><span class="spaces">                </span><span class="nottickedoff">else go l (y:xs)</span></span>
+<span class="lineno">  588 </span><span class="decl"><span class="istickedoff">pAddPoints = pAddPointsRestricted <span class="nottickedoff">[]</span></span></span>
+<span class="lineno">  589 </span>
+<span class="lineno">  590 </span>pAddPointsRestricted :: PolyCtx a =&gt; [(V2 a, V2 a)] -&gt; Int -&gt; APolygon a -&gt; APolygon a
+<span class="lineno">  591 </span><span class="decl"><span class="istickedoff">pAddPointsRestricted _immutableEdges n p | <span class="tickonlytrue">n &lt;= 0</span> = p</span>
+<span class="lineno">  592 </span><span class="spaces"></span><span class="istickedoff">pAddPointsRestricted immutableEdges n p = <span class="nottickedoff">pAddPointsRestricted immutableEdges (n-1) $</span></span>
+<span class="lineno">  593 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">mkPolygon $ V.fromList $ concatMap worker [0 .. pSize p-1]</span></span>
+<span class="lineno">  594 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  595 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">isImmutable idx =</span></span>
+<span class="lineno">  596 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">(pAccess p idx, pAccess p $ idx+1) `elem` immutableEdges ||</span></span>
+<span class="lineno">  597 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">(pAccess p $ idx+1, pAccess p idx) `elem` immutableEdges</span></span>
+<span class="lineno">  598 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">worker idx</span></span>
+<span class="lineno">  599 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">| idx == longestEdge &amp;&amp; not (isImmutable idx) =</span></span>
+<span class="lineno">  600 </span><span class="spaces">        </span><span class="istickedoff"><span class="nottickedoff">[pAccess p idx, pMiddlePoint p idx]</span></span>
+<span class="lineno">  601 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">| otherwise = [pAccess p idx]</span></span>
+<span class="lineno">  602 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">longestEdge = maximumBy cmpLength [0 .. pSize p-1]</span></span>
+<span class="lineno">  603 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">cmpLength a _ | isImmutable a = LT</span></span>
+<span class="lineno">  604 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">cmpLength _ b | isImmutable b = GT</span></span>
+<span class="lineno">  605 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">cmpLength a b =</span></span>
+<span class="lineno">  606 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">distSquared (pAccess p a) (pAccess p $ a+1) `compare`</span></span>
+<span class="lineno">  607 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">distSquared (pAccess p b) (pAccess p $ b+1)</span></span></span>
+<span class="lineno">  608 </span>
+<span class="lineno">  609 </span>pMiddlePoint :: PolyCtx a =&gt; APolygon a -&gt; Int -&gt; V2 a
+<span class="lineno">  610 </span><span class="decl"><span class="nottickedoff">pMiddlePoint p idx</span>
+<span class="lineno">  611 </span><span class="spaces">  </span><span class="nottickedoff">= lerp 0.5 (pAccess p $ idx+1) (pAccess p idx)</span></span>
+<span class="lineno">  612 </span>
+<span class="lineno">  613 </span>pAddPointsBetween :: PolyCtx a =&gt; (Int, Int) -&gt; Int -&gt; APolygon a -&gt; APolygon a
+<span class="lineno">  614 </span><span class="decl"><span class="nottickedoff">pAddPointsBetween _ n p | n &lt;= 0 = p</span>
+<span class="lineno">  615 </span><span class="spaces"></span><span class="nottickedoff">pAddPointsBetween (i,l) n p = pAddPointsBetween (i,l+1) (n-1) $</span>
+<span class="lineno">  616 </span><span class="spaces">    </span><span class="nottickedoff">mkPolygon $ V.fromList $ concatMap worker [0 .. pSize p-1]</span>
+<span class="lineno">  617 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  618 </span><span class="spaces">    </span><span class="nottickedoff">worker idx</span>
+<span class="lineno">  619 </span><span class="spaces">      </span><span class="nottickedoff">| idx == longestEdge =</span>
+<span class="lineno">  620 </span><span class="spaces">        </span><span class="nottickedoff">[pAccess p idx, pMiddlePoint p idx]</span>
+<span class="lineno">  621 </span><span class="spaces">      </span><span class="nottickedoff">| otherwise = [pAccess p idx]</span>
+<span class="lineno">  622 </span><span class="spaces">    </span><span class="nottickedoff">longestEdge = maximumBy cmpLength [i .. i+l-1]</span>
+<span class="lineno">  623 </span><span class="spaces">    </span><span class="nottickedoff">cmpLength a b =</span>
+<span class="lineno">  624 </span><span class="spaces">      </span><span class="nottickedoff">distSquared (pAccess p a) (pAccess p $ a+1) `compare`</span>
+<span class="lineno">  625 </span><span class="spaces">      </span><span class="nottickedoff">distSquared (pAccess p b) (pAccess p $ b+1)</span></span>
+<span class="lineno">  626 </span>
+<span class="lineno">  627 </span>-- addPoints :: Int -&gt; Polygon -&gt; Polygon
+<span class="lineno">  628 </span>-- addPoints n p = mkPolygon $ V.fromList $ worker n 0 (map (pAccess p) [0..s])
+<span class="lineno">  629 </span>--   where
+<span class="lineno">  630 </span>--     worker 0 _ rest = init rest
+<span class="lineno">  631 </span>--     worker i acc (x:y:xs) =
+<span class="lineno">  632 </span>--       let xy = approxDist x y in
+<span class="lineno">  633 </span>--       if acc + xy &gt; limit
+<span class="lineno">  634 </span>--         then x : worker (i-1) 0 (lerp ((limit-acc)/xy) y x : y:xs)
+<span class="lineno">  635 </span>--         else x : worker i (acc+xy) (y:xs)
+<span class="lineno">  636 </span>--     worker _ _ [_] = []
+<span class="lineno">  637 </span>--     worker _ _ _ = error &quot;addPoints: invalid polygon&quot;
+<span class="lineno">  638 </span>--     s = pSize p
+<span class="lineno">  639 </span>--     len = polygonLength p
+<span class="lineno">  640 </span>--     limit = len / fromIntegral (n+1)
+<span class="lineno">  641 </span>
+<span class="lineno">  642 </span>pIsConvex :: Polygon -&gt; Bool
+<span class="lineno">  643 </span><span class="decl"><span class="nottickedoff">pIsConvex p = and</span>
+<span class="lineno">  644 </span><span class="spaces">  </span><span class="nottickedoff">[ area2X (pAccess p i) (pAccess p j) (pAccess p k) &gt; 0</span>
+<span class="lineno">  645 </span><span class="spaces">  </span><span class="nottickedoff">| i &lt;- [0..n-1]</span>
+<span class="lineno">  646 </span><span class="spaces">  </span><span class="nottickedoff">, j &lt;- [i+1..n-1]</span>
+<span class="lineno">  647 </span><span class="spaces">  </span><span class="nottickedoff">, k &lt;- [j+1..n-1]</span>
+<span class="lineno">  648 </span><span class="spaces">  </span><span class="nottickedoff">]</span>
+<span class="lineno">  649 </span><span class="spaces">  </span><span class="nottickedoff">where n = pSize p</span></span>
+<span class="lineno">  650 </span>
+<span class="lineno">  651 </span>pIsCCW :: Polygon -&gt; Bool
+<span class="lineno">  652 </span><span class="decl"><span class="istickedoff">pIsCCW p | <span class="tickonlyfalse">pNull p</span> = <span class="nottickedoff">False</span></span>
+<span class="lineno">  653 </span><span class="spaces"></span><span class="istickedoff">pIsCCW p = V.sum (pMapEdges fn p) &lt; 0</span>
+<span class="lineno">  654 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  655 </span><span class="spaces">    </span><span class="istickedoff">fn (V2 x1 y1) (V2 x2 y2) = (x2-x1)*(y2+y1)</span></span>
+<span class="lineno">  656 </span>
+<span class="lineno">  657 </span>{-# INLINE pRayIntersect #-}
+<span class="lineno">  658 </span>pRayIntersect :: PolyCtx a =&gt; APolygon a -&gt; (Int, Int) -&gt; (Int,Int) -&gt; Maybe (V2 a)
+<span class="lineno">  659 </span><span class="decl"><span class="nottickedoff">pRayIntersect p (a,b) (c,d) =</span>
+<span class="lineno">  660 </span><span class="spaces">  </span><span class="nottickedoff">rayIntersect (pAccess p a, pAccess p b) (pAccess p c, pAccess p d)</span></span>
+<span class="lineno">  661 </span>
+<span class="lineno">  662 </span>pCuts :: (Real a, Fractional a, Epsilon a) =&gt; APolygon a -&gt; [(APolygon a,APolygon a)]
+<span class="lineno">  663 </span><span class="decl"><span class="nottickedoff">pCuts p =</span>
+<span class="lineno">  664 </span><span class="spaces">  </span><span class="nottickedoff">[ pCutAt (pAdjustOffset p i) (j-i)</span>
+<span class="lineno">  665 </span><span class="spaces">  </span><span class="nottickedoff">| i &lt;- [0 .. pSize p-1 ]</span>
+<span class="lineno">  666 </span><span class="spaces">  </span><span class="nottickedoff">, j &lt;- [i+2 .. pSize p-1 ]</span>
+<span class="lineno">  667 </span><span class="spaces">  </span><span class="nottickedoff">, (j+1) `mod` pSize p /= i</span>
+<span class="lineno">  668 </span><span class="spaces">  </span><span class="nottickedoff">, pParent p i j == i ]</span></span>
+<span class="lineno">  669 </span>
+<span class="lineno">  670 </span>pCutEqual :: PolyCtx a =&gt; APolygon a -&gt; (APolygon a, APolygon a)
+<span class="lineno">  671 </span><span class="decl"><span class="nottickedoff">pCutEqual p =</span>
+<span class="lineno">  672 </span><span class="spaces">    </span><span class="nottickedoff">fromMaybe (p,p) $ listToMaybe $ sortOn f $ pCuts p</span>
+<span class="lineno">  673 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  674 </span><span class="spaces">    </span><span class="nottickedoff">f (a,b) = abs (pArea a - pArea b)</span></span>
+<span class="lineno">  675 </span>
+<span class="lineno">  676 </span>-- FIXME: This should be more efficient
+<span class="lineno">  677 </span>pCutAt :: PolyCtx a =&gt; APolygon a -&gt; Int -&gt; (APolygon a, APolygon a)
+<span class="lineno">  678 </span><span class="decl"><span class="nottickedoff">pCutAt p i = (mkPolygon $ V.fromList left, mkPolygon $ V.fromList right)</span>
+<span class="lineno">  679 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  680 </span><span class="spaces">    </span><span class="nottickedoff">n     = pSize p</span>
+<span class="lineno">  681 </span><span class="spaces">    </span><span class="nottickedoff">left  = map (pAccess p) [0 .. i]</span>
+<span class="lineno">  682 </span><span class="spaces">    </span><span class="nottickedoff">right = map (pAccess p) (0:[i..n-1])</span></span>
+<span class="lineno">  683 </span>
+<span class="lineno">  684 </span>pOverlap :: PolyCtx a =&gt; APolygon a -&gt; APolygon a -&gt; APolygon a
+<span class="lineno">  685 </span><span class="decl"><span class="nottickedoff">pOverlap a b = mkPolygon $ V.fromList $ clearDups $ concatMap edgeIntersect [0 .. pSize a-1]</span>
+<span class="lineno">  686 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  687 </span><span class="spaces">    </span><span class="nottickedoff">clearDups (x:y:xs)</span>
+<span class="lineno">  688 </span><span class="spaces">      </span><span class="nottickedoff">| x == y = clearDups (y:xs)</span>
+<span class="lineno">  689 </span><span class="spaces">      </span><span class="nottickedoff">| otherwise = x : clearDups (y:xs)</span>
+<span class="lineno">  690 </span><span class="spaces">    </span><span class="nottickedoff">clearDups xs = xs</span>
+<span class="lineno">  691 </span><span class="spaces">    </span><span class="nottickedoff">edgeIntersect edge =</span>
+<span class="lineno">  692 </span><span class="spaces">      </span><span class="nottickedoff">sortOn (distSquared (pAccess a edge)) $ catMaybes</span>
+<span class="lineno">  693 </span><span class="spaces">      </span><span class="nottickedoff">[ lineIntersect (aP, aP') (bP, bP')</span>
+<span class="lineno">  694 </span><span class="spaces">      </span><span class="nottickedoff">| i &lt;- [0 .. pSize b-1]</span>
+<span class="lineno">  695 </span><span class="spaces">      </span><span class="nottickedoff">, let aP = pAccess a edge</span>
+<span class="lineno">  696 </span><span class="spaces">            </span><span class="nottickedoff">aP' = pAccess a (edge+1)</span>
+<span class="lineno">  697 </span><span class="spaces">            </span><span class="nottickedoff">bP = pAccess b i</span>
+<span class="lineno">  698 </span><span class="spaces">            </span><span class="nottickedoff">bP' = pAccess b (i+1)</span>
+<span class="lineno">  699 </span><span class="spaces">      </span><span class="nottickedoff">]</span></span>
+<span class="lineno">  700 </span>
+<span class="lineno">  701 </span>---------------------------------------------------------
+<span class="lineno">  702 </span>-- SSSP visibility and SSSP windows
+<span class="lineno">  703 </span>
+<span class="lineno">  704 </span>ssspVisibility :: PolyCtx a =&gt; APolygon a -&gt; APolygon a
+<span class="lineno">  705 </span><span class="decl"><span class="nottickedoff">ssspVisibility p = mkPolygon $</span>
+<span class="lineno">  706 </span><span class="spaces">    </span><span class="nottickedoff">V.fromList $ clearDups $ go [0 .. pSize p-1] -- ([root..pSize p-1]  ++ [0 .. root-1])</span>
+<span class="lineno">  707 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  708 </span><span class="spaces">    </span><span class="nottickedoff">clearDups (x:y:xs)</span>
+<span class="lineno">  709 </span><span class="spaces">      </span><span class="nottickedoff">| x == y = clearDups (y:xs)</span>
+<span class="lineno">  710 </span><span class="spaces">      </span><span class="nottickedoff">| otherwise = x : clearDups (y:xs)</span>
+<span class="lineno">  711 </span><span class="spaces">    </span><span class="nottickedoff">clearDups xs = xs</span>
+<span class="lineno">  712 </span><span class="spaces">    </span><span class="nottickedoff">obstructedBy n =</span>
+<span class="lineno">  713 </span><span class="spaces">      </span><span class="nottickedoff">case pParent p 0 n of</span>
+<span class="lineno">  714 </span><span class="spaces">        </span><span class="nottickedoff">0 -&gt; n</span>
+<span class="lineno">  715 </span><span class="spaces">        </span><span class="nottickedoff">i -&gt; obstructedBy i</span>
+<span class="lineno">  716 </span><span class="spaces">    </span><span class="nottickedoff">go [] = []</span>
+<span class="lineno">  717 </span><span class="spaces">    </span><span class="nottickedoff">go [x] = [pAccess p x]</span>
+<span class="lineno">  718 </span><span class="spaces">    </span><span class="nottickedoff">go (x:y:xs) =</span>
+<span class="lineno">  719 </span><span class="spaces">      </span><span class="nottickedoff">let xO = obstructedBy x</span>
+<span class="lineno">  720 </span><span class="spaces">          </span><span class="nottickedoff">yO = obstructedBy y</span>
+<span class="lineno">  721 </span><span class="spaces">      </span><span class="nottickedoff">in case () of</span>
+<span class="lineno">  722 </span><span class="spaces">          </span><span class="nottickedoff">()</span>
+<span class="lineno">  723 </span><span class="spaces">            </span><span class="nottickedoff">-- Both ends are visible.</span>
+<span class="lineno">  724 </span><span class="spaces">            </span><span class="nottickedoff">| xO == x &amp;&amp; yO == y -&gt; pAccess p x : go (y:xs)</span>
+<span class="lineno">  725 </span><span class="spaces">            </span><span class="nottickedoff">-- X is visible, x to intersect (0,yO) (x,y)</span>
+<span class="lineno">  726 </span><span class="spaces">            </span><span class="nottickedoff">| xO == x   -&gt;</span>
+<span class="lineno">  727 </span><span class="spaces">              </span><span class="nottickedoff">pAccess p x : fromMaybe (pAccess p y) (pRayIntersect p (0,yO) (x,y)) : go (y:xs)</span>
+<span class="lineno">  728 </span><span class="spaces">            </span><span class="nottickedoff">-- Y is visible</span>
+<span class="lineno">  729 </span><span class="spaces">            </span><span class="nottickedoff">| yO == y   -&gt; fromMaybe (pAccess p x) (pRayIntersect p (0,xO) (x,y)) : pAccess p y : go (y:xs)</span>
+<span class="lineno">  730 </span><span class="spaces">            </span><span class="nottickedoff">-- Neither is visible and they've obstructed by the same point</span>
+<span class="lineno">  731 </span><span class="spaces">            </span><span class="nottickedoff">-- so the entire edge is hidden.</span>
+<span class="lineno">  732 </span><span class="spaces">            </span><span class="nottickedoff">| xO == yO -&gt; go (y:xs)</span>
+<span class="lineno">  733 </span><span class="spaces">            </span><span class="nottickedoff">-- Neither is visible. Cast shadow from obstruction points to</span>
+<span class="lineno">  734 </span><span class="spaces">            </span><span class="nottickedoff">-- find if a subsection of the edge is visible.</span>
+<span class="lineno">  735 </span><span class="spaces">            </span><span class="nottickedoff">| otherwise -&gt;</span>
+<span class="lineno">  736 </span><span class="spaces">              </span><span class="nottickedoff">let a = fromMaybe (error &quot;a&quot;) (pRayIntersect p (0,xO) (x,y))</span>
+<span class="lineno">  737 </span><span class="spaces">                  </span><span class="nottickedoff">b = fromMaybe (error &quot;b&quot;) (pRayIntersect p (0,yO) (x,y))</span>
+<span class="lineno">  738 </span><span class="spaces">              </span><span class="nottickedoff">in if a /= b</span>
+<span class="lineno">  739 </span><span class="spaces">                </span><span class="nottickedoff">then a : b : go (y:xs)</span>
+<span class="lineno">  740 </span><span class="spaces">                </span><span class="nottickedoff">else go (y:xs)</span></span>
+<span class="lineno">  741 </span>
+<span class="lineno">  742 </span>ssspWindows :: Polygon -&gt; [(V2 Rational, V2 Rational)]
+<span class="lineno">  743 </span><span class="decl"><span class="nottickedoff">ssspWindows p = clearDups $ go (pAccess p 0) [0..pSize p-1]</span>
+<span class="lineno">  744 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  745 </span><span class="spaces">    </span><span class="nottickedoff">clearDups (x:y:xs)</span>
+<span class="lineno">  746 </span><span class="spaces">      </span><span class="nottickedoff">| x == y = clearDups (y:xs)</span>
+<span class="lineno">  747 </span><span class="spaces">      </span><span class="nottickedoff">| otherwise = x : clearDups (y:xs)</span>
+<span class="lineno">  748 </span><span class="spaces">    </span><span class="nottickedoff">clearDups xs = xs</span>
+<span class="lineno">  749 </span><span class="spaces">    </span><span class="nottickedoff">obstructedBy n =</span>
+<span class="lineno">  750 </span><span class="spaces">      </span><span class="nottickedoff">case pParent p 0 n of</span>
+<span class="lineno">  751 </span><span class="spaces">        </span><span class="nottickedoff">0 -&gt; n</span>
+<span class="lineno">  752 </span><span class="spaces">        </span><span class="nottickedoff">i -&gt; obstructedBy i</span>
+<span class="lineno">  753 </span><span class="spaces">    </span><span class="nottickedoff">go _ [] = []</span>
+<span class="lineno">  754 </span><span class="spaces">    </span><span class="nottickedoff">go _ [_] = []</span>
+<span class="lineno">  755 </span><span class="spaces">    </span><span class="nottickedoff">go l (x:y:xs) =</span>
+<span class="lineno">  756 </span><span class="spaces">      </span><span class="nottickedoff">let xO = obstructedBy x</span>
+<span class="lineno">  757 </span><span class="spaces">          </span><span class="nottickedoff">yO = obstructedBy y</span>
+<span class="lineno">  758 </span><span class="spaces">      </span><span class="nottickedoff">in case () of</span>
+<span class="lineno">  759 </span><span class="spaces">          </span><span class="nottickedoff">()</span>
+<span class="lineno">  760 </span><span class="spaces">            </span><span class="nottickedoff">-- Both ends are visible.</span>
+<span class="lineno">  761 </span><span class="spaces">            </span><span class="nottickedoff">| xO == x &amp;&amp; yO == y -&gt; go (pAccess p x) (y:xs)</span>
+<span class="lineno">  762 </span><span class="spaces">            </span><span class="nottickedoff">-- X is visible, x to intersect (0,yO) (x,y)</span>
+<span class="lineno">  763 </span><span class="spaces">            </span><span class="nottickedoff">| xO == x   -&gt;</span>
+<span class="lineno">  764 </span><span class="spaces">              </span><span class="nottickedoff">go (fromMaybe (pAccess p y) (pRayIntersect p (0,yO) (x,y))) (y:xs)</span>
+<span class="lineno">  765 </span><span class="spaces">            </span><span class="nottickedoff">-- Y is visible</span>
+<span class="lineno">  766 </span><span class="spaces">            </span><span class="nottickedoff">| yO == y   -&gt;</span>
+<span class="lineno">  767 </span><span class="spaces">              </span><span class="nottickedoff">let newL = fromMaybe (pAccess p x) (pRayIntersect p (0,xO) (x,y)) in</span>
+<span class="lineno">  768 </span><span class="spaces">              </span><span class="nottickedoff">(l, newL) :</span>
+<span class="lineno">  769 </span><span class="spaces">              </span><span class="nottickedoff">go newL (y:xs)</span>
+<span class="lineno">  770 </span><span class="spaces">            </span><span class="nottickedoff">-- Neither is visible and they've obstructed by the same point</span>
+<span class="lineno">  771 </span><span class="spaces">            </span><span class="nottickedoff">-- so the entire edge is hidden.</span>
+<span class="lineno">  772 </span><span class="spaces">            </span><span class="nottickedoff">| xO == yO -&gt; go l (y:xs)</span>
+<span class="lineno">  773 </span><span class="spaces">            </span><span class="nottickedoff">-- Neither is visible. Cast shadow from obstruction points to</span>
+<span class="lineno">  774 </span><span class="spaces">            </span><span class="nottickedoff">-- find if a subsection of the edge is visible.</span>
+<span class="lineno">  775 </span><span class="spaces">            </span><span class="nottickedoff">| otherwise -&gt;</span>
+<span class="lineno">  776 </span><span class="spaces">              </span><span class="nottickedoff">let a = fromMaybe (error &quot;a&quot;) (pRayIntersect p (0,xO) (x,y))</span>
+<span class="lineno">  777 </span><span class="spaces">                  </span><span class="nottickedoff">b = fromMaybe (error &quot;b&quot;) (pRayIntersect p (0,yO) (x,y))</span>
+<span class="lineno">  778 </span><span class="spaces">              </span><span class="nottickedoff">in if a /= b</span>
+<span class="lineno">  779 </span><span class="spaces">                </span><span class="nottickedoff">then (l, a) : (b, pAccess p yO) : go (pAccess p yO) (y:xs)</span>
+<span class="lineno">  780 </span><span class="spaces">                </span><span class="nottickedoff">else go l (y:xs)</span></span>
 
 </pre>
 </body>

@@ -100,9 +100,9 @@ span.spaces    { background: white }
 <span class="lineno">   81 </span>-- | Apply morphing strategy to interpolate between two SVG images.
 <span class="lineno">   82 </span>morph :: Morph -&gt; SVG -&gt; SVG -&gt; Double -&gt; SVG
 <span class="lineno">   83 </span><span class="decl"><span class="istickedoff">morph Morph{..} src dst = \t -&gt;</span>
-<span class="lineno">   84 </span><span class="spaces">  </span><span class="istickedoff">case <span class="nottickedoff">t</span> of</span>
-<span class="lineno">   85 </span><span class="spaces">    </span><span class="istickedoff">-- 0 -&gt; lowerTransformations src</span>
-<span class="lineno">   86 </span><span class="spaces">    </span><span class="istickedoff">-- 1 -&gt; lowerTransformations dst</span>
+<span class="lineno">   84 </span><span class="spaces">  </span><span class="istickedoff">case t of</span>
+<span class="lineno">   85 </span><span class="spaces">    </span><span class="istickedoff">0 -&gt; lowerTransformations src</span>
+<span class="lineno">   86 </span><span class="spaces">    </span><span class="istickedoff">1 -&gt; lowerTransformations dst</span>
 <span class="lineno">   87 </span><span class="spaces">    </span><span class="istickedoff">_ -&gt; mkGroup</span>
 <span class="lineno">   88 </span><span class="spaces">          </span><span class="istickedoff">[ render (genPoints t)</span>
 <span class="lineno">   89 </span><span class="spaces">              </span><span class="istickedoff">&amp; drawAttributes .~ genAttrs <span class="nottickedoff">t</span></span>

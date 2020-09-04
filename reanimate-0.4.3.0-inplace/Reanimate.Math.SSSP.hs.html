@@ -214,7 +214,7 @@ span.spaces    { background: white }
 <span class="lineno">  195 </span><span class="decl"><span class="nottickedoff">dualTree t (a,b) e = -- simplifyDual $</span>
 <span class="lineno">  196 </span><span class="spaces">    </span><span class="nottickedoff">case hasTriangle of</span>
 <span class="lineno">  197 </span><span class="spaces">      </span><span class="nottickedoff">[] -&gt; EmptyDual</span>
-<span class="lineno">  198 </span><span class="spaces">      </span><span class="nottickedoff">[(ab)] -&gt;</span>
+<span class="lineno">  198 </span><span class="spaces">      </span><span class="nottickedoff">[ab] -&gt;</span>
 <span class="lineno">  199 </span><span class="spaces">        </span><span class="nottickedoff">NodeDual ab</span>
 <span class="lineno">  200 </span><span class="spaces">          </span><span class="nottickedoff">(dualTree t (ab,b) a)</span>
 <span class="lineno">  201 </span><span class="spaces">          </span><span class="nottickedoff">(dualTree t (a,ab) b)</span>
@@ -241,8 +241,8 @@ span.spaces    { background: white }
 <span class="lineno">  222 </span><span class="spaces">        </span><span class="nottickedoff">worker [c] [b] a r ++</span>
 <span class="lineno">  223 </span><span class="spaces">        </span><span class="nottickedoff">loopLeft a c l</span>
 <span class="lineno">  224 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  225 </span><span class="spaces">    </span><span class="nottickedoff">toSSSP edges =</span>
-<span class="lineno">  226 </span><span class="spaces">      </span><span class="nottickedoff">(V.fromList . map snd . sortOn fst) edges</span>
+<span class="lineno">  225 </span><span class="spaces">    </span><span class="nottickedoff">toSSSP =</span>
+<span class="lineno">  226 </span><span class="spaces">      </span><span class="nottickedoff">V.fromList . map snd . sortOn fst</span>
 <span class="lineno">  227 </span><span class="spaces">    </span><span class="nottickedoff">loopLeft a outer l =</span>
 <span class="lineno">  228 </span><span class="spaces">      </span><span class="nottickedoff">case l of</span>
 <span class="lineno">  229 </span><span class="spaces">        </span><span class="nottickedoff">EmptyDual -&gt; []</span>
@@ -368,8 +368,8 @@ span.spaces    { background: white }
 <span class="lineno">  349 </span><span class="spaces">        </span><span class="nottickedoff">worker (Funnel (F.singleton c) a (F.singleton b)) r ++</span>
 <span class="lineno">  350 </span><span class="spaces">        </span><span class="nottickedoff">loopLeft a c l</span>
 <span class="lineno">  351 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
-<span class="lineno">  352 </span><span class="spaces">    </span><span class="nottickedoff">toSSSP edges =</span>
-<span class="lineno">  353 </span><span class="spaces">      </span><span class="nottickedoff">(V.fromList . map snd . sortOn fst) edges</span>
+<span class="lineno">  352 </span><span class="spaces">    </span><span class="nottickedoff">toSSSP =</span>
+<span class="lineno">  353 </span><span class="spaces">      </span><span class="nottickedoff">V.fromList . map snd . sortOn fst</span>
 <span class="lineno">  354 </span><span class="spaces">    </span><span class="nottickedoff">loopLeft a outer l =</span>
 <span class="lineno">  355 </span><span class="spaces">      </span><span class="nottickedoff">case l of</span>
 <span class="lineno">  356 </span><span class="spaces">        </span><span class="nottickedoff">EmptyDual -&gt; []</span>
