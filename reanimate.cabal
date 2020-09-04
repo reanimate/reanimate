@@ -93,7 +93,6 @@ library
                       Reanimate.Driver.Compile
                       Reanimate.Misc
                       Paths_reanimate
-                      Reanimate.Math.Visibility
   build-depends:
     base                 >=4.10 && <5,
     JuicyPixels          >=3.3.3,

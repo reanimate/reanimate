@@ -195,7 +195,7 @@ dualTree :: Triangulation -> (Int,Int) -> Int -> DualTree
 dualTree t (a,b) e = -- simplifyDual $
     case hasTriangle of
       [] -> EmptyDual
-      [(ab)] ->
+      [ab] ->
         NodeDual ab
           (dualTree t (ab,b) a)
           (dualTree t (a,ab) b)
@@ -222,8 +222,8 @@ sssp p d = toSSSP $
         worker [c] [b] a r ++
         loopLeft a c l
   where
-    toSSSP edges =
-      (V.fromList . map snd . sortOn fst) edges
+    toSSSP =
+      V.fromList . map snd . sortOn fst
     loopLeft a outer l =
       case l of
         EmptyDual -> []
@@ -349,8 +349,8 @@ ssspFinger p d = toSSSP $
         worker (Funnel (F.singleton c) a (F.singleton b)) r ++
         loopLeft a c l
   where
-    toSSSP edges =
-      (V.fromList . map snd . sortOn fst) edges
+    toSSSP =
+      V.fromList . map snd . sortOn fst
     loopLeft a outer l =
       case l of
         EmptyDual -> []

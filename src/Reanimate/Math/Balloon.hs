@@ -73,7 +73,7 @@ balloonP p = \t ->
         worker a =
           let b = pNext p a in
           if nodeVisible a && nodeVisible b
-            then (pAccess p a : pAccess p b : [])
+            then [pAccess p a, pAccess p b]
             else
               chunkRight a b (pAccess p a) (pAccess p b) (fst $ getFunnel a b) ++
               chunkCenter a b ++

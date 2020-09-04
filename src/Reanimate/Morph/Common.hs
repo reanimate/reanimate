@@ -82,8 +82,8 @@ data Morph = Morph
 morph :: Morph -> SVG -> SVG -> Double -> SVG
 morph Morph{..} src dst = \t ->
   case t of
-    -- 0 -> lowerTransformations src
-    -- 1 -> lowerTransformations dst
+    0 -> lowerTransformations src
+    1 -> lowerTransformations dst
     _ -> mkGroup
           [ render (genPoints t)
               & drawAttributes .~ genAttrs t

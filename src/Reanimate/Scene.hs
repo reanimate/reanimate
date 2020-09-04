@@ -153,6 +153,7 @@ import           Control.Monad.Fix
 import           Control.Monad.ST
 import           Control.Monad.State    (State, execState)
 import           Data.List
+import           Data.Bifunctor
 import           Data.Monoid
 import           Data.STRef
 import           Graphics.SvgTree       (Number (..), Tree (None), strokeWidth, toUserUnit)
@@ -569,7 +570,7 @@ newSpriteSVG_ = void . newSpriteSVG
 applyVar :: Var s a -> Sprite s -> (a -> SVG -> SVG) -> Scene s ()
 applyVar var sprite fn = spriteModify sprite $ do
   varFn <- unVar var
-  return $ \(svg, zindex) -> (fn varFn svg, zindex)
+  return $ first $ fn varFn
 
 -- | Destroy a sprite, preventing it from being rendered in the future of the scene.
 --   If 'destroySprite' is invoked multiple times, the earliest time-of-death is used.
@@ -635,7 +636,7 @@ spriteTween sprite@(Sprite born _) dur fn = do
   let tDelta = now - born
   spriteModify sprite $ do
     t <- spriteT
-    return $ \(svg, zindex) -> (fn (clamp 0 1 $ (t - tDelta) / dur) svg, zindex)
+    return $ first $ \svg -> fn (clamp 0 1 $ (t - tDelta) / dur) svg
   wait dur
  where
   clamp a b v | v < a     = a
@@ -960,11 +961,11 @@ oBBHeight = oBB . _4
 
 -- | Modify object properties.
 oModify :: Object s a -> (ObjectData a -> ObjectData a) -> Scene s ()
-oModify o fn = modifyVar (objectData o) fn
+oModify o = modifyVar (objectData o)
 
 -- | Modify object properties using a stateful API.
-oModifyS :: Object s a -> (State (ObjectData a) b) -> Scene s ()
-oModifyS o fn = oModify o (execState fn)
+oModifyS :: Object s a -> State (ObjectData a) b -> Scene s ()
+oModifyS o = oModify o . execState
 
 -- | Query object property.
 oRead :: Object s a -> Getting b (ObjectData a) b -> Scene s b
@@ -980,7 +981,7 @@ oTween o d fn = do
 
 -- | Modify object properties over a set duration using a stateful API.
 oTweenS :: Object s a -> Duration -> (Double -> State (ObjectData a) b) -> Scene s ()
-oTweenS o d fn = oTween o d (\t -> execState (fn t))
+oTweenS o d fn = oTween o d (execState . fn)
 
 -- | Modify object value over a set duration. This is a convenience function
 --   for modifying `oValue`.
@@ -1101,7 +1102,7 @@ oScaleIn' easing origin = oStagger' 0.05 $ \svg ->
   in signalA easing $ mkAnimation 0.3 $ \t ->
     translate cx cy $
     scale t $
-    translate (-cx) (-cy) $
+    translate (-cx) (-cy)
     svg
 
 oScaleOut :: SVG -> Animation
@@ -1134,7 +1135,7 @@ oStaggerRev' staggerDelay fn svg = scene $
     wait staggerDelay
 
 oDraw :: SVG -> Animation
-oDraw = oStagger $ \svg -> scene $ do
+oDraw = oStagger $ \svg -> scene $
   forM_ (svgGlyphs $ pathify svg) $ \(ctx, attr, node) -> do
     let sWidth =
           case toUserUnit defaultDPI <$> getLast (attr ^. strokeWidth) of
@@ -1314,7 +1315,7 @@ cameraZoom cam d s =
 -- | Instantaneously set camera location.
 cameraSetPan :: Object s Camera -> (Double, Double) -> Scene s ()
 cameraSetPan cam location =
-  oModifyS cam $ do
+  oModifyS cam $
     oTranslate .= location
 
 -- | Change camera location over a set duration.
