@@ -13,8 +13,14 @@ markdown_extensions:
   - pymdownx.arithmatex
 extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML
+  - https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/codemirror.min.js
+  - https://reanimate.github.io/reanimate/playground/elm.js
+  - https://reanimate.github.io/reanimate/playground/playground.js
+  - https://reanimate.github.io/reanimate/playground/embed.js
 extra_css:
   - fix.css
+  - https://reanimate.github.io/reanimate/playground/embed.css
+  - https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/codemirror.min.css
 nav:
   - Reanimate: index.md
   - Core concepts: introduction.md
@@ -23,6 +29,8 @@ nav:
 #  - Voice control: voice.md
 #  - How to:
 #    - Use fonts (incomplete): fonts.md
+  - Tutorials:
+    - Setting up an Equation: tut_equation.md
   - Showcase:
     - Color Theory: showcase_colortheory.md
   - Discord bot: discord_bot.md
