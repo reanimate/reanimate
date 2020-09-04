@@ -31,5 +31,6 @@ services:
       - ./certbot/data:/var/www/certbot
   watch:
     image: v2tec/watchtower
+    command: --interval 1800
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
