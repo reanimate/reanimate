@@ -195,7 +195,7 @@ decomposePolygon :: [RPoint] -> [[RPoint]]
 decomposePolygon poly =
   [ [ V2 x y
     | v <- V.toList (Geo.boundaryVertices f pg)
-    , let Geo.Point2 x y =(pg^.Geo.vertexDataOf v) ^. Geo.location ]
+    , let Geo.Point2 x y = pg^.Geo.vertexDataOf v . Geo.location ]
   | (f, Inside) <- V.toList (Geo.internalFaces pg) ]
 
   where

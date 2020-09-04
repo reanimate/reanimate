@@ -156,7 +156,7 @@ reanimate animation = do
             else do
               raster <- selectRaster RasterAuto
               when (raster == RasterNone) $ do
-                hPutStrLn stderr $
+                hPutStrLn stderr
                   "Error: your FFmpeg was built without SVG support and no raster engines \
                   \are available. Please install either inkscape, imagemagick, or rsvg."
                 exitWith (ExitFailure 1)
