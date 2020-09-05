@@ -168,7 +168,9 @@ checkAt v ((d,expected):xs) = do
   checkAt v xs
 
 tc :: TestName -> (forall s. Scene s ()) -> TestTree
-tc name action = testCase name $ evalScene action @?= ()
+tc name action = testCase name $
+  (evalScene action @?= ())
+  `catch` \(ErrorCall err) -> assertFailure err
 
 io :: IO a -> Scene s a
 io action = liftST (unsafeIOToST action)

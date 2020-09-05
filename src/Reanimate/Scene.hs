@@ -387,6 +387,7 @@ modifyEVar (EVar ref) fn = do
   liftST $ modifySTRef ref $ modifyEVarData now fn
 
 tweenEVar :: EVar s a -> Duration -> (a -> Time -> a) -> Scene s ()
+tweenEVar _ dur _ | dur < 0 = error "Reanimate.tweenVar: durations must be non-negative"
 tweenEVar (EVar ref) dur fn = do
   now <- queryNow
   liftST $ modifySTRef ref $ tweenEVarData now dur fn
@@ -427,7 +428,10 @@ tweenEVarData st dur fn var@EVarData{..} =
   let nd = st + dur
       before = keepBefore st var
       during = keepInRange (Just st) (Just nd) var
-      tweenFn a t = fn (readEVarData (during {evarDefault = a}) t) $ (t - st) / dur
+      tweenFn a t =
+        let idx = (t - st) / dur
+            idx' = if isNaN idx then 1 else idx
+        in fn (readEVarData (during {evarDefault = a}) t) idx'
       valueTweenEnd = tweenFn evarDefault nd -- we'll never use the def here, replace with error?
       after = EVarData evarDefault (M.singleton st $ TweenValue dur tweenFn) (Just nd) valueTweenEnd
   in  after `elseVar` before
