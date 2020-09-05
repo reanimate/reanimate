@@ -23,14 +23,15 @@ extra_css:
   - https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/codemirror.min.css
 nav:
   - Reanimate: index.md
-  - Core concepts: introduction.md
-  - Gluing together animations: glue_tut.md
 #  - Morphology (incomplete): morphology.md
-#  - Voice control: voice.md
 #  - How to:
 #    - Use fonts (incomplete): fonts.md
   - Tutorials:
-    - Setting up an Equation: tut_equation.md
+    - Animating an Equation: tut_equation.md
+  - Concepts:
+    - Core concepts: introduction.md
+    - Gluing together animations: glue_tut.md
+    - Voice control: voice.md
   - Showcase:
     - Color Theory: showcase_colortheory.md
   - Discord bot: discord_bot.md
