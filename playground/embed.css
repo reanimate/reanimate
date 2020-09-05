@@ -11,6 +11,9 @@ div.playground-embed {
     grid-template-rows: 1fr 1fr;
   }
 }
+div.playground-embed.large {
+  grid-template-rows: 1fr 1fr !important;
+}
 
 div.playground-embed div.playground-editor {
   border: 1px solid black;

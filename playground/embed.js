@@ -1,7 +1,8 @@
-function embedPlayground(parent) {
+function embedPlayground(parent, extraClass = '') {
   const code = parent.innerText;
   const container = document.createElement("div");
   container.classList.add('playground-embed')
+  container.classList.add(extraClass)
 
   const editor = document.createElement("div");
   editor.classList.add('playground-editor')
