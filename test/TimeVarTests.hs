@@ -84,6 +84,20 @@ timeVarTests =
       tweenEVar v 0 $ \_prev _t -> 1
       checkAt v
         [ (0,0), (1,1), (2,1)]
+  , tc "Tween 4" $ do
+      v <- newEVar (0::Double)
+      tweenEVar v 1 $ \prev t -> fromToS prev 1 t
+      tweenEVar v 1 $ \prev t -> fromToS prev 0 t
+      checkAt v
+        [ (0,0), (0.5,0.5), (1,1), (1.5,0.5), (2,0)]
+  , tc "Tween 5" $ do
+      v <- newEVar (0::Double)
+      tweenEVar v 1 $ \prev t -> fromToS prev 1 t
+      tweenEVar v 1 $ \prev t -> fromToS prev 0 t
+      wait (-1)
+      writeEVar v 2
+      checkAt v
+        [ (0,0), (0.5,0.5), (1,2), (1.5,2), (2,2)]
   , tc "Tween zero duration" $ do
       v <- newEVar 0
       wait 1
@@ -112,6 +126,23 @@ timeVarTests =
       -- The count should therefore be 2 and not 4.
       checkAt v
         [ (0.5,0.5), (1,1), (2,1), (3,1) ]
+      counter <- io $ readIORef ref
+      io $ counter @?= 2
+  , tc "Performance/tweenEVar 2" $ do
+      v <- newEVar (0::Double)
+      fork $ wait 10 >> writeEVar v 1
+      ref <- io $ newIORef (0::Int)
+      let expensive prev t = unsafePerformIO $ do
+            modifyIORef ref (+1)
+            evaluate (fromToS prev 1 t)
+      tweenEVar v 1 expensive
+      wait 2
+      writeEVar v 2
+      -- Reading at 0.5 and 1 should call the expensive function.
+      -- Reading at 2 should reuse the result from 1.
+      -- The count should therefore be 2 and not 4.
+      checkAt v
+        [ (0.5,0.5), (1,1), (2,1), (3,2), (4,2) ]
       counter <- io $ readIORef ref
       io $ counter @?= 2
   , expectFail $ tc "Performance (old vars)" $ do
