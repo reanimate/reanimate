@@ -1,36 +1,23 @@
 <pre id="c1">
 animation :: Animation
 animation = scene $ do
-  newSpriteSVG_ $ mkBackground "lightblue"
-  oE <- oNew symb_e
-  oEQ <- oNew symb_eq
-  oM <- oNew symb_m
-  oC2 <- oNew symb_c2
-  let symbols = [oE, oEQ, oM, oC2]
+  newSpriteSVG_ $
+    mkBackground "lightblue"
+  symbols <- mapM oNew
+    [symb_e, symb_eq, symb_m, symb_c2]
   mapM_ oShow symbols
   wait 1
 
-  oShow oE
-  fork $ oTweenS oE 1 $ \t -> do
-    oScale %= \origin -> fromToS origin scaleFactor t
-    oLeftX %= \origin -> fromToS origin screenLeft t
-    oCenterY %= \origin -> fromToS origin 3 t
-  wait 0.3
-  fork $ oTweenS oEQ 1 $ \t -> do
-    oScale %= \origin -> fromToS origin scaleFactor t
-    oLeftX %= \origin -> fromToS origin screenLeft t
-    oCenterY %= \origin -> fromToS origin 1 t
-  wait 0.3
-  fork $ oTweenS oM 1 $ \t -> do
-    oScale %= \origin -> fromToS origin scaleFactor t
-    oLeftX %= \origin -> fromToS origin screenLeft t
-    oCenterY %= \origin -> fromToS origin (-1) t
-  wait 0.3
-  fork $ oTweenS oC2 1 $ \t -> do
-    oScale %= \origin -> fromToS origin scaleFactor t
-    oLeftX %= \origin -> fromToS origin screenLeft t
-    oCenterY %= \origin -> fromToS origin (-3) t
-  wait 2
+  forM_ (zip symbols yPositions) $
+    \(obj, yPos) -> do
+    fork $ oTweenS obj 1 $ \t -> do
+      oScale %= \origin -> fromToS origin scaleFactor t
+      oLeftX %= \origin -> fromToS origin screenLeft t
+      oCenterY %= \origin -> fromToS origin yPos t
+    wait 0.3
+  
+  wait 1
+  
   l1 <- oNew energy
   oModifyS l1 $ do
     oLeftX .= -4
@@ -60,7 +47,7 @@ animation = scene $ do
   forM_ [l1,l2,l3,l4] $ \obj ->
     fork $ oHideWith obj oFadeOut
 
-  forM_ (reverse [oE, oEQ, oM, oC2]) $ \obj -> do
+  forM_ (reverse symbols) $ \obj -> do
     fork $ oTweenS obj 1 $ \t -> do
       oScale %= \origin -> fromToS origin 1 t
       (oTranslate._1) %= \pos -> fromToS pos 0 t
@@ -100,6 +87,8 @@ speedOfLight = scale 1.5 $ center $
   latex "speed of light$^2$"
 
 oCenterY = oCenterXY . _2
+
+yPositions = [3,1,-1,-3]
 
 </pre>
 <script>

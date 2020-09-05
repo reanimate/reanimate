@@ -14,6 +14,7 @@ markdown_extensions:
 extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML
   - https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/codemirror.min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/mode/haskell/haskell.min.js
   - https://reanimate.github.io/reanimate/playground/elm.js
   - https://reanimate.github.io/reanimate/playground/playground.js
   - https://reanimate.github.io/reanimate/playground/embed.js
