@@ -11,6 +11,10 @@ div.playground-embed {
     grid-template-rows: 1fr 1fr;
   }
 }
+div.playground-embed.large {
+  grid-template-rows: 1fr 1fr !important;
+  grid-template-columns: auto;
+}
 
 div.playground-embed div.playground-editor {
   border: 1px solid black;
