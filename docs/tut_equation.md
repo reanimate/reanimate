@@ -1,6 +1,6 @@
 <pre id="c1">
 animation :: Animation
-animation = scene $ do
+animation = mapscene $ do
   newSpriteSVG_ $
     mkBackground "lightblue"
   symbols <- mapM oNew
@@ -18,33 +18,23 @@ animation = scene $ do
   
   wait 1
   
-  l1 <- oNew energy
-  oModifyS l1 $ do
-    oLeftX .= -4
-    oCenterY .= 3
-  oShowWith l1 oDraw
-
-  l2 <- oNew equals
-  oModifyS l2 $ do
-    oLeftX .= -4
-    oCenterY .= 1
-  oShowWith l2 oDraw
-
-  l3 <- oNew mass
-  oModifyS l3 $ do
-    oLeftX .= -4
-    oCenterY .= -1
-  oShowWith l3 oDraw
-
-  l4 <- oNew speedOfLight
-  oModifyS l4 $ do
-    oLeftX .= -4
-    oCenterY .= -3
-  oShowWith l4 oDraw
+  ls <- mapM oNew [energy, equals, mass, speedOfLight]
+  
+  -- Maybe show lines with the same center as the symbols.
+  -- Then show how to align the baselines.
+  forM_ (zip ls yPositions) $
+    \(obj, nth) -> do
+    --bot <- oRead (symbols!!nth) oBottomY
+    --margin <- oRead (symbols!!nth) oMarginBottom
+    oModifyS obj $ do
+      oLeftX .= -4
+      --oTranslateY .= bot+margin
+      oCenterY .= nth
+    oShowWith obj oDraw
 
   wait 2
 
-  forM_ [l1,l2,l3,l4] $ \obj ->
+  forM_ ls $ \obj ->
     fork $ oHideWith obj oFadeOut
 
   forM_ (reverse symbols) $ \obj -> do
@@ -74,25 +64,28 @@ symb_c2 = snd $ splitGlyphs [3,4] svg
 svg = scale 3 $ center $
   latexAlign "E = mc^2"
 
-energy = scale 1.5 $ center $
+energy = scale 1.5 $ centerX $
   latex "Energy"
 
-equals = scale 1.5 $ center $
+equals = scale 1.5 $ centerX $
   latex "equals"
 
-mass = scale 1.5 $ center $
+mass = scale 1.5 $ centerX $
   latex "mass times"
 
-speedOfLight = scale 1.5 $ center $
+speedOfLight = scale 1.5 $ centerX $
   latex "speed of light$^2$"
 
 oCenterY = oCenterXY . _2
+
+oTranslateY :: Lens' (ObjectData a) Double
+oTranslateY = oTranslate._2
 
 yPositions = [3,1,-1,-3]
 
 </pre>
 <script>
   setTimeout(function () {
-    embedPlayground(document.querySelector("#c1"));
+    embedPlayground(document.querySelector("#c1"),'blah');
   },0);
 </script>
