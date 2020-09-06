@@ -398,7 +398,7 @@ tweenVarUnclamped (Var ref) dur fn = do
 --
 -- @
 -- do var \<- 'simpleVar' 'mkCircle' 0
---    'tweenVar' var 2 $ \val -> 'fromToS' val ('Reanimate.Constants.screenHeight'/2)
+--    'tweenVar' var 2 $ \\val -> 'fromToS' val ('Reanimate.Constants.screenHeight'/2)
 -- @
 --
 --   <<docs/gifs/doc_simpleVar.gif>>
@@ -441,8 +441,8 @@ instance Applicative (Frame s) where
 -- @
 -- do v \<- 'newVar' 0
 --    'newSprite' $ 'mkCircle' \<$\> 'unVar' v
---    'tweenVar' v 1 $ \val -> 'fromToS' val 3
---    'tweenVar' v 1 $ \val -> 'fromToS' val 0
+--    'tweenVar' v 1 $ \\val -> 'fromToS' val 3
+--    'tweenVar' v 1 $ \\val -> 'fromToS' val 0
 -- @
 --
 --   <<docs/gifs/doc_unVar.gif>>
@@ -563,7 +563,7 @@ newSpriteSVG_ = void . newSpriteSVG
 -- do s \<- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawBox'
 --    v \<- 'newVar' 0
 --    'applyVar' v s 'rotate'
---    'tweenVar' v 2 $ \val -> 'fromToS' val 90
+--    'tweenVar' v 2 $ \\val -> 'fromToS' val 90
 -- @
 --
 --   <<docs/gifs/doc_applyVar.gif>>
@@ -626,7 +626,7 @@ spriteMap sprite@(Sprite born _) fn = do
 --
 -- @
 -- do s \<- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawCircle'
---    'spriteTween' s 1 $ \val -> 'translate' ('Reanimate.Constants.screenWidth'*0.3*val) 0
+--    'spriteTween' s 1 $ \\val -> 'translate' ('Reanimate.Constants.screenWidth'*0.3*val) 0
 -- @
 --
 --   <<docs/gifs/doc_spriteTween.gif>>
@@ -650,7 +650,7 @@ spriteTween sprite@(Sprite born _) dur fn = do
 -- @
 -- do s \<- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawBox'
 --    v \<- 'spriteVar' s 0 'rotate'
---    'tweenVar' v 2 $ \val -> 'fromToS' val 90
+--    'tweenVar' v 2 $ \\val -> 'fromToS' val 90
 -- @
 --
 --   <<docs/gifs/doc_spriteVar.gif>>
