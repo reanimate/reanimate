@@ -417,7 +417,7 @@ span.spaces    { background: white }
 <span class="lineno">  398 </span>--
 <span class="lineno">  399 </span>-- @
 <span class="lineno">  400 </span>-- do var \&lt;- 'simpleVar' 'mkCircle' 0
-<span class="lineno">  401 </span>--    'tweenVar' var 2 $ \val -&gt; 'fromToS' val ('Reanimate.Constants.screenHeight'/2)
+<span class="lineno">  401 </span>--    'tweenVar' var 2 $ \\val -&gt; 'fromToS' val ('Reanimate.Constants.screenHeight'/2)
 <span class="lineno">  402 </span>-- @
 <span class="lineno">  403 </span>--
 <span class="lineno">  404 </span>--   &lt;&lt;docs/gifs/doc_simpleVar.gif&gt;&gt;
@@ -460,8 +460,8 @@ span.spaces    { background: white }
 <span class="lineno">  441 </span>-- @
 <span class="lineno">  442 </span>-- do v \&lt;- 'newVar' 0
 <span class="lineno">  443 </span>--    'newSprite' $ 'mkCircle' \&lt;$\&gt; 'unVar' v
-<span class="lineno">  444 </span>--    'tweenVar' v 1 $ \val -&gt; 'fromToS' val 3
-<span class="lineno">  445 </span>--    'tweenVar' v 1 $ \val -&gt; 'fromToS' val 0
+<span class="lineno">  444 </span>--    'tweenVar' v 1 $ \\val -&gt; 'fromToS' val 3
+<span class="lineno">  445 </span>--    'tweenVar' v 1 $ \\val -&gt; 'fromToS' val 0
 <span class="lineno">  446 </span>-- @
 <span class="lineno">  447 </span>--
 <span class="lineno">  448 </span>--   &lt;&lt;docs/gifs/doc_unVar.gif&gt;&gt;
@@ -582,7 +582,7 @@ span.spaces    { background: white }
 <span class="lineno">  563 </span>-- do s \&lt;- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawBox'
 <span class="lineno">  564 </span>--    v \&lt;- 'newVar' 0
 <span class="lineno">  565 </span>--    'applyVar' v s 'rotate'
-<span class="lineno">  566 </span>--    'tweenVar' v 2 $ \val -&gt; 'fromToS' val 90
+<span class="lineno">  566 </span>--    'tweenVar' v 2 $ \\val -&gt; 'fromToS' val 90
 <span class="lineno">  567 </span>-- @
 <span class="lineno">  568 </span>--
 <span class="lineno">  569 </span>--   &lt;&lt;docs/gifs/doc_applyVar.gif&gt;&gt;
@@ -645,7 +645,7 @@ span.spaces    { background: white }
 <span class="lineno">  626 </span>--
 <span class="lineno">  627 </span>-- @
 <span class="lineno">  628 </span>-- do s \&lt;- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawCircle'
-<span class="lineno">  629 </span>--    'spriteTween' s 1 $ \val -&gt; 'translate' ('Reanimate.Constants.screenWidth'*0.3*val) 0
+<span class="lineno">  629 </span>--    'spriteTween' s 1 $ \\val -&gt; 'translate' ('Reanimate.Constants.screenWidth'*0.3*val) 0
 <span class="lineno">  630 </span>-- @
 <span class="lineno">  631 </span>--
 <span class="lineno">  632 </span>--   &lt;&lt;docs/gifs/doc_spriteTween.gif&gt;&gt;
@@ -669,7 +669,7 @@ span.spaces    { background: white }
 <span class="lineno">  650 </span>-- @
 <span class="lineno">  651 </span>-- do s \&lt;- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawBox'
 <span class="lineno">  652 </span>--    v \&lt;- 'spriteVar' s 0 'rotate'
-<span class="lineno">  653 </span>--    'tweenVar' v 2 $ \val -&gt; 'fromToS' val 90
+<span class="lineno">  653 </span>--    'tweenVar' v 2 $ \\val -&gt; 'fromToS' val 90
 <span class="lineno">  654 </span>-- @
 <span class="lineno">  655 </span>--
 <span class="lineno">  656 </span>--   &lt;&lt;docs/gifs/doc_spriteVar.gif&gt;&gt;
