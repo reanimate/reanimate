@@ -37,7 +37,6 @@ import qualified Data.ByteString.Lazy.Char8    as LBS
 import           Data.Hashable
 import qualified Data.Text                     as T
 import           Graphics.SvgTree                         ( Number(..)
-                                                          , Tree(..)
                                                           , defaultSvg
                                                           , parseSvgFile
                                                           )
@@ -94,7 +93,7 @@ mkImage width height path | pRaster == RasterNone = unsafePerformIO $ do
   let imgData = LBS.unpack $ Base64.encode inp
   return
     $  flipYAxis
-    $  ImageTree
+    $  Svg.imageTree
     $  defaultSvg
     &  Svg.imageWidth
     .~ Svg.Num width
@@ -116,7 +115,7 @@ mkImage width height path = unsafePerformIO $ do
   unless exists $ copyFile path target
   return
     $  flipYAxis
-    $  ImageTree
+    $  Svg.imageTree
     $  defaultSvg
     &  Svg.imageWidth
     .~ Svg.Num width
@@ -194,7 +193,7 @@ embedPng
 --     path = "/tmp" </> show (hash png) <.> "png"
 embedPng w h png =
   flipYAxis
-    $  ImageTree
+    $  Svg.imageTree
     $  defaultSvg
     &  Svg.imageCornerUpperLeft
     .~ (Svg.Num (-w / 2), Svg.Num (-h / 2))

@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash    #-}
 {-# LANGUAGE MultiWayIf   #-}
+{-# LANGUAGE PatternSynonyms   #-}
 {-|
 Module      : Reanimate.GeoProjection
 Copyright   : Written by David Himmelstrup
@@ -74,7 +75,7 @@ import           Debug.Trace
 import           Foreign
 import           GHC.Exts                (Double (..), cosDouble#, sinDouble#,
                                           (*##), (+##), (-##), (/##))
-import           Graphics.SvgTree        (Tree (None))
+import           Graphics.SvgTree        (pattern None)
 import           Linear                  (distance, lerp)
 import           Linear.V2               hiding (angle)
 import           Reanimate

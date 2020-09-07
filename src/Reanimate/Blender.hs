@@ -39,7 +39,7 @@ module Reanimate.Blender
 import           Data.Hashable
 import           Data.Text                  (Text)
 import qualified Data.Text.IO               as T
-import           Graphics.SvgTree           (Tree (..))
+import           Graphics.SvgTree           (Tree)
 import           Reanimate.Animation
 import           Reanimate.Cache
 import           Reanimate.Constants

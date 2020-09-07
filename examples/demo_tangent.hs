@@ -6,8 +6,7 @@ module Main(main) where
 import           Control.Lens                    ((^.))
 import           Control.Monad.State
 import qualified Data.Vector.Unboxed             as V
-import           Graphics.SvgTree                (Coord, Tree (..), mapTree,
-                                                  pathDefinition)
+import           Graphics.SvgTree
 import           Linear.Metric
 import           Linear.V2                       (V2 (..))
 import           Linear.Vector

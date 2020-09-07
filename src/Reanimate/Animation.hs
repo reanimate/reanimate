@@ -55,10 +55,7 @@ module Reanimate.Animation
 
 import           Control.Arrow              ()
 import           Data.Fixed                 (mod')
-import           Graphics.SvgTree           (Alignment (..), Document (..),
-                                             Number (..),
-                                             PreserveAspectRatio (..),
-                                             Tree (..), xmlOfTree)
+import           Graphics.SvgTree
 import           Graphics.SvgTree.Printer
 import           Reanimate.Constants
 import           Reanimate.Ease
@@ -210,11 +207,11 @@ renderSvg w h t = ppDocument doc
     width = 16
     height = 9
     doc = Document
-      { _viewBox = Just (-width/2, -height/2, width, height)
-      , _width = w
-      , _height = h
-      , _elements = [withStrokeWidth defaultStrokeWidth $ scaleXY 1 (-1) t]
-      , _description = ""
+      { _documentViewBox = Just (-width/2, -height/2, width, height)
+      , _documentWidth = w
+      , _documentHeight = h
+      , _documentElements = [withStrokeWidth defaultStrokeWidth $ scaleXY 1 (-1) t]
+      , _documentDescription = ""
       , _documentLocation = ""
       , _documentAspectRatio = PreserveAspectRatio False AlignNone Nothing
       }

@@ -41,26 +41,35 @@ module Reanimate.PolyShape
   ) where
 
 import           Algorithms.Geometry.PolygonTriangulation.Triangulate (triangulate')
-import           Control.Lens ((&), (.~), (^.))
+import           Control.Lens                                         ((&), (.~), (^.))
 import           Data.Ext
-import           Data.Geometry.PlanarSubdivision (PolygonFaceData (..))
-import qualified Data.Geometry.Point as Geo
-import qualified Data.Geometry.Polygon as Geo
-import           Data.List (nub, partition, sortOn)
-import qualified Data.PlaneGraph as Geo
+import           Data.Geometry.PlanarSubdivision                      (PolygonFaceData (..))
+import qualified Data.Geometry.Point                                  as Geo
+import qualified Data.Geometry.Polygon                                as Geo
+import           Data.List                                            (nub, partition, sortOn)
+import qualified Data.PlaneGraph                                      as Geo
 import           Data.Proxy
-import qualified Data.Vector as V
-import           Geom2D.CubicBezier.Linear (ClosedPath (..), CubicBezier (..), FillRule (..),
-                                            PathJoin (..), QuadBezier (..), arcLength,
-                                            arcLengthParam, bezierIntersection, bezierSubsegment,
-                                            closedPathCurves, closest, colinear, curvesToClosed,
-                                            evalBezier, quadToCubic, reorient, splitBezier, union,
-                                            vectorDistance)
-import           Graphics.SvgTree (PathCommand (..), RPoint, Tree (..), defaultSvg, pathDefinition)
+import qualified Data.Vector                                          as V
+import           Geom2D.CubicBezier.Linear                            (ClosedPath (..),
+                                                                       CubicBezier (..),
+                                                                       FillRule (..), PathJoin (..),
+                                                                       QuadBezier (..), arcLength,
+                                                                       arcLengthParam,
+                                                                       bezierIntersection,
+                                                                       bezierSubsegment,
+                                                                       closedPathCurves, closest,
+                                                                       colinear, curvesToClosed,
+                                                                       evalBezier, quadToCubic,
+                                                                       reorient, splitBezier, union,
+                                                                       vectorDistance)
+import           Graphics.SvgTree                                     (PathCommand (..), RPoint,
+                                                                       Tree, defaultSvg,
+                                                                       pathDefinition, pathTree)
 import           Linear.V2
 import           Reanimate.Animation
 import           Reanimate.Constants
-import           Reanimate.Math.Polygon (Polygon, mkPolygon, pArea, pIsCCW)
+import           Reanimate.Math.Polygon                               (Polygon, mkPolygon, pArea,
+                                                                       pIsCCW)
 import           Reanimate.Svg
 
 -- | Shape drawn by continuous line. May have overlap, may be convex.
@@ -77,12 +86,12 @@ data PolyShapeWithHoles = PolyShapeWithHoles
 -- | Render a set of polyshapes as a single SVG path.
 renderPolyShapes :: [PolyShape] -> Tree
 renderPolyShapes pls =
-  PathTree $ defaultSvg & pathDefinition .~ concatMap plPathCommands pls
+  pathTree $ defaultSvg & pathDefinition .~ concatMap plPathCommands pls
 
 -- | Render a polyshape as a single SVG path.
 renderPolyShape :: PolyShape -> Tree
 renderPolyShape pl =
-    PathTree $ defaultSvg & pathDefinition .~ plPathCommands pl
+    pathTree $ defaultSvg & pathDefinition .~ plPathCommands pl
 
 -- | Render control-points of a polyshape as circles.
 renderPolyShapePoints :: PolyShape -> Tree

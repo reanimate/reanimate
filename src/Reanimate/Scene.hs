@@ -152,11 +152,12 @@ import           Control.Monad          (forM_, void)
 import           Control.Monad.Fix
 import           Control.Monad.ST
 import           Control.Monad.State    (State, execState)
-import           Data.List
 import           Data.Bifunctor
+import           Data.List
 import           Data.Monoid
 import           Data.STRef
-import           Graphics.SvgTree       (Number (..), Tree (None), strokeWidth, toUserUnit)
+import           Graphics.SvgTree       (Number (..), Tree, pattern None, strokeWidth,
+                                         toUserUnit)
 import           Reanimate.Animation
 import           Reanimate.Constants
 import           Reanimate.Ease         (Signal, curveS, fromToS)

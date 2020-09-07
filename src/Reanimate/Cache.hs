@@ -18,7 +18,7 @@ import qualified Data.Map            as Map
 import           Data.Text           (Text)
 import qualified Data.Text           as T
 import qualified Data.Text.IO        as T
-import           Graphics.SvgTree    (Tree (..), unparse)
+import           Graphics.SvgTree    (Tree, unparse, pattern None)
 import           Reanimate.Animation (renderTree)
 import           Reanimate.Misc      (renameOrCopyFile)
 import           System.Directory
@@ -96,7 +96,7 @@ cacheMem gen key = do
       case svg of
         -- None usually indicates that latex or another tool was misconfigured. In this case,
         -- don't store the result.
-        None -> pure None
+        None -> pure svg
         _    -> atomicModifyIORef cache (\m -> (Map.insert key svg m, svg))
 
 encodeInt :: Int -> String
