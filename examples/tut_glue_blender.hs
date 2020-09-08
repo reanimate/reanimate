@@ -14,7 +14,7 @@ import           Control.Lens                    ((&), (^.))
 import           Control.Monad
 import           Data.Monoid
 import qualified Data.Text                       as T
-import           Graphics.SvgTree                hiding (text)
+import           Graphics.SvgTree
 import           NeatInterpolation
 import           System.Random
 import "random-shuffle" System.Random.Shuffle

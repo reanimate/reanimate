@@ -16,8 +16,7 @@ module Reanimate.Svg
 
 import           Control.Lens                 ((%~), (&), (.~), (^.), (?~))
 import           Control.Monad.State
-import           Graphics.SvgTree             hiding (height, line, path, use,
-                                               width)
+import           Graphics.SvgTree
 import           Linear.V2                    hiding (angle)
 import           Reanimate.Constants
 import           Reanimate.Animation (SVG)
@@ -90,7 +89,7 @@ simplify root =
       concatMap dropNulls
       [DefinitionTree $ d & groupChildren %~ concatMap worker]
     worker (GroupTree g)
-      | g ^. drawAttributes == defaultSvg =
+      | g^.drawAttributes == defaultSvg =
         concatMap dropNulls $
         concatMap worker (g^.groupChildren)
       | otherwise =
@@ -118,11 +117,11 @@ removeGroups = worker defaultSvg
       concatMap dropNulls
       [DefinitionTree $ d & groupChildren %~ concatMap (worker defaultSvg)]
     worker attr (GroupTree g)
-      | g ^. drawAttributes == defaultSvg =
+      | g^.drawAttributes == defaultSvg =
         concatMap dropNulls $
         concatMap (worker attr) (g^.groupChildren)
       | otherwise =
-        concatMap (worker (attr <> g ^. drawAttributes)) (g^.groupChildren)
+        concatMap (worker (attr <> g^.drawAttributes)) (g^.groupChildren)
     worker attr t = dropNulls (t & drawAttributes .~ attr)
 
     dropNulls None = []
