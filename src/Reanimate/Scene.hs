@@ -1,200 +1,206 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE ApplicativeDo             #-}
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE RankNTypes                #-}
-{-# LANGUAGE RecordWildCards           #-}
-{-|
-Module      : Reanimate.Scene
-Copyright   : Written by David Himmelstrup
-License     : Unlicense
-Maintainer  : lemmih@gmail.com
-Stability   : experimental
-Portability : POSIX
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
 
-Scenes are an imperative way of defining animations.
-
--}
+-- |
+-- Module      : Reanimate.Scene
+-- Copyright   : Written by David Himmelstrup
+-- License     : Unlicense
+-- Maintainer  : lemmih@gmail.com
+-- Stability   : experimental
+-- Portability : POSIX
+--
+-- Scenes are an imperative way of defining animations.
 module Reanimate.Scene
   ( -- * Scenes
-    Scene
-  , ZIndex
-  , scene             -- :: (forall s. Scene s a) -> Animation
-  , sceneAnimation    -- :: (forall s. Scene s a) -> Animation
-  , play              -- :: Animation -> Scene s ()
-  , fork              -- :: Scene s a -> Scene s a
-  , queryNow          -- :: Scene s Time
-  , wait              -- :: Duration -> Scene s ()
-  , waitUntil         -- :: Time -> Scene s ()
-  , waitOn            -- :: Scene s a -> Scene s a
-  , adjustZ           -- :: (ZIndex -> ZIndex) -> Scene s a -> Scene s a
-  , withSceneDuration -- :: Scene s () -> Scene s Duration
-  -- * Variables
-  , Var
-  , newVar            -- :: a -> Scene s (Var s a)
-  , readVar           -- :: Var s a -> Scene s a
-  , writeVar          -- :: Var s a -> a -> Scene s ()
-  , modifyVar         -- :: Var s a -> (a -> a) -> Scene s ()
-  , tweenVar          -- :: Var s a -> Duration -> (a -> Time -> a) -> Scene s ()
-  , tweenVarUnclamped -- :: Var s a -> Duration -> (a -> Time -> a) -> Scene s ()
-  , simpleVar         -- :: (a -> SVG) -> a -> Scene s (Var s a)
-  , findVar           -- :: (a -> Bool) -> [Var s a] -> Scene s (Var s a)
-  , EVar
-  , newEVar
-  , readEVar
-  , writeEVar
-  , modifyEVar
-  , tweenEVar
-  -- * Sprites
-  , Sprite
-  , Frame
-  , unVar             -- :: Var s a -> Frame s a
-  , spriteT           -- :: Frame s Time
-  , spriteDuration    -- :: Frame s Duration
-  , newSprite         -- :: Frame s SVG -> Scene s (Sprite s)
-  , newSprite_        -- :: Frame s SVG -> Scene s ()
-  , newSpriteA        -- :: Animation -> Scene s (Sprite s)
-  , newSpriteA'       -- :: Sync -> Animation -> Scene s (Sprite s)
-  , newSpriteSVG      -- :: SVG -> Scene s (Sprite s)
-  , newSpriteSVG_     -- :: SVG -> Scene s ()
-  , destroySprite     -- :: Sprite s -> Scene s ()
-  , applyVar          -- :: Var s a -> Sprite s -> (a -> SVG -> SVG) -> Scene s ()
-  , spriteModify      -- :: Sprite s -> Frame s ((SVG,ZIndex) -> (SVG, ZIndex)) -> Scene s ()
-  , spriteMap         -- :: Sprite s -> (SVG -> SVG) -> Scene s ()
-  , spriteTween       -- :: Sprite s -> Duration -> (Double -> SVG -> SVG) -> Scene s ()
-  , spriteVar         -- :: Sprite s -> a -> (a -> SVG -> SVG) -> Scene s (Var s a)
-  , spriteE           -- :: Sprite s -> Effect -> Scene s ()
-  , spriteZ           -- :: Sprite s -> ZIndex -> Scene s ()
-  , spriteScope       -- :: Scene s a -> Scene s a
+    Scene,
+    ZIndex,
+    scene, -- :: (forall s. Scene s a) -> Animation
+    sceneAnimation, -- :: (forall s. Scene s a) -> Animation
+    play, -- :: Animation -> Scene s ()
+    fork, -- :: Scene s a -> Scene s a
+    queryNow, -- :: Scene s Time
+    wait, -- :: Duration -> Scene s ()
+    waitUntil, -- :: Time -> Scene s ()
+    waitOn, -- :: Scene s a -> Scene s a
+    adjustZ, -- :: (ZIndex -> ZIndex) -> Scene s a -> Scene s a
+    withSceneDuration, -- :: Scene s () -> Scene s Duration
 
-  -- * Object API
-  , Object
-  , ObjectData
-  , oNew
-  , newObject
-  , oModify
-  , oModifyS
-  , oRead
-  , oTween
-  , oTweenS
-  , oTweenV
-  , oTweenVS
-  , Renderable(..)
-  -- ** Object Properties
-  , oTranslate
-  , oSVG
-  , oContext
-  , oMargin
-  , oMarginTop
-  , oMarginRight
-  , oMarginBottom
-  , oMarginLeft
-  , oBB
-  , oBBMinX
-  , oBBMinY
-  , oBBWidth
-  , oBBHeight
-  , oOpacity
-  , oShown
-  , oZIndex
-  , oEasing
-  , oScale
-  , oScaleOrigin
-  , oTopY
-  , oBottomY
-  , oLeftX
-  , oRightX
-  , oCenterXY
-  , oValue
+    -- * Variables
+    Var,
+    newVar, -- :: a -> Scene s (Var s a)
+    readVar, -- :: Var s a -> Scene s a
+    writeVar, -- :: Var s a -> a -> Scene s ()
+    modifyVar, -- :: Var s a -> (a -> a) -> Scene s ()
+    tweenVar, -- :: Var s a -> Duration -> (a -> Time -> a) -> Scene s ()
+    tweenVarUnclamped, -- :: Var s a -> Duration -> (a -> Time -> a) -> Scene s ()
+    simpleVar, -- :: (a -> SVG) -> a -> Scene s (Var s a)
+    findVar, -- :: (a -> Bool) -> [Var s a] -> Scene s (Var s a)
+    EVar,
+    newEVar,
+    readEVar,
+    writeEVar,
+    modifyEVar,
+    tweenEVar,
 
-  -- ** Graphics object methods
-  , oShow
-  , oHide
-  , oFadeIn
-  , oFadeOut
-  , oGrow
-  , oShrink
-  , oTransform
-  , oShowWith
-  , oHideWith
-  , Origin
-  , oScaleIn
-  , oScaleIn'
-  , oScaleOut
-  , oScaleOut'
-  , oSim
-  , oStagger
-  , oStaggerRev
-  , oStagger'
-  , oStaggerRev'
-  , oDraw
-  -- , oBalloon
+    -- * Sprites
+    Sprite,
+    Frame,
+    unVar, -- :: Var s a -> Frame s a
+    spriteT, -- :: Frame s Time
+    spriteDuration, -- :: Frame s Duration
+    newSprite, -- :: Frame s SVG -> Scene s (Sprite s)
+    newSprite_, -- :: Frame s SVG -> Scene s ()
+    newSpriteA, -- :: Animation -> Scene s (Sprite s)
+    newSpriteA', -- :: Sync -> Animation -> Scene s (Sprite s)
+    newSpriteSVG, -- :: SVG -> Scene s (Sprite s)
+    newSpriteSVG_, -- :: SVG -> Scene s ()
+    destroySprite, -- :: Sprite s -> Scene s ()
+    applyVar, -- :: Var s a -> Sprite s -> (a -> SVG -> SVG) -> Scene s ()
+    spriteModify, -- :: Sprite s -> Frame s ((SVG,ZIndex) -> (SVG, ZIndex)) -> Scene s ()
+    spriteMap, -- :: Sprite s -> (SVG -> SVG) -> Scene s ()
+    spriteTween, -- :: Sprite s -> Duration -> (Double -> SVG -> SVG) -> Scene s ()
+    spriteVar, -- :: Sprite s -> a -> (a -> SVG -> SVG) -> Scene s (Var s a)
+    spriteE, -- :: Sprite s -> Effect -> Scene s ()
+    spriteZ, -- :: Sprite s -> ZIndex -> Scene s ()
+    spriteScope, -- :: Scene s a -> Scene s a
 
-  -- ** Pre-defined objects
-  , Circle(..)
-  , circleRadius
-  , Rectangle(..)
-  , rectWidth
-  , rectHeight
-  , Morph(..)
-  , morphDelta
-  , morphSrc
-  , morphDst
-  , Camera(..)
-  , cameraAttach
-  , cameraFocus
-  , cameraSetZoom
-  , cameraZoom
-  , cameraSetPan
-  , cameraPan
+    -- * Object API
+    Object,
+    ObjectData,
+    oNew,
+    newObject,
+    oModify,
+    oModifyS,
+    oRead,
+    oTween,
+    oTweenS,
+    oTweenV,
+    oTweenVS,
+    Renderable (..),
 
-  -- * ST internals
-  , liftST
-  , transitionO
-  , evalScene
+    -- ** Object Properties
+    oTranslate,
+    oSVG,
+    oContext,
+    oMargin,
+    oMarginTop,
+    oMarginRight,
+    oMarginBottom,
+    oMarginLeft,
+    oBB,
+    oBBMinX,
+    oBBMinY,
+    oBBWidth,
+    oBBHeight,
+    oOpacity,
+    oShown,
+    oZIndex,
+    oEasing,
+    oScale,
+    oScaleOrigin,
+    oTopY,
+    oBottomY,
+    oLeftX,
+    oRightX,
+    oCenterXY,
+    oValue,
 
-  , efficiencyTesterVar
-  , efficiencyTesterEVar
-  , testVarsEqual
+    -- ** Graphics object methods
+    oShow,
+    oHide,
+    oFadeIn,
+    oFadeOut,
+    oGrow,
+    oShrink,
+    oTransform,
+    oShowWith,
+    oHideWith,
+    Origin,
+    oScaleIn,
+    oScaleIn',
+    oScaleOut,
+    oScaleOut',
+    oSim,
+    oStagger,
+    oStaggerRev,
+    oStagger',
+    oStaggerRev',
+    oDraw,
+    -- , oBalloon
+
+    -- ** Pre-defined objects
+    Circle (..),
+    circleRadius,
+    Rectangle (..),
+    rectWidth,
+    rectHeight,
+    Morph (..),
+    morphDelta,
+    morphSrc,
+    morphDst,
+    Camera (..),
+    cameraAttach,
+    cameraFocus,
+    cameraSetZoom,
+    cameraZoom,
+    cameraSetPan,
+    cameraPan,
+
+    -- * ST internals
+    liftST,
+    transitionO,
+    evalScene,
+    efficiencyTesterVar,
+    efficiencyTesterEVar,
+    testVarsEqual,
   )
 where
 
-import           Control.Lens
-import           Control.Monad          (forM_, void)
-import           Control.Monad.Fix
-import           Control.Monad.ST
-import           Control.Monad.State    (State, execState)
-import           Data.Bifunctor
-import qualified Data.Map                   as M
-import           Data.Maybe                 (fromMaybe)
-import           Data.List
-import           Data.Monoid
-import           Data.STRef
-import           Graphics.SvgTree       (Number (..), Tree, pattern None, strokeWidth,
-                                         toUserUnit)
-import           Reanimate.Animation
-import           Reanimate.Constants
-import           Reanimate.Ease         (Signal, curveS, fromToS)
-import           Reanimate.Effect
-import           Reanimate.Math.Balloon
-import           Reanimate.Morph.Common (morph)
-import           Reanimate.Morph.Linear (linear)
-import           Reanimate.Svg
-import           Reanimate.Transition
-
+import Control.Lens
+import Control.Monad (forM_, void)
+import Control.Monad.Fix (MonadFix (..))
+import Control.Monad.ST
+import Control.Monad.State (State, execState)
+import Data.Bifunctor
+import Data.List
+import qualified Data.Map as M
+import Data.Maybe (fromMaybe)
+import Data.Monoid
+import Data.STRef
 import Debug.Trace
+import Graphics.SvgTree
+  ( Number (..),
+    Tree,
+    strokeWidth,
+    toUserUnit,
+    pattern None,
+  )
+import Reanimate.Animation
+import Reanimate.Constants (defaultDPI, defaultStrokeWidth)
+import Reanimate.Ease (Signal, curveS, fromToS)
+import Reanimate.Effect
+import Reanimate.Math.Balloon
+import Reanimate.Morph.Common (morph)
+import Reanimate.Morph.Linear (linear)
+import Reanimate.Svg
+import Reanimate.Transition
 
 -- | The ZIndex property specifies the stack order of sprites and animations. Elements
 --   with a higher ZIndex will be drawn on top of elements with a lower index.
 type ZIndex = Int
 
-
 -- (seq duration, par duration)
 -- [(Time, Animation, ZIndex)]
 -- Map Time [(Animation, ZIndex)]
 type Gen s = ST s (Duration -> Time -> (SVG, ZIndex))
+
 -- | A 'Scene' represents a sequence of animations and variables
 --   that change over time.
-newtype Scene s a = M { unM :: Time -> ST s (a, Duration, Duration, [Gen s]) }
+newtype Scene s a = M {unM :: Time -> ST s (a, Duration, Duration, [Gen s])}
 
 instance Functor (Scene s) where
   fmap f action = M $ \t -> do
@@ -223,29 +229,34 @@ liftST :: ST s a -> Scene s a
 liftST action = M $ \_ -> action >>= \a -> return (a, 0, 0, [])
 
 -- | Evaluate the value of a scene.
-evalScene :: (forall s . Scene s a) -> a
+evalScene :: (forall s. Scene s a) -> a
 evalScene action = runST $ do
-  (val, _, _ , _) <- unM action 0
+  (val, _, _, _) <- unM action 0
   return val
 
 -- | Render a 'Scene' to an 'Animation'.
-scene :: (forall s . Scene s a) -> Animation
+scene :: (forall s. Scene s a) -> Animation
 scene = sceneAnimation
 
 -- | Render a 'Scene' to an 'Animation'.
-sceneAnimation :: (forall s . Scene s a) -> Animation
-sceneAnimation action = runST
-  (do
-    (_, s, p, gens) <- unM action 0
-    let dur = max s p
-    genFns <- sequence gens
-    return $ mkAnimation
-      dur
-      (\t -> mkGroup $ map fst $ sortOn
-        snd
-        [ spriteRender dur (t * dur) | spriteRender <- genFns ]
-      )
-  )
+sceneAnimation :: (forall s. Scene s a) -> Animation
+sceneAnimation action =
+  runST
+    ( do
+        (_, s, p, gens) <- unM action 0
+        let dur = max s p
+        genFns <- sequence gens
+        return $
+          mkAnimation
+            dur
+            ( \t ->
+                mkGroup $
+                  map fst $
+                    sortOn
+                      snd
+                      [spriteRender dur (t * dur) | spriteRender <- genFns]
+            )
+    )
 
 -- | Execute actions in a scene without advancing the clock. Note that scenes do not end before
 --   all forked actions have completed.
@@ -331,10 +342,10 @@ adjustZ :: (ZIndex -> ZIndex) -> Scene s a -> Scene s a
 adjustZ fn (M action) = M $ \t -> do
   (a, s, p, gens) <- action t
   return (a, s, p, map genFn gens)
- where
-  genFn gen = do
-    frameGen <- gen
-    return $ \d t -> let (svg, z) = frameGen d t in (svg, fn z)
+  where
+    genFn gen = do
+      frameGen <- gen
+      return $ \d t -> let (svg, z) = frameGen d t in (svg, fn z)
 
 -- | Query the duration of a scene.
 withSceneDuration :: Scene s () -> Scene s Duration
@@ -347,24 +358,19 @@ withSceneDuration s = do
 addGen :: Gen s -> Scene s ()
 addGen gen = M $ \_ -> return ((), 0, 0, [gen])
 
-
-
-
-
 -- Efficient time variable
 newtype EVar s a = EVar (STRef s (EVarData a))
 
-
--- Note: We must ensure that upon transforming an EVarData, 
+-- Note: We must ensure that upon transforming an EVarData,
 --       1. evarDefault old == evarDefault new
 --       2. isNothing (evarLastTime old) || isJust (evarLastTime new) i.e. once evarLastValue has a Just value,
 --          it shouldn't be Nothing again.
 --       3. isNothing (evarLastTime var) => M.null (evarTimeline var)
 data EVarData a = EVarData
-  { evarDefault   :: a
-  , evarTimeline  :: Timeline a
-  , evarLastTime  :: Maybe Time
-  , evarLastValue :: a
+  { evarDefault :: a,
+    evarTimeline :: Timeline a,
+    evarLastTime :: Maybe Time,
+    evarLastValue :: a
   }
 
 data Modifier a = StaticValue a | TweenValue Duration (a -> Time -> a)
@@ -411,7 +417,7 @@ writeEVarData :: Time -> a -> EVarData a -> EVarData a
 writeEVarData now x var =
   let before = keepBefore now var
       after = EVarData (evarDefault var) M.empty (Just now) x
-  in after `elseVar` before
+   in after `elseVar` before
 
 modifyEVarData :: Time -> (a -> a) -> EVarData a -> EVarData a
 modifyEVarData now fn var =
@@ -420,22 +426,22 @@ modifyEVarData now fn var =
       timeline = flip M.map (evarTimeline after) $ \case
         StaticValue s -> StaticValue $ fn s
         TweenValue dur f -> TweenValue dur $ \a t -> fn (f a t)
-   in  after {evarTimeline = timeline, evarLastValue = fn $ evarLastValue after} `elseVar` before
+   in after {evarTimeline = timeline, evarLastValue = fn $ evarLastValue after} `elseVar` before
 
 -- Note: The function passed here takes time on the scale 0 to 1
 --       while the function in `TweenValue` takes time on an absolute scale.
 tweenEVarData :: Time -> Duration -> (a -> Time -> a) -> EVarData a -> EVarData a
-tweenEVarData st dur fn var@EVarData{..} =
+tweenEVarData st dur fn var@EVarData {..} =
   let nd = st + dur
       before = keepBefore st var
       during = keepInRange (Just st) (Just nd) var
       tweenFn a t =
         let idx = (t - st) / dur
             idx' = if isNaN idx then 1 else idx
-        in fn (readEVarData (during {evarDefault = a}) t) idx'
+         in fn (readEVarData (during {evarDefault = a}) t) idx'
       valueTweenEnd = tweenFn evarDefault nd -- we'll never use the def here, replace with error?
       after = EVarData evarDefault (M.singleton st $ TweenValue dur tweenFn) (Just nd) valueTweenEnd
-  in  after `elseVar` before
+   in after `elseVar` before
 
 -- Returns the union of two vars such that we use the second var if first var doesn't have a value.
 -- Assumes both vars have same default value.
@@ -445,7 +451,8 @@ elseVar var1 var2
     let afterTimeline = evarTimeline var1
         joinAt = fromMaybe t . fmap fst $ M.lookupMin afterTimeline
         beforeTimeline = case keepBefore joinAt var2 of
-          x | Just lastTime <- evarLastTime x, lastTime < joinAt -> M.insert lastTime (StaticValue $ evarLastValue x) $ evarTimeline x
+          x
+            | Just lastTime <- evarLastTime x, lastTime < joinAt -> M.insert lastTime (StaticValue $ evarLastValue x) $ evarTimeline x
             | otherwise -> evarTimeline x
      in var1 {evarTimeline = M.union afterTimeline beforeTimeline}
   | otherwise = var2
@@ -456,7 +463,7 @@ keepInRange st nd = fromMaybe id (keepFrom <$> st) . fromMaybe id (keepBefore <$
 
 -- Restrict a var to start at given timestamp.
 keepFrom :: Time -> EVarData a -> EVarData a
-keepFrom st EVarData{..} =
+keepFrom st EVarData {..} =
   let timeline' = M.dropWhileAntitone (< st) evarTimeline
       -- if there is no modifier in timeline starting at st,
       -- we must get the modifier that starts before and truncate it to start at st.
@@ -466,11 +473,11 @@ keepFrom st EVarData{..} =
         Just (t, TweenValue dur fn)
           | t < st, t + dur > st -> M.insert st (TweenValue (t + dur - st) fn) timeline'
         _ -> timeline'
-  in EVarData evarDefault timeline'' (max evarLastTime $ Just st) evarLastValue
+   in EVarData evarDefault timeline'' (max evarLastTime $ Just st) evarLastValue
 
 -- Restrict a var to end(clamp) at given timestamp.
 keepBefore :: Time -> EVarData a -> EVarData a
-keepBefore nd var@EVarData{..} =
+keepBefore nd var@EVarData {..} =
   let timeline' = M.takeWhileAntitone (< nd) evarTimeline
       lastModifier = M.lookupMax timeline'
       timeline'' = case lastModifier of
@@ -480,7 +487,7 @@ keepBefore nd var@EVarData{..} =
       lastTime = case lastModifier of
         Just (t, TweenValue dur _) -> Just $ min nd (t + dur)
         _ -> min nd <$> evarLastTime
-  in EVarData evarDefault timeline'' lastTime (fromMaybe evarDefault $ fmap (readEVarData var) lastTime)
+   in EVarData evarDefault timeline'' lastTime (fromMaybe evarDefault $ fmap (readEVarData var) lastTime)
 
 -- If this prints 'expensive' twice then Var is not efficient.
 efficiencyTesterVar :: Int
@@ -500,83 +507,85 @@ efficiencyTesterEVar = evalScene $ do
   at0 <- readEVar v
   wait 1
   at1 <- readEVar v
-  pure $ at0+at1
+  pure $ at0 + at1
 
 testVarsEqual :: Bool
-testVarsEqual = all id $
-  [ -- check new
-    (evalScene $ do
-      var <- newVar (0 :: Double)
-      evar <- newEVar 0
-      isSameAsVar evar var
-    ),
-    -- Read/write static values.
-    (evalScene $ do
-      var <- newVar (0 :: Double)
-      wait 1 >> writeVar var 2 >> wait 1 >> writeVar var 3 >> wait (-2)
-      evar <- newEVar 0
-      wait 1 >> writeEVar evar 2 >> wait 1 >> writeEVar evar 3 >> wait (-2)
-      isSameAsVar evar var
-    ),
-    -- Read/write static values with time-travel (waiting with negative values)
-    (evalScene $ do
-      var <- newVar (0 :: Double)
-      wait (-1) >> writeVar var 3 >> wait 1
-      evar <- newEVar 0
-      wait (-1) >> writeEVar evar 3 >> wait 1
-      isSameAsVar evar var
-    ),
-    -- Read/write values that change over time.
-    (evalScene $ do
-      var <- newVar (0 :: Double)
-      wait 1 >> modifyVar var (+1) >> tweenVar var 2 (\a t -> a + t) >> wait (-3)
-      evar <- newEVar 0
-      wait 1 >> modifyEVar evar (+1) >> tweenEVar evar 2 (\a t -> a + t) >> wait (-3)
-      isSameAsVar evar var
-    ),
-    -- Change a value over 1 second. Go back 0.5 seconds and modify the value at that timestamp.
-    (evalScene $ do
-      var <- newVar (0 :: Double)
-      wait 1 >> tweenVar var 1 (\a t -> a + t) >> wait (-0.5) >> modifyVar var (+3) >> wait (-1.5)
-      evar <- newEVar 0
-      wait 1 >> tweenEVar evar 1 (\a t -> a + t) >> wait (-0.5) >> modifyEVar evar (+3) >> wait (-1.5)
-      isSameAsVar evar var
-    ),
-    -- Change a value over 1 second. Go back 0.5 seconds and change the value over 1 second from that timestamp.
-    (evalScene $ do
-      var <- newVar (0 :: Double)
-      wait 1 >> tweenVar var 1 (\a t -> a + t) >> wait (-0.5) >> tweenVar var 1 (\a t -> a + 2 * t) >> wait (-2.5)
-      evar <- newEVar 0
-      wait 1 >> tweenEVar evar 1 (\a t -> a + t) >> wait (-0.5) >> tweenEVar evar 1 (\a t -> a + 2 * t) >> wait (-2.5)
-      isSameAsVar evar var
-    ),
-    -- Write a static value, go back 0.5 seconds, change the value over 1 second from that timestamp.
-    (evalScene $ do
-      var <- newVar (0 :: Double)
-      wait 1 >> writeVar var 42 >> wait (-0.5) >> tweenVar var 1 (\a t -> a + t) >> wait (-1.5)
-      evar <- newEVar 0
-      wait 1 >> writeEVar evar 42 >> wait (-0.5) >> tweenEVar evar 1 (\a t -> a + t) >> wait (-1.5)
-      isSameAsVar evar var
-    )
-  ]
+testVarsEqual =
+  all id $
+    [ -- check new
+      ( evalScene $ do
+          var <- newVar (0 :: Double)
+          evar <- newEVar 0
+          isSameAsVar evar var
+      ),
+      -- Read/write static values.
+      ( evalScene $ do
+          var <- newVar (0 :: Double)
+          wait 1 >> writeVar var 2 >> wait 1 >> writeVar var 3 >> wait (-2)
+          evar <- newEVar 0
+          wait 1 >> writeEVar evar 2 >> wait 1 >> writeEVar evar 3 >> wait (-2)
+          isSameAsVar evar var
+      ),
+      -- Read/write static values with time-travel (waiting with negative values)
+      ( evalScene $ do
+          var <- newVar (0 :: Double)
+          wait (-1) >> writeVar var 3 >> wait 1
+          evar <- newEVar 0
+          wait (-1) >> writeEVar evar 3 >> wait 1
+          isSameAsVar evar var
+      ),
+      -- Read/write values that change over time.
+      ( evalScene $ do
+          var <- newVar (0 :: Double)
+          wait 1 >> modifyVar var (+ 1) >> tweenVar var 2 (\a t -> a + t) >> wait (-3)
+          evar <- newEVar 0
+          wait 1 >> modifyEVar evar (+ 1) >> tweenEVar evar 2 (\a t -> a + t) >> wait (-3)
+          isSameAsVar evar var
+      ),
+      -- Change a value over 1 second. Go back 0.5 seconds and modify the value at that timestamp.
+      ( evalScene $ do
+          var <- newVar (0 :: Double)
+          wait 1 >> tweenVar var 1 (\a t -> a + t) >> wait (-0.5) >> modifyVar var (+ 3) >> wait (-1.5)
+          evar <- newEVar 0
+          wait 1 >> tweenEVar evar 1 (\a t -> a + t) >> wait (-0.5) >> modifyEVar evar (+ 3) >> wait (-1.5)
+          isSameAsVar evar var
+      ),
+      -- Change a value over 1 second. Go back 0.5 seconds and change the value over 1 second from that timestamp.
+      ( evalScene $ do
+          var <- newVar (0 :: Double)
+          wait 1 >> tweenVar var 1 (\a t -> a + t) >> wait (-0.5) >> tweenVar var 1 (\a t -> a + 2 * t) >> wait (-2.5)
+          evar <- newEVar 0
+          wait 1 >> tweenEVar evar 1 (\a t -> a + t) >> wait (-0.5) >> tweenEVar evar 1 (\a t -> a + 2 * t) >> wait (-2.5)
+          isSameAsVar evar var
+      ),
+      -- Write a static value, go back 0.5 seconds, change the value over 1 second from that timestamp.
+      ( evalScene $ do
+          var <- newVar (0 :: Double)
+          wait 1 >> writeVar var 42 >> wait (-0.5) >> tweenVar var 1 (\a t -> a + t) >> wait (-1.5)
+          evar <- newEVar 0
+          wait 1 >> writeEVar evar 42 >> wait (-0.5) >> tweenEVar evar 1 (\a t -> a + t) >> wait (-1.5)
+          isSameAsVar evar var
+      )
+    ]
   where
     varVals :: (Show a) => Var s a -> [Time] -> Scene s [a]
     varVals var points =
       flip mapM points $ \t -> do
         wait t
         x <- readVar var
-        wait (-t)
+        wait (- t)
         pure x
     evarVals :: (Show a) => EVar s a -> [Time] -> Scene s [a]
     evarVals var points =
       flip mapM points $ \t -> do
         wait t
         x <- readEVar var
-        wait (-t)
+        wait (- t)
         pure x
-    isSameAsVar ::  (Show a, Eq a) => EVar s a -> Var s a -> Scene s Bool
-    isSameAsVar evar var = let points = fmap (/2) [-40..40]
-                           in (==) <$> varVals var points <*> evarVals evar points
+    isSameAsVar :: (Show a, Eq a) => EVar s a -> Var s a -> Scene s Bool
+    isSameAsVar evar var =
+      let points = fmap (/ 2) [-40 .. 40]
+       in (==) <$> varVals var points <*> evarVals evar points
 
 -- | Time dependent variable.
 newtype Var s a = Var (STRef s (Time -> a))
@@ -623,10 +632,11 @@ modifyVar (Var ref) fn = do
 tweenVar :: Var s a -> Duration -> (a -> Time -> a) -> Scene s ()
 tweenVar (Var ref) dur fn = do
   now <- queryNow
-  liftST $ modifySTRef ref $ \prev t ->
-    if t < now
-      then prev t
-      else fn (prev t) (max 0 (min dur $ t - now) / dur)
+  liftST $
+    modifySTRef ref $ \prev t ->
+      if t < now
+        then prev t
+        else fn (prev t) (max 0 (min dur $ t - now) / dur)
   wait dur
 
 -- | Modify a variable between @now@ and @now+duration@.
@@ -657,8 +667,8 @@ simpleVar render def = do
 
 -- | Helper function for filtering variables.
 findVar :: (a -> Bool) -> [Var s a] -> Scene s (Var s a)
-findVar _cond []       = error "Variable not found."
-findVar cond  (v : vs) = do
+findVar _cond [] = error "Variable not found."
+findVar cond (v : vs) = do
   val <- readVar v
   if cond val then return v else findVar cond vs
 
@@ -667,7 +677,7 @@ findVar cond  (v : vs) = do
 data Sprite s = Sprite Time (STRef s (Duration, ST s (Duration -> Time -> SVG -> (SVG, ZIndex))))
 
 -- | Sprite frame generator. Generates frames over time in a stateful environment.
-newtype Frame s a = Frame { unFrame :: ST s (Time -> Duration -> Time -> a) }
+newtype Frame s a = Frame {unFrame :: ST s (Time -> Duration -> Time -> a)}
 
 instance Functor (Frame s) where
   fmap fn (Frame gen) = Frame $ do
@@ -698,7 +708,6 @@ unVar (Var ref) = Frame $ do
   fn <- readSTRef ref
   return $ \real_t _d _t -> fn real_t
 
-
 -- | Dereference seconds since sprite birth.
 spriteT :: Frame s Time
 spriteT = Frame $ return (\_real_t _d t -> t)
@@ -723,9 +732,9 @@ newSprite render = do
   now <- queryNow
   ref <- liftST $ newSTRef (-1, return $ \_d _t svg -> (svg, 0))
   addGen $ do
-    fn                           <- unFrame render
+    fn <- unFrame render
     (spriteDur, spriteEffectGen) <- readSTRef ref
-    spriteEffect                 <- spriteEffectGen
+    spriteEffect <- spriteEffectGen
     return $ \d absT ->
       let relD = (if spriteDur < 0 then d else spriteDur) - now
           relT = absT - now
@@ -735,8 +744,8 @@ newSprite render = do
           -- This behavior is difficult to get right. See the 'bug_*' examples for
           -- automated tests.
           inTimeSlice = relT >= 0 && relT < relD
-          isLastFrame = d==absT && relT == relD
-      in  if inTimeSlice || isLastFrame
+          isLastFrame = d == absT && relT == relD
+       in if inTimeSlice || isLastFrame
             then spriteEffect relD relT (fn absT relD relT)
             else (None, 0)
   return $ Sprite now ref
@@ -834,19 +843,21 @@ applyVar var sprite fn = spriteModify sprite $ do
 destroySprite :: Sprite s -> Scene s ()
 destroySprite (Sprite _ ref) = do
   now <- queryNow
-  liftST $ modifySTRef ref $ \(ttl, render) ->
-    (if ttl < 0 then now else min ttl now, render)
+  liftST $
+    modifySTRef ref $ \(ttl, render) ->
+      (if ttl < 0 then now else min ttl now, render)
 
 -- | Low-level frame modifier.
 spriteModify :: Sprite s -> Frame s ((SVG, ZIndex) -> (SVG, ZIndex)) -> Scene s ()
-spriteModify (Sprite born ref) modFn = liftST $ modifySTRef ref $ \(ttl, renderGen) ->
-  ( ttl
-  , do
-    render    <- renderGen
-    modRender <- unFrame modFn
-    return $ \relD relT ->
-      let absT = relT + born in modRender absT relD relT . render relD relT
-  )
+spriteModify (Sprite born ref) modFn = liftST $
+  modifySTRef ref $ \(ttl, renderGen) ->
+    ( ttl,
+      do
+        render <- renderGen
+        modRender <- unFrame modFn
+        return $ \relD relT ->
+          let absT = relT + born in modRender absT relD relT . render relD relT
+    )
 
 -- | Map the SVG output of a sprite.
 --
@@ -885,10 +896,11 @@ spriteTween sprite@(Sprite born _) dur fn = do
     t <- spriteT
     return $ first $ \svg -> fn (clamp 0 1 $ (t - tDelta) / dur) svg
   wait dur
- where
-  clamp a b v | v < a     = a
-              | v > b     = b
-              | otherwise = v
+  where
+    clamp a b v
+      | v < a = a
+      | v > b = b
+      | otherwise = v
 
 -- | Create a new variable and apply it to a sprite.
 --
@@ -921,14 +933,15 @@ spriteVar sprite def fn = do
 spriteE :: Sprite s -> Effect -> Scene s ()
 spriteE (Sprite born ref) effect = do
   now <- queryNow
-  liftST $ modifySTRef ref $ \(ttl, renderGen) ->
-    ( ttl
-    , do
-      render <- renderGen
-      return $ \d t svg ->
-        let (svg', z) = render d t svg
-        in  (delayE (max 0 $ now - born) effect d t svg', z)
-    )
+  liftST $
+    modifySTRef ref $ \(ttl, renderGen) ->
+      ( ttl,
+        do
+          render <- renderGen
+          return $ \d t svg ->
+            let (svg', z) = render d t svg
+             in (delayE (max 0 $ now - born) effect d t svg', z)
+      )
 
 -- | Set new ZIndex of a sprite.
 --
@@ -946,13 +959,14 @@ spriteE (Sprite born ref) effect = do
 spriteZ :: Sprite s -> ZIndex -> Scene s ()
 spriteZ (Sprite born ref) zindex = do
   now <- queryNow
-  liftST $ modifySTRef ref $ \(ttl, renderGen) ->
-    ( ttl
-    , do
-      render <- renderGen
-      return $ \d t svg ->
-        let (svg', z) = render d t svg in (svg', if t < now - born then z else zindex)
-    )
+  liftST $
+    modifySTRef ref $ \(ttl, renderGen) ->
+      ( ttl,
+        do
+          render <- renderGen
+          return $ \d t svg ->
+            let (svg', z) = render d t svg in (svg', if t < now - born then z else zindex)
+      )
 
 -- | Destroy all local sprites at the end of a scene.
 --
@@ -975,14 +989,14 @@ spriteZ (Sprite born ref) zindex = do
 spriteScope :: Scene s a -> Scene s a
 spriteScope (M action) = M $ \t -> do
   (a, s, p, gens) <- action t
-  return (a, s, p, map (genFn (t+max s p)) gens)
- where
-  genFn maxT gen = do
-    frameGen <- gen
-    return $ \_ t ->
-      if t < maxT
-        then frameGen maxT t
-        else (None, 0)
+  return (a, s, p, map (genFn (t + max s p)) gens)
+  where
+    genFn maxT gen = do
+      frameGen <- gen
+      return $ \_ t ->
+        if t < maxT
+          then frameGen maxT t
+          else (None, 0)
 
 asAnimation :: (forall s'. Scene s' a) -> Scene s Animation
 asAnimation s = do
@@ -1000,9 +1014,6 @@ transitionO t o a b = do
     asAnimation b
   play $ overlapT o t aA bA
 
-
-
-
 -------------------------------------------------------
 -- Objects
 
@@ -1017,33 +1028,34 @@ instance Renderable Tree where
 --   identity, location, and several other properties that can
 --   change over time.
 data Object s a = Object
-  { objectSprite :: Sprite s
-  , objectData   :: Var s (ObjectData a)
+  { objectSprite :: Sprite s,
+    objectData :: Var s (ObjectData a)
   }
 
 -- | Container for object properties.
 data ObjectData a = ObjectData
-  { _oTranslate   :: (Double, Double)
-  , _oValueRef    :: a
-  , _oSVG         :: SVG
-  , _oContext     :: SVG -> SVG
-  , _oMargin      :: (Double, Double, Double, Double)
-      -- ^ Top, right, bottom, left
-  , _oBB          :: (Double,Double,Double,Double)
-  , _oOpacity     :: Double
-  , _oShown       :: Bool
-  , _oZIndex      :: Int
-  , _oEasing      :: Signal
-  , _oScale       :: Double
-  , _oScaleOrigin :: (Double, Double)
+  { _oTranslate :: (Double, Double),
+    _oValueRef :: a,
+    _oSVG :: SVG,
+    _oContext :: SVG -> SVG,
+    -- | Top, right, bottom, left
+    _oMargin :: (Double, Double, Double, Double),
+    _oBB :: (Double, Double, Double, Double),
+    _oOpacity :: Double,
+    _oShown :: Bool,
+    _oZIndex :: Int,
+    _oEasing :: Signal,
+    _oScale :: Double,
+    _oScaleOrigin :: (Double, Double)
   }
 
 -- Basic lenses
 
 -- FIXME: Maybe 'position' is a better name.
+
 -- | Object position. Default: \<0,0\>
 oTranslate :: Lens' (ObjectData a) (Double, Double)
-oTranslate = lens _oTranslate $ \obj val -> obj { _oTranslate = val }
+oTranslate = lens _oTranslate $ \obj val -> obj {_oTranslate = val}
 
 -- | Rendered SVG node of an object. Does not include context
 --   or object properties. Read-only.
@@ -1053,11 +1065,11 @@ oSVG = to _oSVG
 -- | Custom render context. Is applied to the object for every
 --   frame that it is shown.
 oContext :: Lens' (ObjectData a) (SVG -> SVG)
-oContext = lens _oContext $ \obj val -> obj { _oContext = val  }
+oContext = lens _oContext $ \obj val -> obj {_oContext = val}
 
 -- | Object margins (top, right, bottom, left) in local units.
 oMargin :: Lens' (ObjectData a) (Double, Double, Double, Double)
-oMargin = lens _oMargin $ \obj val -> obj { _oMargin = val }
+oMargin = lens _oMargin $ \obj val -> obj {_oMargin = val}
 
 -- | Object bounding-box (minimal X-coordinate, minimal Y-coordinate,
 --   width, height). Uses `Reanimate.Svg.BoundingBox.boundingBox`
@@ -1067,68 +1079,72 @@ oBB = to _oBB
 
 -- | Object opacity. Default: 1
 oOpacity :: Lens' (ObjectData a) Double
-oOpacity = lens _oOpacity $ \obj val -> obj { _oOpacity = val }
+oOpacity = lens _oOpacity $ \obj val -> obj {_oOpacity = val}
 
 -- | Toggle for whether or not the object should be rendered.
 --   Default: False
 oShown :: Lens' (ObjectData a) Bool
-oShown = lens _oShown $ \obj val -> obj { _oShown = val }
+oShown = lens _oShown $ \obj val -> obj {_oShown = val}
 
 -- | Object's z-index.
 oZIndex :: Lens' (ObjectData a) Int
-oZIndex = lens _oZIndex $ \obj val -> obj { _oZIndex = val }
+oZIndex = lens _oZIndex $ \obj val -> obj {_oZIndex = val}
 
 -- | Easing function used when modifying object properties.
 --   Default: @'Reanimate.Ease.curveS' 2@
 oEasing :: Lens' (ObjectData a) Signal
-oEasing = lens _oEasing $ \obj val -> obj { _oEasing = val }
+oEasing = lens _oEasing $ \obj val -> obj {_oEasing = val}
 
 -- | Object's scale. Default: 1
 oScale :: Lens' (ObjectData a) Double
-oScale = lens _oScale $ \obj val -> oComputeBB obj { _oScale = val }
+oScale = lens _oScale $ \obj val -> oComputeBB obj {_oScale = val}
 
 -- | Origin point for scaling. Default: \<0,0\>
 oScaleOrigin :: Lens' (ObjectData a) (Double, Double)
-oScaleOrigin = lens _oScaleOrigin $ \obj val -> oComputeBB obj { _oScaleOrigin = val }
+oScaleOrigin = lens _oScaleOrigin $ \obj val -> oComputeBB obj {_oScaleOrigin = val}
 
 -- Smart lenses
 
 -- | Lens for the source value contained in an object.
 oValue :: Renderable a => Lens' (ObjectData a) a
 oValue = lens _oValueRef $ \obj newVal ->
-    let svg = toSVG newVal
-    in oComputeBB obj
-    { _oValueRef = newVal
-    , _oSVG      = svg }
+  let svg = toSVG newVal
+   in oComputeBB
+        obj
+          { _oValueRef = newVal,
+            _oSVG = svg
+          }
 
 oComputeBB :: ObjectData a -> ObjectData a
-oComputeBB obj = obj
-  { _oBB = boundingBox $ oScaleApply obj (_oSVG obj) }
+oComputeBB obj =
+  obj
+    { _oBB = boundingBox $ oScaleApply obj (_oSVG obj)
+    }
 
 -- | Derived location of the top-most point of an object + margin.
 oTopY :: Lens' (ObjectData a) Double
 oTopY = lens getter setter
   where
     getter obj =
-      let top  = obj ^. oMarginTop
+      let top = obj ^. oMarginTop
           miny = obj ^. oBBMinY
-          h    = obj ^. oBBHeight
-          dy   = obj ^. oTranslate . _2
-      in dy+miny+h+top
+          h = obj ^. oBBHeight
+          dy = obj ^. oTranslate . _2
+       in dy + miny + h + top
     setter obj val =
-      obj & (oTranslate . _2) +~ val-getter obj
+      obj & (oTranslate . _2) +~ val - getter obj
 
 -- | Derived location of the bottom-most point of an object + margin.
 oBottomY :: Lens' (ObjectData a) Double
 oBottomY = lens getter setter
   where
     getter obj =
-      let bot  = obj ^. oMarginBottom
+      let bot = obj ^. oMarginBottom
           miny = obj ^. oBBMinY
-          dy   = obj ^. oTranslate . _2
-      in dy+miny-bot
+          dy = obj ^. oTranslate . _2
+       in dy + miny - bot
     setter obj val =
-      obj & (oTranslate . _2) +~ val-getter obj
+      obj & (oTranslate . _2) +~ val - getter obj
 
 -- | Derived location of the left-most point of an object + margin.
 oLeftX :: Lens' (ObjectData a) Double
@@ -1137,10 +1153,10 @@ oLeftX = lens getter setter
     getter obj =
       let left = obj ^. oMarginLeft
           minx = obj ^. oBBMinX
-          dx   = obj ^. oTranslate . _1
-      in dx+minx-left
+          dx = obj ^. oTranslate . _1
+       in dx + minx - left
     setter obj val =
-      obj & (oTranslate . _1) +~ val-getter obj
+      obj & (oTranslate . _1) +~ val - getter obj
 
 -- | Derived location of the right-most point of an object + margin.
 oRightX :: Lens' (ObjectData a) Double
@@ -1148,28 +1164,28 @@ oRightX = lens getter setter
   where
     getter obj =
       let right = obj ^. oMarginRight
-          minx  = obj ^. oBBMinX
-          w     = obj ^. oBBWidth
-          dx    = obj ^. oTranslate . _1
-      in dx+minx+w+right
+          minx = obj ^. oBBMinX
+          w = obj ^. oBBWidth
+          dx = obj ^. oTranslate . _1
+       in dx + minx + w + right
     setter obj val =
-      obj & (oTranslate . _1) +~ val-getter obj
+      obj & (oTranslate . _1) +~ val - getter obj
 
 -- | Derived location of an object's center point.
 oCenterXY :: Lens' (ObjectData a) (Double, Double)
 oCenterXY = lens getter setter
   where
     getter obj =
-      let minx    = obj ^. oBBMinX
-          miny    = obj ^. oBBMinY
-          w       = obj ^. oBBWidth
-          h       = obj ^. oBBHeight
-          (dx,dy) = obj ^. oTranslate
-      in (dx+minx+w/2, dy+miny+h/2)
+      let minx = obj ^. oBBMinX
+          miny = obj ^. oBBMinY
+          w = obj ^. oBBWidth
+          h = obj ^. oBBHeight
+          (dx, dy) = obj ^. oTranslate
+       in (dx + minx + w / 2, dy + miny + h / 2)
     setter obj (dx, dy) =
-      let (x,y) = getter obj in
-      obj & (oTranslate . _1) +~ dx-x
-          & (oTranslate . _2) +~ dy-y
+      let (x, y) = getter obj
+       in obj & (oTranslate . _1) +~ dx - x
+            & (oTranslate . _2) +~ dy - y
 
 -- | Object's top margin.
 oMarginTop :: Lens' (ObjectData a) Double
@@ -1247,44 +1263,48 @@ oNew = newObject
 -- | Create new object.
 newObject :: Renderable a => a -> Scene s (Object s a)
 newObject val = do
-  ref <- newVar ObjectData
-    { _oTranslate = (0,0)
-    , _oValueRef = val
-    , _oSVG = svg
-    , _oContext = id
-    , _oMargin = (0.5,0.5,0.5,0.5)
-    , _oBB = boundingBox svg
-    , _oOpacity = 1
-    , _oShown = False
-    , _oZIndex = 1
-    , _oEasing = curveS 2
-    , _oScale = 1
-    , _oScaleOrigin = (0,0)
-    }
+  ref <-
+    newVar
+      ObjectData
+        { _oTranslate = (0, 0),
+          _oValueRef = val,
+          _oSVG = svg,
+          _oContext = id,
+          _oMargin = (0.5, 0.5, 0.5, 0.5),
+          _oBB = boundingBox svg,
+          _oOpacity = 1,
+          _oShown = False,
+          _oZIndex = 1,
+          _oEasing = curveS 2,
+          _oScale = 1,
+          _oScaleOrigin = (0, 0)
+        }
   sprite <- newSprite $ do
-    ~obj@ObjectData{..} <- unVar ref
+    ~obj@ObjectData {..} <- unVar ref
     pure $
       if _oShown
         then
           uncurry translate _oTranslate $
-          oScaleApply obj $
-          withGroupOpacity _oOpacity $
-          mkGroup [_oContext _oSVG]
+            oScaleApply obj $
+              withGroupOpacity _oOpacity $
+                mkGroup [_oContext _oSVG]
         else None
   spriteModify sprite $ do
-    ~ObjectData{_oZIndex=z} <- unVar ref
-    pure $ \(img,_) -> (img,z)
-  return Object
-    { objectSprite = sprite
-    , objectData   = ref }
+    ~ObjectData {_oZIndex = z} <- unVar ref
+    pure $ \(img, _) -> (img, z)
+  return
+    Object
+      { objectSprite = sprite,
+        objectData = ref
+      }
   where
     svg = toSVG val
 
 oScaleApply :: ObjectData a -> (SVG -> SVG)
-oScaleApply ObjectData{..} =
-  uncurry translate (_oScaleOrigin & both %~ negate) .
-  scale _oScale .
-  uncurry translate _oScaleOrigin
+oScaleApply ObjectData {..} =
+  uncurry translate (_oScaleOrigin & both %~ negate)
+    . scale _oScale
+    . uncurry translate _oScaleOrigin
 
 -------------------------------------------------------------------------------
 -- Graphical transformations
@@ -1303,16 +1323,16 @@ oShowWith o fn = do
   initSVG <- oRead o oSVG
   let ani = fn initSVG
   oTween o (duration ani) $ \t obj ->
-    obj{ _oSVG = getAnimationFrame SyncStretch ani t 1 }
-  oModify o $ \obj -> obj { _oSVG = initSVG }
+    obj {_oSVG = getAnimationFrame SyncStretch ani t 1}
+  oModify o $ \obj -> obj {_oSVG = initSVG}
 
 oHideWith :: Object s a -> (SVG -> Animation) -> Scene s ()
 oHideWith o fn = do
   initSVG <- oRead o oSVG
   let ani = fn initSVG
   oTween o (duration ani) $ \t obj ->
-    obj{ _oSVG = getAnimationFrame SyncStretch ani t 1 }
-  oModify o $ \obj -> obj { _oSVG = initSVG }
+    obj {_oSVG = getAnimationFrame SyncStretch ani t 1}
+  oModify o $ \obj -> obj {_oSVG = initSVG}
   oModify o $ oShown .~ False
 
 -- | Fade in object over a set duration.
@@ -1337,23 +1357,27 @@ svgOrigin :: SVG -> Origin -> (Double, Double)
 svgOrigin svg (originX, originY) =
   case boundingBox svg of
     (polyX, polyY, polyWidth, polyHeight) ->
-      ( polyX + polyWidth * originX
-      , polyY + polyHeight * originY)
+      ( polyX + polyWidth * originX,
+        polyY + polyHeight * originY
+      )
 
 oScaleIn :: SVG -> Animation
-oScaleIn = oScaleIn' (curveS 2) (0.5,1)
+oScaleIn = oScaleIn' (curveS 2) (0.5, 1)
 
 oScaleIn' :: Signal -> Origin -> SVG -> Animation
 oScaleIn' easing origin = oStagger' 0.05 $ \svg ->
   let (cx, cy) = svgOrigin svg origin
-  in signalA easing $ mkAnimation 0.3 $ \t ->
-    translate cx cy $
-    scale t $
-    translate (-cx) (-cy)
-    svg
+   in signalA easing $
+        mkAnimation 0.3 $ \t ->
+          translate cx cy $
+            scale t $
+              translate
+                (- cx)
+                (- cy)
+                svg
 
 oScaleOut :: SVG -> Animation
-oScaleOut = reverseA . oStaggerRev' 0.05 (oScaleIn' (curveS 2) (0.5,0))
+oScaleOut = reverseA . oStaggerRev' 0.05 (oScaleIn' (curveS 2) (0.5, 0))
 
 oScaleOut' :: Signal -> Origin -> SVG -> Animation
 oScaleOut' easing origin = reverseA . oStaggerRev' 0.05 (oScaleIn' easing origin)
@@ -1387,18 +1411,20 @@ oDraw = oStagger $ \svg -> scene $
     let sWidth =
           case toUserUnit defaultDPI <$> getLast (attr ^. strokeWidth) of
             Just (Num d) -> max defaultStrokeWidth d
-            _            -> defaultStrokeWidth
+            _ -> defaultStrokeWidth
     -- wait 1
     play $
       mapA ctx $
-      applyE (overEnding fillDur $ fadeLineOutE sWidth) $
-      animate $ \t -> withStrokeWidth sWidth $
-      mkGroup
-      [withFillOpacity 0 $ partialSvg t node]
-    wait (-fillDur)
-    newSpriteA' SyncFreeze $ mkAnimation fillDur $ \t ->
-      withGroupOpacity t $
-      mkGroup [ ctx node ]
+        applyE (overEnding fillDur $ fadeLineOutE sWidth) $
+          animate $ \t ->
+            withStrokeWidth sWidth $
+              mkGroup
+                [withFillOpacity 0 $ partialSvg t node]
+    wait (- fillDur)
+    newSpriteA' SyncFreeze $
+      mkAnimation fillDur $ \t ->
+        withGroupOpacity t $
+          mkGroup [ctx node]
   where
     fillDur = 0.3
 
@@ -1406,32 +1432,32 @@ _oBalloon :: SVG -> Animation
 _oBalloon = animate . balloon
 
 -- FIXME: Also transform attributes: 'opacity', 'scale', 'scaleOrigin'.
+
 -- | Morph source object into target object over a set duration.
 oTransform :: Object s a -> Object s b -> Duration -> Scene s ()
 oTransform src dst d = do
-    srcSvg <- oRead src oSVG
-    srcCtx <- oRead src oContext
-    srcEase <- oRead src oEasing
-    srcLoc <- oRead src oTranslate
-    oModify src $ oShown .~ False
+  srcSvg <- oRead src oSVG
+  srcCtx <- oRead src oContext
+  srcEase <- oRead src oEasing
+  srcLoc <- oRead src oTranslate
+  oModify src $ oShown .~ False
 
-    dstSvg <- oRead dst oSVG
-    dstCtx <- oRead dst oContext
-    dstLoc <- oRead dst oTranslate
+  dstSvg <- oRead dst oSVG
+  dstCtx <- oRead dst oContext
+  dstLoc <- oRead dst oTranslate
 
-    m <- newObject $ Morph 0 (srcCtx srcSvg) (dstCtx dstSvg)
-    oModifyS m $ do
-      oShown     .= True
-      oEasing    .= srcEase
-      oTranslate .= srcLoc
-    fork $ oTween m d $ \t -> oTranslate %~ moveTo t dstLoc
-    oTweenV m d $ \t -> morphDelta .~ t
-    oModify m $ oShown .~ False
-    oModify dst $ oShown .~ True
+  m <- newObject $ Morph 0 (srcCtx srcSvg) (dstCtx dstSvg)
+  oModifyS m $ do
+    oShown .= True
+    oEasing .= srcEase
+    oTranslate .= srcLoc
+  fork $ oTween m d $ \t -> oTranslate %~ moveTo t dstLoc
+  oTweenV m d $ \t -> morphDelta .~ t
+  oModify m $ oShown .~ False
+  oModify dst $ oShown .~ True
   where
     moveTo t (dstX, dstY) (srcX, srcY) =
       (fromToS srcX dstX t, fromToS srcY dstY t)
-
 
 -------------------------------------------------------------------------------
 -- Built-in objects
@@ -1447,34 +1473,34 @@ instance Renderable Circle where
   toSVG (Circle r) = mkCircle r
 
 -- | Basic object mapping to \<rect\/\> in SVG.
-data Rectangle = Rectangle { _rectWidth :: Double, _rectHeight :: Double }
+data Rectangle = Rectangle {_rectWidth :: Double, _rectHeight :: Double}
 
 -- | Rectangle width in local units.
 rectWidth :: Lens' Rectangle Double
-rectWidth = lens _rectWidth $ \obj val -> obj{_rectWidth=val}
+rectWidth = lens _rectWidth $ \obj val -> obj {_rectWidth = val}
 
 -- | Rectangle height in local units.
 rectHeight :: Lens' Rectangle Double
-rectHeight = lens _rectHeight $ \obj val -> obj{_rectHeight=val}
+rectHeight = lens _rectHeight $ \obj val -> obj {_rectHeight = val}
 
 instance Renderable Rectangle where
   toSVG (Rectangle w h) = mkRect w h
 
 -- | Object representing an interpolation between SVG nodes.
-data Morph = Morph { _morphDelta :: Double, _morphSrc :: SVG, _morphDst :: SVG }
+data Morph = Morph {_morphDelta :: Double, _morphSrc :: SVG, _morphDst :: SVG}
 
 -- | Control variable for the interpolation. A value of 0 gives the
 --   source SVG and 1 gives the target svg.
 morphDelta :: Lens' Morph Double
-morphDelta = lens _morphDelta $ \obj val -> obj{_morphDelta = val}
+morphDelta = lens _morphDelta $ \obj val -> obj {_morphDelta = val}
 
 -- | Source shape.
 morphSrc :: Lens' Morph SVG
-morphSrc = lens _morphSrc $ \obj val -> obj{_morphSrc = val}
+morphSrc = lens _morphSrc $ \obj val -> obj {_morphSrc = val}
 
 -- | Target shape.
 morphDst :: Lens' Morph SVG
-morphDst = lens _morphDst $ \obj val -> obj{_morphDst = val}
+morphDst = lens _morphDst $ \obj val -> obj {_morphDst = val}
 
 instance Renderable Morph where
   toSVG (Morph t src dst) = morph linear src dst t
@@ -1482,6 +1508,7 @@ instance Renderable Morph where
 -- | Cameras can take control of objects and manipulate them
 --   with convenient pan and zoom operations.
 data Camera = Camera
+
 instance Renderable Camera where
   toSVG Camera = None
 
@@ -1507,14 +1534,14 @@ cameraAttach :: Object s Camera -> Object s a -> Scene s ()
 cameraAttach cam obj =
   spriteModify (objectSprite obj) $ do
     camData <- unVar (objectData cam)
-    return $ \(svg,zindex) ->
-      let (x,y) = camData^.oTranslate
+    return $ \(svg, zindex) ->
+      let (x, y) = camData ^. oTranslate
           ctx =
-            translate (-x) (-y) .
-            uncurry translate (camData^.oScaleOrigin) .
-            scale (camData^.oScale) .
-            uncurry translate (camData^.oScaleOrigin & both %~ negate)
-      in (ctx svg, zindex)
+            translate (- x) (- y)
+              . uncurry translate (camData ^. oScaleOrigin)
+              . scale (camData ^. oScale)
+              . uncurry translate (camData ^. oScaleOrigin & both %~ negate)
+       in (ctx svg, zindex)
 
 -- |
 --
@@ -1538,14 +1565,14 @@ cameraAttach cam obj =
 --
 --   <<docs/gifs/doc_cameraFocus.gif>>
 cameraFocus :: Object s Camera -> (Double, Double) -> Scene s ()
-cameraFocus cam (x,y) = do
+cameraFocus cam (x, y) = do
   (ox, oy) <- oRead cam oScaleOrigin
   (tx, ty) <- oRead cam oTranslate
   s <- oRead cam oScale
-  let newLocation = (x-((x-ox)*s+ox-tx), y-((y-oy)*s+oy-ty))
+  let newLocation = (x - ((x - ox) * s + ox - tx), y - ((y - oy) * s + oy - ty))
   oModifyS cam $ do
     oTranslate .= newLocation
-    oScaleOrigin .= (x,y)
+    oScaleOrigin .= (x, y)
 
 -- | Instantaneously set camera zoom level.
 cameraSetZoom :: Object s Camera -> Double -> Scene s ()
@@ -1567,7 +1594,7 @@ cameraSetPan cam location =
 
 -- | Change camera location over a set duration.
 cameraPan :: Object s Camera -> Duration -> (Double, Double) -> Scene s ()
-cameraPan cam d (x,y) =
+cameraPan cam d (x, y) =
   oTweenS cam d $ \t -> do
-    oTranslate._1 %= \v -> fromToS v x t
-    oTranslate._2 %= \v -> fromToS v y t
+    oTranslate . _1 %= \v -> fromToS v x t
+    oTranslate . _2 %= \v -> fromToS v y t
