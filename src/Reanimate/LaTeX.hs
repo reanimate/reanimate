@@ -23,7 +23,7 @@ import qualified Data.ByteString               as B
 import           Data.Text                                ( Text )
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as T
-import           Graphics.SvgTree                         ( Tree(..)
+import           Graphics.SvgTree                         ( Tree
                                                           , parseSvgFile
                                                           )
 import           Reanimate.Cache

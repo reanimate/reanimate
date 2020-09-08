@@ -17,7 +17,7 @@ import           Data.List
 import           Data.Maybe (mapMaybe)
 import qualified Data.Vector.Unboxed as V
 import qualified Geom2D.CubicBezier.Linear as Bezier
-import           Graphics.SvgTree hiding (height, line, path, use, width)
+import           Graphics.SvgTree
 import           Linear.V2 hiding (angle)
 import           Linear.Vector
 import           Reanimate.Constants
@@ -79,7 +79,7 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
       None            -> []
       UseTree{}       -> []
       GroupTree g     -> concatMap svgBoundingPoints (g^.groupChildren)
-      SymbolTree (Symbol g) -> concatMap svgBoundingPoints (g^.groupChildren)
+      SymbolTree g    -> concatMap svgBoundingPoints (g^.groupChildren)
       FilterTree{}    -> []
       DefinitionTree{} -> []
       PathTree p      -> linePoints $ toLineCommands (p^.pathDefinition)

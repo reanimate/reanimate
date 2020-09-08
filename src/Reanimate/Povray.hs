@@ -18,7 +18,7 @@ import           Data.Hashable
 import           Data.Text                  (Text)
 import qualified Data.Text                  as T
 import qualified Data.Text.IO               as T
-import           Graphics.SvgTree           (Tree (..))
+import           Graphics.SvgTree           (Tree)
 import           Reanimate.Cache
 import           Reanimate.Constants
 import           Reanimate.Misc
