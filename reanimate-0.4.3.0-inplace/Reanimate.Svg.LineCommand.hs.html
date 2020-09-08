@@ -40,7 +40,7 @@ span.spaces    { background: white }
 <span class="lineno">   21 </span>import           Data.Functor
 <span class="lineno">   22 </span>import qualified Data.Vector.Unboxed       as V
 <span class="lineno">   23 </span>import qualified Geom2D.CubicBezier.Linear as Bezier
-<span class="lineno">   24 </span>import           Graphics.SvgTree          hiding (height, line, path, use, width)
+<span class="lineno">   24 </span>import           Graphics.SvgTree
 <span class="lineno">   25 </span>import           Linear.Metric
 <span class="lineno">   26 </span>import           Linear.V2                 hiding (angle)
 <span class="lineno">   27 </span>import           Linear.Vector
@@ -294,7 +294,7 @@ span.spaces    { background: white }
 <span class="lineno">  275 </span><span class="spaces"></span><span class="istickedoff">partialSvg alpha = mapTree worker</span>
 <span class="lineno">  276 </span><span class="spaces">  </span><span class="istickedoff">where</span>
 <span class="lineno">  277 </span><span class="spaces">    </span><span class="istickedoff">worker (PathTree path) =</span>
-<span class="lineno">  278 </span><span class="spaces">      </span><span class="istickedoff">PathTree $ path &amp; pathDefinition %~ lineToPath . partialLine alpha . toLineCommands</span>
+<span class="lineno">  278 </span><span class="spaces">        </span><span class="istickedoff">PathTree $ path &amp; pathDefinition %~ lineToPath . partialLine alpha . toLineCommands</span>
 <span class="lineno">  279 </span><span class="spaces">    </span><span class="istickedoff">worker t = t</span></span>
 
 </pre>

@@ -36,7 +36,7 @@ span.spaces    { background: white }
 <span class="lineno">   17 </span>import           Data.Maybe (mapMaybe)
 <span class="lineno">   18 </span>import qualified Data.Vector.Unboxed as V
 <span class="lineno">   19 </span>import qualified Geom2D.CubicBezier.Linear as Bezier
-<span class="lineno">   20 </span>import           Graphics.SvgTree hiding (height, line, path, use, width)
+<span class="lineno">   20 </span>import           Graphics.SvgTree
 <span class="lineno">   21 </span>import           Linear.V2 hiding (angle)
 <span class="lineno">   22 </span>import           Linear.Vector
 <span class="lineno">   23 </span>import           Reanimate.Constants
@@ -98,7 +98,7 @@ span.spaces    { background: white }
 <span class="lineno">   79 </span><span class="spaces">      </span><span class="istickedoff">None            -&gt; <span class="nottickedoff">[]</span></span>
 <span class="lineno">   80 </span><span class="spaces">      </span><span class="istickedoff">UseTree{}       -&gt; <span class="nottickedoff">[]</span></span>
 <span class="lineno">   81 </span><span class="spaces">      </span><span class="istickedoff">GroupTree g     -&gt; concatMap svgBoundingPoints (g^.groupChildren)</span>
-<span class="lineno">   82 </span><span class="spaces">      </span><span class="istickedoff">SymbolTree (Symbol g) -&gt; <span class="nottickedoff">concatMap svgBoundingPoints (g^.groupChildren)</span></span>
+<span class="lineno">   82 </span><span class="spaces">      </span><span class="istickedoff">SymbolTree g    -&gt; <span class="nottickedoff">concatMap svgBoundingPoints (g^.groupChildren)</span></span>
 <span class="lineno">   83 </span><span class="spaces">      </span><span class="istickedoff">FilterTree{}    -&gt; <span class="nottickedoff">[]</span></span>
 <span class="lineno">   84 </span><span class="spaces">      </span><span class="istickedoff">DefinitionTree{} -&gt; <span class="nottickedoff">[]</span></span>
 <span class="lineno">   85 </span><span class="spaces">      </span><span class="istickedoff">PathTree p      -&gt; <span class="nottickedoff">linePoints $ toLineCommands (p^.pathDefinition)</span></span>
