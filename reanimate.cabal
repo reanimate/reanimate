@@ -93,6 +93,10 @@ library
                       Reanimate.Driver.Compile
                       Reanimate.Misc
                       Paths_reanimate
+                      Reanimate.Scene.Core
+                      Reanimate.Scene.Var
+                      Reanimate.Scene.Sprite
+                      Reanimate.Scene.Object
   build-depends:
     base                 >=4.10 && <5,
     JuicyPixels          >=3.3.3,
@@ -145,6 +149,7 @@ test-suite spec
   default-language:   Haskell2010
   other-modules:
     UnitTests
+    TimeVarTests
     Properties
     Helpers
   hs-source-dirs: test
@@ -159,4 +164,5 @@ test-suite spec
     QuickCheck >= 2.1.0, text,
     temporary,
     tasty, tasty-golden, tasty-hunit,
-    tasty-quickcheck, tasty-rerun >= 1.1.17
+    tasty-quickcheck, tasty-rerun >= 1.1.17,
+    tasty-expected-failure
