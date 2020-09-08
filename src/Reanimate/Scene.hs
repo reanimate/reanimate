@@ -166,6 +166,7 @@ import           Control.Monad.State    (State, execState)
 import           Data.Bifunctor
 import qualified Data.Map                   as M
 import           Data.Maybe                 (fromMaybe)
+import           Data.List
 import           Data.Monoid
 import           Data.STRef
 import           Graphics.SvgTree       (Number (..), Tree, pattern None, strokeWidth,
