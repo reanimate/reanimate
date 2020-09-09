@@ -63,15 +63,15 @@ renderSvgs :: FilePath -> Int -> Bool -> Animation -> IO ()
 renderSvgs folder offset _prettyPrint ani = do
   print frameCount
   lock <- newMVar ()
-
   handle errHandler $ concurrentForM_ (frameOrder rate frameCount) $ \nth' -> do
     let nth = (nth'+offset) `mod` frameCount
         now = (duration ani / (fromIntegral frameCount - 1)) * fromIntegral nth
         frame = frameAt (if frameCount <= 1 then 0 else now) ani
-        svg = renderSvg Nothing Nothing frame
         path = folder </> show nth <.> "svg"
+        ~svg = renderSvg Nothing Nothing frame
 
-    idempotentFile path $ writeFile path svg
+    idempotentFile path $
+      writeFile path svg
     withMVar lock $ \_ -> do
       print nth
       hFlush stdout

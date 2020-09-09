@@ -93,7 +93,6 @@ module Reanimate
   , writeVar          -- :: Var s a -> a -> Scene s ()
   , modifyVar         -- :: Var s a -> (a -> a) -> Scene s ()
   , tweenVar          -- :: Var s a -> Duration -> (a -> Time -> a) -> Scene s ()
-  , tweenVarUnclamped -- :: Var s a -> Duration -> (a -> Time -> a) -> Scene s ()
   , simpleVar         -- :: (a -> SVG) -> a -> Scene s (Var s a)
   , findVar           -- :: (a -> Bool) -> [Var s a] -> Scene s (Var s a)
   -- *** Sprites

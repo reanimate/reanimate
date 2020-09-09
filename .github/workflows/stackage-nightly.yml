@@ -1,0 +1,39 @@
+name: Stackage nightly
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-haskell@v1
+      with:
+        stack-version: 'latest'
+
+    - name: Cache
+      uses: actions/cache@v1
+      env:
+        cache-name: cache-stack
+      with:
+        path: |
+          ~/.stack
+          ~/.stack-work
+          ~/.ghc
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/cabal.project') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
+    - name: Test nightly
+      run: |
+        rm -fr discord-bot playground dist-newstyle
+        rm -f stack.yaml && stack init --resolver nightly
+        stack build --resolver nightly --haddock --test --bench --no-run-benchmarks

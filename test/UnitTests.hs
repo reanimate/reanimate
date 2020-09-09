@@ -24,6 +24,7 @@ data BuildSystem
   = Cabal
   | Stack
 
+{-# NOINLINE buildSystem #-}
 buildSystem :: BuildSystem
 buildSystem = unsafePerformIO $ do
   newbuild <- doesDirectoryExist "dist-newstyle"
@@ -32,7 +33,19 @@ buildSystem = unsafePerformIO $ do
     else if stack then pure Stack
     else error "Unknown build system."
 
+{-# NOINLINE unitTestsDisabled #-}
+unitTestsDisabled :: Bool
+unitTestsDisabled =
+  case buildSystem of
+    Cabal -> False
+    Stack -> unsafePerformIO $ do
+      (ret, _, _) <- readProcessWithExitCode "stack" ["exec","--","ghc", "-e", "Reanimate.duration Reanimate.Builtin.Documentation.drawCircle"] ""
+      case ret of
+        ExitFailure{} -> pure True
+        ExitSuccess   -> pure False
+
 unitTestFolder :: FilePath -> IO TestTree
+unitTestFolder _ | unitTestsDisabled = return $ testGroup "animate (disabled)" []
 unitTestFolder path = do
   files <- sort <$> getDirectoryContents path
   mbWDiff <- findExecutable "wdiff"
@@ -65,6 +78,7 @@ genGolden path = do
     ExitFailure{} -> error $ "Failed to run: " ++ T.unpack err
 
 compileTestFolder :: FilePath -> IO TestTree
+compileTestFolder _ | unitTestsDisabled = return $ testGroup "compile (disabled)" []
 compileTestFolder path = do
   files <- sort <$> getDirectoryContents path
   return $ testGroup "compile"
@@ -87,6 +101,7 @@ compileTestFolder path = do
     ghcOpts = ["-fno-code", "-O0", "-Werror", "-Wall"]
 
 compileVideoFolder :: FilePath -> IO TestTree
+compileVideoFolder _ | unitTestsDisabled = return $ testGroup "videos (disabled)" []
 compileVideoFolder path = do
   exist <- doesDirectoryExist path
   if exist

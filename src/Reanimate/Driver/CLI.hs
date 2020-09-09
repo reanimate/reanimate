@@ -44,6 +44,7 @@ data Command
     , renderPreset  :: Maybe Preset
     , renderRaster  :: Raster
     , renderPartial :: Bool
+    , renderHash    :: Bool
     }
    deriving (Show)
 
@@ -211,6 +212,10 @@ renderCommand = info parse
         (long "partial"
         <> help "Produce partial animation even if frame generation was \
                 \interrupted by ctrl-c")
+      <*> flag True False
+        (long "disable-hashing"
+        <> help "Disable SVG dedup via hashing. This might improve performance \
+                \if all your frames are unique.")
 
 opts :: ParserInfo Options
 opts = info (options <**> helper )
