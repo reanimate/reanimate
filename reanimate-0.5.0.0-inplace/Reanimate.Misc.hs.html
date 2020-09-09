@@ -1,0 +1,131 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>module Reanimate.Misc
+<span class="lineno">    2 </span>  ( requireExecutable
+<span class="lineno">    3 </span>  , runCmd
+<span class="lineno">    4 </span>  , runCmd_
+<span class="lineno">    5 </span>  , runCmdLazy
+<span class="lineno">    6 </span>  , withTempDir
+<span class="lineno">    7 </span>  , withTempFile
+<span class="lineno">    8 </span>  , renameOrCopyFile
+<span class="lineno">    9 </span>  ) where
+<span class="lineno">   10 </span>
+<span class="lineno">   11 </span>import           Control.Concurrent
+<span class="lineno">   12 </span>import           Control.Exception  (catch, evaluate, finally, throw)
+<span class="lineno">   13 </span>import qualified Data.Text          as T
+<span class="lineno">   14 </span>import qualified Data.Text.IO       as T
+<span class="lineno">   15 </span>import           Foreign.C.Error
+<span class="lineno">   16 </span>import           GHC.IO.Exception
+<span class="lineno">   17 </span>import           System.Directory   (copyFile, findExecutable, removeFile,
+<span class="lineno">   18 </span>                                     renameFile)
+<span class="lineno">   19 </span>import           System.FilePath    ((&lt;.&gt;))
+<span class="lineno">   20 </span>import           System.IO          (hClose, hGetContents, hIsEOF, hPutStr,
+<span class="lineno">   21 </span>                                     stderr)
+<span class="lineno">   22 </span>import           System.IO.Temp     (withSystemTempDirectory,
+<span class="lineno">   23 </span>                                     withSystemTempFile)
+<span class="lineno">   24 </span>import           System.Process     (readProcessWithExitCode,
+<span class="lineno">   25 </span>                                     runInteractiveProcess, showCommandForUser,
+<span class="lineno">   26 </span>                                     terminateProcess, waitForProcess)
+<span class="lineno">   27 </span>
+<span class="lineno">   28 </span>
+<span class="lineno">   29 </span>requireExecutable :: String -&gt; IO FilePath
+<span class="lineno">   30 </span><span class="decl"><span class="nottickedoff">requireExecutable exec = do</span>
+<span class="lineno">   31 </span><span class="spaces">  </span><span class="nottickedoff">mbPath &lt;- findExecutable exec</span>
+<span class="lineno">   32 </span><span class="spaces">  </span><span class="nottickedoff">case mbPath of</span>
+<span class="lineno">   33 </span><span class="spaces">    </span><span class="nottickedoff">Nothing   -&gt; error $ &quot;Couldn't find executable: &quot; ++ exec</span>
+<span class="lineno">   34 </span><span class="spaces">    </span><span class="nottickedoff">Just path -&gt; return path</span></span>
+<span class="lineno">   35 </span>
+<span class="lineno">   36 </span>runCmd :: FilePath -&gt; [String] -&gt; IO ()
+<span class="lineno">   37 </span><span class="decl"><span class="nottickedoff">runCmd exec args = do</span>
+<span class="lineno">   38 </span><span class="spaces">  </span><span class="nottickedoff">ret &lt;- runCmd_ exec args</span>
+<span class="lineno">   39 </span><span class="spaces">  </span><span class="nottickedoff">case ret of</span>
+<span class="lineno">   40 </span><span class="spaces">    </span><span class="nottickedoff">Left err -&gt; error $ showCommandForUser exec args ++ &quot;:\n&quot; ++ err</span>
+<span class="lineno">   41 </span><span class="spaces">    </span><span class="nottickedoff">Right{}  -&gt; return ()</span></span>
+<span class="lineno">   42 </span>
+<span class="lineno">   43 </span>runCmd_ :: FilePath -&gt; [String] -&gt; IO (Either String String)
+<span class="lineno">   44 </span><span class="decl"><span class="nottickedoff">runCmd_ exec args = do</span>
+<span class="lineno">   45 </span><span class="spaces">  </span><span class="nottickedoff">(ret, stdout, errMsg) &lt;- readProcessWithExitCode exec args &quot;&quot;</span>
+<span class="lineno">   46 </span><span class="spaces">  </span><span class="nottickedoff">_                     &lt;- evaluate (length stdout + length errMsg)</span>
+<span class="lineno">   47 </span><span class="spaces">  </span><span class="nottickedoff">case ret of</span>
+<span class="lineno">   48 </span><span class="spaces">    </span><span class="nottickedoff">ExitSuccess -&gt; return (Right stdout)</span>
+<span class="lineno">   49 </span><span class="spaces">    </span><span class="nottickedoff">ExitFailure err | False -&gt;</span>
+<span class="lineno">   50 </span><span class="spaces">      </span><span class="nottickedoff">return</span>
+<span class="lineno">   51 </span><span class="spaces">        </span><span class="nottickedoff">$  Left</span>
+<span class="lineno">   52 </span><span class="spaces">        </span><span class="nottickedoff">$  &quot;Failed to run: &quot;</span>
+<span class="lineno">   53 </span><span class="spaces">        </span><span class="nottickedoff">++ showCommandForUser exec args</span>
+<span class="lineno">   54 </span><span class="spaces">        </span><span class="nottickedoff">++ &quot;\n&quot;</span>
+<span class="lineno">   55 </span><span class="spaces">        </span><span class="nottickedoff">++ &quot;Error code: &quot;</span>
+<span class="lineno">   56 </span><span class="spaces">        </span><span class="nottickedoff">++ show err</span>
+<span class="lineno">   57 </span><span class="spaces">        </span><span class="nottickedoff">++ &quot;\n&quot;</span>
+<span class="lineno">   58 </span><span class="spaces">        </span><span class="nottickedoff">++ &quot;stderr: &quot;</span>
+<span class="lineno">   59 </span><span class="spaces">        </span><span class="nottickedoff">++ errMsg</span>
+<span class="lineno">   60 </span><span class="spaces">    </span><span class="nottickedoff">ExitFailure{} | null errMsg -&gt; -- LaTeX prints errors to stdout. :(</span>
+<span class="lineno">   61 </span><span class="spaces">      </span><span class="nottickedoff">return $ Left stdout</span>
+<span class="lineno">   62 </span><span class="spaces">    </span><span class="nottickedoff">ExitFailure{} -&gt; return $ Left errMsg</span></span>
+<span class="lineno">   63 </span>
+<span class="lineno">   64 </span>runCmdLazy
+<span class="lineno">   65 </span>  :: FilePath -&gt; [String] -&gt; (IO (Either String T.Text) -&gt; IO a) -&gt; IO a
+<span class="lineno">   66 </span><span class="decl"><span class="nottickedoff">runCmdLazy exec args handler = do</span>
+<span class="lineno">   67 </span><span class="spaces">  </span><span class="nottickedoff">(inp, out, err, pid) &lt;- runInteractiveProcess exec args Nothing Nothing</span>
+<span class="lineno">   68 </span><span class="spaces">  </span><span class="nottickedoff">hClose inp</span>
+<span class="lineno">   69 </span><span class="spaces">  </span><span class="nottickedoff">errOutput &lt;- hGetContents err</span>
+<span class="lineno">   70 </span><span class="spaces">  </span><span class="nottickedoff">_ &lt;- forkIO $ hPutStr stderr errOutput</span>
+<span class="lineno">   71 </span><span class="spaces">  </span><span class="nottickedoff">let fetch = do</span>
+<span class="lineno">   72 </span><span class="spaces">        </span><span class="nottickedoff">eof &lt;- hIsEOF out</span>
+<span class="lineno">   73 </span><span class="spaces">        </span><span class="nottickedoff">if eof</span>
+<span class="lineno">   74 </span><span class="spaces">          </span><span class="nottickedoff">then do</span>
+<span class="lineno">   75 </span><span class="spaces">            </span><span class="nottickedoff">_      &lt;- evaluate (length errOutput)</span>
+<span class="lineno">   76 </span><span class="spaces">            </span><span class="nottickedoff">ret    &lt;- waitForProcess pid</span>
+<span class="lineno">   77 </span><span class="spaces">            </span><span class="nottickedoff">case ret of</span>
+<span class="lineno">   78 </span><span class="spaces">              </span><span class="nottickedoff">ExitSuccess   -&gt; return (Left &quot;&quot;)</span>
+<span class="lineno">   79 </span><span class="spaces">              </span><span class="nottickedoff">ExitFailure{} -&gt; return (Left errOutput)</span>
+<span class="lineno">   80 </span><span class="spaces">              </span><span class="nottickedoff">{-ExitFailure errMsg -&gt; do</span>
+<span class="lineno">   81 </span><span class="spaces">                </span><span class="nottickedoff">return $ Left $</span>
+<span class="lineno">   82 </span><span class="spaces">                  </span><span class="nottickedoff">&quot;Failed to run: &quot; ++ showCommandForUser exec args ++ &quot;\n&quot; ++</span>
+<span class="lineno">   83 </span><span class="spaces">                  </span><span class="nottickedoff">&quot;Error code: &quot; ++ show errMsg ++ &quot;\n&quot; ++</span>
+<span class="lineno">   84 </span><span class="spaces">                  </span><span class="nottickedoff">&quot;stderr: &quot; ++ stderr-}</span>
+<span class="lineno">   85 </span><span class="spaces">          </span><span class="nottickedoff">else do</span>
+<span class="lineno">   86 </span><span class="spaces">            </span><span class="nottickedoff">line &lt;- T.hGetLine out</span>
+<span class="lineno">   87 </span><span class="spaces">            </span><span class="nottickedoff">return (Right line)</span>
+<span class="lineno">   88 </span><span class="spaces">  </span><span class="nottickedoff">handler fetch `finally` do</span>
+<span class="lineno">   89 </span><span class="spaces">    </span><span class="nottickedoff">terminateProcess pid</span>
+<span class="lineno">   90 </span><span class="spaces">    </span><span class="nottickedoff">_ &lt;- waitForProcess pid</span>
+<span class="lineno">   91 </span><span class="spaces">    </span><span class="nottickedoff">return ()</span></span>
+<span class="lineno">   92 </span>
+<span class="lineno">   93 </span>-- renameFile fails if we're crossing filesystem boundaries. If this happens,
+<span class="lineno">   94 </span>-- revert back to copyFile + removeFile.
+<span class="lineno">   95 </span>renameOrCopyFile :: FilePath -&gt; FilePath -&gt; IO ()
+<span class="lineno">   96 </span><span class="decl"><span class="nottickedoff">renameOrCopyFile src dst = renameFile src dst `catch` exdev</span>
+<span class="lineno">   97 </span><span class="spaces"> </span><span class="nottickedoff">where</span>
+<span class="lineno">   98 </span><span class="spaces">  </span><span class="nottickedoff">exdev e = if fmap Errno (ioe_errno e) == Just eXDEV</span>
+<span class="lineno">   99 </span><span class="spaces">    </span><span class="nottickedoff">then copyFile src dst &gt;&gt; removeFile src</span>
+<span class="lineno">  100 </span><span class="spaces">    </span><span class="nottickedoff">else throw e</span></span>
+<span class="lineno">  101 </span>
+<span class="lineno">  102 </span>withTempDir :: (FilePath -&gt; IO a) -&gt; IO a
+<span class="lineno">  103 </span><span class="decl"><span class="nottickedoff">withTempDir = withSystemTempDirectory &quot;reanimate&quot;</span></span>
+<span class="lineno">  104 </span>
+<span class="lineno">  105 </span>withTempFile :: String -&gt; (FilePath -&gt; IO a) -&gt; IO a
+<span class="lineno">  106 </span><span class="decl"><span class="nottickedoff">withTempFile ext action =</span>
+<span class="lineno">  107 </span><span class="spaces">  </span><span class="nottickedoff">withSystemTempFile (&quot;reanimate&quot; &lt;.&gt; ext) $ \path hd -&gt;</span>
+<span class="lineno">  108 </span><span class="spaces">    </span><span class="nottickedoff">hClose hd &gt;&gt; action path</span></span>
+
+</pre>
+</body>
+</html>

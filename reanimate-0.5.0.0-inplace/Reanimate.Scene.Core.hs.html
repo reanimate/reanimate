@@ -1,0 +1,186 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>{-# LANGUAGE RankNTypes #-}
+<span class="lineno">    2 </span>
+<span class="lineno">    3 </span>module Reanimate.Scene.Core where
+<span class="lineno">    4 </span>
+<span class="lineno">    5 </span>import Control.Monad.Fix (MonadFix (..))
+<span class="lineno">    6 </span>import Control.Monad.ST
+<span class="lineno">    7 </span>import Data.List
+<span class="lineno">    8 </span>import Reanimate.Animation
+<span class="lineno">    9 </span>import Reanimate.Svg.Constructors
+<span class="lineno">   10 </span>
+<span class="lineno">   11 </span>-- | The ZIndex property specifies the stack order of sprites and animations. Elements
+<span class="lineno">   12 </span>--   with a higher ZIndex will be drawn on top of elements with a lower index.
+<span class="lineno">   13 </span>type ZIndex = Int
+<span class="lineno">   14 </span>
+<span class="lineno">   15 </span>-- (seq duration, par duration)
+<span class="lineno">   16 </span>-- [(Time, Animation, ZIndex)]
+<span class="lineno">   17 </span>-- Map Time [(Animation, ZIndex)]
+<span class="lineno">   18 </span>type Gen s = ST s (Duration -&gt; Time -&gt; (SVG, ZIndex))
+<span class="lineno">   19 </span>
+<span class="lineno">   20 </span>-- | A 'Scene' represents a sequence of animations and variables
+<span class="lineno">   21 </span>--   that change over time.
+<span class="lineno">   22 </span>newtype Scene s a = M {<span class="istickedoff"><span class="decl"><span class="istickedoff">unM</span></span></span> :: Time -&gt; ST s (a, Duration, Duration, [Gen s])}
+<span class="lineno">   23 </span>
+<span class="lineno">   24 </span>instance Functor (Scene s) where
+<span class="lineno">   25 </span>  <span class="decl"><span class="istickedoff">fmap f action = M $ \t -&gt; do</span>
+<span class="lineno">   26 </span><span class="spaces">    </span><span class="istickedoff">(a, d1, d2, gens) &lt;- unM action t</span>
+<span class="lineno">   27 </span><span class="spaces">    </span><span class="istickedoff">return (f a, d1, d2, gens)</span></span>
+<span class="lineno">   28 </span>
+<span class="lineno">   29 </span>instance Applicative (Scene s) where
+<span class="lineno">   30 </span>  <span class="decl"><span class="istickedoff">pure a = M $ \_ -&gt; return (a, 0, 0, [])</span></span>
+<span class="lineno">   31 </span>  <span class="decl"><span class="istickedoff">f &lt;*&gt; g = M $ \t -&gt; do</span>
+<span class="lineno">   32 </span><span class="spaces">    </span><span class="istickedoff">(f', s1, p1, gen1) &lt;- unM f t</span>
+<span class="lineno">   33 </span><span class="spaces">    </span><span class="istickedoff">(g', s2, p2, gen2) &lt;- unM g (t + s1)</span>
+<span class="lineno">   34 </span><span class="spaces">    </span><span class="istickedoff">return (f' g', s1 + s2, max p1 (s1 + p2), gen1 ++ gen2)</span></span>
+<span class="lineno">   35 </span>
+<span class="lineno">   36 </span>instance Monad (Scene s) where
+<span class="lineno">   37 </span>  <span class="decl"><span class="nottickedoff">return = pure</span></span>
+<span class="lineno">   38 </span>  <span class="decl"><span class="istickedoff">f &gt;&gt;= g = M $ \t -&gt; do</span>
+<span class="lineno">   39 </span><span class="spaces">    </span><span class="istickedoff">(a, s1, p1, gen1) &lt;- unM f t</span>
+<span class="lineno">   40 </span><span class="spaces">    </span><span class="istickedoff">(b, s2, p2, gen2) &lt;- unM (g a) (t + s1)</span>
+<span class="lineno">   41 </span><span class="spaces">    </span><span class="istickedoff">return (b, s1 + s2, max p1 (s1 + p2), gen1 ++ gen2)</span></span>
+<span class="lineno">   42 </span>
+<span class="lineno">   43 </span>instance MonadFix (Scene s) where
+<span class="lineno">   44 </span>  <span class="decl"><span class="nottickedoff">mfix fn = M $ \t -&gt; mfix (\v -&gt; let (a, _s, _p, _gens) = v in unM (fn a) t)</span></span>
+<span class="lineno">   45 </span>
+<span class="lineno">   46 </span>liftST :: ST s a -&gt; Scene s a
+<span class="lineno">   47 </span><span class="decl"><span class="istickedoff">liftST action = M $ \_ -&gt; action &gt;&gt;= \a -&gt; return (a, 0, 0, [])</span></span>
+<span class="lineno">   48 </span>
+<span class="lineno">   49 </span>-- | Evaluate the value of a scene.
+<span class="lineno">   50 </span>evalScene :: (forall s. Scene s a) -&gt; a
+<span class="lineno">   51 </span><span class="decl"><span class="nottickedoff">evalScene action = runST $ do</span>
+<span class="lineno">   52 </span><span class="spaces">  </span><span class="nottickedoff">(val, _, _, _) &lt;- unM action 0</span>
+<span class="lineno">   53 </span><span class="spaces">  </span><span class="nottickedoff">return val</span></span>
+<span class="lineno">   54 </span>
+<span class="lineno">   55 </span>-- | Render a 'Scene' to an 'Animation'.
+<span class="lineno">   56 </span>scene :: (forall s. Scene s a) -&gt; Animation
+<span class="lineno">   57 </span><span class="decl"><span class="nottickedoff">scene = sceneAnimation</span></span>
+<span class="lineno">   58 </span>
+<span class="lineno">   59 </span>-- | Render a 'Scene' to an 'Animation'.
+<span class="lineno">   60 </span>sceneAnimation :: (forall s. Scene s a) -&gt; Animation
+<span class="lineno">   61 </span><span class="decl"><span class="istickedoff">sceneAnimation action =</span>
+<span class="lineno">   62 </span><span class="spaces">  </span><span class="istickedoff">runST</span>
+<span class="lineno">   63 </span><span class="spaces">    </span><span class="istickedoff">( do</span>
+<span class="lineno">   64 </span><span class="spaces">        </span><span class="istickedoff">(_, s, p, gens) &lt;- unM action 0</span>
+<span class="lineno">   65 </span><span class="spaces">        </span><span class="istickedoff">let dur = max s p</span>
+<span class="lineno">   66 </span><span class="spaces">        </span><span class="istickedoff">genFns &lt;- sequence gens</span>
+<span class="lineno">   67 </span><span class="spaces">        </span><span class="istickedoff">return $</span>
+<span class="lineno">   68 </span><span class="spaces">          </span><span class="istickedoff">mkAnimation</span>
+<span class="lineno">   69 </span><span class="spaces">            </span><span class="istickedoff">dur</span>
+<span class="lineno">   70 </span><span class="spaces">            </span><span class="istickedoff">( \t -&gt;</span>
+<span class="lineno">   71 </span><span class="spaces">                </span><span class="istickedoff">mkGroup $</span>
+<span class="lineno">   72 </span><span class="spaces">                  </span><span class="istickedoff">map fst $</span>
+<span class="lineno">   73 </span><span class="spaces">                    </span><span class="istickedoff">sortOn</span>
+<span class="lineno">   74 </span><span class="spaces">                      </span><span class="istickedoff">snd</span>
+<span class="lineno">   75 </span><span class="spaces">                      </span><span class="istickedoff">[spriteRender dur (t * dur) | spriteRender &lt;- genFns]</span>
+<span class="lineno">   76 </span><span class="spaces">            </span><span class="istickedoff">)</span>
+<span class="lineno">   77 </span><span class="spaces">    </span><span class="istickedoff">)</span></span>
+<span class="lineno">   78 </span>
+<span class="lineno">   79 </span>-- | Execute actions in a scene without advancing the clock. Note that scenes do not end before
+<span class="lineno">   80 </span>--   all forked actions have completed.
+<span class="lineno">   81 </span>--
+<span class="lineno">   82 </span>--   Example:
+<span class="lineno">   83 </span>--
+<span class="lineno">   84 </span>-- @
+<span class="lineno">   85 </span>-- do 'fork' $ 'play' 'Reanimate.Builtin.Documentation.drawBox'
+<span class="lineno">   86 </span>--    'play' 'Reanimate.Builtin.Documentation.drawCircle'
+<span class="lineno">   87 </span>-- @
+<span class="lineno">   88 </span>--
+<span class="lineno">   89 </span>--   &lt;&lt;docs/gifs/doc_fork.gif&gt;&gt;
+<span class="lineno">   90 </span>fork :: Scene s a -&gt; Scene s a
+<span class="lineno">   91 </span><span class="decl"><span class="istickedoff">fork (M action) = M $ \t -&gt; do</span>
+<span class="lineno">   92 </span><span class="spaces">  </span><span class="istickedoff">(a, s, p, gens) &lt;- action t</span>
+<span class="lineno">   93 </span><span class="spaces">  </span><span class="istickedoff">return (a, 0, max s p, gens)</span></span>
+<span class="lineno">   94 </span>
+<span class="lineno">   95 </span>-- | Query the current clock timestamp.
+<span class="lineno">   96 </span>--
+<span class="lineno">   97 </span>--   Example:
+<span class="lineno">   98 </span>--
+<span class="lineno">   99 </span>-- @
+<span class="lineno">  100 </span>-- do now \&lt;- 'play' 'Reanimate.Builtin.Documentation.drawCircle' *\&gt; 'queryNow'
+<span class="lineno">  101 </span>--    'play' $ 'staticFrame' 1 $ 'scale' 2 $ 'withStrokeWidth' 0.05 $
+<span class="lineno">  102 </span>--      'mkText' $ &quot;Now=&quot; &lt;&gt; T.pack (show now)
+<span class="lineno">  103 </span>-- @
+<span class="lineno">  104 </span>--
+<span class="lineno">  105 </span>--   &lt;&lt;docs/gifs/doc_queryNow.gif&gt;&gt;
+<span class="lineno">  106 </span>queryNow :: Scene s Time
+<span class="lineno">  107 </span><span class="decl"><span class="istickedoff">queryNow = M $ \t -&gt; return (t, 0, 0, [])</span></span>
+<span class="lineno">  108 </span>
+<span class="lineno">  109 </span>-- | Advance the clock by a given number of seconds.
+<span class="lineno">  110 </span>--
+<span class="lineno">  111 </span>--   Example:
+<span class="lineno">  112 </span>--
+<span class="lineno">  113 </span>-- @
+<span class="lineno">  114 </span>-- do 'fork' $ 'play' 'Reanimate.Builtin.Documentation.drawBox'
+<span class="lineno">  115 </span>--    'wait' 1
+<span class="lineno">  116 </span>--    'play' 'Reanimate.Builtin.Documentation.drawCircle'
+<span class="lineno">  117 </span>-- @
+<span class="lineno">  118 </span>--
+<span class="lineno">  119 </span>--   &lt;&lt;docs/gifs/doc_wait.gif&gt;&gt;
+<span class="lineno">  120 </span>wait :: Duration -&gt; Scene s ()
+<span class="lineno">  121 </span><span class="decl"><span class="istickedoff">wait d = M $ \_ -&gt; return (<span class="nottickedoff">()</span>, d, 0, [])</span></span>
+<span class="lineno">  122 </span>
+<span class="lineno">  123 </span>-- | Wait until the clock is equal to the given timestamp.
+<span class="lineno">  124 </span>waitUntil :: Time -&gt; Scene s ()
+<span class="lineno">  125 </span><span class="decl"><span class="nottickedoff">waitUntil tNew = do</span>
+<span class="lineno">  126 </span><span class="spaces">  </span><span class="nottickedoff">now &lt;- queryNow</span>
+<span class="lineno">  127 </span><span class="spaces">  </span><span class="nottickedoff">wait (max 0 (tNew - now))</span></span>
+<span class="lineno">  128 </span>
+<span class="lineno">  129 </span>-- | Wait until all forked and sequential animations have finished.
+<span class="lineno">  130 </span>--
+<span class="lineno">  131 </span>--   Example:
+<span class="lineno">  132 </span>--
+<span class="lineno">  133 </span>-- @
+<span class="lineno">  134 </span>-- do 'waitOn' $ 'fork' $ 'play' 'Reanimate.Builtin.Documentation.drawBox'
+<span class="lineno">  135 </span>--    'play' 'Reanimate.Builtin.Documentation.drawCircle'
+<span class="lineno">  136 </span>-- @
+<span class="lineno">  137 </span>--
+<span class="lineno">  138 </span>--   &lt;&lt;docs/gifs/doc_waitOn.gif&gt;&gt;
+<span class="lineno">  139 </span>waitOn :: Scene s a -&gt; Scene s a
+<span class="lineno">  140 </span><span class="decl"><span class="istickedoff">waitOn (M action) = M $ \t -&gt; do</span>
+<span class="lineno">  141 </span><span class="spaces">  </span><span class="istickedoff">(a, s, p, gens) &lt;- action t</span>
+<span class="lineno">  142 </span><span class="spaces">  </span><span class="istickedoff">return (<span class="nottickedoff">a</span>, max s p, 0, gens)</span></span>
+<span class="lineno">  143 </span>
+<span class="lineno">  144 </span>-- | Change the ZIndex of a scene.
+<span class="lineno">  145 </span>adjustZ :: (ZIndex -&gt; ZIndex) -&gt; Scene s a -&gt; Scene s a
+<span class="lineno">  146 </span><span class="decl"><span class="nottickedoff">adjustZ fn (M action) = M $ \t -&gt; do</span>
+<span class="lineno">  147 </span><span class="spaces">  </span><span class="nottickedoff">(a, s, p, gens) &lt;- action t</span>
+<span class="lineno">  148 </span><span class="spaces">  </span><span class="nottickedoff">return (a, s, p, map genFn gens)</span>
+<span class="lineno">  149 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  150 </span><span class="spaces">    </span><span class="nottickedoff">genFn gen = do</span>
+<span class="lineno">  151 </span><span class="spaces">      </span><span class="nottickedoff">frameGen &lt;- gen</span>
+<span class="lineno">  152 </span><span class="spaces">      </span><span class="nottickedoff">return $ \d t -&gt; let (svg, z) = frameGen d t in (svg, fn z)</span></span>
+<span class="lineno">  153 </span>
+<span class="lineno">  154 </span>-- | Query the duration of a scene.
+<span class="lineno">  155 </span>withSceneDuration :: Scene s () -&gt; Scene s Duration
+<span class="lineno">  156 </span><span class="decl"><span class="nottickedoff">withSceneDuration s = do</span>
+<span class="lineno">  157 </span><span class="spaces">  </span><span class="nottickedoff">t1 &lt;- queryNow</span>
+<span class="lineno">  158 </span><span class="spaces">  </span><span class="nottickedoff">s</span>
+<span class="lineno">  159 </span><span class="spaces">  </span><span class="nottickedoff">t2 &lt;- queryNow</span>
+<span class="lineno">  160 </span><span class="spaces">  </span><span class="nottickedoff">return (t2 - t1)</span></span>
+<span class="lineno">  161 </span>
+<span class="lineno">  162 </span>addGen :: Gen s -&gt; Scene s ()
+<span class="lineno">  163 </span><span class="decl"><span class="istickedoff">addGen gen = M $ \_ -&gt; return (<span class="nottickedoff">()</span>, 0, 0, [gen])</span></span>
+
+</pre>
+</body>
+</html>

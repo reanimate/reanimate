@@ -1,0 +1,118 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>{-|
+<span class="lineno">    2 </span>Copyright   : Written by David Himmelstrup
+<span class="lineno">    3 </span>License     : Unlicense
+<span class="lineno">    4 </span>Maintainer  : lemmih@gmail.com
+<span class="lineno">    5 </span>Stability   : experimental
+<span class="lineno">    6 </span>Portability : POSIX
+<span class="lineno">    7 </span>-}
+<span class="lineno">    8 </span>module Reanimate.Morph.Linear
+<span class="lineno">    9 </span>  ( linear, rawLinear
+<span class="lineno">   10 </span>  , closestLinearCorrespondence
+<span class="lineno">   11 </span>  , closestLinearCorrespondenceA
+<span class="lineno">   12 </span>  , linearTrajectory
+<span class="lineno">   13 </span>  ) where
+<span class="lineno">   14 </span>
+<span class="lineno">   15 </span>import           Data.Hashable
+<span class="lineno">   16 </span>import qualified Data.Vector            as V
+<span class="lineno">   17 </span>import           Linear.Vector
+<span class="lineno">   18 </span>import           Reanimate.ColorComponents
+<span class="lineno">   19 </span>import           Reanimate.Math.Common
+<span class="lineno">   20 </span>import           Reanimate.Math.Polygon
+<span class="lineno">   21 </span>import           Reanimate.Morph.Cache
+<span class="lineno">   22 </span>import           Reanimate.Morph.Common
+<span class="lineno">   23 </span>
+<span class="lineno">   24 </span>-- | Linear interpolation strategy.
+<span class="lineno">   25 </span>--
+<span class="lineno">   26 </span>--   Example:
+<span class="lineno">   27 </span>--
+<span class="lineno">   28 </span>-- @
+<span class="lineno">   29 </span>-- 'Reanimate.playThenReverseA' $ 'Reanimate.pauseAround' 0.5 0.5 $ 'Reanimate.mkAnimation' 3 $ \\t -&gt;
+<span class="lineno">   30 </span>--   'Reanimate.withStrokeLineJoin' 'Graphics.SvgTree.JoinRound' $
+<span class="lineno">   31 </span>--   let src = 'Reanimate.scale' 8 $ 'Reanimate.center' $ 'Reanimate.LaTeX.latex' \&quot;X\&quot;
+<span class="lineno">   32 </span>--       dst = 'Reanimate.scale' 8 $ 'Reanimate.center' $ 'Reanimate.LaTeX.latex' \&quot;H\&quot;
+<span class="lineno">   33 </span>--   in 'morph' 'linear' src dst t
+<span class="lineno">   34 </span>-- @
+<span class="lineno">   35 </span>--
+<span class="lineno">   36 </span>--   &lt;&lt;docs/gifs/doc_linear.gif&gt;&gt;
+<span class="lineno">   37 </span>linear :: Morph
+<span class="lineno">   38 </span><span class="decl"><span class="nottickedoff">linear = rawLinear</span>
+<span class="lineno">   39 </span><span class="spaces">  </span><span class="nottickedoff">{ morphPointCorrespondence  =</span>
+<span class="lineno">   40 </span><span class="spaces">      </span><span class="nottickedoff">cachePointCorrespondence (hash (&quot;closest&quot;::String))</span>
+<span class="lineno">   41 </span><span class="spaces">        </span><span class="nottickedoff">closestLinearCorrespondence }</span></span>
+<span class="lineno">   42 </span>
+<span class="lineno">   43 </span>-- | Linear interpolation strategy without realigning corners.
+<span class="lineno">   44 </span>--   May give better results if the polygons are already aligned.
+<span class="lineno">   45 </span>--   Usually gives worse results.
+<span class="lineno">   46 </span>--
+<span class="lineno">   47 </span>--   Example:
+<span class="lineno">   48 </span>--
+<span class="lineno">   49 </span>-- @
+<span class="lineno">   50 </span>-- 'Reanimate.playThenReverseA' $ 'Reanimate.pauseAround' 0.5 0.5 $ 'Reanimate.mkAnimation' 3 $ \\t -&gt;
+<span class="lineno">   51 </span>--   'Reanimate.withStrokeLineJoin' 'Graphics.SvgTree.JoinRound' $
+<span class="lineno">   52 </span>--   let src = 'Reanimate.scale' 8 $ 'Reanimate.center' $ 'Reanimate.LaTeX.latex' \&quot;X\&quot;
+<span class="lineno">   53 </span>--       dst = 'Reanimate.scale' 8 $ 'Reanimate.center' $ 'Reanimate.LaTeX.latex' \&quot;H\&quot;
+<span class="lineno">   54 </span>--   in 'morph' 'rawLinear' src dst t
+<span class="lineno">   55 </span>-- @
+<span class="lineno">   56 </span>--
+<span class="lineno">   57 </span>--   &lt;&lt;docs/gifs/doc_rawLinear.gif&gt;&gt;
+<span class="lineno">   58 </span>rawLinear :: Morph
+<span class="lineno">   59 </span><span class="decl"><span class="istickedoff">rawLinear = Morph</span>
+<span class="lineno">   60 </span><span class="spaces">  </span><span class="istickedoff">{ morphTolerance            = 0.001</span>
+<span class="lineno">   61 </span><span class="spaces">  </span><span class="istickedoff">, morphColorComponents      = <span class="nottickedoff">labComponents</span></span>
+<span class="lineno">   62 </span><span class="spaces">  </span><span class="istickedoff">, morphPointCorrespondence  = normalizePolygons</span>
+<span class="lineno">   63 </span><span class="spaces">  </span><span class="istickedoff">, morphTrajectory           = linearTrajectory</span>
+<span class="lineno">   64 </span><span class="spaces">  </span><span class="istickedoff">, morphObjectCorrespondence = splitObjectCorrespondence }</span></span>
+<span class="lineno">   65 </span>
+<span class="lineno">   66 </span>-- | Cycle polygons until the sum of the point trajectory path lengths
+<span class="lineno">   67 </span>--   is smallest.
+<span class="lineno">   68 </span>closestLinearCorrespondence :: PointCorrespondence
+<span class="lineno">   69 </span><span class="decl"><span class="nottickedoff">closestLinearCorrespondence = closestLinearCorrespondenceA</span></span>
+<span class="lineno">   70 </span>
+<span class="lineno">   71 </span>-- | Cycle polygons until the sum of the point trajectory path lengths
+<span class="lineno">   72 </span>--   is smallest.
+<span class="lineno">   73 </span>closestLinearCorrespondenceA :: (Real a, Fractional a, Epsilon a) =&gt; APolygon a -&gt; APolygon a -&gt; (APolygon a, APolygon a)
+<span class="lineno">   74 </span><span class="decl"><span class="nottickedoff">closestLinearCorrespondenceA src' dst' =</span>
+<span class="lineno">   75 </span><span class="spaces">    </span><span class="nottickedoff">(src, worker dst (score dst) options)</span>
+<span class="lineno">   76 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">   77 </span><span class="spaces">    </span><span class="nottickedoff">(src, dst) = normalizePolygons src' dst'</span>
+<span class="lineno">   78 </span><span class="spaces">    </span><span class="nottickedoff">worker bestP _bestPScore [] = bestP</span>
+<span class="lineno">   79 </span><span class="spaces">    </span><span class="nottickedoff">worker bestP bestPScore (x:xs) =</span>
+<span class="lineno">   80 </span><span class="spaces">      </span><span class="nottickedoff">let newScore = score x in</span>
+<span class="lineno">   81 </span><span class="spaces">      </span><span class="nottickedoff">if newScore &lt; bestPScore</span>
+<span class="lineno">   82 </span><span class="spaces">        </span><span class="nottickedoff">then worker x newScore xs</span>
+<span class="lineno">   83 </span><span class="spaces">        </span><span class="nottickedoff">else worker bestP bestPScore xs</span>
+<span class="lineno">   84 </span><span class="spaces">    </span><span class="nottickedoff">options = pCycles dst</span>
+<span class="lineno">   85 </span><span class="spaces">    </span><span class="nottickedoff">score p = sum</span>
+<span class="lineno">   86 </span><span class="spaces">      </span><span class="nottickedoff">[ -- approxDist (pAccess src n) (pAccess p n)</span>
+<span class="lineno">   87 </span><span class="spaces">        </span><span class="nottickedoff">distSquared (pAccess src n) (pAccess p n)</span>
+<span class="lineno">   88 </span><span class="spaces">      </span><span class="nottickedoff">| n &lt;- [0 .. pSize src-1] ]</span></span>
+<span class="lineno">   89 </span>
+<span class="lineno">   90 </span>-- | Strategy for moving points in a linear (straight-line) trajectory.
+<span class="lineno">   91 </span>linearTrajectory :: Trajectory
+<span class="lineno">   92 </span><span class="decl"><span class="istickedoff">linearTrajectory (src,dst)</span>
+<span class="lineno">   93 </span><span class="spaces">  </span><span class="istickedoff">| <span class="tickonlytrue">pSize src == pSize dst</span> = \t -&gt; mkPolygon $</span>
+<span class="lineno">   94 </span><span class="spaces">    </span><span class="istickedoff">V.zipWith (lerp $ realToFrac t) (polygonPoints dst) (polygonPoints src)</span>
+<span class="lineno">   95 </span><span class="spaces">  </span><span class="istickedoff">| <span class="nottickedoff">otherwise</span> = <span class="nottickedoff">error $ &quot;Invalid lengths: &quot; ++ show (pSize src, pSize dst)</span></span></span>
+
+</pre>
+</body>
+</html>
