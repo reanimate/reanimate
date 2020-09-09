@@ -1,0 +1,92 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>{-# LANGUAGE BangPatterns   #-}
+<span class="lineno">    2 </span>{-|
+<span class="lineno">    3 </span>  2D transformation matrices capable of translating, scaling,
+<span class="lineno">    4 </span>  rotating, and skewing.
+<span class="lineno">    5 </span>-}
+<span class="lineno">    6 </span>module Reanimate.Transform
+<span class="lineno">    7 </span>  ( identity
+<span class="lineno">    8 </span>  , transformPoint
+<span class="lineno">    9 </span>  , mkMatrix
+<span class="lineno">   10 </span>  , toTransformation
+<span class="lineno">   11 </span>  ) where
+<span class="lineno">   12 </span>
+<span class="lineno">   13 </span>-- XXX: Use Linear.Matrix instead of Data.Matrix to drop the 'matrix' dependency.
+<span class="lineno">   14 </span>import           Data.List
+<span class="lineno">   15 </span>import           Data.Matrix (Matrix)
+<span class="lineno">   16 </span>import qualified Data.Matrix as M
+<span class="lineno">   17 </span>import           Data.Maybe
+<span class="lineno">   18 </span>import           Graphics.SvgTree
+<span class="lineno">   19 </span>import           Linear.V2
+<span class="lineno">   20 </span>
+<span class="lineno">   21 </span>-- | Identity matrix.
+<span class="lineno">   22 </span>--
+<span class="lineno">   23 </span>--   @transformPoints identity x = x@
+<span class="lineno">   24 </span>identity :: Matrix Coord
+<span class="lineno">   25 </span><span class="decl"><span class="istickedoff">identity = M.identity 3</span></span>
+<span class="lineno">   26 </span>
+<span class="lineno">   27 </span>fromList :: [Coord] -&gt; Matrix Coord
+<span class="lineno">   28 </span><span class="decl"><span class="istickedoff">fromList [a,b,c,d,e,f] = M.fromList 3 3 [a,c,e,b,d,f,0,0,1]</span>
+<span class="lineno">   29 </span><span class="spaces"></span><span class="istickedoff">fromList _             = <span class="nottickedoff">error &quot;Reanimate.Transform.fromList: bad input&quot;</span></span></span>
+<span class="lineno">   30 </span>
+<span class="lineno">   31 </span>-- | Apply a transformation matrix to a 2D point.
+<span class="lineno">   32 </span>transformPoint :: Matrix Coord -&gt; RPoint -&gt; RPoint
+<span class="lineno">   33 </span><span class="decl"><span class="istickedoff">transformPoint m (V2 x y) = V2 (a*x +c*y + e) (b*x + d*y +f)</span>
+<span class="lineno">   34 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">   35 </span><span class="spaces">    </span><span class="istickedoff">!a = M.unsafeGet 1 1 m</span>
+<span class="lineno">   36 </span><span class="spaces">    </span><span class="istickedoff">!c = M.unsafeGet 1 2 m</span>
+<span class="lineno">   37 </span><span class="spaces">    </span><span class="istickedoff">!e = M.unsafeGet 1 3 m</span>
+<span class="lineno">   38 </span><span class="spaces">    </span><span class="istickedoff">!b = M.unsafeGet 2 1 m</span>
+<span class="lineno">   39 </span><span class="spaces">    </span><span class="istickedoff">!d = M.unsafeGet 2 2 m</span>
+<span class="lineno">   40 </span><span class="spaces">    </span><span class="istickedoff">!f = M.unsafeGet 2 3 m</span></span>
+<span class="lineno">   41 </span>    -- (a:c:e:b:d:f:_) = M.toList m
+<span class="lineno">   42 </span>
+<span class="lineno">   43 </span>-- | Convert multiple SVG transformations into a single transformation matrix.
+<span class="lineno">   44 </span>mkMatrix :: Maybe [Transformation] -&gt; Matrix Coord
+<span class="lineno">   45 </span><span class="decl"><span class="istickedoff">mkMatrix Nothing   = identity</span>
+<span class="lineno">   46 </span><span class="spaces"></span><span class="istickedoff">mkMatrix (Just ts) = foldl' (*) identity (map transformationMatrix ts)</span></span>
+<span class="lineno">   47 </span>
+<span class="lineno">   48 </span>-- | Convert an SVG transformation into a transformation matrix.
+<span class="lineno">   49 </span>transformationMatrix :: Transformation -&gt; Matrix Coord
+<span class="lineno">   50 </span><span class="decl"><span class="istickedoff">transformationMatrix transformation =</span>
+<span class="lineno">   51 </span><span class="spaces">  </span><span class="istickedoff">case transformation of</span>
+<span class="lineno">   52 </span><span class="spaces">    </span><span class="istickedoff">TransformMatrix a b c d e f -&gt; <span class="nottickedoff">fromList [a,b,c,d,e,f]</span></span>
+<span class="lineno">   53 </span><span class="spaces">    </span><span class="istickedoff">Translate x y               -&gt; <span class="nottickedoff">translate x y</span></span>
+<span class="lineno">   54 </span><span class="spaces">    </span><span class="istickedoff">Scale sx mbSy               -&gt; fromList [sx,0,0,fromMaybe <span class="nottickedoff">sx</span> mbSy,0,0]</span>
+<span class="lineno">   55 </span><span class="spaces">    </span><span class="istickedoff">Rotate a Nothing            -&gt; <span class="nottickedoff">rotate a</span></span>
+<span class="lineno">   56 </span><span class="spaces">    </span><span class="istickedoff">Rotate a (Just (x,y))       -&gt; <span class="nottickedoff">translate x y * rotate a * translate (-x) (-y)</span></span>
+<span class="lineno">   57 </span><span class="spaces">    </span><span class="istickedoff">SkewX a                     -&gt; <span class="nottickedoff">fromList [1,0,tan (a*pi/180),1,0,0]</span></span>
+<span class="lineno">   58 </span><span class="spaces">    </span><span class="istickedoff">SkewY a                     -&gt; <span class="nottickedoff">fromList [1,tan (a*pi/180),0,1,0,0]</span></span>
+<span class="lineno">   59 </span><span class="spaces">    </span><span class="istickedoff">TransformUnknown            -&gt; <span class="nottickedoff">identity</span></span>
+<span class="lineno">   60 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">   61 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">translate x y = fromList [1,0,0,1,x,y]</span></span>
+<span class="lineno">   62 </span><span class="spaces">    </span><span class="istickedoff"><span class="nottickedoff">rotate a = fromList [cos r,sin r,-sin r,cos r,0,0]</span></span>
+<span class="lineno">   63 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">where r = a * pi / 180</span></span></span>
+<span class="lineno">   64 </span>
+<span class="lineno">   65 </span>-- | Convert a transformation matrix back into an SVG transformation.
+<span class="lineno">   66 </span>toTransformation :: Matrix Coord -&gt; Transformation
+<span class="lineno">   67 </span><span class="decl"><span class="nottickedoff">toTransformation m = TransformMatrix a b c d e f</span>
+<span class="lineno">   68 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">   69 </span><span class="spaces">    </span><span class="nottickedoff">[a,c,e,b,d,f,_,_,_] = M.toList m</span></span>
+
+</pre>
+</body>
+</html>
