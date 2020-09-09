@@ -1,6 +1,28 @@
 # Revision history for reanimate
 
-## 0.4.4.0
+## 0.5.0.0 -- 2020-09-09
+
+### Added
+
+* Hashable instance for SVG.
+
+### Changed
+
+* Improve efficiency of time variables (thanks to ).
+* Major refactoring of SVG interface.
+* Haddock improvements.
+* Improve consistency of object bounding-box calculations.
+* Rewrite object transitions in terms of Animations.
+
+### Removed
+
+* Reanimate.Scene.tweenVarUnclamped
+* Reanimate.Math.SSSP.pdual
+
+### Contributors
+
+ * Shaurya Gupta (@sureyeaah)
+ * Jan Hrček (@jhrcek)
 
 ## 0.4.3.0 -- 2020-08-29
 
