@@ -97,6 +97,7 @@ library
                       Reanimate.Scene.Var
                       Reanimate.Scene.Sprite
                       Reanimate.Scene.Object
+  autogen-modules:    Paths_reanimate
   build-depends:
     base                 >=4.10 && <5,
     JuicyPixels          >=3.3.3,
