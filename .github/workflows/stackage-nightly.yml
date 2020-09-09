@@ -34,5 +34,6 @@ jobs:
 
     - name: Test nightly
       run: |
+        rm -fr discord-bot playground
         rm -f stack.yaml && stack init --resolver nightly
         stack build --resolver nightly --haddock --test --bench --no-run-benchmarks
