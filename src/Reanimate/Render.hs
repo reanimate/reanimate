@@ -28,7 +28,6 @@ import           Control.Exception
 import           Control.Monad             (forM_, forever, unless, void, when)
 import           Data.Either
 import           Data.Function
-import qualified Data.HashMap.Strict              as M
 import qualified Data.Text                 as T
 import qualified Data.Text.IO              as T
 import           Data.Time
