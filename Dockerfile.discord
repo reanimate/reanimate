@@ -20,11 +20,9 @@ WORKDIR /src
 
 # Install reanimate dependencies and cache the layer
 ADD reanimate.cabal stack.yaml ./
-RUN n=0 \
-    until [ "$n" -ge 3 ] \
+RUN for i in 1 2 3; \
     do \
-      stack build --only-dependencies --no-install-ghc --system-ghc --haddock && break \
-      n=$((n+1)) \
+      stack build --only-dependencies --no-install-ghc --system-ghc --haddock && break; \
     done
 
 # Install discord-bot dependencies and cache the layer
