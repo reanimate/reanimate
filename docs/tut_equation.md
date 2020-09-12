@@ -1,6 +1,31 @@
-<pre id="c1">
+Blank canvas
+
+<pre class="interactive">
 animation :: Animation
-animation = mapscene $ do
+animation = scene $ do
+  newSpriteSVG_ $
+    mkBackground "lightblue"
+</pre>
+
+Custom environment
+
+<pre class="interactive">
+animation :: Animation
+animation = env $ scene $ do
+  wait 1
+
+bg = mkBackground "lightblue"
+env :: Animation -> Animation
+env = addStatic bg.
+  mapA
+  (withStrokeWidth defaultStrokeWidth)
+</pre>
+
+Final animation
+
+<pre class="interactive">
+animation :: Animation
+animation = scene $ do
   newSpriteSVG_ $
     mkBackground "lightblue"
   symbols <- mapM oNew
@@ -82,10 +107,18 @@ oTranslateY :: Lens' (ObjectData a) Double
 oTranslateY = oTranslate._2
 
 yPositions = [3,1,-1,-3]
-
 </pre>
+
 <script>
   setTimeout(function () {
-    embedPlayground(document.querySelector("#c1"),'blah');
+    const pres = document.querySelectorAll(".interactive");
+    var delay=0;
+    for(var i=0; i<pres.length; i++) {
+      const elt = pres[i];
+      setTimeout(function() {
+        embedPlayground(elt);
+      },delay);
+      delay += 0;
+    }
   },0);
 </script>
