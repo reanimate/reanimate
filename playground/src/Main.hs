@@ -364,7 +364,7 @@ withHaskellFile m action = withSystemTempFile "playground.hs" $ \target h -> do
     hClose h
     T.writeFile target
       "{-# LANGUAGE OverloadedStrings #-}\n\
-      \{-# LANGUAGE FlexibleCOntexts #-}\n\
+      \{-# LANGUAGE FlexibleContexts #-}\n\
       \module Animation where\n\
       \import Reanimate\n\
       \import Reanimate.Builtin.Documentation\n\
