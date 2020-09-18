@@ -364,6 +364,7 @@ withHaskellFile m action = withSystemTempFile "playground.hs" $ \target h -> do
     hClose h
     T.writeFile target
       "{-# LANGUAGE OverloadedStrings #-}\n\
+      \{-# LANGUAGE FlexibleCOntexts #-}\n\
       \module Animation where\n\
       \import Reanimate\n\
       \import Reanimate.Builtin.Documentation\n\
@@ -384,6 +385,7 @@ withHaskellFile m action = withSystemTempFile "playground.hs" $ \target h -> do
       \import Linear.Vector\n\
       \import Text.Printf\n\
       \import Codec.Picture.Types\n\
+      \import Control.Monad.State\n\
       \-- Used for testing:\n\
       \-- import System.IO.Unsafe\n\
       \-- import Control.Concurrent\n\
