@@ -5,7 +5,6 @@ module Reanimate.Scene.Var where
 
 import Control.Monad.ST (ST)
 import qualified Data.Map as M
-import Data.Maybe (fromMaybe)
 import Data.STRef
 import Reanimate.Animation (Duration, Time)
 import Reanimate.Scene.Core (Scene, liftST, queryNow, wait)
