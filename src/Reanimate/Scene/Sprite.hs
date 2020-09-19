@@ -29,7 +29,7 @@ import Reanimate.Scene.Core
     fork,
     liftST,
     queryNow,
-    sceneAnimation,
+    scene,
     wait,
   )
 import Reanimate.Scene.Var (unpackVar, Var (..), newVar, readVar)
@@ -402,7 +402,7 @@ spriteScope (M action) = M $ \t -> do
 asAnimation :: (forall s'. Scene s' a) -> Scene s Animation
 asAnimation s = do
   now <- queryNow
-  return $ dropA now (sceneAnimation (wait now >> s))
+  return $ dropA now (scene (wait now >> s))
 
 -- | Apply a transformation with a given overlap. This makes sure
 --   to keep timestamps intact such that events can still be timed

@@ -4,7 +4,7 @@ env =
 
 animation :: Animation
 animation = env $
-  sceneAnimation $ do
+  scene $ do
     -- Configure objects
     txt <- newText "Center"
     top <- newText "Top"

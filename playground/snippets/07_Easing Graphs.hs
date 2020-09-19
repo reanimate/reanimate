@@ -10,7 +10,7 @@ fns =
  ]
 
 animation :: Animation
-animation = docEnv $ pauseAtEnd 1 $ sceneAnimation $ do
+animation = docEnv $ pauseAtEnd 1 $ scene $ do
   newSpriteSVG_ $ mkBackground "white"
   play $ signalA (curveS 2) $ animate $ \t -> partialSvg t grid
   newSpriteSVG_ grid

@@ -4,7 +4,7 @@ env =
 
 animation :: Animation
 animation = env $
-  sceneAnimation $ do
+  scene $ do
     circ <- newObject $ Circle 3
     oModify circ $
       oContext .~ withFillColor "pink"

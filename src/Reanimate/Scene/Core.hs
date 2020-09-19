@@ -54,11 +54,7 @@ evalScene action = runST $ do
 
 -- | Render a 'Scene' to an 'Animation'.
 scene :: (forall s. Scene s a) -> Animation
-scene = sceneAnimation
-
--- | Render a 'Scene' to an 'Animation'.
-sceneAnimation :: (forall s. Scene s a) -> Animation
-sceneAnimation action =
+scene action =
   runST
     ( do
         (_, s, p, gens) <- unM action 0
