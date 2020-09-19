@@ -4,11 +4,12 @@
 module Main(main) where
 
 import Reanimate
+import Reanimate.Scene
 import Reanimate.Builtin.Documentation
-import qualified Data.Text as T
 
 main :: IO ()
 main = reanimate $ docEnv $ scene $ do
-    now <- play drawCircle *> queryNow
-    play $ staticFrame 1 $ scale 2 $ withStrokeWidth 0.05 $
-      mkText $ "Now=" <> T.pack (show now)
+  txt <- oNew $ withStrokeWidth 0 $ withFillOpacity 1 $
+    center $ scale 3 $ latex "oGrow"
+  oShowWith txt oGrow
+  wait 1; oHideWith txt oFadeOut

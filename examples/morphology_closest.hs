@@ -23,7 +23,7 @@ main = reanimate $
   mapA (withStrokeColor "black") $
   mapA (withStrokeLineJoin JoinRound) $
   mapA (withFillOpacity 1) $
-    sceneAnimation $ do
+    scene $ do
       _ <- newSpriteSVG $
         withStrokeWidth 0 $ translate (-4) 4 $
         center $ latex "no-op"

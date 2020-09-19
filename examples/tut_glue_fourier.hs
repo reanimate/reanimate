@@ -12,7 +12,7 @@ import           Reanimate
 
 -- layer 3
 main :: IO ()
-main = reanimate $ setDuration 30 $ sceneAnimation $ do
+main = reanimate $ setDuration 30 $ scene $ do
     _ <- newSpriteSVG $ mkBackgroundPixel (PixelRGBA8 252 252 252 0xFF)
     play $ fourierA (fromToS 0 5)      -- Rotate 15 times
       & setDuration 50

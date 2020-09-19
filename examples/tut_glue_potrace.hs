@@ -15,7 +15,7 @@ import qualified Data.Text         as T
 import           NeatInterpolation
 
 main :: IO ()
-main = reanimate $ parA bg $ sceneAnimation $ do
+main = reanimate $ parA bg $ scene $ do
     play $ mkAnimation drawDuration $ \t -> partialSvg t (wireframe (-45) 220)
     xRot <- newVar (-45)
     yRot <- newVar 220

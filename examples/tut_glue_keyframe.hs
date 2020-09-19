@@ -21,7 +21,7 @@ main = reanimate $ bg `parA` mainScene
     bg = animate $ const $ mkBackgroundPixel (PixelRGBA8 252 252 252 0xFF)
 
 mainScene :: Animation
-mainScene = sceneAnimation $ mdo
+mainScene = scene $ mdo
     play $ drawCircle
       & setDuration drawCircleT
       & applyE (constE flipXAxis)

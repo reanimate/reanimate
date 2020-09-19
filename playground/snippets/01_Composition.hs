@@ -1,5 +1,5 @@
 animation :: Animation
-animation = docEnv $ sceneAnimation $ do
+animation = docEnv $ scene $ do
   play $ drawBox `parA` drawCircle
     & label "parA"
   play $ drawBox `seqA` drawCircle

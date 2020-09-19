@@ -23,7 +23,7 @@ import           Codec.Picture.Types
 import qualified Data.Vector                   as V
 
 main :: IO ()
-main = reanimate $ sceneAnimation $ do
+main = reanimate $ scene $ do
   newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
   play $ trails 0.05 starAnimation
 

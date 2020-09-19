@@ -29,7 +29,7 @@ import Reanimate.Scene.Core
     fork,
     liftST,
     queryNow,
-    sceneAnimation,
+    scene,
     wait,
   )
 import Reanimate.Scene.Var (unpackVar, Var (..), newVar, readVar)
@@ -41,8 +41,8 @@ import Reanimate.Transition (Transition, overlapT)
 --   Example:
 --
 -- @
--- do var \<- 'simpleVar' 'mkCircle' 0
---    'tweenVar' var 2 $ \\val -> 'fromToS' val ('Reanimate.Constants.screenHeight'/2)
+-- do var \<- 'simpleVar' 'Reanimate.Svg.Constructors.mkCircle' 0
+--    'Reanimate.Scene.tweenVar' var 2 $ \\val -> 'Reanimate.fromToS' val ('Reanimate.Constants.screenHeight'/2)
 -- @
 --
 --   <<docs/gifs/doc_simpleVar.gif>>
@@ -98,9 +98,9 @@ instance Applicative (Frame s) where
 --
 -- @
 -- do v \<- 'newVar' 0
---    'newSprite' $ 'mkCircle' \<$\> 'unVar' v
---    'tweenVar' v 1 $ \\val -> 'fromToS' val 3
---    'tweenVar' v 1 $ \\val -> 'fromToS' val 0
+--    'newSprite' $ 'Reanimate.Svg.Constructors.mkCircle' \<$\> 'unVar' v
+--    'Reanimate.Scene.tweenVar' v 1 $ \\val -> 'Reanimate.fromToS' val 3
+--    'Reanimate.Scene.tweenVar' v 1 $ \\val -> 'Reanimate.fromToS' val 0
 -- @
 --
 --   <<docs/gifs/doc_unVar.gif>>
@@ -123,7 +123,7 @@ spriteDuration = Frame $ return (\_real_t d _t -> d)
 --   Example:
 --
 -- @
--- do 'newSprite' $ 'mkCircle' \<$\> 'spriteT' -- Circle sprite where radius=time.
+-- do 'newSprite' $ 'Reanimate.Svg.Constructors.mkCircle' \<$\> 'spriteT' -- Circle sprite where radius=time.
 --    'wait' 2
 -- @
 --
@@ -169,7 +169,7 @@ newSprite_ = void . newSprite
 -- @
 -- do 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawCircle'
 --    'play' 'Reanimate.Builtin.Documentation.drawBox'
---    'play' $ 'reverseA' 'Reanimate.Builtin.Documentation.drawBox'
+--    'play' $ 'Reanimate.Animation.reverseA' 'Reanimate.Builtin.Documentation.drawBox'
 -- @
 --
 --   <<docs/gifs/doc_newSpriteA.gif>>
@@ -182,9 +182,9 @@ newSpriteA = newSpriteA' SyncStretch
 --   Example:
 --
 -- @
--- do 'fork' $ 'newSpriteA'' 'SyncFreeze' 'Reanimate.Builtin.Documentation.drawCircle'
+-- do 'fork' $ 'newSpriteA'' 'Reanimate.Animation.SyncFreeze' 'Reanimate.Builtin.Documentation.drawCircle'
 --    'play' 'Reanimate.Builtin.Documentation.drawBox'
---    'play' $ 'reverseA' 'Reanimate.Builtin.Documentation.drawBox'
+--    'play' $ 'Reanimate.Animation.reverseA' 'Reanimate.Builtin.Documentation.drawBox'
 -- @
 --
 --   <<docs/gifs/doc_newSpriteA'.gif>>
@@ -198,7 +198,7 @@ newSpriteA' sync animation =
 --   Example:
 --
 -- @
--- do 'newSpriteSVG' $ 'mkBackground' "lightblue"
+-- do 'newSpriteSVG' $ 'Reanimate.Svg.Constructors.mkBackground' "lightblue"
 --    'play' 'Reanimate.Builtin.Documentation.drawCircle'
 -- @
 --
@@ -219,8 +219,8 @@ newSpriteSVG_ = void . newSpriteSVG
 -- @
 -- do s \<- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawBox'
 --    v \<- 'newVar' 0
---    'applyVar' v s 'rotate'
---    'tweenVar' v 2 $ \\val -> 'fromToS' val 90
+--    'applyVar' v s 'Reanimate.Svg.Constructors.rotate'
+--    'Reanimate.Scene.tweenVar' v 2 $ \\val -> 'Reanimate.fromToS' val 90
 -- @
 --
 --   <<docs/gifs/doc_applyVar.gif>>
@@ -235,7 +235,7 @@ applyVar var sprite fn = spriteModify sprite $ do
 --   Example:
 --
 -- @
--- do s <- 'newSpriteSVG' $ 'withFillOpacity' 1 $ 'mkCircle' 1
+-- do s <- 'newSpriteSVG' $ 'Reanimate.Svg.Constructors.withFillOpacity' 1 $ 'Reanimate.Svg.Constructors.mkCircle' 1
 --    'fork' $ 'wait' 1 \>\> 'destroySprite' s
 --    'play' 'Reanimate.Builtin.Documentation.drawBox'
 -- @
@@ -267,7 +267,7 @@ spriteModify (Sprite born ref) modFn = liftST $
 -- @
 -- do s \<- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawCircle'
 --    'wait' 1
---    'spriteMap' s 'flipYAxis'
+--    'spriteMap' s 'Reanimate.Svg.Constructors.flipYAxis'
 -- @
 --
 --   <<docs/gifs/doc_spriteMap.gif>>
@@ -285,7 +285,7 @@ spriteMap sprite@(Sprite born _) fn = do
 --
 -- @
 -- do s \<- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawCircle'
---    'spriteTween' s 1 $ \\val -> 'translate' ('Reanimate.Constants.screenWidth'*0.3*val) 0
+--    'spriteTween' s 1 $ \\val -> 'Reanimate.Svg.Constructors.translate' ('Reanimate.Constants.screenWidth'*0.3*val) 0
 -- @
 --
 --   <<docs/gifs/doc_spriteTween.gif>>
@@ -309,8 +309,8 @@ spriteTween sprite@(Sprite born _) dur fn = do
 --
 -- @
 -- do s \<- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawBox'
---    v \<- 'spriteVar' s 0 'rotate'
---    'tweenVar' v 2 $ \\val -> 'fromToS' val 90
+--    v \<- 'spriteVar' s 0 'Reanimate.Svg.Constructors.rotate'
+--    'Reanimate.Scene.tweenVar' v 2 $ \\val -> 'Reanimate.fromToS' val 90
 -- @
 --
 --   <<docs/gifs/doc_spriteVar.gif>>
@@ -326,8 +326,8 @@ spriteVar sprite def fn = do
 --
 -- @
 -- do s <- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawCircle'
---    'spriteE' s $ 'overBeginning' 1 'fadeInE'
---    'spriteE' s $ 'overEnding' 0.5 'fadeOutE'
+--    'spriteE' s $ 'Reanimate.Effect.overBeginning' 1 'Reanimate.Effect.fadeInE'
+--    'spriteE' s $ 'Reanimate.Effect.overEnding' 0.5 'Reanimate.Effect.fadeOutE'
 -- @
 --
 --   <<docs/gifs/doc_spriteE.gif>>
@@ -349,8 +349,8 @@ spriteE (Sprite born ref) effect = do
 --   Example:
 --
 -- @
--- do s1 \<- 'newSpriteSVG' $ 'withFillOpacity' 1 $ 'withFillColor' "blue" $ 'mkCircle' 3
---    'newSpriteSVG' $ 'withFillOpacity' 1 $ 'withFillColor' "red" $ 'mkRect' 8 3
+-- do s1 \<- 'newSpriteSVG' $ 'Reanimate.Svg.Constructors.withFillOpacity' 1 $ 'Reanimate.Svg.Constructors.withFillColor' "blue" $ 'Reanimate.Svg.Constructors.mkCircle' 3
+--    'newSpriteSVG' $ 'Reanimate.Svg.Constructors.withFillOpacity' 1 $ 'Reanimate.Svg.Constructors.withFillColor' "red" $ 'Reanimate.Svg.Constructors.mkRect' 8 3
 --    'wait' 1
 --    'spriteZ' s1 1
 --    'wait' 1
@@ -375,13 +375,13 @@ spriteZ (Sprite born ref) zindex = do
 --
 -- @
 -- do -- the rect lives through the entire 3s animation
---    'newSpriteSVG_' $ 'translate' (-3) 0 $ 'mkRect' 4 4
+--    'newSpriteSVG_' $ 'Reanimate.Svg.Constructors.translate' (-3) 0 $ 'Reanimate.Svg.Constructors.mkRect' 4 4
 --    'wait' 1
 --    'spriteScope' $ do
 --      -- the circle only lives for 1 second.
---      local \<- 'newSpriteSVG' $ 'translate' 3 0 $ 'mkCircle' 2
---      'spriteE' local $ 'overBeginning' 0.3 'fadeInE'
---      'spriteE' local $ 'overEnding' 0.3 'fadeOutE'
+--      local \<- 'newSpriteSVG' $ 'Reanimate.Svg.Constructors.translate' 3 0 $ 'Reanimate.Svg.Constructors.mkCircle' 2
+--      'spriteE' local $ 'Reanimate.Effect.overBeginning' 0.3 'Reanimate.Effect.fadeInE'
+--      'spriteE' local $ 'Reanimate.Effect.overEnding' 0.3 'Reanimate.Effect.fadeOutE'
 --      'wait' 1
 --    'wait' 1
 -- @
@@ -402,7 +402,7 @@ spriteScope (M action) = M $ \t -> do
 asAnimation :: (forall s'. Scene s' a) -> Scene s Animation
 asAnimation s = do
   now <- queryNow
-  return $ dropA now (sceneAnimation (wait now >> s))
+  return $ dropA now (scene (wait now >> s))
 
 -- | Apply a transformation with a given overlap. This makes sure
 --   to keep timestamps intact such that events can still be timed

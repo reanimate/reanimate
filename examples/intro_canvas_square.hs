@@ -22,7 +22,7 @@ newWidth = 8
 newHeight = 8
 
 main :: IO ()
-main = reanimate $ mapA squareViewBox $ sceneAnimation $ do
+main = reanimate $ mapA squareViewBox $ scene $ do
   newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
   newSpriteSVG_ static
   dotPath  <- newVar (QuadBezier (V2 0 0) (V2 0 0) (V2 0 0))

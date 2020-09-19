@@ -22,7 +22,7 @@ import           Graphics.SvgTree
 import           Reanimate
 
 main :: IO ()
-main = reanimate $ sceneAnimation $ do
+main = reanimate $ scene $ do
     newSpriteSVG_ $ mkBackground "white"
     let circles =
           [ (900, 0.3)

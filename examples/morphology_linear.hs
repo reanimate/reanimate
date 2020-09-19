@@ -22,7 +22,7 @@ main = reanimate $
   mapA (withStrokeColor "black") $
   mapA (withStrokeLineJoin JoinRound) $
   mapA (withFillOpacity 1) $
-    sceneAnimation $
+    scene $
       showPair (stages ++ take 1 stages)
   where
     showPair (from:to:rest) =

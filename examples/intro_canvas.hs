@@ -18,7 +18,7 @@ import           Geom2D.CubicBezier.Linear
 import           Text.Printf
 
 main :: IO ()
-main = reanimate $ sceneAnimation $ do
+main = reanimate $ scene $ do
   newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
   newSpriteSVG_ static
   dotPath  <- newVar (QuadBezier (V2 0 0) (V2 0 0) (V2 0 0))

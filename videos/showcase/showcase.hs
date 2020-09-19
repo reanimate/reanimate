@@ -73,7 +73,7 @@ playbackTest :: Animation
 playbackTest = setDuration 10 feat3D
 
 sphereIntro :: Animation
-sphereIntro = sceneAnimation $ do
+sphereIntro = scene $ do
   -- play $ drawSphere
   --   # setDuration 15
   --   # pauseAtEnd 2
@@ -227,7 +227,7 @@ featWireSphere = rotateWireSphere
   & repeatA 10
 
 introSVG :: Animation
-introSVG = sceneAnimation $ do
+introSVG = scene $ do
   fork $ play $ animate $ const $
     mkBackground "black"
   -- Title
@@ -291,7 +291,7 @@ drawAnimation :: SVG -> Animation
 drawAnimation = drawAnimation' 0.5 0.3
 
 drawAnimation' :: Double -> Double -> SVG -> Animation
-drawAnimation' fillDur step svg = sceneAnimation $ do
+drawAnimation' fillDur step svg = scene $ do
   forM_ (zip [0..] $ svgGlyphs svg) $ \(n, (fn, attr, tree)) -> do
     let sWidth =
           case toUserUnit defaultDPI <$> getLast (attr ^. strokeWidth) of

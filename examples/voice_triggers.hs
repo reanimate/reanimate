@@ -20,7 +20,7 @@ transformer =
   translate (-4) 0 . centerUsing (latex $ transcriptText transcript)
 
 main :: IO ()
-main = reanimate $ sceneAnimation $ do
+main = reanimate $ scene $ do
   newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
   waitOn $ forM_ (splitTranscript transcript) $ \(svg, tword) -> do
     let render v = transformer $ masked (wordKey tword)

@@ -5,7 +5,6 @@ module Reanimate.Scene.Var where
 
 import Control.Monad.ST (ST)
 import qualified Data.Map as M
-import Data.Maybe (fromMaybe)
 import Data.STRef
 import Reanimate.Animation (Duration, Time)
 import Reanimate.Scene.Core (Scene, liftST, queryNow, wait)
@@ -34,7 +33,7 @@ type Timeline a = M.Map Time (Modifier a)
 --   earlier than when the variable was created. For example:
 --
 -- @
--- do v \<- 'fork' ('wait' 10 \>\> 'newVar' 0) -- Create a variable at timestamp '10'.
+-- do v \<- 'Reanimate.Scene.fork' ('wait' 10 \>\> 'newVar' 0) -- Create a variable at timestamp '10'.
 --    'readVar' v                       -- Read the variable at timestamp '0'.
 --                                    -- The value of the variable will be '0'.
 -- @
@@ -54,7 +53,7 @@ unpackVar (Var ref) = readVarData <$> readSTRef ref
 --
 -- @
 -- do v \<- 'newVar' 0
---    'newSprite' $ 'mkCircle' \<$\> 'unVar' v
+--    'Reanimate.Scene.newSprite' $ 'Reanimate.Svg.Constructors.mkCircle' \<$\> 'Reanimate.Scene.unVar' v
 --    'writeVar' v 1; 'wait' 1
 --    'writeVar' v 2; 'wait' 1
 --    'writeVar' v 3; 'wait' 1
@@ -129,7 +128,7 @@ elseVar :: VarData a -> VarData a -> VarData a
 elseVar var1 var2
   | Just t <- evarLastTime var1 =
     let afterTimeline = evarTimeline var1
-        joinAt = fromMaybe t . fmap fst $ M.lookupMin afterTimeline
+        joinAt = maybe t fst $ M.lookupMin afterTimeline
         beforeTimeline = case keepBefore joinAt var2 of
           x
             | Just lastTime <- evarLastTime x, lastTime < joinAt -> M.insert lastTime (StaticValue $ evarLastValue x) $ evarTimeline x
@@ -139,7 +138,7 @@ elseVar var1 var2
 
 -- Restrict a var to a given time interval.
 keepInRange :: Maybe Time -> Maybe Time -> VarData a -> VarData a
-keepInRange st nd = fromMaybe id (keepFrom <$> st) . fromMaybe id (keepBefore <$> nd)
+keepInRange st nd = maybe id keepFrom st . maybe id keepBefore nd
 
 -- Restrict a var to start at given timestamp.
 keepFrom :: Time -> VarData a -> VarData a
@@ -167,4 +166,4 @@ keepBefore nd var@VarData {..} =
       lastTime = case lastModifier of
         Just (t, TweenValue dur _) -> Just $ min nd (t + dur)
         _ -> min nd <$> evarLastTime
-   in VarData evarDefault timeline'' lastTime (fromMaybe evarDefault $ fmap (readVarData var) lastTime)
+   in VarData evarDefault timeline'' lastTime (maybe evarDefault (readVarData var) lastTime)

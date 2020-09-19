@@ -376,7 +376,7 @@ mercatorP = Projection "mercator" forward inverse
   where
     forward (LonLat lam phi) =
       XYCoord ((lam+pi)/tau)
-        (min 1 $ max 0 $ ((log(tan(pi/4+phi/2))) + pi)/tau)
+        (min 1 $ max 0 $ (log(tan(pi/4+phi/2)) + pi)/tau)
     inverse (XYCoord x y) = LonLat xPi (atan (sinh yPi))
       where
         xPi = fromToS (-pi) pi x
@@ -384,7 +384,7 @@ mercatorP = Projection "mercator" forward inverse
 
 thetas :: V.Vector Double
 thetas = V.fromList $
-  map (find_theta_fast . fromIndex) [0 .. granularity]
+  map (findThetaFast . fromIndex) [0 .. granularity]
 
 granularity :: Int
 granularity = 50000
@@ -421,9 +421,9 @@ mollweideP = Projection "mollweide" forward inverse
         lam = pi*x/(2*sqrt2*cos theta)
         phi = asin ((2*theta+sin(2*theta))/pi)
 
-find_theta_fast :: Double -> Double
-find_theta_fast !phi | abs phi == pi/2 = signum phi * halfPi
-find_theta_fast (D# phi) = go phi
+findThetaFast :: Double -> Double
+findThetaFast !phi | abs phi == pi/2 = signum phi * halfPi
+findThetaFast (D# phi) = go phi
   where
     !(D# pi#) = pi
     go acc =
