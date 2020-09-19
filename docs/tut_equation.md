@@ -213,11 +213,8 @@ moveBotLeft t = do
   oBottomY %= \origin ->
     fromToS origin screenBottom t
 
-moveToOrigin t = do
-  (oTranslate._1) %= \origin ->
-    fromToS origin 0 t
-  (oTranslate._2) %= \origin ->
-    fromToS origin 0 t
+moveToOrigin t =
+  oTranslate %= lerp t (V2 0 0)
 
 symb_e :: SVG
 symb_e = snd $
@@ -285,8 +282,6 @@ env = addStatic bg
 
 bg :: SVG
 bg = mkBackground "lightblue"
-
-oCenterY = oCenterXY . _2
 </pre>
 API references: [fork](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate.html#v:fork), [wait](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate.html#v:wait).
 
@@ -336,8 +331,6 @@ env = addStatic bg .
 
 bg :: SVG
 bg = mkBackground "lightblue"
-
-oCenterY = oCenterXY . _2
 </pre>
 API references: [oFadeIn](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Scene.html#v:oFadeIn), [oDraw](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Scene.html#v:oDraw), [oScaleIn](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Scene.html#v:oScaleIn), [oGrow](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Scene.html#v:oGrow).
 
@@ -369,11 +362,6 @@ mass = scale 1.5 $ centerX $
 
 speedOfLight = scale 1.5 $ centerX $
   latex "speed of light$^2$"
-
-oCenterY = oCenterXY . _2
-
-oTranslateY :: Lens' (ObjectData a) Double
-oTranslateY = oTranslate._2
 
 yPositions = [3,1,-1,-3]
 
@@ -436,8 +424,7 @@ animation = env $ scene $ do
   forM_ (reverse symbols) $ \obj -> do
     fork $ oTweenS obj 1 $ \t -> do
       oScale %= \origin -> fromToS origin 1 t
-      (oTranslate._1) %= \pos -> fromToS pos 0 t
-      (oTranslate._2) %= \pos -> fromToS pos 0 t
+      oTranslate %= lerp t (V2 0 0)
     wait 0.3
   wait 2
 
@@ -469,11 +456,6 @@ mass = scale 1.5 $ centerX $
 
 speedOfLight = scale 1.5 $ centerX $
   latex "speed of light$^2$"
-
-oCenterY = oCenterXY . _2
-
-oTranslateY :: Lens' (ObjectData a) Double
-oTranslateY = oTranslate._2
 
 yPositions = [3,1,-1,-3]
 
