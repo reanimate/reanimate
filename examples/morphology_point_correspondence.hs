@@ -26,7 +26,7 @@ main = reanimate $
   mapA (withStrokeWidth 0) $
   mapA (withStrokeColor "black") $
   mapA (withFillOpacity 1) $
-    sceneAnimation $ do
+    scene $ do
       let pl1 = translate (-4) 0 $ mkGroup
             [ lowerTransformations $ scale 3 $ withFillOpacity 1 $
               withStrokeColor "black" $

@@ -77,7 +77,7 @@ module Reanimate
     -- ** Scenes
     Scene
   , ZIndex
-  , sceneAnimation    -- :: (forall s. Scene s a) -> Animation
+  , scene             -- :: (forall s. Scene s a) -> Animation
   , play              -- :: Animation -> Scene s ()
   , fork              -- :: Scene s a -> Scene s a
   , queryNow          -- :: Scene s Time

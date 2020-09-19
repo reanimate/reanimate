@@ -15,7 +15,7 @@ main = reanimate $ bg `parA` mainScene
     bg = animate $ const $ mkBackground "black"
 
 mainScene :: Animation
-mainScene = sceneAnimation $ mdo
+mainScene = scene $ mdo
     play $ drawCircle
       & setDuration drawCircleT
       & applyE (constE $ scaleXY (-1) 1)

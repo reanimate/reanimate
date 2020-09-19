@@ -56,7 +56,7 @@ main =
     -- $ dropA (wordStart beginWord)
     -- $ takeA (wordEnd endWord)
     -- $ takeA 20
-    $ sceneAnimation
+    $ scene
     $ do
         newSpriteSVG_ $ mkBackground "black"
         monalisaScene

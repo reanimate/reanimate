@@ -4,7 +4,7 @@ env =
 
 animation :: Animation
 animation = env $
-  sceneAnimation $ do
+  scene $ do
     drawLatex "e^{i\\pi}+1=0"
     drawLatex "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
     drawLatex "\\sum_{k=1}^\\infty"

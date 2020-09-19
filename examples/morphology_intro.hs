@@ -19,7 +19,7 @@ main = reanimate $
   mapA (withStrokeWidth 0) $
   mapA (withStrokeColor "black") $
   mapA (withFillOpacity 1) $
-    sceneAnimation $ do
+    scene $ do
       play $ step stage1 stage2
       play $ step stage2 stage3
       play $ step stage3 stage4

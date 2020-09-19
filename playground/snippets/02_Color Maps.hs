@@ -1,5 +1,5 @@
 animation :: Animation
-animation = docEnv $ sceneAnimation $ do
+animation = docEnv $ scene $ do
   play $ staticFrame 1 (showColorMap parula)
     & label "Parula"
   play $ staticFrame 1 (showColorMap viridis)

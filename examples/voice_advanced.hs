@@ -19,7 +19,7 @@ transcript :: Transcript
 transcript = loadTranscript "voice_advanced.txt"
 
 main :: IO ()
-main = reanimate $ sceneAnimation $ do
+main = reanimate $ scene $ do
   bg <- newSpriteSVG $ mkBackgroundPixel rtfdBackgroundColor
   spriteZ bg (-100)
   newSpriteSVG_ $ mkGroup

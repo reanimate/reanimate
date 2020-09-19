@@ -8,7 +8,7 @@ import Reanimate.Scene
 import Control.Lens
 
 main :: IO ()
-main = reanimate $ docEnv $ sceneAnimation $ do
+main = reanimate $ docEnv $ scene $ do
   cam <- newObject Camera
   circ <- newObject $ Circle 2
   oModifyS circ $
