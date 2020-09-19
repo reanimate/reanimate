@@ -48,7 +48,7 @@ span.spaces    { background: white }
 <span class="lineno">   29 </span>    fork,
 <span class="lineno">   30 </span>    liftST,
 <span class="lineno">   31 </span>    queryNow,
-<span class="lineno">   32 </span>    sceneAnimation,
+<span class="lineno">   32 </span>    scene,
 <span class="lineno">   33 </span>    wait,
 <span class="lineno">   34 </span>  )
 <span class="lineno">   35 </span>import Reanimate.Scene.Var (unpackVar, Var (..), newVar, readVar)
@@ -421,7 +421,7 @@ span.spaces    { background: white }
 <span class="lineno">  402 </span>asAnimation :: (forall s'. Scene s' a) -&gt; Scene s Animation
 <span class="lineno">  403 </span><span class="decl"><span class="nottickedoff">asAnimation s = do</span>
 <span class="lineno">  404 </span><span class="spaces">  </span><span class="nottickedoff">now &lt;- queryNow</span>
-<span class="lineno">  405 </span><span class="spaces">  </span><span class="nottickedoff">return $ dropA now (sceneAnimation (wait now &gt;&gt; s))</span></span>
+<span class="lineno">  405 </span><span class="spaces">  </span><span class="nottickedoff">return $ dropA now (scene (wait now &gt;&gt; s))</span></span>
 <span class="lineno">  406 </span>
 <span class="lineno">  407 </span>-- | Apply a transformation with a given overlap. This makes sure
 <span class="lineno">  408 </span>--   to keep timestamps intact such that events can still be timed
