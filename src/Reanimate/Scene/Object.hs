@@ -350,6 +350,10 @@ oShow o = oModify o $ oShown .~ True
 oHide :: Object s a -> Scene s ()
 oHide o = oModify o $ oShown .~ False
 
+-- | Show object with an animator function. The animator is responsible for
+--   transitioning the object from invisible to having its final shape.
+--   If this doesn't hold true for the animator function then the final
+--   animation will be discontinuous.
 oShowWith :: Object s a -> (SVG -> Animation) -> Scene s ()
 oShowWith o fn = do
   oModify o $ oShown .~ True
@@ -359,6 +363,10 @@ oShowWith o fn = do
     obj {_oSVG = getAnimationFrame SyncStretch ani t 1}
   oModify o $ \obj -> obj {_oSVG = initSVG}
 
+-- | Hide object with an animator function. The animator is responsible for
+--   transitioning the object from visible to invisible.
+--   If this doesn't hold true for the animator function then the final
+--   animation will be discontinuous.
 oHideWith :: Object s a -> (SVG -> Animation) -> Scene s ()
 oHideWith o fn = do
   initSVG <- oRead o oSVG
@@ -377,6 +385,17 @@ oFadeOut :: SVG -> Animation
 oFadeOut = reverseA . oFadeIn
 
 -- | Scale in object over a set duration.
+--
+--   Example:
+--
+-- @
+-- do txt <- 'oNew' $ 'withStrokeWidth' 0 $ 'withFillOpacity' 1 $
+--      'center' $ 'scale' 3 $ 'Reanimate.LaTeX.latex' "oGrow"
+--    'oShowWith' txt 'oGrow'
+--    'wait' 1; 'oHideWith' txt 'oFadeOut'
+-- @
+--
+--    <<docs/gifs/doc_oGrow.gif>>
 oGrow :: SVG -> Animation
 oGrow svg = animate $ \t -> scale t svg
 
@@ -384,6 +403,7 @@ oGrow svg = animate $ \t -> scale t svg
 oShrink :: SVG -> Animation
 oShrink = reverseA . oGrow
 
+-- | Relative coordinates for an SVG node.
 type Origin = (Double, Double)
 
 svgOrigin :: SVG -> Origin -> (Double, Double)
@@ -394,9 +414,22 @@ svgOrigin svg (originX, originY) =
         polyY + polyHeight * originY
       )
 
+-- | Scale in children from left to right, with an origin at the top of each child.
+--
+--   Example:
+--
+-- @
+-- do txt <- 'oNew' $ 'withStrokeWidth' 0 $ 'withFillOpacity' 1 $
+--      'center' $ 'scale' 3 $ 'Reanimate.LaTeX.latex' "oScaleIn"
+--    'oShowWith' txt $ 'adjustDuration' (*2) . 'oScaleIn'
+--    'wait' 1; 'oHideWith' txt 'oFadeOut'
+-- @
+--
+--   <<docs/gifs/doc_oScaleIn.gif>>
 oScaleIn :: SVG -> Animation
 oScaleIn = oScaleIn' (curveS 2) (0.5, 1)
 
+-- | Like 'oScaleIn' but takes an easing function and an origin.
 oScaleIn' :: Signal -> Origin -> SVG -> Animation
 oScaleIn' easing origin = oStagger' 0.05 $ \svg ->
   let (cx, cy) = svgOrigin svg origin
@@ -409,35 +442,66 @@ oScaleIn' easing origin = oStagger' 0.05 $ \svg ->
                 (- cy)
                 svg
 
+-- | Scale out children from left to right, with an origin at the bottom of each child.
+--
+--   Example:
+--
+-- @
+-- do txt <- 'oNew' $ 'withStrokeWidth' 0 $ 'withFillOpacity' 1 $
+--      'center' $ 'scale' 3 $ 'Reanimate.LaTeX.latex' "oScaleOut"
+--    'oShowWith' txt 'oFadeIn'
+--    'oHideWith' txt $ 'adjustDuration' (*2) . 'oScaleOut'
+-- @
+--
+--   <<docs/gifs/doc_oScaleOut.gif>>
 oScaleOut :: SVG -> Animation
 oScaleOut = reverseA . oStaggerRev' 0.05 (oScaleIn' (curveS 2) (0.5, 0))
 
+-- | Like 'oScaleOut' but takes an easing function and an origin.
 oScaleOut' :: Signal -> Origin -> SVG -> Animation
 oScaleOut' easing origin = reverseA . oStaggerRev' 0.05 (oScaleIn' easing origin)
 
+-- | Animate each child node in parallel.
 oSim :: (SVG -> Animation) -> SVG -> Animation
 oSim = oStagger' 0
 
 -- oSim (oStagger fn) = oSim fn
 -- oStagger (oStagger fn) = oStagger fn
+-- | Animate each child node in parallel, staggered by 0.2 seconds.
 oStagger :: (SVG -> Animation) -> SVG -> Animation
 oStagger = oStagger' 0.2
 
+-- | Animate each child node in parallel, staggered by 0.2 seconds and in reverse order.
 oStaggerRev :: (SVG -> Animation) -> SVG -> Animation
 oStaggerRev = oStaggerRev' 0.2
 
+-- | Animate each child node in parallel, staggered by a given duration.
 oStagger' :: Duration -> (SVG -> Animation) -> SVG -> Animation
 oStagger' staggerDelay fn svg = scene $
   forM_ (svgGlyphs svg) $ \(ctx, _attr, node) -> do
     void $ fork $ newSpriteA' SyncFreeze (fn $ ctx node)
     wait staggerDelay
 
+-- | Animate each child node in parallel, staggered by given duration and in reverse order.
 oStaggerRev' :: Duration -> (SVG -> Animation) -> SVG -> Animation
 oStaggerRev' staggerDelay fn svg = scene $
   forM_ (reverse $ svgGlyphs svg) $ \(ctx, _attr, node) -> do
     void $ fork $ newSpriteA' SyncFreeze (fn $ ctx node)
     wait staggerDelay
 
+-- | Render SVG by first drawing outlines and then filling shapes.
+--
+--   Example:
+--
+-- @
+-- do txt <- 'oNew' $ 'withStrokeWidth' 0 $ 'withFillOpacity' 1 $
+--      'center' $ 'scale' 4 $ 'Reanimate.LaTeX.latex' "oDraw"
+--    'oModify' txt $ 'oEasing' .~ id
+--    'oShowWith' txt 'oDraw'; 'wait' 1
+--    'oHideWith' txt 'oFadeOut'
+-- @
+--
+--   <<docs/gifs/doc_oDraw.gif>>
 oDraw :: SVG -> Animation
 oDraw = oStagger $ \svg -> scene $
   forM_ (svgGlyphs $ pathify svg) $ \(ctx, attr, node) -> do

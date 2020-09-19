@@ -6,13 +6,10 @@ module Main(main) where
 import Reanimate
 import Reanimate.Scene
 import Reanimate.Builtin.Documentation
-import Control.Lens
 
 main :: IO ()
 main = reanimate $ docEnv $ scene $ do
   txt <- oNew $ withStrokeWidth 0 $ withFillOpacity 1 $
-    center $ scale 4 $ latex "oDraw"
-  oModify txt $ oEasing .~ id
-  oShowWith txt oDraw
-  wait 1
-  oHideWith txt oFadeOut
+    center $ scale 3 $ latex "oGrow"
+  oShowWith txt oGrow
+  wait 1; oHideWith txt oFadeOut

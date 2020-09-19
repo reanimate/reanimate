@@ -68,7 +68,7 @@ renderSvgs folder offset _prettyPrint ani = do
         now = (duration ani / (fromIntegral frameCount - 1)) * fromIntegral nth
         frame = frameAt (if frameCount <= 1 then 0 else now) ani
         path = folder </> show nth <.> "svg"
-        ~svg = renderSvg Nothing Nothing frame
+        svg = renderSvg Nothing Nothing frame
 
     idempotentFile path $
       writeFile path svg

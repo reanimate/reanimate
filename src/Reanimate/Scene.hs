@@ -1,10 +1,3 @@
-{-# LANGUAGE ApplicativeDo #-}
-{-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE RecordWildCards #-}
-
 -- |
 -- Module      : Reanimate.Scene
 -- Copyright   : Written by David Himmelstrup
@@ -108,24 +101,24 @@ module Reanimate.Scene
     -- ** Graphics object methods
     oShow,
     oHide,
+    oShowWith,
+    oHideWith,
     oFadeIn,
     oFadeOut,
     oGrow,
     oShrink,
     oTransform,
-    oShowWith,
-    oHideWith,
     Origin,
     oScaleIn,
     oScaleIn',
     oScaleOut,
     oScaleOut',
+    oDraw,
     oSim,
     oStagger,
     oStaggerRev,
     oStagger',
     oStaggerRev',
-    oDraw,
     -- , oBalloon
 
     -- ** Pre-defined objects
