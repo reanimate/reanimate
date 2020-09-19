@@ -129,7 +129,7 @@ elseVar :: VarData a -> VarData a -> VarData a
 elseVar var1 var2
   | Just t <- evarLastTime var1 =
     let afterTimeline = evarTimeline var1
-        joinAt = fromMaybe t . fmap fst $ M.lookupMin afterTimeline
+        joinAt = maybe t fst $ M.lookupMin afterTimeline
         beforeTimeline = case keepBefore joinAt var2 of
           x
             | Just lastTime <- evarLastTime x, lastTime < joinAt -> M.insert lastTime (StaticValue $ evarLastValue x) $ evarTimeline x
@@ -139,7 +139,7 @@ elseVar var1 var2
 
 -- Restrict a var to a given time interval.
 keepInRange :: Maybe Time -> Maybe Time -> VarData a -> VarData a
-keepInRange st nd = fromMaybe id (keepFrom <$> st) . fromMaybe id (keepBefore <$> nd)
+keepInRange st nd = maybe id keepFrom st . maybe id keepBefore nd
 
 -- Restrict a var to start at given timestamp.
 keepFrom :: Time -> VarData a -> VarData a
@@ -167,4 +167,4 @@ keepBefore nd var@VarData {..} =
       lastTime = case lastModifier of
         Just (t, TweenValue dur _) -> Just $ min nd (t + dur)
         _ -> min nd <$> evarLastTime
-   in VarData evarDefault timeline'' lastTime (fromMaybe evarDefault $ fmap (readVarData var) lastTime)
+   in VarData evarDefault timeline'' lastTime (maybe evarDefault (readVarData var) lastTime)
