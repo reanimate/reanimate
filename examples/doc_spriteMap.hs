@@ -6,7 +6,7 @@ import Reanimate
 import Reanimate.Builtin.Documentation
 
 main :: IO ()
-main = reanimate $ docEnv $ sceneAnimation $ do
+main = reanimate $ docEnv $ scene $ do
   s <- fork $ newSpriteA drawCircle
   wait 1
   spriteMap s flipYAxis

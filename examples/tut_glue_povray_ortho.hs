@@ -23,7 +23,7 @@ import "random-shuffle" System.Random.Shuffle
 
 
 main :: IO ()
-main = reanimate $ parA bg $ sceneAnimation $ do
+main = reanimate $ parA bg $ scene $ do
     xRot <- newVar (-30)
     yRot <- newVar 180
     zRot <- newVar 0
@@ -131,7 +131,7 @@ checker w h =
 
 
 latexExample :: Animation
-latexExample = sceneAnimation $ do
+latexExample = scene $ do
     -- Draw equation
     play $ drawAnimation strokedSvg
     sprites <- forM glyphs $ \(fn, _, elt) ->
@@ -181,7 +181,7 @@ drawAnimation :: SVG -> Animation
 drawAnimation = drawAnimation' Nothing 0.5 0.3
 
 drawAnimation' :: Maybe Int -> Double -> Double -> SVG -> Animation
-drawAnimation' mbSeed fillDur step svg = sceneAnimation $ do
+drawAnimation' mbSeed fillDur step svg = scene $ do
   forM_ (zip [0..] $ shuf $ svgGlyphs svg) $ \(n, (fn, attr, tree)) -> do
     let sWidth =
           case toUserUnit defaultDPI <$> getLast (attr ^. strokeWidth) of

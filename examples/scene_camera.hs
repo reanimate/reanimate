@@ -7,6 +7,7 @@ import Reanimate
 import Reanimate.Builtin.Documentation
 import Reanimate.Scene
 import Control.Lens
+import Linear.V2
 
 main :: IO ()
 {-
@@ -101,7 +102,7 @@ main = reanimate $ docEnv $ mapA (withFillOpacity 1) $ sceneAnimation $ do
 
   wait 1
 -}
-main = reanimate $ docEnv $ mapA (withFillOpacity 1) $ sceneAnimation $ do
+main = reanimate $ docEnv $ mapA (withFillOpacity 1) $ scene $ do
   cam <- newObject Camera
 
   txt <- newObject $ center $ latex "Fixed (non-cam)"
@@ -141,4 +142,4 @@ main = reanimate $ docEnv $ mapA (withFillOpacity 1) $ sceneAnimation $ do
   waitOn $ do
     fork $ cameraZoom cam 3 1
   waitOn $ do
-    fork $ cameraPan cam 1 (0,0)
+    fork $ cameraPan cam 1 (V2 0 0)

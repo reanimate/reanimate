@@ -6,7 +6,7 @@ import Reanimate
 import Reanimate.Builtin.Documentation
 
 main :: IO ()
-main = reanimate $ docEnv $ sceneAnimation $ do
+main = reanimate $ docEnv $ scene $ do
   -- the rect lives through the entire 3s animation
   newSpriteSVG_ $ translate (-3) 0 $ mkRect 4 4
   wait 1

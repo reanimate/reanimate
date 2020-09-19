@@ -19,7 +19,6 @@ module Reanimate.Scene
     Scene,
     ZIndex,
     scene, -- :: (forall s. Scene s a) -> Animation
-    sceneAnimation, -- :: (forall s. Scene s a) -> Animation
     play, -- :: Animation -> Scene s ()
     fork, -- :: Scene s a -> Scene s a
     queryNow, -- :: Scene s Time
@@ -77,6 +76,8 @@ module Reanimate.Scene
 
     -- ** Object Properties
     oTranslate,
+    oTranslateX,
+    oTranslateY,
     oSVG,
     oContext,
     oMargin,
@@ -100,6 +101,8 @@ module Reanimate.Scene
     oLeftX,
     oRightX,
     oCenterXY,
+    oCenterX,
+    oCenterY,
     oValue,
 
     -- ** Graphics object methods

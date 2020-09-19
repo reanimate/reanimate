@@ -61,7 +61,7 @@ whiteGithub = withFillOpacity 1 $ withFillColor "white" $
   scaleToHeight screenHeight $ center $ unpackImage githubIcon
 
 main :: IO ()
-main = reanimate $ sceneAnimation $ do
+main = reanimate $ scene $ do
     newSpriteSVG_ $ mkBackground "white"
     -- newSpriteSVG_ $
     --   mkClipPath "clip" $

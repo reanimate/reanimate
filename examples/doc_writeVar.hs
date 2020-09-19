@@ -6,7 +6,7 @@ import Reanimate
 import Reanimate.Builtin.Documentation
 
 main :: IO ()
-main = reanimate $ docEnv $ sceneAnimation $ do
+main = reanimate $ docEnv $ scene $ do
   v <- newVar 0
   _ <- newSprite $ mkCircle <$> unVar v
   writeVar v 1; wait 1

@@ -12,7 +12,7 @@ import           Reanimate.LaTeX
 import           Reanimate.Scene
 
 main :: IO ()
-main = reanimate $ docEnv $ mapA (withFillOpacity 1) $ sceneAnimation $ do
+main = reanimate $ docEnv $ mapA (withFillOpacity 1) $ scene $ do
   line1 <- newLaTeX ["$>$ ", "knock!", " ", "knock!"]
   oModifyMany line1 $
     oTopY .~ screenTop
