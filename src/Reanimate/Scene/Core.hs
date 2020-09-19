@@ -43,6 +43,7 @@ instance Monad (Scene s) where
 instance MonadFix (Scene s) where
   mfix fn = M $ \t -> mfix (\v -> let (a, _s, _p, _gens) = v in unM (fn a) t)
 
+-- | Lift ST action into the Scene monad.
 liftST :: ST s a -> Scene s a
 liftST action = M $ \_ -> action >>= \a -> return (a, 0, 0, [])
 
@@ -82,8 +83,8 @@ sceneAnimation action =
 --   Example:
 --
 -- @
--- do 'fork' $ 'play' 'Reanimate.Builtin.Documentation.drawBox'
---    'play' 'Reanimate.Builtin.Documentation.drawCircle'
+-- do 'fork' $ 'Reanimate.Scene.play' 'Reanimate.Builtin.Documentation.drawBox'
+--    'Reanimate.Scene.play' 'Reanimate.Builtin.Documentation.drawCircle'
 -- @
 --
 --   <<docs/gifs/doc_fork.gif>>
@@ -97,8 +98,8 @@ fork (M action) = M $ \t -> do
 --   Example:
 --
 -- @
--- do now \<- 'play' 'Reanimate.Builtin.Documentation.drawCircle' *\> 'queryNow'
---    'play' $ 'staticFrame' 1 $ 'scale' 2 $ 'withStrokeWidth' 0.05 $
+-- do now \<- 'Reanimate.Scene.play' 'Reanimate.Builtin.Documentation.drawCircle' *\> 'queryNow'
+--    'Reanimate.Scene.play' $ 'staticFrame' 1 $ 'scale' 2 $ 'withStrokeWidth' 0.05 $
 --      'mkText' $ "Now=" <> T.pack (show now)
 -- @
 --
@@ -111,9 +112,9 @@ queryNow = M $ \t -> return (t, 0, 0, [])
 --   Example:
 --
 -- @
--- do 'fork' $ 'play' 'Reanimate.Builtin.Documentation.drawBox'
+-- do 'fork' $ 'Reanimate.Scene.play' 'Reanimate.Builtin.Documentation.drawBox'
 --    'wait' 1
---    'play' 'Reanimate.Builtin.Documentation.drawCircle'
+--    'Reanimate.Scene.play' 'Reanimate.Builtin.Documentation.drawCircle'
 -- @
 --
 --   <<docs/gifs/doc_wait.gif>>
@@ -131,8 +132,8 @@ waitUntil tNew = do
 --   Example:
 --
 -- @
--- do 'waitOn' $ 'fork' $ 'play' 'Reanimate.Builtin.Documentation.drawBox'
---    'play' 'Reanimate.Builtin.Documentation.drawCircle'
+-- do 'waitOn' $ 'fork' $ 'Reanimate.Scene.play' 'Reanimate.Builtin.Documentation.drawBox'
+--    'Reanimate.Scene.play' 'Reanimate.Builtin.Documentation.drawCircle'
 -- @
 --
 --   <<docs/gifs/doc_waitOn.gif>>

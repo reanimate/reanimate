@@ -33,7 +33,7 @@ type Timeline a = M.Map Time (Modifier a)
 --   earlier than when the variable was created. For example:
 --
 -- @
--- do v \<- 'fork' ('wait' 10 \>\> 'newVar' 0) -- Create a variable at timestamp '10'.
+-- do v \<- 'Reanimate.Scene.fork' ('wait' 10 \>\> 'newVar' 0) -- Create a variable at timestamp '10'.
 --    'readVar' v                       -- Read the variable at timestamp '0'.
 --                                    -- The value of the variable will be '0'.
 -- @
@@ -53,7 +53,7 @@ unpackVar (Var ref) = readVarData <$> readSTRef ref
 --
 -- @
 -- do v \<- 'newVar' 0
---    'newSprite' $ 'mkCircle' \<$\> 'unVar' v
+--    'Reanimate.Scene.newSprite' $ 'Reanimate.Svg.Constructors.mkCircle' \<$\> 'Reanimate.Scene.unVar' v
 --    'writeVar' v 1; 'wait' 1
 --    'writeVar' v 2; 'wait' 1
 --    'writeVar' v 3; 'wait' 1
