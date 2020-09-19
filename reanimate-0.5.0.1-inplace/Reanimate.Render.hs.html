@@ -87,7 +87,7 @@ span.spaces    { background: white }
 <span class="lineno">   68 </span><span class="spaces">        </span><span class="nottickedoff">now = (duration ani / (fromIntegral frameCount - 1)) * fromIntegral nth</span>
 <span class="lineno">   69 </span><span class="spaces">        </span><span class="nottickedoff">frame = frameAt (if frameCount &lt;= 1 then 0 else now) ani</span>
 <span class="lineno">   70 </span><span class="spaces">        </span><span class="nottickedoff">path = folder &lt;/&gt; show nth &lt;.&gt; &quot;svg&quot;</span>
-<span class="lineno">   71 </span><span class="spaces">        </span><span class="nottickedoff">~svg = renderSvg Nothing Nothing frame</span>
+<span class="lineno">   71 </span><span class="spaces">        </span><span class="nottickedoff">svg = renderSvg Nothing Nothing frame</span>
 <span class="lineno">   72 </span><span class="spaces"></span><span class="nottickedoff"></span>
 <span class="lineno">   73 </span><span class="spaces">    </span><span class="nottickedoff">idempotentFile path $</span>
 <span class="lineno">   74 </span><span class="spaces">      </span><span class="nottickedoff">writeFile path svg</span>
