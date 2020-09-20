@@ -41,4 +41,4 @@ jobs:
         build_deps || build_deps
     - name: Test nightly
       run: |
-	stack build --resolver nightly --haddock --test --bench --no-run-benchmarks
+        stack build --resolver nightly --haddock --test --bench --no-run-benchmarks
