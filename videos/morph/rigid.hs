@@ -119,7 +119,7 @@ main = reanimate $ sceneAnimation $ do
   --   $ 20
   -- play $ playTraces $ last $ take 35 $ compatiblyTriangulateP p1 p2
   -- fork $ newSpriteA $ drawCompatible p1 p2
-  -- newSpriteSVG_ $ translate (5) 0 $ lowerTransformations $ scale 2 $
+  -- newSpriteSVG_ $ translate 5 0 $ lowerTransformations $ scale 2 $
   --   -- DCEL.renderMesh 0.02 m1final
   --   DCEL.renderMeshColored m1final
     -- renderMeshPair optMesh
@@ -133,7 +133,7 @@ main = reanimate $ sceneAnimation $ do
   --   , withFillColor "grey" $ polygonNumDots p1
   --   ]
   -- newSpriteSVG_ $
-  --   translate (3) 0 $ scale 1 $ mkGroup
+  --   translate 3 0 $ scale 1 $ mkGroup
   --   [ mkGroup []
   --   , withFillColor "grey" $ polygonShape p2
   --   , withFillColor "grey" $ polygonNumDots p2
@@ -150,7 +150,7 @@ main = reanimate $ sceneAnimation $ do
   --   -- wait 1
   -- fork $ forM_ p2s $ \p1Piece -> do
   --   newSpriteSVG_ $
-  --     translate (3) 0 $ scale 1 $ mkGroup
+  --     translate 3 0 $ scale 1 $ mkGroup
   --     [ mkGroup []
   --     , withFillColor "white" $ polygonShape p1Piece
   --     -- , withFillColor "grey" $ polygonNumDots p1Piece
@@ -167,7 +167,7 @@ main = reanimate $ sceneAnimation $ do
   --   ]
   fork $ play $ mkAnimation 3 $ \t ->
     let points = interpolate optPrep t
-    in  translate (3) 0 $ lowerTransformations $ scale 1 $ mkGroup
+    in  translate 3 0 $ lowerTransformations $ scale 1 $ mkGroup
       [ mkGroup []
       , drawTrigs points (meshTriangles optMesh)
       -- , DCEL.renderMeshColored m1final
@@ -180,7 +180,7 @@ main = reanimate $ sceneAnimation $ do
         -- , scale 2 $ polygonNumDots p1
   -- play $ pauseAtEnd 1 $ mkAnimation 3 $ \t ->
   --   let points = interpolate bestPrep t
-  --   in  translate (3) 0 $ mkGroup [drawTrigs points (meshTriangles bestMesh)
+  --   in  translate 3 0 $ mkGroup [drawTrigs points (meshTriangles bestMesh)
   --       -- , scale 2 $ polygonNumDots p2
   --                                                                           ]
   -- play $ pauseAtEnd 1 $ mkAnimation 3 $ \t ->
@@ -193,9 +193,9 @@ main = reanimate $ sceneAnimation $ do
   --   let (minAngA, minAngB) = meshMinAngle newMesh
   --   txt <- newSpriteSVG $ withFillColor "white" $
   --     mkGroup
-  --     [translate (5) 2 $  center $
+  --     [translate 5 2 $  center $
   --       latex $ T.pack $ printf "Min: %.1f" (minAngA/pi*180)
-  --     ,translate (5) 1 $  center $
+  --     ,translate 5 1 $  center $
   --       latex $ T.pack $ printf "Min: %.1f" (minAngB/pi*180) ]
   --   s <- newSpriteSVG $ renderAMesh newMesh
   --   wait (recip 60)
@@ -235,11 +235,11 @@ mkMesh a b = Mesh
     V.fromList $ nub $ V.toList $ V.concat [ polygonPoints b | (a, b) <- trigs ]
   trigs = compatiblyTriangulateP a b
   mkRel arr p =
-    ( (fromJust $ V.elemIndex (pAccess p 0) arr)
-    , (fromJust $ V.elemIndex (pAccess p 1) arr)
-    , (fromJust $ V.elemIndex (pAccess p 2) arr)
+    ( fromJust $ V.elemIndex (pAccess p 0) arr
+    , fromJust $ V.elemIndex (pAccess p 1) arr
+    , fromJust $ V.elemIndex (pAccess p 2) arr
     )
-  relTrigs = V.fromList [ (mkRel pointsA a) | (a, b) <- trigs ]
+  relTrigs = V.fromList [ mkRel pointsA a | (a, b) <- trigs ]
     -- data Mesh = Mesh (Vector P) (Vector (RelTrig, RelTrig))
 
 testMesh2 :: Mesh

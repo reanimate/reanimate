@@ -48,7 +48,7 @@ main = reanimate $ scene $ do
 
 mkGooeyFilter :: Double -> SVG
 mkGooeyFilter blur =
-  FilterTree $ mkFilter ("gooey")
+  FilterTree $ mkFilter "gooey"
       [ FEGaussianBlur $ defaultSvg
         & gaussianBlurStdDeviationX .~ Num blur
         & gaussianBlurEdgeMode      .~ EdgeNone

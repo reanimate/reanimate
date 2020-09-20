@@ -33,5 +33,5 @@ main = reanimate $
     stage2 = translate 3 0 $ withFillColor "blue" $ mkRect (radius*2) (radius*2)
     stage3 = mkGroup
       [translate (-1) (-1) $ withFillColor "green" $ mkRect (radius*0.5) (radius*0.5)
-      ,translate 1 (1) $ withFillColor "black" $ mkRect (radius*0.5) (radius*0.5) ]
+      ,translate 1 1 $ withFillColor "black" $ mkRect (radius*0.5) (radius*0.5) ]
     stage4 = translate (-3) 0 $ withFillColor "purple" $ mkCircle (radius*0.24)

@@ -62,7 +62,7 @@ renderAMesh m = mkGroup
                                    [pA V.! a, pA V.! b, pA V.! c]
     | (a, b, c) <- V.toList (meshTriangles m)
     ]
-  , translate (1.5) 0 $ renderMesh
+  , translate 1.5 0 $ renderMesh
     (mkPolygon outlineB)
     [ mkPolygon $ V.fromList $ map (fmap realToFrac)
                                    [pB V.! a, pB V.! b, pB V.! c]
@@ -149,7 +149,7 @@ smoothStep triangulation pts steiner =
     return $ sortOn (dir pt) edgePoints
   -- Direction from south of 'a', to 'a', to 'b'.
   dir :: V2 Double -> V2 Double -> Double
-  dir a b = (atan2 (crossZ (V2 0 1) (b - a)) (dot (V2 0 1) (b - a)))
+  dir a b = atan2 (crossZ (V2 0 1) (b - a)) (dot (V2 0 1) (b - a))
 
 angleSmooth :: V2 Double -> V.Vector (V2 Double) -> V2 Double
 angleSmooth origin js = V.sum (V.generate n nth) ^/ V.sum (V.generate n factor)
@@ -192,7 +192,7 @@ isValidLocation origin edges newLoc =
     <  minAngle newLoc edges
  where
   dir :: V2 Double -> V2 Double -> Double
-  dir a b = (atan2 (crossZ (V2 0 1) (b - a)) (dot (V2 0 1) (b - a)))
+  dir a b = atan2 (crossZ (V2 0 1) (b - a)) (dot (V2 0 1) (b - a))
 
 minAngle :: V2 Double -> V.Vector (V2 Double) -> Double
 minAngle origin edges = minimum $ concat

@@ -136,8 +136,8 @@ grid :: Projection -> SVG
 grid p =
   lowerTransformations $
   scaleXY
-    (screenWidth)
-    (screenHeight)
+    screenWidth
+    screenHeight
    $
   translate (-1/2) (-1/2) $
   withStrokeWidth strokeWidth $
@@ -203,11 +203,11 @@ longitudeLines p =
 halfPi :: Double
 halfPi = pi/2
 
-landBorders :: [(GeospatialGeometry)]
+landBorders :: [GeospatialGeometry]
 landBorders = unsafePerformIO $ do
   Just geo <- decodeFileStrict "land.geojson"
   return
-    [ (feature ^. geometry)
+    [ feature ^. geometry
     | feature <- toList $ geo ^. geofeatures
     , let p = feature ^. properties :: Map String Value
     ]

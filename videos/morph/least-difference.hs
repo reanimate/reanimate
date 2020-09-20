@@ -86,23 +86,23 @@ main = reanimate $ sceneAnimation $ do
       -- , polygonNumDots (castPolygon l)
       ]
     newSpriteSVG_ $ 
-      translate (2) 0 $ withFillColorPixel c $ mkGroup
+      translate 2 0 $ withFillColorPixel c $ mkGroup
       [ polygonShape (castPolygon r)
       -- , polygonNumDots (castPolygon r)
       ]
     nums <- newSpriteSVG $ mkGroup
       [ translate (-2) 0 $ polygonNumDots (castPolygon l)
-      , translate (2) 0 $ polygonNumDots (castPolygon r)
+      , translate 2 0 $ polygonNumDots (castPolygon r)
       ]
     wait (1/60)
     destroySprite nums
   
   -- fork $ play $ staticFrame (1/60) $ mkGroup
-  --   [ translate (2) 0 $ mkGroup
+  --   [ translate 2 0 $ mkGroup
   --     [ withFillColor "grey" $ polygonShape p2_circ
   --     , polygonNumDots p2_circ
   --     ]
-  --   , translate (6) 0 $ mkGroup
+  --   , translate 6 0 $ mkGroup
   --     [ withFillColor "grey" $ polygonShape p2
   --     , polygonNumDots p2
   --     ]

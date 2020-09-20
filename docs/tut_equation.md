@@ -183,7 +183,7 @@ API references:
 
 # Step 4: Moving objects
 
-Objects in reanimate encapsulate SVG nodes and makes it easier to animate properties such as position and scale. In the example below, we create an object from the `E` SVG node and 'tween' position properties to make it move around the canvas. [Tweening](https://en.wikipedia.org/wiki/Inbetweening) (or inbetweening) is an animation concept that simply meanings moving smoothly from one value to another.
+Objects in reanimate encapsulate SVG nodes and makes it easier to animate properties such as position and scale. In the example below, we create an object from the `E` SVG node and 'tween' position properties to make it move around the canvas. [Tweening](https://en.wikipedia.org/wiki/Inbetweening) (or inbetweening) is an animation concept that simply means moving smoothly from one value to another.
 
 Reanimate exports many properties such as `oLeftX`, `oTopY` and `oCenterXY`. These properties manipulate the object's position with respect to its bounding box and margins. The position of an object is ultimately captured in the `oTranslate` property and resetting this property will undo any movements.
 

@@ -107,11 +107,11 @@ longitudeLines p =
       , let lam = fromToS (-pi) pi (n/segments)
       , let XYCoord x y = projectionForward p $ LonLat lam phi ]
 
-landBorders :: [(GeospatialGeometry)]
+landBorders :: [GeospatialGeometry]
 landBorders = unsafePerformIO $ do
   Just geo <- decodeFileStrict "countries.json"
   return
-    [ (feature ^. geometry)
+    [ feature ^. geometry
     | feature <- toList $ geo ^. geofeatures :: [GeoFeature Value]
     ]
 

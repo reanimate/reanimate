@@ -52,7 +52,7 @@ main = reanimate $
         withStrokeWidth 0 $ translate (-4) 4 $
         center $ latex "linear"
       _ <- newSpriteSVG $
-        withStrokeWidth 0 $ translate (4) 4 $
+        withStrokeWidth 0 $ translate 4 4 $
         center $ latex "line bend"
       showTrails
       forM_ pairs $ uncurry showPair
@@ -62,7 +62,7 @@ main = reanimate $
             translate (-4) (-0.5) $
             genTrails (map linearTrajectory pairs)
       _ <- newSpriteSVG $
-            translate (4) (-0.5) $
+            translate 4 (-0.5) $
             genTrails (map lineBend pairs)
       return ()
     showPair from to =
@@ -72,7 +72,7 @@ main = reanimate $
           & mapA (withFillColor "lightgreen")
           & signalA (curveS 4)
         fork $ play $ mkAnimation 4 (morph myMorph (polygonShape from) (polygonShape to))
-          & mapA (translate (4) (-0.5))
+          & mapA (translate 4 (-0.5))
           & mapA (withFillColor "cyan")
           & signalA (curveS 4)
     myMorph = linear{morphTrajectory = lineBend }
@@ -83,7 +83,7 @@ main = reanimate $
       , spike3
       ]
 
-genTrails :: [(Double -> Polygon)] -> SVG
+genTrails :: [Double -> Polygon] -> SVG
 genTrails plotters =
     withFillOpacity 0 $
     withStrokeWidth (defaultStrokeWidth*0.5) $

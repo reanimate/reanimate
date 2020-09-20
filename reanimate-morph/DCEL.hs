@@ -263,7 +263,7 @@ getVertex position = do
   case L.find comparingPosition (M.assocs vs) of
     Nothing     -> createVertex position
     Just (k, _) -> return k
-  where comparingPosition (_k, v) = (_vertexPosition v) == position
+  where comparingPosition (_k, v) = _vertexPosition v == position
 
 requireVertex :: VertexId -> MeshM a (Vertex a)
 requireVertex vid = do
@@ -280,7 +280,7 @@ getEdge e = do
   edges <- gets _meshEdges
   maybe (bug edges) return $ M.lookup e edges
     --return $ fromJust $ M.lookup e edges
-  where bug _edges = error $ "Can't find edge with id " ++ (show e)
+  where bug _edges = error $ "Can't find edge with id " ++ show e
 
 withEdge :: EdgeId -> (Edge -> State (Mesh a) ()) -> State (Mesh a) ()
 withEdge e f = f =<< getEdge e
@@ -360,7 +360,7 @@ getFace :: FaceId -> State (Mesh a) Face
 getFace f = do
   faces <- gets _meshFaces
   maybe bug return (M.lookup f faces)
-  where bug = error $ "Can't find face with id " ++ (show f)
+  where bug = error $ "Can't find face with id " ++ show f
 
 
 buildMesh :: State (Mesh a) b -> Mesh a
@@ -585,7 +585,7 @@ smoothVertex steiner = do
     sortVertices self = sortOn (dirV self)
     -- Direction from south of 'a', to 'a', to 'b'.
     dir :: V2 Double -> V2 Double -> Double
-    dir a b = (atan2 (crossZ (V2 0 1) (b - a)) (dot (V2 0 1) (b - a)))
+    dir a b = atan2 (crossZ (V2 0 1) (b - a)) (dot (V2 0 1) (b - a))
     dirV :: V2 Double -> Vertex (V2 Double) -> Double
     dirV a v = dir a (_vertexPosition v)
 
@@ -631,7 +631,7 @@ isValidLocation origin edges newLoc =
     <  minAngle newLoc edges
  where
   dir :: V2 Double -> V2 Double -> Double
-  dir a b = (atan2 (crossZ (V2 0 1) (b - a)) (dot (V2 0 1) (b - a)))
+  dir a b = atan2 (crossZ (V2 0 1) (b - a)) (dot (V2 0 1) (b - a))
 
 isCCW :: (Ord a, Num a) => V2 a -> V2 a -> V2 a -> Bool
 isCCW a b c = sum [fn a b, fn b c, fn c a] < 0
@@ -754,7 +754,7 @@ splitInternalEdge eid m = evalState worker m
             , faceMinAngle f5 mAfter
             , faceMinAngle f6 mAfter ]
       return ()
-      if (afterAng < beforeAng)
+      if afterAng < beforeAng
         then return Nothing
         else return (Just mAfter)
 
@@ -795,7 +795,7 @@ splitOuterEdge eid m = evalState worker m
       let afterAng = minimum
             [ faceMinAngle f2 mAfter
             , faceMinAngle f3 mAfter ]
-      if (afterAng < beforeAng)
+      if afterAng < beforeAng
         then return Nothing
         else return (Just mAfter)
 

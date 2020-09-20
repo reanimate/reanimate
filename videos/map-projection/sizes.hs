@@ -124,7 +124,7 @@ mainScene = seq equirectangular $ -- takeA 10 $ dropA 21 $
                 mkImage screenWidth screenHeight imgFile
               , withStrokeWidth (fromToS 0 (defaultStrokeWidth*0.3) t) $
                 lowerTransformations $ setPos $ scale orthoScale $
-                  (proj (orthoP lonlat))
+                  proj (orthoP lonlat)
               ]
           -- destroySprite region1Shadow
           fork $ tweenVar move 1 $ \v -> fromToS v 1 . curveS 2
@@ -271,8 +271,8 @@ fetchCountry :: Projection -> (Map String Value -> SVG -> Maybe SVG) -> SVG
 fetchCountry p checker =
     lowerTransformations $
     scaleXY
-      (screenWidth)
-      (screenHeight)
+      screenWidth
+      screenHeight
      $
     translate (-1/2) (-1/2) $
 
@@ -361,8 +361,8 @@ grid :: Projection -> SVG
 grid p =
   lowerTransformations $
   scaleXY
-    (screenWidth)
-    (screenHeight)
+    screenWidth
+    screenHeight
    $
   translate (-1/2) (-1/2) $
 
@@ -387,11 +387,11 @@ landGeo = loadFeatureCollection "land.geojson"
 gridLines :: Int -> Int -> SVG
 gridLines latLines lonLines = mkGroup $ map mkLinePath $
     map longitudeLine (stepper (-halfPi) halfPi (lonLines+1)) ++
-    map latitudeLine (stepper (-pi) pi (latLines))
+    map latitudeLine (stepper (-pi) pi latLines)
   where
     segments = 100
     stepper from to nMax =
-      [ fromToS from to (fromIntegral n / fromIntegral (nMax))
+      [ fromToS from to (fromIntegral n / fromIntegral nMax)
       | n <- [0 .. nMax-1] ]
     maxLat = halfPi -- atan (sinh pi)
     latitudeLine lam =

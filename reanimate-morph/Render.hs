@@ -65,7 +65,7 @@ import           Reanimate.Svg
 --     [ withFillColor "grey" $ polygonShape a
 --     , withFillColor "grey" $ polygonNumDots a
 --     ]
---   newSpriteSVG $ translate (3) 0 $ mkGroup
+--   newSpriteSVG $ translate 3 0 $ mkGroup
 --     [ withFillColor "grey" $ polygonShape b
 --     , withFillColor "grey" $ polygonNumDots b
 --     ]
@@ -75,7 +75,7 @@ import           Reanimate.Svg
 --       translate (-3) 0 $ withStrokeColor "white" $ withStrokeWidth (defaultStrokeWidth*0.2) $
 --       withFillOpacity 0 $ polygonShape l
 --     fork $ play $ staticFrame 1 $
---       translate (3) 0 $ withStrokeColor "white" $ withStrokeWidth (defaultStrokeWidth*0.2) $
+--       translate 3 0 $ withStrokeColor "white" $ withStrokeWidth (defaultStrokeWidth*0.2) $
 --       withFillOpacity 0 $ polygonShape r
 
 -- drawWindow :: Polygon -> SVG

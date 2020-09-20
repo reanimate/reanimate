@@ -270,7 +270,7 @@ newBackend = do
           now <- getCurrentTime
           emptyQueue <- isEmptyMVar queue
           let timeLimit = if emptyQueue then totalTimeLimitLong else totalTimeLimitShort
-          if (diffUTCTime now startTime < timeLimit)
+          if diffUTCTime now startTime < timeLimit
             then action
             else do
               renderWarning req "Render timed out"

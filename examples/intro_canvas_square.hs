@@ -36,10 +36,10 @@ main = reanimate $ mapA squareViewBox $ scene $ do
         wait 1
   moveDot (V2 0 1)     (V2 2 1)
   moveDot (V2 (-1) 0)  (V2 (-1) 1.5)
-  moveDot (V2 (0) 0)   (V2 (-2) (-3))
-  moveDot (V2 (0) 0)   (V2 (2.5) (-1))
-  moveDot (V2 (3) 1.5) (V2 1.5 1)
-  moveDot (V2 (0) 0)   (V2 0 0)
+  moveDot (V2 0 0)   (V2 (-2) (-3))
+  moveDot (V2 0 0)   (V2 2.5 (-1))
+  moveDot (V2 3 1.5) (V2 1.5 1)
+  moveDot (V2 0 0)   (V2 0 0)
 
 squareViewBox :: SVG -> SVG
 squareViewBox = withViewBox (-4, -4, 8, 8)
@@ -95,12 +95,12 @@ grid = withStrokeColor "grey" $ withStrokeWidth (defaultStrokeWidth * 0.5) $ mkG
   [ mkGroup
     [ translate
           0
-          (i / (screenHeight) * screenHeight - screenHeight / 2 - screenHeight / 18)
+          (i / screenHeight * screenHeight - screenHeight / 2 - screenHeight / 18)
         $ mkLine (-screenWidth, 0) (screenWidth, 0)
     | i <- [0 .. screenHeight]
     ]
   , mkGroup
-    [ translate (i / (screenWidth) * screenWidth - screenWidth / 2) 0
+    [ translate (i / screenWidth * screenWidth - screenWidth / 2) 0
         $ mkLine (0, -screenHeight) (0, screenHeight)
     | i <- [0 .. screenWidth]
     ]

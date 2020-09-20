@@ -263,16 +263,16 @@ introSVG = scene $ do
         wait 1
         spriteZ sp 0
   -- SVG
-  (svgAt, svgT, svgS) <- mkFeatSprite (-5.5) (1.5) featSVG
+  (svgAt, svgT, svgS) <- mkFeatSprite (-5.5) 1.5 featSVG
   fork $ tweenFeat svgS svgAt svgT svgHighlight svgHighlightDur
   -- LaTeX
-  (latexAt, latexT, latexS) <- mkFeatSprite (5.5) (1.5) featLaTeX
+  (latexAt, latexT, latexS) <- mkFeatSprite 5.5 1.5 featLaTeX
   fork $ tweenFeat latexS latexAt latexT latexHighlight latexHighlightDur
   -- Tracing
   (traceAt, traceT, traceS) <- mkFeatSprite (-5.5) (-2.5) featWireSphere
   fork $ tweenFeat traceS traceAt traceT traceHighlight traceHighlightDur
   -- Raytracing
-  (rayAt, rayT, rayS) <- mkFeatSprite (5.5) (-2.5) feat3D
+  (rayAt, rayT, rayS) <- mkFeatSprite 5.5 (-2.5) feat3D
   fork $ tweenFeat rayS rayAt rayT rayHighlight rayHighlightDur
   -- wait
   wait $ rayHighlight + rayHighlightDur + 2 + 10

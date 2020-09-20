@@ -48,7 +48,7 @@ main = reanimate $
         withStrokeWidth 0 $ translate (-4) 4 $
         center $ latex "linear"
       _ <- newSpriteSVG $
-        withStrokeWidth 0 $ translate (4) 4 $
+        withStrokeWidth 0 $ translate 4 4 $
         center $ latex "rotational"
       originVar <- newVar (0.5, 0.5)
 
@@ -79,7 +79,7 @@ main = reanimate $
       _ <- newSprite $ do
             origin <- unVar originVar
             pure $
-              translate (4) (-0.5) $
+              translate 4 (-0.5) $
               genTrails (map (rotationalTrajectory origin) [(spike1, spike2)])
       return ()
     showPair originVar from to =
@@ -99,7 +99,7 @@ main = reanimate $
                 originDst = polygonOrigin to origin
                 V2 originX originY = lerp localTime originDst originSrc
             in
-            translate (4) (-0.5) $ mkGroup
+            translate 4 (-0.5) $ mkGroup
             [ withFillColor "cyan" $
               morph myMorph (polygonShape from) (polygonShape to) localTime
             , withFillColor "red" $ translate originX originY $
@@ -108,7 +108,7 @@ main = reanimate $
         wait 2
         destroySprite s
 
-genTrails :: [(Double -> Polygon)] -> SVG
+genTrails :: [Double -> Polygon] -> SVG
 genTrails plotters =
     withFillOpacity 0 $
     withStrokeWidth (defaultStrokeWidth*0.5) $
