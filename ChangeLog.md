@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and the
 project adheres to the [Haskell Package Versioning
 Policy (PVP)](https://pvp.haskell.org)
 
+## 1.0.0.0 -- 2020-09-20
+
+### Changed
+
+ * Objects: Use Linear.V2 instead of tuples.
+ * Reanimate.Scene.sceneAnimation -> Reanimate.Scene.scene
+
+### Other/Non-visible
+
+ * Improved object documentation.
+ * CI stability improvements.
+ * Add interactive tutorial.
+ * Minor playground improvements.
+
 ## 0.5.0.0 -- 2020-09-09
 
 ### Added
@@ -14,7 +28,7 @@ Policy (PVP)](https://pvp.haskell.org)
 
 ### Changed
 
-* Improve efficiency of time variables (thanks to ).
+* Improve efficiency of time variables (thanks to Shaurya Gupta).
 * Major refactoring of SVG interface.
 * Haddock improvements.
 * Improve consistency of object bounding-box calculations.
