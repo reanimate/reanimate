@@ -17,9 +17,9 @@ import           System.Random
 import "random-shuffle" System.Random.Shuffle
 
 main :: IO ()
-main = reanimate $ parA bg latexExample
+main = reanimate $ addStatic bg latexExample
   where
-    bg = animate $ const $ mkBackgroundPixel (PixelRGBA8 252 252 252 0xFF)
+    bg = mkBackgroundPixel (PixelRGBA8 252 252 252 0xFF)
 
 latexExample :: Animation
 latexExample = scene $ do
@@ -29,11 +29,11 @@ latexExample = scene $ do
       newSpriteSVG $ fn elt
     -- Yoink each glyph
     forM_ (reverse sprites) $ \sprite -> do
-      spriteE sprite (overBeginning 1 $ aroundCenterE $ highlightE)
+      spriteE sprite (overBeginning 1 $ aroundCenterE highlightE)
       wait 0.5
     -- Flash glyphs randomly with color
     forM_ (shuffleList (sprites++sprites)) $ \sprite -> do
-      spriteE sprite (overBeginning 0.5 $ aroundCenterE $ flashE)
+      spriteE sprite (overBeginning 0.5 $ aroundCenterE flashE)
       wait 0.1
     wait 0.5
     mapM_ destroySprite sprites
@@ -80,7 +80,7 @@ drawAnimation' mbSeed fillDur step svg = scene $ do
             _            -> defaultStrokeWidth
     fork $ do
       wait (n*step)
-      play $ mapA fn $ (animate (\t -> withFillOpacity 0 $ partialSvg t tree)
+      play $ mapA fn (animate (\t -> withFillOpacity 0 $ partialSvg t tree)
         & applyE (overEnding fillDur $ fadeLineOutE sWidth))
     fork $ do
       wait (n*step+(1-fillDur))

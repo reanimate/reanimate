@@ -116,7 +116,7 @@ main = forever $ do
         "latex is missing"
       assertIO (findExecutable "xelatex") (/=Nothing)
         "xelatex is missing"
-      exitWith ExitSuccess
+      exitSuccess
     [] -> do
       tok <- getEnv "DISCORD_TOKEN"
       T.putStrLn =<< runDiscord def
@@ -168,7 +168,6 @@ eventHandler fastGhci slowGhci event = case event of
             --       }
             -- void $ restCall (R.CreateMessageEmbed (messageChannel m) "video.mp4" embed)
             void $ restCall (R.DeleteOwnReaction (messageChannel m, messageId m) "eyes")
-            return ()
           Left err -> do
             liftIO $ putStrLn "Video failed!"
             Right dm <- restCall (R.CreateDM (userId $ messageAuthor m))

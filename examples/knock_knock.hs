@@ -58,4 +58,4 @@ placeBelow a b = do
     oTopY .~ bBot
 
 newLaTeX :: [Text] -> Scene s [Object s SVG]
-newLaTeX chunks = mapM newObject $ map (translate (-4) 0) $ latexChunks chunks
+newLaTeX chunks = mapM (newObject . translate (-4) 0) $ latexChunks chunks

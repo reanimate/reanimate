@@ -23,7 +23,7 @@ import "random-shuffle" System.Random.Shuffle
 
 
 main :: IO ()
-main = reanimate $ parA bg $ scene $ do
+main = reanimate $ addStatic bg $ scene $ do
     xRot <- newVar (-30)
     yRot <- newVar 180
     zRot <- newVar 0
@@ -46,7 +46,7 @@ main = reanimate $ parA bg $ scene $ do
     wait tDuration
     wait 2
   where
-    bg = animate $ const $ mkBackgroundPixel $ PixelRGBA8 252 252 252 0xFF
+    bg = mkBackgroundPixel $ PixelRGBA8 252 252 252 0xFF
 
 texture :: Double -> SVG
 texture t = mkGroup
@@ -103,8 +103,7 @@ checker w h =
   withStrokeColor "lightblue" $
   withStrokeWidth (defaultStrokeWidth/2) $
   mkGroup
-  [ withStrokeWidth 0 $
-    withFillOpacity 0.8 $ mkBackground "white"
+  [ withFillOpacity 0.8 $ mkBackground "white"
   , mkGroup
     [ translate (stepX*x-offsetX + stepX/2) 0 $
       mkLine (0, -screenHeight/2*0.9) (0, screenHeight/2*0.9)
@@ -138,11 +137,11 @@ latexExample = scene $ do
       newSpriteSVG $ fn elt
     -- Yoink each glyph
     forM_ (reverse sprites) $ \sprite -> do
-      spriteE sprite (overBeginning 1 $ aroundCenterE $ highlightE)
+      spriteE sprite (overBeginning 1 $ aroundCenterE highlightE)
       wait 0.5
     -- Flash glyphs randomly with color
     forM_ (shuffleList (sprites++sprites)) $ \sprite -> do
-      spriteE sprite (overBeginning 0.5 $ aroundCenterE $ flashE)
+      spriteE sprite (overBeginning 0.5 $ aroundCenterE flashE)
       wait 0.1
     wait 0.5
     mapM_ destroySprite sprites
@@ -189,7 +188,7 @@ drawAnimation' mbSeed fillDur step svg = scene $ do
             _            -> defaultStrokeWidth
     fork $ do
       wait (n*step)
-      play $ mapA fn $ (animate (\t -> withFillOpacity 0 $ partialSvg t tree)
+      play $ mapA fn (animate (\t -> withFillOpacity 0 $ partialSvg t tree)
         & applyE (overEnding fillDur $ fadeLineOutE sWidth))
     fork $ do
       wait (n*step+(1-fillDur))

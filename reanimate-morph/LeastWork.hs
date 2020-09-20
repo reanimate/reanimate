@@ -260,9 +260,9 @@ leastWork'' stretchCosts bendCosts src dst srcV dstV srcDist dstDist = runST $ d
             when cond $ do
               unsafeIOToST $ hPutStrLn stderr $ "West:  " ++ show (i-1-prevWest, i-1, i)
               unsafeIOToST $ hPutStrLn stderr $ "West:  " ++ show (j-prevNorth, j, j)
-              unsafeIOToST $ hPutStrLn stderr $ "bWork: " ++ show (bWork)
-              unsafeIOToST $ hPutStrLn stderr $ "len:    " ++ show (len)
-              unsafeIOToST $ hPutStrLn stderr $ "sWork:  " ++ show (sWork)
+              unsafeIOToST $ hPutStrLn stderr $ "bWork: " ++ show bWork
+              unsafeIOToST $ hPutStrLn stderr $ "len:    " ++ show len
+              unsafeIOToST $ hPutStrLn stderr $ "sWork:  " ++ show sWork
             return (prevWork + sWork + bWork + if prevWest==0&&prevNorth==1 then 10000 else 0)
           w1 <- if j==0 then return 0 else do
             prevWork <- readArray work (i,j-1)
@@ -294,9 +294,9 @@ leastWork'' stretchCosts bendCosts src dst srcV dstV srcDist dstDist = runST $ d
             when cond $ do
               unsafeIOToST $ hPutStrLn stderr $ "North:  " ++ show (i-prevWest, i, i)
               unsafeIOToST $ hPutStrLn stderr $ "North:  " ++ show (j-1-prevNorth, j-1, j)
-              unsafeIOToST $ hPutStrLn stderr $ "bWork:  " ++ show (bWork)
-              unsafeIOToST $ hPutStrLn stderr $ "len:    " ++ show (len)
-              unsafeIOToST $ hPutStrLn stderr $ "sWork:  " ++ show (sWork)
+              unsafeIOToST $ hPutStrLn stderr $ "bWork:  " ++ show bWork
+              unsafeIOToST $ hPutStrLn stderr $ "len:    " ++ show len
+              unsafeIOToST $ hPutStrLn stderr $ "sWork:  " ++ show sWork
             return (prevWork + sWork + bWork + if prevWest==1&&prevNorth==0 then 10000 else 0)
           w2 <- if j==0 || i==0 then return 0 else do
             prevWork <- readArray work (i-1,j-1)
@@ -333,7 +333,7 @@ leastWork'' stretchCosts bendCosts src dst srcV dstV srcDist dstDist = runST $ d
             when cond $ do
               unsafeIOToST $ hPutStrLn stderr $ "Diag:  " ++ show (i-1-prevWest, i-1, i)
               unsafeIOToST $ hPutStrLn stderr $ "Diag:  " ++ show (j-1-prevNorth, j-1, j)
-              unsafeIOToST $ hPutStrLn stderr $ "bWork: " ++ show (bWork)
+              unsafeIOToST $ hPutStrLn stderr $ "bWork: " ++ show bWork
               -- unsafeIOToST $ hPutStrLn stderr $ "bWork': " ++ show (bWork')
             return (prevWork + sWork + bWork)
           let goNorth = do
@@ -389,7 +389,7 @@ leastWork'' stretchCosts bendCosts src dst srcV dstV srcDist dstDist = runST $ d
           -- when (i==14) $
           --   unsafeIOToST $ hPrint stderr (i,j)
           let acc' = (i,j):acc
-          if (i==0 && j==0)
+          if i==0 && j==0
             then return acc'
             else do
               isNorth <- (==1) <$> readArray north (i,j)

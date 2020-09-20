@@ -61,7 +61,7 @@ immutable.
 -}
 
 main :: IO ()
-main = reanimate $ animate (const $ mkBackground "black") `parA`
+main = reanimate $ addStatic (mkBackground "black")
   -- animate $ const $ checker 10 10
   -- rotateSphere
   -- rotateWireSphere
@@ -109,7 +109,7 @@ sphereIntro = scene $ do
     partialSvg t $
     withFillOpacity 0 $
     rotate 180 $
-    pathify $
+    pathify
     circ
   -- playZ 1 $ pauseAtEnd 2 $ setDuration 1 $ animate $ \t ->
   --   withFillOpacity t $
@@ -120,25 +120,25 @@ sphereIntro = scene $ do
     let p = curveS 3 t in
     withFillOpacity p $
     translate (1*p) (2*p) $
-    scale (1-scaleFactor*p) $
+    scale (1-scaleFactor*p)
     circ
   fork $ adjustZ (+1) $ play $ pauseAtEnd 2 $ setDuration 1 $ animate $ \t ->
     let p = curveS 3 t in
     withFillOpacity p $
     translate (1*p) (-2*p) $
-    scale (1-scaleFactor*p) $
+    scale (1-scaleFactor*p)
     circ
   fork $ adjustZ (+1) $ play $ pauseAtEnd 2 $ setDuration 1 $ animate $ \t ->
     let p = curveS 3 t in
     withFillOpacity p $
     translate (5*p) (2*p) $
-    scale (1-scaleFactor*p) $
+    scale (1-scaleFactor*p)
     circ
   fork $ adjustZ (+1) $ play $ pauseAtEnd 2 $ setDuration 1 $ animate $ \t ->
     let p = curveS 3 t in
     withFillOpacity p $
     translate (5*p) (-2*p) $
-    scale (1-scaleFactor*p) $
+    scale (1-scaleFactor*p)
     circ
   where
     circ =
@@ -169,7 +169,7 @@ mkFeatSprite xPos yPos ani = do
   return (spriteAt, spriteTMod, sprite)
 
 featSVG :: Animation
-featSVG = animate $ const $ scale 0.4 $ svgLogo
+featSVG = animate $ const $ scale 0.4 svgLogo
 
 feat3D :: Animation
 feat3D = rotateSphere
@@ -211,10 +211,10 @@ fadeTransition :: Double -> Animation -> Animation -> Animation
 fadeTransition overlap a b =
   (a
   & pauseAtEnd overlap
-  & applyE (overEnding overlap $ fadeOutE)
+  & applyE (overEnding overlap fadeOutE)
   ) `seqA` (
   b
-  & applyE (overBeginning overlap $ fadeInE)
+  & applyE (overBeginning overlap fadeInE)
   )
 
 fadeTransitions :: Double -> [Animation] -> Animation
@@ -263,16 +263,16 @@ introSVG = scene $ do
         wait 1
         spriteZ sp 0
   -- SVG
-  (svgAt, svgT, svgS) <- mkFeatSprite (-5.5) (1.5) featSVG
+  (svgAt, svgT, svgS) <- mkFeatSprite (-5.5) 1.5 featSVG
   fork $ tweenFeat svgS svgAt svgT svgHighlight svgHighlightDur
   -- LaTeX
-  (latexAt, latexT, latexS) <- mkFeatSprite (5.5) (1.5) featLaTeX
+  (latexAt, latexT, latexS) <- mkFeatSprite 5.5 1.5 featLaTeX
   fork $ tweenFeat latexS latexAt latexT latexHighlight latexHighlightDur
   -- Tracing
   (traceAt, traceT, traceS) <- mkFeatSprite (-5.5) (-2.5) featWireSphere
   fork $ tweenFeat traceS traceAt traceT traceHighlight traceHighlightDur
   -- Raytracing
-  (rayAt, rayT, rayS) <- mkFeatSprite (5.5) (-2.5) feat3D
+  (rayAt, rayT, rayS) <- mkFeatSprite 5.5 (-2.5) feat3D
   fork $ tweenFeat rayS rayAt rayT rayHighlight rayHighlightDur
   -- wait
   wait $ rayHighlight + rayHighlightDur + 2 + 10
@@ -299,7 +299,7 @@ drawAnimation' fillDur step svg = scene $ do
             _            -> defaultStrokeWidth
     fork $ do
       wait (n*step)
-      play $ mapA fn $ (animate (\t -> withFillOpacity 0 $ partialSvg t tree)
+      play $ mapA fn (animate (\t -> withFillOpacity 0 $ partialSvg t tree)
         & applyE (overEnding fillDur $ fadeLineOutE sWidth))
     fork $ do
       wait (n*step+(1-fillDur))
@@ -407,8 +407,7 @@ checker w h =
   withStrokeColor "white" $
   withStrokeWidth 0.1 $
   mkGroup
-  [ withStrokeWidth 0 $
-    withFillOpacity 0.8 $ mkBackground "blue"
+  [ withFillOpacity 0.8 $ mkBackground "blue"
   , mkGroup
     [ translate (stepX*x-offsetX + stepX/2) 0 $
       mkLine (0, -screenHeight/2*0.9) (0, screenHeight/2*0.9)

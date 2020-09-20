@@ -28,7 +28,7 @@ main = reanimate $
     showPair (from:to:rest) =
       waitOn $ do
         toS <- newSpriteSVG $
-          translate (4) 0 to
+          translate 4 0 to
         spriteE toS $ overBeginning 0.2 fadeInE
         spriteE toS $ overEnding 0.2 fadeOutE
         m <- fork $ newSpriteA $ animate (morph linear from to)

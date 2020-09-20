@@ -19,13 +19,13 @@ transitionTime :: Double
 transitionTime = 0.5
 
 main :: IO ()
-main = reanimate $ bg `parA`
+main = reanimate $ addStatic bg $
     chainT transition
     [animateCircleR, animateCircleP, animateRectR, animateColor
     ,signalA (constantS 0) $ setDuration transitionTime animateCircleR]
   where
     transition = overlapT transitionTime fadeT
-    bg = animate $ const $ mkBackgroundPixel bgColor
+    bg = mkBackgroundPixel bgColor
 
 animateCircleR :: Animation
 animateCircleR = mkSegment "radius" $ \t -> mkCircle (t*2)

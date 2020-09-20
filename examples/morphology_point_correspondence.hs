@@ -1,7 +1,6 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ParallelListComp  #-}
 module Main(main) where
 
 import           Codec.Picture
@@ -45,7 +44,7 @@ main = reanimate $
       offset <- newVar 0
       slide <- newVar 0
       _ <- newSprite $ pl2 <$> unVar offset <*> unVar slide
-      _ <- newSpriteSVG $ pl1
+      _ <- newSpriteSVG pl1
       let slideLeft = do
             tweenVar slide 1 $ \v -> fromToS v 1 . curveS 4
             writeVar slide 0

@@ -19,12 +19,12 @@ drawLatex txt = do
       -- Fade outline
       play $ animate $ \t ->
         withFillOpacity 0 $
-        withStrokeWidth (defaultStrokeWidth*(1-t)) $
+        withStrokeWidth (defaultStrokeWidth*(1-t))
         svg
     wait 0.7
     -- Fill in letters
     play $ animate $ \t ->
-      withFillOpacity t $ withStrokeWidth 0 $
+      withFillOpacity t $ withStrokeWidth 0
       svg
     -- Hold static image and then fade out
     play $ staticFrame 2 (withStrokeWidth 0 svg)

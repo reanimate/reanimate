@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Animation where
 import Reanimate
 import Reanimate.Builtin.Documentation

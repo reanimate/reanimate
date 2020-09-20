@@ -11,5 +11,5 @@ main :: IO ()
 main = reanimate $ docEnv $ pauseAtEnd 1 $ signalT (curveS 2) slideUpT left right
   where
     left = drawCircle
-    right = staticFrame 1 (withFillOpacity 1 $ mkBackground "black") `parA`
+    right = staticFrame 1 (mkBackground "black") `parA`
             mapA (flipXAxis . withStrokeColor "white") drawCircle

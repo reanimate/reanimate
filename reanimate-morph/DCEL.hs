@@ -263,7 +263,7 @@ getVertex position = do
   case L.find comparingPosition (M.assocs vs) of
     Nothing     -> createVertex position
     Just (k, _) -> return k
-  where comparingPosition (_k, v) = (_vertexPosition v) == position
+  where comparingPosition (_k, v) = _vertexPosition v == position
 
 requireVertex :: VertexId -> MeshM a (Vertex a)
 requireVertex vid = do
@@ -280,7 +280,7 @@ getEdge e = do
   edges <- gets _meshEdges
   maybe (bug edges) return $ M.lookup e edges
     --return $ fromJust $ M.lookup e edges
-  where bug _edges = error $ "Can't find edge with id " ++ (show e)
+  where bug _edges = error $ "Can't find edge with id " ++ show e
 
 withEdge :: EdgeId -> (Edge -> State (Mesh a) ()) -> State (Mesh a) ()
 withEdge e f = f =<< getEdge e
@@ -360,7 +360,7 @@ getFace :: FaceId -> State (Mesh a) Face
 getFace f = do
   faces <- gets _meshFaces
   maybe bug return (M.lookup f faces)
-  where bug = error $ "Can't find face with id " ++ (show f)
+  where bug = error $ "Can't find face with id " ++ show f
 
 
 buildMesh :: State (Mesh a) b -> Mesh a
@@ -561,7 +561,7 @@ smoothVertex steiner = do
     let ps = V.fromList (map _vertexPosition vs')
         vs' = sortVertices self vs
         angleBased = angleSmooth self ps
-        laplacian  = sum ps ^/ (fromIntegral $ length ps) -- laplacian
+        laplacian  = sum ps ^/ fromIntegral (length ps) -- laplacian
     -- trace ("self: " ++ show self) $ return ()
     -- trace ("angleBased: " ++ show angleBased) $ return ()
     -- trace ("Edges: " ++ show (map _vertexId vs')) $ return ()
@@ -585,7 +585,7 @@ smoothVertex steiner = do
     sortVertices self = sortOn (dirV self)
     -- Direction from south of 'a', to 'a', to 'b'.
     dir :: V2 Double -> V2 Double -> Double
-    dir a b = (atan2 (crossZ (V2 0 1) (b - a)) (dot (V2 0 1) (b - a)))
+    dir a b = atan2 (crossZ (V2 0 1) (b - a)) (dot (V2 0 1) (b - a))
     dirV :: V2 Double -> Vertex (V2 Double) -> Double
     dirV a v = dir a (_vertexPosition v)
 
@@ -631,7 +631,7 @@ isValidLocation origin edges newLoc =
     <  minAngle newLoc edges
  where
   dir :: V2 Double -> V2 Double -> Double
-  dir a b = (atan2 (crossZ (V2 0 1) (b - a)) (dot (V2 0 1) (b - a)))
+  dir a b = atan2 (crossZ (V2 0 1) (b - a)) (dot (V2 0 1) (b - a))
 
 isCCW :: (Ord a, Num a) => V2 a -> V2 a -> V2 a -> Bool
 isCCW a b c = sum [fn a b, fn b c, fn c a] < 0
@@ -732,7 +732,7 @@ splitInternalEdges :: Mesh (V2 Double) -> Mesh (V2 Double) -> (Mesh (V2 Double),
 splitInternalEdges = applyCompatible splitInternalEdge internalEdges
 
 splitInternalEdge :: EdgeId -> Mesh (V2 Double) -> Maybe (Mesh (V2 Double))
-splitInternalEdge eid m = evalState worker m
+splitInternalEdge eid = evalState worker
   where
     edgeFaces edge = do
       twin <- getEdge (edge^.edgeTwin)
@@ -753,8 +753,7 @@ splitInternalEdge eid m = evalState worker m
             , faceMinAngle f4 mAfter
             , faceMinAngle f5 mAfter
             , faceMinAngle f6 mAfter ]
-      return ()
-      if (afterAng < beforeAng)
+      if afterAng < beforeAng
         then return Nothing
         else return (Just mAfter)
 
@@ -765,7 +764,7 @@ splitLongestEdge m1 m2 =
     longest = longestEdge m1 m2
 
 splitInternalEdgeForced :: EdgeId -> Mesh (V2 Double) -> Mesh (V2 Double)
-splitInternalEdgeForced eid m = execState worker m
+splitInternalEdgeForced eid = execState worker
   where
     worker = do
       edge <- getEdge eid
@@ -779,7 +778,7 @@ splitOuterEdges :: Mesh (V2 Double) -> Mesh (V2 Double) -> (Mesh (V2 Double), Me
 splitOuterEdges = applyCompatible splitOuterEdge outerEdges
 
 splitOuterEdge :: EdgeId -> Mesh (V2 Double) -> Maybe (Mesh (V2 Double))
-splitOuterEdge eid m = evalState worker m
+splitOuterEdge eid = evalState worker
   where
     worker = do
       edge <- getEdge eid
@@ -795,7 +794,7 @@ splitOuterEdge eid m = evalState worker m
       let afterAng = minimum
             [ faceMinAngle f2 mAfter
             , faceMinAngle f3 mAfter ]
-      if (afterAng < beforeAng)
+      if afterAng < beforeAng
         then return Nothing
         else return (Just mAfter)
 
@@ -880,5 +879,5 @@ renderMeshStats mesh = mkGroup
     angs = meshAngles mesh
     minAng = minimum angs
     meanAngle = L.sort angs !! (length angs `div` 2)
-    avgAngle = sum angs / (fromIntegral $ length angs)
+    avgAngle = sum angs / fromIntegral (length angs)
     maxAngle = maximum angs

@@ -16,9 +16,9 @@ import           Graphics.SvgTree (Tree)
 import           Reanimate
 
 main :: IO ()
-main = reanimate $ bg `parA` mainScene
+main = reanimate $ addStatic bg mainScene
   where
-    bg = animate $ const $ mkBackgroundPixel (PixelRGBA8 252 252 252 0xFF)
+    bg = mkBackgroundPixel (PixelRGBA8 252 252 252 0xFF)
 
 mainScene :: Animation
 mainScene = scene $ mdo
@@ -84,5 +84,5 @@ drawSVG :: Tree -> Animation
 drawSVG svg = animate $ \t ->
     withStrokeColor "black" $
     rotate (t*360) $
-    translate 0 radius $
+    translate 0 radius
     svg
