@@ -1,0 +1,86 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>{-|
+<span class="lineno">    2 </span>Module      : Reanimate.Builtin.Documentation
+<span class="lineno">    3 </span>Copyright   : Written by David Himmelstrup
+<span class="lineno">    4 </span>License     : Unlicense
+<span class="lineno">    5 </span>Maintainer  : lemmih@gmail.com
+<span class="lineno">    6 </span>Stability   : experimental
+<span class="lineno">    7 </span>Portability : POSIX
+<span class="lineno">    8 </span>
+<span class="lineno">    9 </span>This module contains convenience functions used in documention
+<span class="lineno">   10 </span>GIFs for a consistent look and feel.
+<span class="lineno">   11 </span>
+<span class="lineno">   12 </span>-}
+<span class="lineno">   13 </span>module Reanimate.Builtin.Documentation where
+<span class="lineno">   14 </span>
+<span class="lineno">   15 </span>import Reanimate.Animation
+<span class="lineno">   16 </span>import Reanimate.Svg
+<span class="lineno">   17 </span>import Reanimate.Raster
+<span class="lineno">   18 </span>import Reanimate.Constants
+<span class="lineno">   19 </span>import Codec.Picture
+<span class="lineno">   20 </span>
+<span class="lineno">   21 </span>-- | Default environment for API documentation GIFs.
+<span class="lineno">   22 </span>docEnv :: Animation -&gt; Animation
+<span class="lineno">   23 </span><span class="decl"><span class="istickedoff">docEnv = mapA $ \svg -&gt; mkGroup</span>
+<span class="lineno">   24 </span><span class="spaces">  </span><span class="istickedoff">[ mkBackground &quot;white&quot;</span>
+<span class="lineno">   25 </span><span class="spaces">  </span><span class="istickedoff">, withFillOpacity 0 $</span>
+<span class="lineno">   26 </span><span class="spaces">    </span><span class="istickedoff">withStrokeWidth 0.1 $</span>
+<span class="lineno">   27 </span><span class="spaces">    </span><span class="istickedoff">withStrokeColor &quot;black&quot; (mkGroup [svg]) ]</span></span>
+<span class="lineno">   28 </span>
+<span class="lineno">   29 </span>-- | &lt;&lt;docs/gifs/doc_drawBox.gif&gt;&gt;
+<span class="lineno">   30 </span>drawBox :: Animation
+<span class="lineno">   31 </span><span class="decl"><span class="istickedoff">drawBox = mkAnimation 2 $ \t -&gt;</span>
+<span class="lineno">   32 </span><span class="spaces">  </span><span class="istickedoff">partialSvg t $ pathify $</span>
+<span class="lineno">   33 </span><span class="spaces">  </span><span class="istickedoff">mkRect (screenWidth/2) (screenHeight/2)</span></span>
+<span class="lineno">   34 </span>
+<span class="lineno">   35 </span>-- | &lt;&lt;docs/gifs/doc_drawCircle.gif&gt;&gt;
+<span class="lineno">   36 </span>drawCircle :: Animation
+<span class="lineno">   37 </span><span class="decl"><span class="istickedoff">drawCircle = mkAnimation 2 $ \t -&gt;</span>
+<span class="lineno">   38 </span><span class="spaces">  </span><span class="istickedoff">partialSvg t $ pathify $</span>
+<span class="lineno">   39 </span><span class="spaces">  </span><span class="istickedoff">mkCircle (screenHeight/3)</span></span>
+<span class="lineno">   40 </span>
+<span class="lineno">   41 </span>-- | &lt;&lt;docs/gifs/doc_drawProgress.gif&gt;&gt;
+<span class="lineno">   42 </span>drawProgress :: Animation
+<span class="lineno">   43 </span><span class="decl"><span class="istickedoff">drawProgress = mkAnimation 2 $ \t -&gt;</span>
+<span class="lineno">   44 </span><span class="spaces">  </span><span class="istickedoff">mkGroup</span>
+<span class="lineno">   45 </span><span class="spaces">  </span><span class="istickedoff">[ mkLine (-screenWidth/2*widthP,0)</span>
+<span class="lineno">   46 </span><span class="spaces">           </span><span class="istickedoff">(screenWidth/2*widthP,0)</span>
+<span class="lineno">   47 </span><span class="spaces">  </span><span class="istickedoff">, translate (-screenWidth/2*widthP + screenWidth*widthP*t) 0 $</span>
+<span class="lineno">   48 </span><span class="spaces">    </span><span class="istickedoff">withFillOpacity 1 $ mkCircle 0.5 ]</span>
+<span class="lineno">   49 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">   50 </span><span class="spaces">    </span><span class="istickedoff">widthP = 0.8</span></span>
+<span class="lineno">   51 </span>
+<span class="lineno">   52 </span>-- | Render a full-screen view of a color-map.
+<span class="lineno">   53 </span>showColorMap :: (Double -&gt; PixelRGB8) -&gt; SVG
+<span class="lineno">   54 </span><span class="decl"><span class="istickedoff">showColorMap f = center $ scaleToSize screenWidth screenHeight $ embedImage img</span>
+<span class="lineno">   55 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">   56 </span><span class="spaces">    </span><span class="istickedoff">width = 256</span>
+<span class="lineno">   57 </span><span class="spaces">    </span><span class="istickedoff">height = 1</span>
+<span class="lineno">   58 </span><span class="spaces">    </span><span class="istickedoff">img = generateImage pixelRenderer width height</span>
+<span class="lineno">   59 </span><span class="spaces">    </span><span class="istickedoff">pixelRenderer x _y = f (fromIntegral x / fromIntegral (width-1))</span></span>
+<span class="lineno">   60 </span>
+<span class="lineno">   61 </span>-- | Default background color for videos on reanimate.rtfd.io
+<span class="lineno">   62 </span>rtfdBackgroundColor :: PixelRGBA8
+<span class="lineno">   63 </span><span class="decl"><span class="istickedoff">rtfdBackgroundColor = PixelRGBA8 252 252 252 0xFF</span></span>
+
+</pre>
+</body>
+</html>

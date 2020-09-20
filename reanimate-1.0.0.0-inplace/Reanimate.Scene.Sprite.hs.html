@@ -1,0 +1,439 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>{-# LANGUAGE ApplicativeDo #-}
+<span class="lineno">    2 </span>{-# LANGUAGE PatternSynonyms #-}
+<span class="lineno">    3 </span>{-# LANGUAGE RankNTypes #-}
+<span class="lineno">    4 </span>
+<span class="lineno">    5 </span>module Reanimate.Scene.Sprite where
+<span class="lineno">    6 </span>
+<span class="lineno">    7 </span>import Control.Monad (void)
+<span class="lineno">    8 </span>import Control.Monad.ST (ST)
+<span class="lineno">    9 </span>import Data.Bifunctor (Bifunctor (first))
+<span class="lineno">   10 </span>import Data.STRef (STRef, modifySTRef, newSTRef, readSTRef)
+<span class="lineno">   11 </span>import Graphics.SvgTree
+<span class="lineno">   12 </span>  ( pattern None,
+<span class="lineno">   13 </span>  )
+<span class="lineno">   14 </span>import Reanimate.Animation
+<span class="lineno">   15 </span>  ( Animation,
+<span class="lineno">   16 </span>    Duration,
+<span class="lineno">   17 </span>    SVG,
+<span class="lineno">   18 </span>    Sync (SyncStretch),
+<span class="lineno">   19 </span>    Time,
+<span class="lineno">   20 </span>    dropA,
+<span class="lineno">   21 </span>    duration,
+<span class="lineno">   22 </span>    getAnimationFrame,
+<span class="lineno">   23 </span>  )
+<span class="lineno">   24 </span>import Reanimate.Effect (Effect, delayE)
+<span class="lineno">   25 </span>import Reanimate.Scene.Core
+<span class="lineno">   26 </span>  ( Scene (M),
+<span class="lineno">   27 </span>    ZIndex,
+<span class="lineno">   28 </span>    addGen,
+<span class="lineno">   29 </span>    fork,
+<span class="lineno">   30 </span>    liftST,
+<span class="lineno">   31 </span>    queryNow,
+<span class="lineno">   32 </span>    scene,
+<span class="lineno">   33 </span>    wait,
+<span class="lineno">   34 </span>  )
+<span class="lineno">   35 </span>import Reanimate.Scene.Var (unpackVar, Var (..), newVar, readVar)
+<span class="lineno">   36 </span>import Reanimate.Transition (Transition, overlapT)
+<span class="lineno">   37 </span>
+<span class="lineno">   38 </span>-- | Create and render a variable. The rendering will be born at the current timestamp
+<span class="lineno">   39 </span>--   and will persist until the end of the scene.
+<span class="lineno">   40 </span>--
+<span class="lineno">   41 </span>--   Example:
+<span class="lineno">   42 </span>--
+<span class="lineno">   43 </span>-- @
+<span class="lineno">   44 </span>-- do var \&lt;- 'simpleVar' 'Reanimate.Svg.Constructors.mkCircle' 0
+<span class="lineno">   45 </span>--    'Reanimate.Scene.tweenVar' var 2 $ \\val -&gt; 'Reanimate.fromToS' val ('Reanimate.Constants.screenHeight'/2)
+<span class="lineno">   46 </span>-- @
+<span class="lineno">   47 </span>--
+<span class="lineno">   48 </span>--   &lt;&lt;docs/gifs/doc_simpleVar.gif&gt;&gt;
+<span class="lineno">   49 </span>simpleVar :: (a -&gt; SVG) -&gt; a -&gt; Scene s (Var s a)
+<span class="lineno">   50 </span><span class="decl"><span class="istickedoff">simpleVar render def = do</span>
+<span class="lineno">   51 </span><span class="spaces">  </span><span class="istickedoff">v &lt;- newVar def</span>
+<span class="lineno">   52 </span><span class="spaces">  </span><span class="istickedoff">_ &lt;- newSprite $ render &lt;$&gt; unVar v</span>
+<span class="lineno">   53 </span><span class="spaces">  </span><span class="istickedoff">return v</span></span>
+<span class="lineno">   54 </span>
+<span class="lineno">   55 </span>-- | Helper function for filtering variables.
+<span class="lineno">   56 </span>findVar :: (a -&gt; Bool) -&gt; [Var s a] -&gt; Scene s (Var s a)
+<span class="lineno">   57 </span><span class="decl"><span class="nottickedoff">findVar _cond [] = error &quot;Variable not found.&quot;</span>
+<span class="lineno">   58 </span><span class="spaces"></span><span class="nottickedoff">findVar cond (v : vs) = do</span>
+<span class="lineno">   59 </span><span class="spaces">  </span><span class="nottickedoff">val &lt;- readVar v</span>
+<span class="lineno">   60 </span><span class="spaces">  </span><span class="nottickedoff">if cond val then return v else findVar cond vs</span></span>
+<span class="lineno">   61 </span>
+<span class="lineno">   62 </span>-- | Play an animation once and then remove it. This advances the clock by the duration of the
+<span class="lineno">   63 </span>--   animation.
+<span class="lineno">   64 </span>--
+<span class="lineno">   65 </span>--   Example:
+<span class="lineno">   66 </span>--
+<span class="lineno">   67 </span>-- @
+<span class="lineno">   68 </span>-- do 'play' 'Reanimate.Builtin.Documentation.drawBox'
+<span class="lineno">   69 </span>--    'play' 'Reanimate.Builtin.Documentation.drawCircle'
+<span class="lineno">   70 </span>-- @
+<span class="lineno">   71 </span>--
+<span class="lineno">   72 </span>--   &lt;&lt;docs/gifs/doc_play.gif&gt;&gt;
+<span class="lineno">   73 </span>play :: Animation -&gt; Scene s ()
+<span class="lineno">   74 </span><span class="decl"><span class="istickedoff">play ani = newSpriteA ani &gt;&gt;= destroySprite</span></span>
+<span class="lineno">   75 </span>
+<span class="lineno">   76 </span>-- | Sprites are animations with a given time of birth as well as a time of death.
+<span class="lineno">   77 </span>--   They can be controlled using variables, tweening, and effects.
+<span class="lineno">   78 </span>data Sprite s = Sprite Time (STRef s (Duration, ST s (Duration -&gt; Time -&gt; SVG -&gt; (SVG, ZIndex))))
+<span class="lineno">   79 </span>
+<span class="lineno">   80 </span>-- | Sprite frame generator. Generates frames over time in a stateful environment.
+<span class="lineno">   81 </span>newtype Frame s a = Frame {<span class="istickedoff"><span class="decl"><span class="istickedoff">unFrame</span></span></span> :: ST s (Time -&gt; Duration -&gt; Time -&gt; a)}
+<span class="lineno">   82 </span>
+<span class="lineno">   83 </span>instance Functor (Frame s) where
+<span class="lineno">   84 </span>  <span class="decl"><span class="istickedoff">fmap fn (Frame gen) = Frame $ do</span>
+<span class="lineno">   85 </span><span class="spaces">    </span><span class="istickedoff">m &lt;- gen</span>
+<span class="lineno">   86 </span><span class="spaces">    </span><span class="istickedoff">return (\real_t d t -&gt; fn $ m real_t <span class="nottickedoff">d</span> t)</span></span>
+<span class="lineno">   87 </span>
+<span class="lineno">   88 </span>instance Applicative (Frame s) where
+<span class="lineno">   89 </span>  <span class="decl"><span class="istickedoff">pure v = Frame $ return (\_ _ _ -&gt; v)</span></span>
+<span class="lineno">   90 </span>  <span class="decl"><span class="istickedoff">Frame f &lt;*&gt; Frame g = Frame $ do</span>
+<span class="lineno">   91 </span><span class="spaces">    </span><span class="istickedoff">m1 &lt;- f</span>
+<span class="lineno">   92 </span><span class="spaces">    </span><span class="istickedoff">m2 &lt;- g</span>
+<span class="lineno">   93 </span><span class="spaces">    </span><span class="istickedoff">return $ \real_t d t -&gt; m1 real_t <span class="nottickedoff">d</span> t (m2 real_t d <span class="nottickedoff">t</span>)</span></span>
+<span class="lineno">   94 </span>
+<span class="lineno">   95 </span>-- | Dereference a variable as a Sprite frame.
+<span class="lineno">   96 </span>--
+<span class="lineno">   97 </span>--   Example:
+<span class="lineno">   98 </span>--
+<span class="lineno">   99 </span>-- @
+<span class="lineno">  100 </span>-- do v \&lt;- 'newVar' 0
+<span class="lineno">  101 </span>--    'newSprite' $ 'Reanimate.Svg.Constructors.mkCircle' \&lt;$\&gt; 'unVar' v
+<span class="lineno">  102 </span>--    'Reanimate.Scene.tweenVar' v 1 $ \\val -&gt; 'Reanimate.fromToS' val 3
+<span class="lineno">  103 </span>--    'Reanimate.Scene.tweenVar' v 1 $ \\val -&gt; 'Reanimate.fromToS' val 0
+<span class="lineno">  104 </span>-- @
+<span class="lineno">  105 </span>--
+<span class="lineno">  106 </span>--   &lt;&lt;docs/gifs/doc_unVar.gif&gt;&gt;
+<span class="lineno">  107 </span>unVar :: Var s a -&gt; Frame s a
+<span class="lineno">  108 </span><span class="decl"><span class="istickedoff">unVar var = Frame $ do</span>
+<span class="lineno">  109 </span><span class="spaces">  </span><span class="istickedoff">fn &lt;- unpackVar var</span>
+<span class="lineno">  110 </span><span class="spaces">  </span><span class="istickedoff">return $ \real_t _d _t -&gt; fn real_t</span></span>
+<span class="lineno">  111 </span>
+<span class="lineno">  112 </span>-- | Dereference seconds since sprite birth.
+<span class="lineno">  113 </span>spriteT :: Frame s Time
+<span class="lineno">  114 </span><span class="decl"><span class="istickedoff">spriteT = Frame $ return (\_real_t _d t -&gt; t)</span></span>
+<span class="lineno">  115 </span>
+<span class="lineno">  116 </span>-- | Dereference duration of the current sprite.
+<span class="lineno">  117 </span>spriteDuration :: Frame s Duration
+<span class="lineno">  118 </span><span class="decl"><span class="istickedoff">spriteDuration = Frame $ return (\_real_t d _t -&gt; d)</span></span>
+<span class="lineno">  119 </span>
+<span class="lineno">  120 </span>-- | Create new sprite defined by a frame generator. Unless otherwise specified using
+<span class="lineno">  121 </span>--   'destroySprite', the sprite will die at the end of the scene.
+<span class="lineno">  122 </span>--
+<span class="lineno">  123 </span>--   Example:
+<span class="lineno">  124 </span>--
+<span class="lineno">  125 </span>-- @
+<span class="lineno">  126 </span>-- do 'newSprite' $ 'Reanimate.Svg.Constructors.mkCircle' \&lt;$\&gt; 'spriteT' -- Circle sprite where radius=time.
+<span class="lineno">  127 </span>--    'wait' 2
+<span class="lineno">  128 </span>-- @
+<span class="lineno">  129 </span>--
+<span class="lineno">  130 </span>--   &lt;&lt;docs/gifs/doc_newSprite.gif&gt;&gt;
+<span class="lineno">  131 </span>newSprite :: Frame s SVG -&gt; Scene s (Sprite s)
+<span class="lineno">  132 </span><span class="decl"><span class="istickedoff">newSprite render = do</span>
+<span class="lineno">  133 </span><span class="spaces">  </span><span class="istickedoff">now &lt;- queryNow</span>
+<span class="lineno">  134 </span><span class="spaces">  </span><span class="istickedoff">ref &lt;- liftST $ newSTRef (-1, return $ \_d _t svg -&gt; (svg, 0))</span>
+<span class="lineno">  135 </span><span class="spaces">  </span><span class="istickedoff">addGen $ do</span>
+<span class="lineno">  136 </span><span class="spaces">    </span><span class="istickedoff">fn &lt;- unFrame render</span>
+<span class="lineno">  137 </span><span class="spaces">    </span><span class="istickedoff">(spriteDur, spriteEffectGen) &lt;- readSTRef ref</span>
+<span class="lineno">  138 </span><span class="spaces">    </span><span class="istickedoff">spriteEffect &lt;- spriteEffectGen</span>
+<span class="lineno">  139 </span><span class="spaces">    </span><span class="istickedoff">return $ \d absT -&gt;</span>
+<span class="lineno">  140 </span><span class="spaces">      </span><span class="istickedoff">let relD = (if spriteDur &lt; 0 then d else spriteDur) - now</span>
+<span class="lineno">  141 </span><span class="spaces">          </span><span class="istickedoff">relT = absT - now</span>
+<span class="lineno">  142 </span><span class="spaces">          </span><span class="istickedoff">-- Sprite is live [now;duration[</span>
+<span class="lineno">  143 </span><span class="spaces">          </span><span class="istickedoff">-- If we're at the end of a scene, sprites</span>
+<span class="lineno">  144 </span><span class="spaces">          </span><span class="istickedoff">-- are live: [now;duration]</span>
+<span class="lineno">  145 </span><span class="spaces">          </span><span class="istickedoff">-- This behavior is difficult to get right. See the 'bug_*' examples for</span>
+<span class="lineno">  146 </span><span class="spaces">          </span><span class="istickedoff">-- automated tests.</span>
+<span class="lineno">  147 </span><span class="spaces">          </span><span class="istickedoff">inTimeSlice = relT &gt;= 0 &amp;&amp; relT &lt; relD</span>
+<span class="lineno">  148 </span><span class="spaces">          </span><span class="istickedoff">isLastFrame = d == absT &amp;&amp; relT == relD</span>
+<span class="lineno">  149 </span><span class="spaces">       </span><span class="istickedoff">in if inTimeSlice || isLastFrame</span>
+<span class="lineno">  150 </span><span class="spaces">            </span><span class="istickedoff">then spriteEffect relD relT (fn absT relD relT)</span>
+<span class="lineno">  151 </span><span class="spaces">            </span><span class="istickedoff">else (None, 0)</span>
+<span class="lineno">  152 </span><span class="spaces">  </span><span class="istickedoff">return $ Sprite now ref</span></span>
+<span class="lineno">  153 </span>
+<span class="lineno">  154 </span>-- | Create new sprite defined by a frame generator. The sprite will die at
+<span class="lineno">  155 </span>--   the end of the scene.
+<span class="lineno">  156 </span>newSprite_ :: Frame s SVG -&gt; Scene s ()
+<span class="lineno">  157 </span><span class="decl"><span class="istickedoff">newSprite_ = void . newSprite</span></span>
+<span class="lineno">  158 </span>
+<span class="lineno">  159 </span>-- | Create a new sprite from an animation. This advances the clock by the
+<span class="lineno">  160 </span>--   duration of the animation. Unless otherwise specified using
+<span class="lineno">  161 </span>--   'destroySprite', the sprite will die at the end of the scene.
+<span class="lineno">  162 </span>--
+<span class="lineno">  163 </span>--   Note: If the scene doesn't end immediately after the duration of the
+<span class="lineno">  164 </span>--   animation, the animation will be stretched to match the lifetime of the
+<span class="lineno">  165 </span>--   sprite. See 'newSpriteA'' and 'play'.
+<span class="lineno">  166 </span>--
+<span class="lineno">  167 </span>--   Example:
+<span class="lineno">  168 </span>--
+<span class="lineno">  169 </span>-- @
+<span class="lineno">  170 </span>-- do 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawCircle'
+<span class="lineno">  171 </span>--    'play' 'Reanimate.Builtin.Documentation.drawBox'
+<span class="lineno">  172 </span>--    'play' $ 'Reanimate.Animation.reverseA' 'Reanimate.Builtin.Documentation.drawBox'
+<span class="lineno">  173 </span>-- @
+<span class="lineno">  174 </span>--
+<span class="lineno">  175 </span>--   &lt;&lt;docs/gifs/doc_newSpriteA.gif&gt;&gt;
+<span class="lineno">  176 </span>newSpriteA :: Animation -&gt; Scene s (Sprite s)
+<span class="lineno">  177 </span><span class="decl"><span class="istickedoff">newSpriteA = newSpriteA' SyncStretch</span></span>
+<span class="lineno">  178 </span>
+<span class="lineno">  179 </span>-- | Create a new sprite from an animation and specify the synchronization policy. This advances
+<span class="lineno">  180 </span>--   the clock by the duration of the animation.
+<span class="lineno">  181 </span>--
+<span class="lineno">  182 </span>--   Example:
+<span class="lineno">  183 </span>--
+<span class="lineno">  184 </span>-- @
+<span class="lineno">  185 </span>-- do 'fork' $ 'newSpriteA'' 'Reanimate.Animation.SyncFreeze' 'Reanimate.Builtin.Documentation.drawCircle'
+<span class="lineno">  186 </span>--    'play' 'Reanimate.Builtin.Documentation.drawBox'
+<span class="lineno">  187 </span>--    'play' $ 'Reanimate.Animation.reverseA' 'Reanimate.Builtin.Documentation.drawBox'
+<span class="lineno">  188 </span>-- @
+<span class="lineno">  189 </span>--
+<span class="lineno">  190 </span>--   &lt;&lt;docs/gifs/doc_newSpriteA'.gif&gt;&gt;
+<span class="lineno">  191 </span>newSpriteA' :: Sync -&gt; Animation -&gt; Scene s (Sprite s)
+<span class="lineno">  192 </span><span class="decl"><span class="istickedoff">newSpriteA' sync animation =</span>
+<span class="lineno">  193 </span><span class="spaces">  </span><span class="istickedoff">newSprite (getAnimationFrame sync animation &lt;$&gt; spriteT &lt;*&gt; spriteDuration)</span>
+<span class="lineno">  194 </span><span class="spaces">    </span><span class="istickedoff">&lt;* wait (duration animation)</span></span>
+<span class="lineno">  195 </span>
+<span class="lineno">  196 </span>-- | Create a sprite from a static SVG image.
+<span class="lineno">  197 </span>--
+<span class="lineno">  198 </span>--   Example:
+<span class="lineno">  199 </span>--
+<span class="lineno">  200 </span>-- @
+<span class="lineno">  201 </span>-- do 'newSpriteSVG' $ 'Reanimate.Svg.Constructors.mkBackground' &quot;lightblue&quot;
+<span class="lineno">  202 </span>--    'play' 'Reanimate.Builtin.Documentation.drawCircle'
+<span class="lineno">  203 </span>-- @
+<span class="lineno">  204 </span>--
+<span class="lineno">  205 </span>--   &lt;&lt;docs/gifs/doc_newSpriteSVG.gif&gt;&gt;
+<span class="lineno">  206 </span>newSpriteSVG :: SVG -&gt; Scene s (Sprite s)
+<span class="lineno">  207 </span><span class="decl"><span class="istickedoff">newSpriteSVG = newSprite . pure</span></span>
+<span class="lineno">  208 </span>
+<span class="lineno">  209 </span>-- | Create a permanent sprite from a static SVG image. Same as `newSpriteSVG`
+<span class="lineno">  210 </span>--   but the sprite isn't returned and thus cannot be destroyed.
+<span class="lineno">  211 </span>newSpriteSVG_ :: SVG -&gt; Scene s ()
+<span class="lineno">  212 </span><span class="decl"><span class="istickedoff">newSpriteSVG_ = void . newSpriteSVG</span></span>
+<span class="lineno">  213 </span>
+<span class="lineno">  214 </span>-- | Change the rendering of a sprite using data from a variable. If data from several variables
+<span class="lineno">  215 </span>--   is needed, use a frame generator instead.
+<span class="lineno">  216 </span>--
+<span class="lineno">  217 </span>--   Example:
+<span class="lineno">  218 </span>--
+<span class="lineno">  219 </span>-- @
+<span class="lineno">  220 </span>-- do s \&lt;- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawBox'
+<span class="lineno">  221 </span>--    v \&lt;- 'newVar' 0
+<span class="lineno">  222 </span>--    'applyVar' v s 'Reanimate.Svg.Constructors.rotate'
+<span class="lineno">  223 </span>--    'Reanimate.Scene.tweenVar' v 2 $ \\val -&gt; 'Reanimate.fromToS' val 90
+<span class="lineno">  224 </span>-- @
+<span class="lineno">  225 </span>--
+<span class="lineno">  226 </span>--   &lt;&lt;docs/gifs/doc_applyVar.gif&gt;&gt;
+<span class="lineno">  227 </span>applyVar :: Var s a -&gt; Sprite s -&gt; (a -&gt; SVG -&gt; SVG) -&gt; Scene s ()
+<span class="lineno">  228 </span><span class="decl"><span class="istickedoff">applyVar var sprite fn = spriteModify sprite $ do</span>
+<span class="lineno">  229 </span><span class="spaces">  </span><span class="istickedoff">varFn &lt;- unVar var</span>
+<span class="lineno">  230 </span><span class="spaces">  </span><span class="istickedoff">return $ first $ fn varFn</span></span>
+<span class="lineno">  231 </span>
+<span class="lineno">  232 </span>-- | Destroy a sprite, preventing it from being rendered in the future of the scene.
+<span class="lineno">  233 </span>--   If 'destroySprite' is invoked multiple times, the earliest time-of-death is used.
+<span class="lineno">  234 </span>--
+<span class="lineno">  235 </span>--   Example:
+<span class="lineno">  236 </span>--
+<span class="lineno">  237 </span>-- @
+<span class="lineno">  238 </span>-- do s &lt;- 'newSpriteSVG' $ 'Reanimate.Svg.Constructors.withFillOpacity' 1 $ 'Reanimate.Svg.Constructors.mkCircle' 1
+<span class="lineno">  239 </span>--    'fork' $ 'wait' 1 \&gt;\&gt; 'destroySprite' s
+<span class="lineno">  240 </span>--    'play' 'Reanimate.Builtin.Documentation.drawBox'
+<span class="lineno">  241 </span>-- @
+<span class="lineno">  242 </span>--
+<span class="lineno">  243 </span>--   &lt;&lt;docs/gifs/doc_destroySprite.gif&gt;&gt;
+<span class="lineno">  244 </span>destroySprite :: Sprite s -&gt; Scene s ()
+<span class="lineno">  245 </span><span class="decl"><span class="istickedoff">destroySprite (Sprite _ ref) = do</span>
+<span class="lineno">  246 </span><span class="spaces">  </span><span class="istickedoff">now &lt;- queryNow</span>
+<span class="lineno">  247 </span><span class="spaces">  </span><span class="istickedoff">liftST $</span>
+<span class="lineno">  248 </span><span class="spaces">    </span><span class="istickedoff">modifySTRef ref $ \(ttl, render) -&gt;</span>
+<span class="lineno">  249 </span><span class="spaces">      </span><span class="istickedoff">(if <span class="tickonlytrue">ttl &lt; 0</span> then now else <span class="nottickedoff">min ttl now</span>, render)</span></span>
+<span class="lineno">  250 </span>
+<span class="lineno">  251 </span>-- | Low-level frame modifier.
+<span class="lineno">  252 </span>spriteModify :: Sprite s -&gt; Frame s ((SVG, ZIndex) -&gt; (SVG, ZIndex)) -&gt; Scene s ()
+<span class="lineno">  253 </span><span class="decl"><span class="istickedoff">spriteModify (Sprite born ref) modFn = liftST $</span>
+<span class="lineno">  254 </span><span class="spaces">  </span><span class="istickedoff">modifySTRef ref $ \(ttl, renderGen) -&gt;</span>
+<span class="lineno">  255 </span><span class="spaces">    </span><span class="istickedoff">( ttl,</span>
+<span class="lineno">  256 </span><span class="spaces">      </span><span class="istickedoff">do</span>
+<span class="lineno">  257 </span><span class="spaces">        </span><span class="istickedoff">render &lt;- renderGen</span>
+<span class="lineno">  258 </span><span class="spaces">        </span><span class="istickedoff">modRender &lt;- unFrame modFn</span>
+<span class="lineno">  259 </span><span class="spaces">        </span><span class="istickedoff">return $ \relD relT -&gt;</span>
+<span class="lineno">  260 </span><span class="spaces">          </span><span class="istickedoff">let absT = relT + born in modRender absT <span class="nottickedoff">relD</span> relT . render <span class="nottickedoff">relD</span> <span class="nottickedoff">relT</span></span>
+<span class="lineno">  261 </span><span class="spaces">    </span><span class="istickedoff">)</span></span>
+<span class="lineno">  262 </span>
+<span class="lineno">  263 </span>-- | Map the SVG output of a sprite.
+<span class="lineno">  264 </span>--
+<span class="lineno">  265 </span>--   Example:
+<span class="lineno">  266 </span>--
+<span class="lineno">  267 </span>-- @
+<span class="lineno">  268 </span>-- do s \&lt;- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawCircle'
+<span class="lineno">  269 </span>--    'wait' 1
+<span class="lineno">  270 </span>--    'spriteMap' s 'Reanimate.Svg.Constructors.flipYAxis'
+<span class="lineno">  271 </span>-- @
+<span class="lineno">  272 </span>--
+<span class="lineno">  273 </span>--   &lt;&lt;docs/gifs/doc_spriteMap.gif&gt;&gt;
+<span class="lineno">  274 </span>spriteMap :: Sprite s -&gt; (SVG -&gt; SVG) -&gt; Scene s ()
+<span class="lineno">  275 </span><span class="decl"><span class="istickedoff">spriteMap sprite@(Sprite born _) fn = do</span>
+<span class="lineno">  276 </span><span class="spaces">  </span><span class="istickedoff">now &lt;- queryNow</span>
+<span class="lineno">  277 </span><span class="spaces">  </span><span class="istickedoff">let tDelta = now - born</span>
+<span class="lineno">  278 </span><span class="spaces">  </span><span class="istickedoff">spriteModify sprite $ do</span>
+<span class="lineno">  279 </span><span class="spaces">    </span><span class="istickedoff">t &lt;- spriteT</span>
+<span class="lineno">  280 </span><span class="spaces">    </span><span class="istickedoff">return $ \(svg, zindex) -&gt; (if (t - tDelta) &lt; 0 then svg else fn svg, zindex)</span></span>
+<span class="lineno">  281 </span>
+<span class="lineno">  282 </span>-- | Modify the output of a sprite between @now@ and @now+duration@.
+<span class="lineno">  283 </span>--
+<span class="lineno">  284 </span>--   Example:
+<span class="lineno">  285 </span>--
+<span class="lineno">  286 </span>-- @
+<span class="lineno">  287 </span>-- do s \&lt;- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawCircle'
+<span class="lineno">  288 </span>--    'spriteTween' s 1 $ \\val -&gt; 'Reanimate.Svg.Constructors.translate' ('Reanimate.Constants.screenWidth'*0.3*val) 0
+<span class="lineno">  289 </span>-- @
+<span class="lineno">  290 </span>--
+<span class="lineno">  291 </span>--   &lt;&lt;docs/gifs/doc_spriteTween.gif&gt;&gt;
+<span class="lineno">  292 </span>spriteTween :: Sprite s -&gt; Duration -&gt; (Double -&gt; SVG -&gt; SVG) -&gt; Scene s ()
+<span class="lineno">  293 </span><span class="decl"><span class="istickedoff">spriteTween sprite@(Sprite born _) dur fn = do</span>
+<span class="lineno">  294 </span><span class="spaces">  </span><span class="istickedoff">now &lt;- queryNow</span>
+<span class="lineno">  295 </span><span class="spaces">  </span><span class="istickedoff">let tDelta = now - born</span>
+<span class="lineno">  296 </span><span class="spaces">  </span><span class="istickedoff">spriteModify sprite $ do</span>
+<span class="lineno">  297 </span><span class="spaces">    </span><span class="istickedoff">t &lt;- spriteT</span>
+<span class="lineno">  298 </span><span class="spaces">    </span><span class="istickedoff">return $ first $ \svg -&gt; fn (clamp 0 1 $ (t - tDelta) / dur) svg</span>
+<span class="lineno">  299 </span><span class="spaces">  </span><span class="istickedoff">wait dur</span>
+<span class="lineno">  300 </span><span class="spaces">  </span><span class="istickedoff">where</span>
+<span class="lineno">  301 </span><span class="spaces">    </span><span class="istickedoff">clamp a b v</span>
+<span class="lineno">  302 </span><span class="spaces">      </span><span class="istickedoff">| <span class="tickonlyfalse">v &lt; a</span> = <span class="nottickedoff">a</span></span>
+<span class="lineno">  303 </span><span class="spaces">      </span><span class="istickedoff">| v &gt; b = b</span>
+<span class="lineno">  304 </span><span class="spaces">      </span><span class="istickedoff">| <span class="tickonlytrue">otherwise</span> = v</span></span>
+<span class="lineno">  305 </span>
+<span class="lineno">  306 </span>-- | Create a new variable and apply it to a sprite.
+<span class="lineno">  307 </span>--
+<span class="lineno">  308 </span>--   Example:
+<span class="lineno">  309 </span>--
+<span class="lineno">  310 </span>-- @
+<span class="lineno">  311 </span>-- do s \&lt;- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawBox'
+<span class="lineno">  312 </span>--    v \&lt;- 'spriteVar' s 0 'Reanimate.Svg.Constructors.rotate'
+<span class="lineno">  313 </span>--    'Reanimate.Scene.tweenVar' v 2 $ \\val -&gt; 'Reanimate.fromToS' val 90
+<span class="lineno">  314 </span>-- @
+<span class="lineno">  315 </span>--
+<span class="lineno">  316 </span>--   &lt;&lt;docs/gifs/doc_spriteVar.gif&gt;&gt;
+<span class="lineno">  317 </span>spriteVar :: Sprite s -&gt; a -&gt; (a -&gt; SVG -&gt; SVG) -&gt; Scene s (Var s a)
+<span class="lineno">  318 </span><span class="decl"><span class="istickedoff">spriteVar sprite def fn = do</span>
+<span class="lineno">  319 </span><span class="spaces">  </span><span class="istickedoff">v &lt;- newVar def</span>
+<span class="lineno">  320 </span><span class="spaces">  </span><span class="istickedoff">applyVar v sprite fn</span>
+<span class="lineno">  321 </span><span class="spaces">  </span><span class="istickedoff">return v</span></span>
+<span class="lineno">  322 </span>
+<span class="lineno">  323 </span>-- | Apply an effect to a sprite.
+<span class="lineno">  324 </span>--
+<span class="lineno">  325 </span>--   Example:
+<span class="lineno">  326 </span>--
+<span class="lineno">  327 </span>-- @
+<span class="lineno">  328 </span>-- do s &lt;- 'fork' $ 'newSpriteA' 'Reanimate.Builtin.Documentation.drawCircle'
+<span class="lineno">  329 </span>--    'spriteE' s $ 'Reanimate.Effect.overBeginning' 1 'Reanimate.Effect.fadeInE'
+<span class="lineno">  330 </span>--    'spriteE' s $ 'Reanimate.Effect.overEnding' 0.5 'Reanimate.Effect.fadeOutE'
+<span class="lineno">  331 </span>-- @
+<span class="lineno">  332 </span>--
+<span class="lineno">  333 </span>--   &lt;&lt;docs/gifs/doc_spriteE.gif&gt;&gt;
+<span class="lineno">  334 </span>spriteE :: Sprite s -&gt; Effect -&gt; Scene s ()
+<span class="lineno">  335 </span><span class="decl"><span class="istickedoff">spriteE (Sprite born ref) effect = do</span>
+<span class="lineno">  336 </span><span class="spaces">  </span><span class="istickedoff">now &lt;- queryNow</span>
+<span class="lineno">  337 </span><span class="spaces">  </span><span class="istickedoff">liftST $</span>
+<span class="lineno">  338 </span><span class="spaces">    </span><span class="istickedoff">modifySTRef ref $ \(ttl, renderGen) -&gt;</span>
+<span class="lineno">  339 </span><span class="spaces">      </span><span class="istickedoff">( ttl,</span>
+<span class="lineno">  340 </span><span class="spaces">        </span><span class="istickedoff">do</span>
+<span class="lineno">  341 </span><span class="spaces">          </span><span class="istickedoff">render &lt;- renderGen</span>
+<span class="lineno">  342 </span><span class="spaces">          </span><span class="istickedoff">return $ \d t svg -&gt;</span>
+<span class="lineno">  343 </span><span class="spaces">            </span><span class="istickedoff">let (svg', z) = render d t svg</span>
+<span class="lineno">  344 </span><span class="spaces">             </span><span class="istickedoff">in (delayE (max 0 $ now - born) effect d t svg', z)</span>
+<span class="lineno">  345 </span><span class="spaces">      </span><span class="istickedoff">)</span></span>
+<span class="lineno">  346 </span>
+<span class="lineno">  347 </span>-- | Set new ZIndex of a sprite.
+<span class="lineno">  348 </span>--
+<span class="lineno">  349 </span>--   Example:
+<span class="lineno">  350 </span>--
+<span class="lineno">  351 </span>-- @
+<span class="lineno">  352 </span>-- do s1 \&lt;- 'newSpriteSVG' $ 'Reanimate.Svg.Constructors.withFillOpacity' 1 $ 'Reanimate.Svg.Constructors.withFillColor' &quot;blue&quot; $ 'Reanimate.Svg.Constructors.mkCircle' 3
+<span class="lineno">  353 </span>--    'newSpriteSVG' $ 'Reanimate.Svg.Constructors.withFillOpacity' 1 $ 'Reanimate.Svg.Constructors.withFillColor' &quot;red&quot; $ 'Reanimate.Svg.Constructors.mkRect' 8 3
+<span class="lineno">  354 </span>--    'wait' 1
+<span class="lineno">  355 </span>--    'spriteZ' s1 1
+<span class="lineno">  356 </span>--    'wait' 1
+<span class="lineno">  357 </span>-- @
+<span class="lineno">  358 </span>--
+<span class="lineno">  359 </span>--   &lt;&lt;docs/gifs/doc_spriteZ.gif&gt;&gt;
+<span class="lineno">  360 </span>spriteZ :: Sprite s -&gt; ZIndex -&gt; Scene s ()
+<span class="lineno">  361 </span><span class="decl"><span class="istickedoff">spriteZ (Sprite born ref) zindex = do</span>
+<span class="lineno">  362 </span><span class="spaces">  </span><span class="istickedoff">now &lt;- queryNow</span>
+<span class="lineno">  363 </span><span class="spaces">  </span><span class="istickedoff">liftST $</span>
+<span class="lineno">  364 </span><span class="spaces">    </span><span class="istickedoff">modifySTRef ref $ \(ttl, renderGen) -&gt;</span>
+<span class="lineno">  365 </span><span class="spaces">      </span><span class="istickedoff">( ttl,</span>
+<span class="lineno">  366 </span><span class="spaces">        </span><span class="istickedoff">do</span>
+<span class="lineno">  367 </span><span class="spaces">          </span><span class="istickedoff">render &lt;- renderGen</span>
+<span class="lineno">  368 </span><span class="spaces">          </span><span class="istickedoff">return $ \d t svg -&gt;</span>
+<span class="lineno">  369 </span><span class="spaces">            </span><span class="istickedoff">let (svg', z) = render <span class="nottickedoff">d</span> <span class="nottickedoff">t</span> svg in (svg', if t &lt; now - born then z else zindex)</span>
+<span class="lineno">  370 </span><span class="spaces">      </span><span class="istickedoff">)</span></span>
+<span class="lineno">  371 </span>
+<span class="lineno">  372 </span>-- | Destroy all local sprites at the end of a scene.
+<span class="lineno">  373 </span>--
+<span class="lineno">  374 </span>--   Example:
+<span class="lineno">  375 </span>--
+<span class="lineno">  376 </span>-- @
+<span class="lineno">  377 </span>-- do -- the rect lives through the entire 3s animation
+<span class="lineno">  378 </span>--    'newSpriteSVG_' $ 'Reanimate.Svg.Constructors.translate' (-3) 0 $ 'Reanimate.Svg.Constructors.mkRect' 4 4
+<span class="lineno">  379 </span>--    'wait' 1
+<span class="lineno">  380 </span>--    'spriteScope' $ do
+<span class="lineno">  381 </span>--      -- the circle only lives for 1 second.
+<span class="lineno">  382 </span>--      local \&lt;- 'newSpriteSVG' $ 'Reanimate.Svg.Constructors.translate' 3 0 $ 'Reanimate.Svg.Constructors.mkCircle' 2
+<span class="lineno">  383 </span>--      'spriteE' local $ 'Reanimate.Effect.overBeginning' 0.3 'Reanimate.Effect.fadeInE'
+<span class="lineno">  384 </span>--      'spriteE' local $ 'Reanimate.Effect.overEnding' 0.3 'Reanimate.Effect.fadeOutE'
+<span class="lineno">  385 </span>--      'wait' 1
+<span class="lineno">  386 </span>--    'wait' 1
+<span class="lineno">  387 </span>-- @
+<span class="lineno">  388 </span>--
+<span class="lineno">  389 </span>--   &lt;&lt;docs/gifs/doc_spriteScope.gif&gt;&gt;
+<span class="lineno">  390 </span>spriteScope :: Scene s a -&gt; Scene s a
+<span class="lineno">  391 </span><span class="decl"><span class="nottickedoff">spriteScope (M action) = M $ \t -&gt; do</span>
+<span class="lineno">  392 </span><span class="spaces">  </span><span class="nottickedoff">(a, s, p, gens) &lt;- action t</span>
+<span class="lineno">  393 </span><span class="spaces">  </span><span class="nottickedoff">return (a, s, p, map (genFn (t + max s p)) gens)</span>
+<span class="lineno">  394 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">  395 </span><span class="spaces">    </span><span class="nottickedoff">genFn maxT gen = do</span>
+<span class="lineno">  396 </span><span class="spaces">      </span><span class="nottickedoff">frameGen &lt;- gen</span>
+<span class="lineno">  397 </span><span class="spaces">      </span><span class="nottickedoff">return $ \_ t -&gt;</span>
+<span class="lineno">  398 </span><span class="spaces">        </span><span class="nottickedoff">if t &lt; maxT</span>
+<span class="lineno">  399 </span><span class="spaces">          </span><span class="nottickedoff">then frameGen maxT t</span>
+<span class="lineno">  400 </span><span class="spaces">          </span><span class="nottickedoff">else (None, 0)</span></span>
+<span class="lineno">  401 </span>
+<span class="lineno">  402 </span>asAnimation :: (forall s'. Scene s' a) -&gt; Scene s Animation
+<span class="lineno">  403 </span><span class="decl"><span class="nottickedoff">asAnimation s = do</span>
+<span class="lineno">  404 </span><span class="spaces">  </span><span class="nottickedoff">now &lt;- queryNow</span>
+<span class="lineno">  405 </span><span class="spaces">  </span><span class="nottickedoff">return $ dropA now (scene (wait now &gt;&gt; s))</span></span>
+<span class="lineno">  406 </span>
+<span class="lineno">  407 </span>-- | Apply a transformation with a given overlap. This makes sure
+<span class="lineno">  408 </span>--   to keep timestamps intact such that events can still be timed
+<span class="lineno">  409 </span>--   by transcripts.
+<span class="lineno">  410 </span>transitionO :: Transition -&gt; Double -&gt; (forall s'. Scene s' a) -&gt; (forall s'. Scene s' b) -&gt; Scene s ()
+<span class="lineno">  411 </span><span class="decl"><span class="nottickedoff">transitionO t o a b = do</span>
+<span class="lineno">  412 </span><span class="spaces">  </span><span class="nottickedoff">aA &lt;- asAnimation a</span>
+<span class="lineno">  413 </span><span class="spaces">  </span><span class="nottickedoff">bA &lt;- fork $ do</span>
+<span class="lineno">  414 </span><span class="spaces">    </span><span class="nottickedoff">wait (duration aA - o)</span>
+<span class="lineno">  415 </span><span class="spaces">    </span><span class="nottickedoff">asAnimation b</span>
+<span class="lineno">  416 </span><span class="spaces">  </span><span class="nottickedoff">play $ overlapT o t aA bA</span></span>
+
+</pre>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>{-# LANGUAGE DataKinds           #-}
+<span class="lineno">    2 </span>{-# LANGUAGE ScopedTypeVariables #-}
+<span class="lineno">    3 </span>{-# OPTIONS_HADDOCK hide #-}
+<span class="lineno">    4 </span>module Reanimate.Math.Triangulate
+<span class="lineno">    5 </span>  ( Triangulation
+<span class="lineno">    6 </span>  , edgesToTriangulation
+<span class="lineno">    7 </span>  , edgesToTriangulationM
+<span class="lineno">    8 </span>  , trianglesToTriangulation
+<span class="lineno">    9 </span>  , trianglesToTriangulationM
+<span class="lineno">   10 </span>  , triangulate
+<span class="lineno">   11 </span>  )
+<span class="lineno">   12 </span>where
+<span class="lineno">   13 </span>
+<span class="lineno">   14 </span>import           Algorithms.Geometry.PolygonTriangulation.Triangulate (triangulate')
+<span class="lineno">   15 </span>import           Algorithms.Geometry.PolygonTriangulation.Types
+<span class="lineno">   16 </span>import           Control.Lens
+<span class="lineno">   17 </span>import           Control.Monad
+<span class="lineno">   18 </span>import           Control.Monad.ST
+<span class="lineno">   19 </span>import           Data.Ext
+<span class="lineno">   20 </span>import           Data.Geometry.PlanarSubdivision                      (PolygonFaceData)
+<span class="lineno">   21 </span>import           Data.Geometry.Point
+<span class="lineno">   22 </span>import           Data.Geometry.Polygon
+<span class="lineno">   23 </span>import qualified Data.IntSet                                          as ISet
+<span class="lineno">   24 </span>import qualified Data.PlaneGraph as Geo
+<span class="lineno">   25 </span>import           Data.Proxy
+<span class="lineno">   26 </span>import qualified Data.Vector                                          as V
+<span class="lineno">   27 </span>import qualified Data.Vector.Mutable                                  as MV
+<span class="lineno">   28 </span>import           Linear.V2
+<span class="lineno">   29 </span>import           Reanimate.Math.Common
+<span class="lineno">   30 </span>-- Max edges: n-2
+<span class="lineno">   31 </span>-- Each edge is represented twice: 2n-4
+<span class="lineno">   32 </span>-- Flat structure:
+<span class="lineno">   33 </span>--   edges   :: V.Vector Int -- max length (2n-4)
+<span class="lineno">   34 </span>--   offsets :: V.Vector Int -- length n
+<span class="lineno">   35 </span>-- Combine the two vectors? &lt; n =&gt; offsets, &gt;= n =&gt; edges?
+<span class="lineno">   36 </span>type Triangulation = V.Vector [Int]
+<span class="lineno">   37 </span>
+<span class="lineno">   38 </span>-- FIXME: Move to Common or a Triangulation module
+<span class="lineno">   39 </span>-- O(n)
+<span class="lineno">   40 </span>edgesToTriangulation :: Int -&gt; [(Int, Int)] -&gt; Triangulation
+<span class="lineno">   41 </span><span class="decl"><span class="nottickedoff">edgesToTriangulation size edges = runST $ do</span>
+<span class="lineno">   42 </span><span class="spaces">  </span><span class="nottickedoff">v &lt;- edgesToTriangulationM size edges</span>
+<span class="lineno">   43 </span><span class="spaces">  </span><span class="nottickedoff">V.unsafeFreeze v</span></span>
+<span class="lineno">   44 </span>
+<span class="lineno">   45 </span>edgesToTriangulationM :: Int -&gt; [(Int, Int)] -&gt; ST s (V.MVector s [Int])
+<span class="lineno">   46 </span><span class="decl"><span class="nottickedoff">edgesToTriangulationM size edges = do</span>
+<span class="lineno">   47 </span><span class="spaces">  </span><span class="nottickedoff">v &lt;- MV.replicate size []</span>
+<span class="lineno">   48 </span><span class="spaces">  </span><span class="nottickedoff">forM_ edges $ \(e1, e2) -&gt; do</span>
+<span class="lineno">   49 </span><span class="spaces">    </span><span class="nottickedoff">MV.modify v (e1 :) e2</span>
+<span class="lineno">   50 </span><span class="spaces">    </span><span class="nottickedoff">MV.modify v (e2 :) e1</span>
+<span class="lineno">   51 </span><span class="spaces">  </span><span class="nottickedoff">forM_ [0 .. size - 1] $ \i -&gt; MV.modify v (ISet.toList . ISet.fromList) i</span>
+<span class="lineno">   52 </span><span class="spaces">  </span><span class="nottickedoff">return v</span></span>
+<span class="lineno">   53 </span>
+<span class="lineno">   54 </span>trianglesToTriangulation :: Int -&gt; V.Vector (Int, Int, Int) -&gt; Triangulation
+<span class="lineno">   55 </span><span class="decl"><span class="nottickedoff">trianglesToTriangulation size edges = runST $ do</span>
+<span class="lineno">   56 </span><span class="spaces">  </span><span class="nottickedoff">v &lt;- trianglesToTriangulationM size edges</span>
+<span class="lineno">   57 </span><span class="spaces">  </span><span class="nottickedoff">V.unsafeFreeze v</span></span>
+<span class="lineno">   58 </span>
+<span class="lineno">   59 </span>trianglesToTriangulationM
+<span class="lineno">   60 </span>  :: Int -&gt; V.Vector (Int, Int, Int) -&gt; ST s (V.MVector s [Int])
+<span class="lineno">   61 </span><span class="decl"><span class="nottickedoff">trianglesToTriangulationM size trigs = do</span>
+<span class="lineno">   62 </span><span class="spaces">  </span><span class="nottickedoff">v &lt;- MV.replicate size []</span>
+<span class="lineno">   63 </span><span class="spaces">  </span><span class="nottickedoff">forM_ (V.toList trigs) $ \(a, b, c) -&gt; do</span>
+<span class="lineno">   64 </span><span class="spaces">    </span><span class="nottickedoff">MV.modify v (\x -&gt; b : c : x) a</span>
+<span class="lineno">   65 </span><span class="spaces">    </span><span class="nottickedoff">MV.modify v (\x -&gt; a : c : x) b</span>
+<span class="lineno">   66 </span><span class="spaces">    </span><span class="nottickedoff">MV.modify v (\x -&gt; a : b : x) c</span>
+<span class="lineno">   67 </span><span class="spaces">  </span><span class="nottickedoff">forM_ [0 .. size - 1] $ \i -&gt; MV.modify v (ISet.toList . ISet.fromList) i</span>
+<span class="lineno">   68 </span><span class="spaces">  </span><span class="nottickedoff">return v</span></span>
+<span class="lineno">   69 </span>
+<span class="lineno">   70 </span>
+<span class="lineno">   71 </span>triangulate :: forall a. (Fractional a, Ord a) =&gt; Ring a -&gt; Triangulation
+<span class="lineno">   72 </span><span class="decl"><span class="nottickedoff">triangulate r = edgesToTriangulation (ringSize r) ds</span>
+<span class="lineno">   73 </span><span class="spaces">  </span><span class="nottickedoff">where</span>
+<span class="lineno">   74 </span><span class="spaces">    </span><span class="nottickedoff">ds :: [(Int,Int)]</span>
+<span class="lineno">   75 </span><span class="spaces">    </span><span class="nottickedoff">ds =</span>
+<span class="lineno">   76 </span><span class="spaces">      </span><span class="nottickedoff">[ (a^.Geo.vData, b^.Geo.vData)</span>
+<span class="lineno">   77 </span><span class="spaces">      </span><span class="nottickedoff">| (d, Diagonal) &lt;- V.toList (Geo.edges pg)</span>
+<span class="lineno">   78 </span><span class="spaces">      </span><span class="nottickedoff">, let (a,b) = Geo.endPointData d pg ]</span>
+<span class="lineno">   79 </span><span class="spaces">    </span><span class="nottickedoff">pg :: Geo.PlaneGraph () Int PolygonEdgeType PolygonFaceData a</span>
+<span class="lineno">   80 </span><span class="spaces">    </span><span class="nottickedoff">pg = triangulate' Proxy p</span>
+<span class="lineno">   81 </span><span class="spaces">    </span><span class="nottickedoff">p :: SimplePolygon Int a</span>
+<span class="lineno">   82 </span><span class="spaces">    </span><span class="nottickedoff">p = fromPoints $</span>
+<span class="lineno">   83 </span><span class="spaces">      </span><span class="nottickedoff">[ Point2 x y :+ n</span>
+<span class="lineno">   84 </span><span class="spaces">      </span><span class="nottickedoff">| (n,V2 x y) &lt;- zip [0..] (V.toList (ringUnpack r)) ]</span></span>
+<span class="lineno">   85 </span>    -- ringUnpack
+
+</pre>
+</body>
+</html>
