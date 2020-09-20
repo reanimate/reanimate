@@ -38,7 +38,11 @@ animation = scene $ do
     mkBackground "lightblue"
 </pre>
 
-API references: [scene](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Scene.html#v:scene), [newSpriteSVG_](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Scene.html#v:newSpriteSVG_), [mkBackground](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Svg-Constructors.html#v:mkBackground), [Animation](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate.html#t:Animation).
+API references:
+  [scene](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Scene.html#v:scene),
+  [newSpriteSVG_](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Scene.html#v:newSpriteSVG_),
+  [mkBackground](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Svg-Constructors.html#v:mkBackground),
+  [Animation](https://hackage.haskell.org/package/reanimate/docs/Reanimate.html#t:Animation).
 
 
 
@@ -82,7 +86,11 @@ env = addStatic bg
 bg :: SVG
 bg = mkBackground "lightblue"
 </pre>
-API references: [addStatic](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate.html#v:addStatic), [center](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Svg-Constructors.html#v:center), [scale](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Svg-Constructors.html#v:scale), [latexAlign](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate.html#v:latexAlign)
+API references:
+  [addStatic](https://hackage.haskell.org/package/reanimate/docs/Reanimate.html#v:addStatic),
+  [center](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Svg-Constructors.html#v:center),
+  [scale](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Svg-Constructors.html#v:scale),
+  [latexAlign](https://hackage.haskell.org/package/reanimate/docs/Reanimate.html#v:latexAlign).
 
 
 
@@ -146,7 +154,10 @@ env = addStatic bg
 bg :: SVG
 bg = mkBackground "lightblue"
 </pre>
-API references: [splitGlyphs](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Svg.html#v:splitGlyphs), [staticFrame](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate.html#v:staticFrame), [play](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate.html#v:play).
+API references:
+  [splitGlyphs](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Svg.html#v:splitGlyphs),
+  [staticFrame](https://hackage.haskell.org/package/reanimate/docs/Reanimate.html#v:staticFrame),
+  [play](https://hackage.haskell.org/package/reanimate/docs/Reanimate.html#v:play).
 
 
 
@@ -230,7 +241,19 @@ env = addStatic bg
 bg :: SVG
 bg = mkBackground "lightblue"
 </pre>
-API references: [oTweenS](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Scene.html#v:oTweenS), [oNew](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Scene.html#v:oNew), [oShow](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Scene.html#v:oShow), [oLeftX](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Scene.html#v:oLeftX), [oTopY](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Scene.html#v:oTopY), [oRightX](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Scene.html#v:oRightX), [oBottomY](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Scene.html#v:oBottomY), [oTranslate](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Scene.html#v:oTranslate), [screenBottom](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate.html#v:screenBottom), [screenLeft](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate.html#v:screenLeft), [screenRight](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate.html#v:screenRight), [screenTop](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate.html#v:screenTop).
+API references:
+  [oTweenS](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Scene.html#v:oTweenS),
+  [oNew](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Scene.html#v:oNew),
+  [oShow](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Scene.html#v:oShow),
+  [oLeftX](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Scene.html#v:oLeftX),
+  [oTopY](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Scene.html#v:oTopY),
+  [oRightX](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Scene.html#v:oRightX),
+  [oBottomY](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Scene.html#v:oBottomY),
+  [oTranslate](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Scene.html#v:oTranslate),
+  [screenBottom](https://hackage.haskell.org/package/reanimate/docs/Reanimate.html#v:screenBottom),
+  [screenLeft](https://hackage.haskell.org/package/reanimate/docs/Reanimate.html#v:screenLeft),
+  [screenRight](https://hackage.haskell.org/package/reanimate/docs/Reanimate.html#v:screenRight),
+  [screenTop](https://hackage.haskell.org/package/reanimate/docs/Reanimate.html#v:screenTop).
 
 
 
@@ -283,7 +306,9 @@ env = addStatic bg
 bg :: SVG
 bg = mkBackground "lightblue"
 </pre>
-API references: [fork](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate.html#v:fork), [wait](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate.html#v:wait).
+API references:
+  [fork](https://hackage.haskell.org/package/reanimate/docs/Reanimate.html#v:fork),
+  [wait](https://hackage.haskell.org/package/reanimate/docs/Reanimate.html#v:wait).
 
 
 
@@ -332,7 +357,11 @@ env = addStatic bg .
 bg :: SVG
 bg = mkBackground "lightblue"
 </pre>
-API references: [oFadeIn](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Scene.html#v:oFadeIn), [oDraw](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Scene.html#v:oDraw), [oScaleIn](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Scene.html#v:oScaleIn), [oGrow](https://hackage.haskell.org/package/reanimate-0.5.0.1/docs/Reanimate-Scene.html#v:oGrow).
+API references:
+  [oFadeIn](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Scene.html#v:oFadeIn),
+  [oDraw](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Scene.html#v:oDraw),
+  [oScaleIn](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Scene.html#v:oScaleIn),
+  [oGrow](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Scene.html#v:oGrow).
 
 Let's use the `oDraw` function to draw text on the screen and let's make sure the text is right-aligned:
 
