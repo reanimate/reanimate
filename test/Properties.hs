@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# OPTIONS_GHC -w      #-}
 {-# LANGUAGE TemplateHaskell      #-}
 module Properties where
@@ -22,7 +21,7 @@ import Debug.Trace
 prop_pGenerate (PolyParam a) (PolyParam b) (PolyParam c) (PolyParam d) =
   pIsSimple $ pGenerate [a,b,c,d]
 
-prop_pIsSimple p = pIsSimple p
+prop_pIsSimple = pIsSimple
 
 prop_isBetween a b = percent $ \t ->
     a /= b ==>

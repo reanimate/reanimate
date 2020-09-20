@@ -732,7 +732,7 @@ splitInternalEdges :: Mesh (V2 Double) -> Mesh (V2 Double) -> (Mesh (V2 Double),
 splitInternalEdges = applyCompatible splitInternalEdge internalEdges
 
 splitInternalEdge :: EdgeId -> Mesh (V2 Double) -> Maybe (Mesh (V2 Double))
-splitInternalEdge eid m = evalState worker m
+splitInternalEdge eid = evalState worker
   where
     edgeFaces edge = do
       twin <- getEdge (edge^.edgeTwin)
@@ -764,7 +764,7 @@ splitLongestEdge m1 m2 =
     longest = longestEdge m1 m2
 
 splitInternalEdgeForced :: EdgeId -> Mesh (V2 Double) -> Mesh (V2 Double)
-splitInternalEdgeForced eid m = execState worker m
+splitInternalEdgeForced eid = execState worker
   where
     worker = do
       edge <- getEdge eid
@@ -778,7 +778,7 @@ splitOuterEdges :: Mesh (V2 Double) -> Mesh (V2 Double) -> (Mesh (V2 Double), Me
 splitOuterEdges = applyCompatible splitOuterEdge outerEdges
 
 splitOuterEdge :: EdgeId -> Mesh (V2 Double) -> Maybe (Mesh (V2 Double))
-splitOuterEdge eid m = evalState worker m
+splitOuterEdge eid = evalState worker
   where
     worker = do
       edge <- getEdge eid

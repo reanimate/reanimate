@@ -1,7 +1,5 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-13.14 runghc --package reanimate
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE PackageImports    #-}
 module Main (main) where
 

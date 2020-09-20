@@ -1,7 +1,6 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ApplicativeDo #-}
 module Main where
 
@@ -112,17 +111,15 @@ main = reanimate $ sceneAnimation $ do
   let pipeline1 = last . take 20 . iterate (
           uncurry delaunayFlip .
           -- uncurry splitInternalEdges . 
-          doSmooth .
-          id
+          doSmooth
           )
-      stages = take 30 $ iterate (
-         pipeline1 .
+      stages = take 30 $ iterate
+         pipeline1
         --  uncurry splitInternalEdges . 
         --  pipeline1 .
         --  uncurry splitLongestEdge .
          --pipeline1
-         id
-         ) (m1,m2)
+         (m1,m2)
   let pipeline = do
         modifyVar mVar (uncurry delaunayFlip)
         modifyVar mVar (uncurry splitInternalEdges)

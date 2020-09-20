@@ -1,6 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash    #-}
-{-# LANGUAGE MultiWayIf   #-}
 {-# LANGUAGE PatternSynonyms   #-}
 {-|
 Module      : Reanimate.GeoProjection

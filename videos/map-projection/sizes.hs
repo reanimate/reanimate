@@ -226,7 +226,7 @@ mainScene = seq equirectangular $ -- takeA 10 $ dropA 21 $
     projWaitT = 3
 
 centerWithDelta :: Double -> Tree -> Tree -> Tree
-centerWithDelta d orig t = translate ((-x-w/2)*d) ((-y-h/2)*d) t
+centerWithDelta d orig = translate ((-x-w/2)*d) ((-y-h/2)*d)
   where
     (x, y, w, h) = boundingBox orig
 

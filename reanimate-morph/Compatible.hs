@@ -1,4 +1,3 @@
-{-# LANGUAGE MultiWayIf          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Reanimate.Math.Compatible where
 

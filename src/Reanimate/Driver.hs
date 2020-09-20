@@ -1,4 +1,3 @@
-{-# LANGUAGE MultiWayIf      #-}
 {-# LANGUAGE RecordWildCards #-}
 module Reanimate.Driver
   ( reanimate

@@ -2,7 +2,6 @@
 -- stack runghc --package reanimate
 {-# LANGUAGE ApplicativeDo     #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ParallelListComp  #-}
 module Main(main) where
 
 import           Codec.Picture
