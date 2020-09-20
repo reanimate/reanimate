@@ -49,7 +49,7 @@ main = reanimate $
 
 mainScene :: Animation
 mainScene = seq equirectangular $ -- takeA 10 $ dropA 21 $
-  mapA (withStrokeColor "black") $ sceneAnimation $ do
+  mapA (withStrokeColor "black") $ scene $ do
     bg <- newSpriteSVG $ mkBackground "white"
     spriteZ bg (-1)
 

@@ -23,7 +23,7 @@ import           System.IO.Unsafe
 
 
 main :: IO ()
-main = reanimate $ sceneAnimation $ do
+main = reanimate $ scene $ do
     -- Set the background to 'rtfdBackgroundColor'
     newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
 

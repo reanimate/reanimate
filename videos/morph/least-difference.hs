@@ -70,7 +70,7 @@ polys'' = compatTriagPairs polys'
 
 main :: IO ()
 -- main = reanimate $ playTraces $ seq (last $ triangulate [] p1 p2) ()
-main = reanimate $ sceneAnimation $ do
+main = reanimate $ scene $ do
   bg <- newSpriteSVG $ mkBackground "black"
   spriteZ bg (-1)
 

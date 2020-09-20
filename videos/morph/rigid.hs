@@ -106,9 +106,9 @@ main :: IO ()
 --   evaluate (last $ take 900 $ compatiblyTriangulateP p1 p2)
 --   return ()
 -- main = reanimate $ playTraces $ length $ take 29 p1s
--- main = reanimate $ playThenReverseA $ pauseAround 0.5 0.5 $ sceneAnimation $ do
+-- main = reanimate $ playThenReverseA $ pauseAround 0.5 0.5 $ scene $ do
 
-main = reanimate $ sceneAnimation $ do
+main = reanimate $ scene $ do
   newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
   -- play
   --   $ playTraces
@@ -287,7 +287,7 @@ drawPolygon :: [V2 Double] -> SVG
 drawPolygon lst = mkLinePathClosed [ (x, y) | V2 x y <- lst ]
 
 drawCompatible :: Polygon -> Polygon -> Animation
-drawCompatible a b = sceneAnimation $ do
+drawCompatible a b = scene $ do
   let left  = -6
       right = 4
   newSpriteSVG $ translate left 0 $ mkGroup

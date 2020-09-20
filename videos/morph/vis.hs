@@ -54,7 +54,7 @@ pCuts' p =
 --   lowerTransformations $ pathify $ center $ latex "$1$"
 
 main :: IO ()
-main = reanimate $ sceneAnimation $ do
+main = reanimate $ scene $ do
   bg <- newSpriteSVG $ mkBackground "black"
   spriteZ bg (-1)
   newSpriteSVG_ $ translate 0 1 $ mkGroup

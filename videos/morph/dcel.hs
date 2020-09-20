@@ -70,7 +70,7 @@ step1 = uncurry delaunayFlip step0
 step2 = doSmooth step1
 
 main :: IO ()
-main = reanimate $ sceneAnimation $ do
+main = reanimate $ scene $ do
   -- newSpriteSVG_ $ mkBackground "black"
   newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
   -- let m = buildMesh $ polygonMesh $ map (fmap realToFrac) $ V.toList $ polygonPoints p2

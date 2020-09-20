@@ -29,7 +29,7 @@ import           System.IO.Unsafe
 
 
 main :: IO ()
-main = seq equirectangular $ reanimate $ setDuration 59 $ sceneAnimation $ do
+main = seq equirectangular $ reanimate $ setDuration 59 $ scene $ do
     bg <- newSpriteSVG $ mkBackground "white"
     spriteZ bg (-1)
     prevProj <- newVar equirectangularP
