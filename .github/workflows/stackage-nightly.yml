@@ -32,8 +32,13 @@ jobs:
           ${{ runner.os }}-build-
           ${{ runner.os }}-
 
-    - name: Test nightly
+    - name: Build nightly
       run: |
         rm -fr discord-bot playground dist-newstyle
         rm -f stack.yaml && stack init --resolver nightly
-        stack build --resolver nightly --haddock --test --bench --no-run-benchmarks
+        alias build_deps='stack build --resolver nightly --haddock --test --only-dependencies --bench --no-run-benchmarks'
+        # Build twice because the stackage servers are incredibly unreliable.
+        build_deps || build_deps
+    - name: Test nightly
+      run: |
+	stack build --resolver nightly --haddock --test --bench --no-run-benchmarks
