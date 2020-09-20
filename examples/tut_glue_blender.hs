@@ -172,8 +172,7 @@ checker w h =
   withStrokeColor "lightgrey" $
   withStrokeWidth (defaultStrokeWidth/2) $
   mkGroup
-  [ withStrokeWidth 0 $
-    withFillOpacity 1 $ mkBackground "darkgrey"
+  [ mkBackground "darkgrey"
   , mkGroup
     [ translate (stepX*x-offsetX + stepX/2) 0 $
       mkLine (0, -screenHeight/2*0.9) (0, screenHeight/2*0.9)

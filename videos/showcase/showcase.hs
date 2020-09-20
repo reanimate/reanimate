@@ -61,7 +61,7 @@ immutable.
 -}
 
 main :: IO ()
-main = reanimate $ animate (const $ mkBackground "black") `parA`
+main = reanimate $ addStatic (mkBackground "black")
   -- animate $ const $ checker 10 10
   -- rotateSphere
   -- rotateWireSphere
@@ -407,8 +407,7 @@ checker w h =
   withStrokeColor "white" $
   withStrokeWidth 0.1 $
   mkGroup
-  [ withStrokeWidth 0 $
-    withFillOpacity 0.8 $ mkBackground "blue"
+  [ withFillOpacity 0.8 $ mkBackground "blue"
   , mkGroup
     [ translate (stepX*x-offsetX + stepX/2) 0 $
       mkLine (0, -screenHeight/2*0.9) (0, screenHeight/2*0.9)

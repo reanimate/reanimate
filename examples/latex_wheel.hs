@@ -10,9 +10,9 @@ import           Graphics.SvgTree (Tree)
 import           Reanimate
 
 main :: IO ()
-main = reanimate $ bg `parA` mainScene
+main = reanimate $ addStatic bg mainScene
   where
-    bg = animate $ const $ mkBackground "black"
+    bg = mkBackground "black"
 
 mainScene :: Animation
 mainScene = scene $ mdo

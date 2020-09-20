@@ -17,9 +17,9 @@ import           System.Random
 import "random-shuffle" System.Random.Shuffle
 
 main :: IO ()
-main = reanimate $ parA bg latexExample
+main = reanimate $ addStatic bg latexExample
   where
-    bg = animate $ const $ mkBackgroundPixel (PixelRGBA8 252 252 252 0xFF)
+    bg = mkBackgroundPixel (PixelRGBA8 252 252 252 0xFF)
 
 latexExample :: Animation
 latexExample = scene $ do

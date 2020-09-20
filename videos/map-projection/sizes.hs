@@ -42,7 +42,7 @@ earthMax = "earth-max.jpg"
 
 main :: IO ()
 main = reanimate $
-    parA (staticFrame 1 $ mkBackground "darkgrey") $
+    addStatic (mkBackground "darkgrey") $
     overlapT 2 (signalT (curveS 2) flipTransition)
       mainScene
       endScene
