@@ -25,7 +25,7 @@ label txt =
   scale 0.7 $
   center $
   withStrokeWidth 0 $
-  withFillOpacity 1 $
+  withFillOpacity 1
   svg
   where
     svg = latex txt

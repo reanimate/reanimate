@@ -73,4 +73,3 @@ main = reanimate $ sceneAnimation $ do
   --   # mapA (translate (-3) 0)
   -- play $ drawTriangulation shape1 earClip'
   --   # mapA (translate 3 0)
-  return ()

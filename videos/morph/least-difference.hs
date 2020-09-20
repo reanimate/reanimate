@@ -50,10 +50,10 @@ extraPoints = 0
 -- p1 = centerPolygon shape2
 -- p2 = pScale 2 $ pAtCenter $ pAddPoints extraPoints (pSetOffset shape14 0 )
 
--- p1 = pAddPoints extraPoints $ (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "S")
--- p2 = pAddPoints extraPoints $ (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "C")
-p1 = pAddPoints extraPoints $ (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "X")
-p2 = pAddPoints extraPoints $ (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "I")
+-- p1 = pAddPoints extraPoints (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "S")
+-- p2 = pAddPoints extraPoints (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "C")
+p1 = pAddPoints extraPoints (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "X")
+p2 = pAddPoints extraPoints (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "I")
 
 p1_ = castPolygon p1
 p2_ = castPolygon p2
@@ -117,9 +117,6 @@ main = reanimate $ sceneAnimation $ do
   --     , polygonNumDots p1
   --     ]
   --   ]
-
-  
-  return ()
 
 
 showP p = mkGroup

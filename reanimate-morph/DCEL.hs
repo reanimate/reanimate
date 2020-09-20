@@ -561,7 +561,7 @@ smoothVertex steiner = do
     let ps = V.fromList (map _vertexPosition vs')
         vs' = sortVertices self vs
         angleBased = angleSmooth self ps
-        laplacian  = sum ps ^/ (fromIntegral $ length ps) -- laplacian
+        laplacian  = sum ps ^/ fromIntegral (length ps) -- laplacian
     -- trace ("self: " ++ show self) $ return ()
     -- trace ("angleBased: " ++ show angleBased) $ return ()
     -- trace ("Edges: " ++ show (map _vertexId vs')) $ return ()
@@ -753,7 +753,6 @@ splitInternalEdge eid m = evalState worker m
             , faceMinAngle f4 mAfter
             , faceMinAngle f5 mAfter
             , faceMinAngle f6 mAfter ]
-      return ()
       if afterAng < beforeAng
         then return Nothing
         else return (Just mAfter)
@@ -880,5 +879,5 @@ renderMeshStats mesh = mkGroup
     angs = meshAngles mesh
     minAng = minimum angs
     meanAngle = L.sort angs !! (length angs `div` 2)
-    avgAngle = sum angs / (fromIntegral $ length angs)
+    avgAngle = sum angs / fromIntegral (length angs)
     maxAngle = maximum angs

@@ -32,7 +32,7 @@ instance Arbitrary PolyParam where
     , a' >= 0.01, b' >= 0.01
     ]
 
-data Parameters = Parameters [(Double, Double)]
+newtype Parameters = Parameters [(Double, Double)]
   deriving (Show)
 instance Arbitrary Parameters where
   arbitrary = do
@@ -45,7 +45,7 @@ instance Arbitrary Parameters where
   shrink (Parameters xs) =
     map Parameters (delete xs $ shrinkListByOne xs) ++
     map Parameters (delete xs $
-    sequence $ map (map unParam . shrink . PolyParam) xs)
+    mapM (map unParam . shrink . PolyParam) xs)
 
 shrinkListByOne :: [a] -> [[a]]
 shrinkListByOne x | length x <= 4 = [x]

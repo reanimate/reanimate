@@ -285,14 +285,14 @@ showSolution _a _b (_nodeL, _nodeR) = mkGroup []
   -- --   mkCircle 0.05
   -- , withFillColor "white" $ latex $ T.pack $ show (nodeL, nodeR)
   -- ]
-  where
+  --where
     -- V2 xA yA = realToFrac <$> steiner2Link a nodeL nodeR
     -- V2 xB yB = steiner2Link b nodeL nodeR
 
 compatiblyTriangulateP' :: (Real a, Fractional a) => APolygon a -> APolygon a -> APolygon a -> [(APolygon a, APolygon a)]
 compatiblyTriangulateP' aOrigin a b
   -- | trace (show (pSize a, pSize b)) False = undefined
-  | n == 3 = traceSVG (showStep a b) $ {- trace ("Done") $ -} [(a, b)]
+  | n == 3 = traceSVG (showStep a b) {- trace ("Done") $ -} [(a, b)]
   | otherwise =
     -- trace ("PolygonA " ++ show a) $
     -- trace ("PolygonB " ++ show b) $
@@ -305,7 +305,7 @@ compatiblyTriangulateP' aOrigin a b
     -- trace ("bestTwoLink: " ++ show bestTwoLink) $
     traceSVG (showStep a b) $ case bestOneLink of
     Nothing -> case bestTwoLink of
-      Nothing -> error $ "no 2-links"
+      Nothing -> error "no 2-links"
       Just (nodeL, nodeR) -> --trace ("Creating steiner node: " ++ show (nodeL, nodeR)) $
             let isTwolink =
                   (nodeL, nodeR) `notElem` aOneLink ||
@@ -316,7 +316,7 @@ compatiblyTriangulateP' aOrigin a b
                 (bL, bR) = if (nodeL, nodeR) `elem` bOneLink
                   then split1Link b nodeL nodeR 1
                   else split2Link b nodeL nodeR
-            in (if isTwolink then traceSVG (showSolution a b (nodeL, nodeR)) else id) $
+            in (if isTwolink then traceSVG (showSolution a b (nodeL, nodeR)) else id)
              (compatiblyTriangulateP' aOrigin aL bL
              ++ compatiblyTriangulateP' aOrigin aR bR
              )
@@ -355,7 +355,7 @@ oneBendBetween p a b =
       (pAccess p a)
       (pAccess p (pParent p a b))
       (pAccess p b)) < epsilon
-  where
+  --where
     -- obstructedBy n =
     --   case pParent p a n of
     --     i -> if i == a then n else obstructedBy i

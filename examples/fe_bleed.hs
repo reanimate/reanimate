@@ -79,7 +79,7 @@ main = reanimate $ scene $ do
       [ FEGaussianBlur $ defaultSvg
         & gaussianBlurStdDeviationX .~ Num 0.2
         & gaussianBlurEdgeMode .~ EdgeNone
-        & filterResult .~ Just "blur"
+        & filterResult ?~ "blur"
       , FEColorMatrix $ defaultSvg
         & colorMatrixType .~ Matrix
         & colorMatrixValues .~
@@ -88,7 +88,7 @@ main = reanimate $ scene $ do
           \0 0 1 0 0 \
           \0 0 0 19 -10"
         & colorMatrixIn .~ pure (SourceRef "blur")
-        & filterResult .~ Just "colormatrix"
+        & filterResult ?~ "colormatrix"
       ]
     newSprite_ $ do
       t <- spriteT
@@ -117,15 +117,15 @@ main = reanimate $ scene $ do
     newSpriteSVG_ $
       ctx $
       mkGroup [scale 2 $ mkBackground "white"]
-      & maskRef .~ (pure $ Ref "clip")
+      & maskRef .~ pure (Ref "clip")
     newSpriteSVG_ $
-      FilterTree $ mkFilter "blur" $
+      FilterTree $ mkFilter "blur"
       [ FEGaussianBlur $ defaultSvg
         & gaussianBlurStdDeviationX .~ Num 0.1
         & gaussianBlurEdgeMode .~ EdgeNone
         & filterX .~ pure (Percent 0)
         & filterY .~ pure (Percent 0)
-        & filterResult .~ Just "blur"
+        & filterResult ?~ "blur"
         & filterWidth .~ pure (Percent 1)
         & filterHeight .~ pure (Percent 1)
       , FETurbulence $ defaultSvg
@@ -134,14 +134,14 @@ main = reanimate $ scene $ do
         & turbulenceNumOctaves .~ 1
         & turbulenceSeed .~ 1
         & turbulenceStitchTiles .~ Stitch
-        & filterResult .~ Just "turbulence"
+        & filterResult ?~ "turbulence"
       , FEDisplacementMap $ defaultSvg
         & displacementMapScale .~ pure 2
         & displacementMapIn .~ pure (SourceRef "blur")
         & displacementMapIn2 .~ pure (SourceRef "turbulence")
         & displacementMapXChannelSelector .~ ChannelR
         & displacementMapYChannelSelector .~ ChannelA
-        & filterResult .~ Just "displacementMap"
+        & filterResult ?~ "displacementMap"
       ]
 
     -- Color wheels:
@@ -149,11 +149,11 @@ main = reanimate $ scene $ do
       fork $ play $ mkAnimation 5 $ \t' ->
         let t = (t' + offset) `mod'` 1
         in ctx $ mkGroup
-        [ mkGroup [ rotate (fromToS 0 dst $ curveS 2 $ oscillateS $ t) $
+        [ mkGroup [ rotate (fromToS 0 dst $ curveS 2 $ oscillateS t) $
           rotate pos $
           withStrokeColorPixel (promotePixel color) slice]
           & filterRef .~ pure (Ref "blur")
-        ] & maskRef .~ (pure $ Ref "clip")
+        ] & maskRef .~ pure (Ref "clip")
     wait 5
 
 slice :: SVG

@@ -37,12 +37,12 @@ drawTangent alpha = mapTree worker
           tangentSvg =
             translate posX posY $
             rotate (unangle normed/pi*180 + 180) $
-            translate 0 (svgHeight tangentTxt/2) $
+            translate 0 (svgHeight tangentTxt/2)
             tangentTxt
           normalSvg =
             translate posX posY $
             rotate (unangle normed/pi*180 + 90) $
-            translate (svgWidth normalTxt/2*1.1) (svgHeight normalTxt/2*1.3) $
+            translate (svgWidth normalTxt/2*1.1) (svgHeight normalTxt/2*1.3)
             normalTxt
       in mkGroup
       [ withStrokeWidth defaultStrokeWidth $
@@ -54,14 +54,14 @@ drawTangent alpha = mapTree worker
         translate posX posY $
         mkLine (0, 0) (-normVectY, normVectX)
       , withStrokeWidth (defaultStrokeWidth*2) $
-        withStrokeColor "white" $
+        withStrokeColor "white"
         tangentSvg
-      , withFillOpacity 1 $ withFillColor "black" $ withStrokeWidth 0 $
+      , withFillOpacity 1 $ withFillColor "black" $ withStrokeWidth 0
         tangentSvg
       , withStrokeWidth (defaultStrokeWidth*2) $
-        withStrokeColor "white" $
+        withStrokeColor "white"
         normalSvg
-      , withFillOpacity 1 $ withFillColor "black" $ withStrokeWidth 0 $
+      , withFillOpacity 1 $ withFillColor "black" $ withStrokeWidth 0
         normalSvg
       ]
     worker t = t
@@ -81,7 +81,7 @@ atPartial alpha cmds = evalState (worker 0 cmds) zero
         else do
           let bezier = lineCommandToBezier from cmd
               (pos, tangent) = evalBezierDeriv bezier frac
-          pure $ (pos, tangent)
+          pure (pos, tangent)
     totalLen = evalState (sum <$> mapM lineLength cmds) zero
     targetLen = totalLen * alpha
 

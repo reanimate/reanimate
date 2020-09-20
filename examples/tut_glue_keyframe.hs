@@ -84,5 +84,5 @@ drawSVG :: Tree -> Animation
 drawSVG svg = animate $ \t ->
     withStrokeColor "black" $
     rotate (t*360) $
-    translate 0 radius $
+    translate 0 radius
     svg

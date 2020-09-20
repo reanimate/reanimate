@@ -33,7 +33,7 @@ starAnimation = mkAnimation 10 $ \t ->
   in  withStrokeWidth 0 $ rotate (t * 360) $ mkGroup
         [ translate (x / newZ) (y / newZ) $ dot (1 - newZ)
         | (x, y, z) <-
-          reverse $ take nStars $ dropWhile (\(_, _, z) -> z < camZ) $ allStars
+          reverse $ take nStars $ dropWhile (\(_, _, z) -> z < camZ) allStars
         , let newZ = z - camZ
         ]
  where

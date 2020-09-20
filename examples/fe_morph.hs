@@ -36,7 +36,7 @@ main = reanimate $ scene $ do
       , mkGroup
         [ lowerTransformations $ center $ withFillColor "black" $ latex "Text"
         , mkGroup
-          [rotate (t*rot) $ translate (fromToS 0 3.5 $ bellS 2 $ t) 0 $
+          [rotate (t*rot) $ translate (fromToS 0 3.5 $ bellS 2 t) 0 $
             withFillColorPixel (promotePixel c) $ mkCircle (size*1.5)
           | (n,(rot, size)) <- zip [0..] circles
           , let c = turbo (n/fromIntegral (length circles-1))
@@ -52,7 +52,7 @@ mkGooeyFilter blur =
       [ FEGaussianBlur $ defaultSvg
         & gaussianBlurStdDeviationX .~ Num blur
         & gaussianBlurEdgeMode      .~ EdgeNone
-        & filterResult              .~ Just "blur"
+        & filterResult              ?~ "blur"
       , FEColorMatrix $ defaultSvg
         & colorMatrixType           .~ Matrix
         & colorMatrixValues         .~ printf
@@ -61,7 +61,7 @@ mkGooeyFilter blur =
           \0 0 1 0 0 \
           \0 0 0 %f %f" mul sub
         & colorMatrixIn             .~ pure (SourceRef "blur")
-        & filterResult              .~ Just "colormatrix"
+        & filterResult              ?~ "colormatrix"
       ]
   where
     -- Increase alpha contrast. Turns alphaMin to 0x00 and alphaMax to 0xFF.

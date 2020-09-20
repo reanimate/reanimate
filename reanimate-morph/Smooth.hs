@@ -135,7 +135,7 @@ smoothStep triangulation pts steiner =
     pt    <- MV.read pts i
     edges <- V.fromList <$> (sortEdges pt =<< MV.read triangulation i)
     let angleBased = angleSmooth pt edges
-        laplacian  = sum edges ^/ (fromIntegral $ length edges) -- laplacian
+        laplacian  = sum edges ^/ fromIntegral (length edges) -- laplacian
     -- unsafeIOToST $ hPrint stderr (pt, edges, newX)
     if isValidLocation pt edges angleBased
       then MV.write pts i angleBased

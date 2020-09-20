@@ -72,7 +72,7 @@ mainScene = seq equirectangular $ -- takeA 10 $ dropA 21 $
               subImg =
                 convertRGBA8 $ rasterSized srcWidth srcHeight $ mkGroup
                     [ mkGroup []
-                    , mkClipPath idName $
+                    , mkClipPath idName
                       clipSvg
                     , withClipPathRef (Ref idName) $
                       scaleToSize screenWidth screenHeight $
@@ -128,8 +128,8 @@ mainScene = seq equirectangular $ -- takeA 10 $ dropA 21 $
               ]
           -- destroySprite region1Shadow
           fork $ tweenVar move 1 $ \v -> fromToS v 1 . curveS 2
-          fork $ play $ (staticFrame 2 $
-            withStrokeWidth 0 $
+          fork $ play $ staticFrame 2
+            (withStrokeWidth 0 $
             translate 0 (-screenHeight*0.40) $
             center $ latex label)
             # applyE (overBeginning 0.2 fadeInE)
@@ -182,22 +182,22 @@ mainScene = seq equirectangular $ -- takeA 10 $ dropA 21 $
           ]
     spriteMap mapS offset
 
-    play $ (staticFrame (projMorphT+projWaitT) $
-      withStrokeWidth 0 $
+    play $ staticFrame (projMorphT+projWaitT)
+      (withStrokeWidth 0 $
       translate 0 (-screenHeight*0.43) $
       center $ latex "Equirectangular")
       # applyE (overBeginning 0.2 fadeInE)
       # applyE (overEnding 0.2 fadeOutE)
 
     let push proj label = do
-          fork $ play $ (staticFrame (projMorphT+projWaitT) $
-            withStrokeWidth 0 $
+          fork $ play $ staticFrame (projMorphT+projWaitT)
+            (withStrokeWidth 0 $
             translate 0 (-screenHeight*0.43) $
             center $ latex label)
             # applyE (overBeginning 0.2 fadeInE)
             # applyE (overEnding 0.2 fadeOutE)
           (_, prev) <- readVar projs
-          writeVar projs (const $ prev, proj)
+          writeVar projs (const prev, proj)
           writeVar morph 0
           tweenVar morph projMorphT $ \v -> fromToS v 1 . curveS 2
           wait projWaitT
@@ -323,7 +323,7 @@ americaE = america equirectangularP
 uk :: Projection -> SVG
 uk p = fetchCountry p $ \props svg -> do
   name <- Map.lookup "NAME" props
-  guard (name `elem` ["United Kingdom"])
+  guard (name == "United Kingdom")
   return svg
 
 ukE :: SVG

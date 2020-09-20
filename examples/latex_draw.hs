@@ -7,9 +7,9 @@ import           Reanimate
 
 main :: IO ()
 main = reanimate $
-    bg `parA` (playThenReverseA $ drawText `andThen` fillText)
+    addStatic bg $ playThenReverseA $ drawText `andThen` fillText
   where
-    bg = animate $ const $ mkBackground "black"
+    bg = mkBackground "black"
     msg = "\\sum_{k=1}^\\infty {1 \\over k^2} = {\\pi^2 \\over 6}"
     glyphs = withStrokeWidth 0.01 $ center $ latexAlign msg
     fillText = mkAnimation 1 $ \t ->

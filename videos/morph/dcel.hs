@@ -154,8 +154,6 @@ main = reanimate $ sceneAnimation $ do
   --   mkGroup $ map (polygonDots . pScale 6) p2s
   -- newSpriteSVG_ $ withFillColor "red" $ scale 3 $ polygonNumDots p2
   -- wait 1
-  return ()
- where
    
 
 drawTrigs :: V.Vector (V2 Double) -> V.Vector RelTrig -> SVG

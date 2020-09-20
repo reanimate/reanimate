@@ -135,7 +135,7 @@ mergeSortUp = do
   snapshot
   len <- inputLength
   let chunkSizes = takeWhile (< len) $ map (2^) [0::Int ..]
-  forM_ chunkSizes $ bottomUpMergeSort'
+  forM_ chunkSizes bottomUpMergeSort'
 
 bottomUpMergeSort' :: Int -> S s ()
 bottomUpMergeSort' chunkSize = do
@@ -215,7 +215,7 @@ quicksort = do
       pivot <- readS (lo + (hi-lo) `div` 2)
       p <- partition pivot lo hi
       snapshot
-      worker $ insertWork (lo, p) $ insertWork (p+1, hi) $ rest
+      worker $ insertWork (lo, p) $ insertWork (p+1, hi) rest
 
     partition pivot lo hi = do
       loVal <- readS lo

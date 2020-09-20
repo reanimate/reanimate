@@ -7,4 +7,4 @@ endScene :: Animation
 endScene = mkAnimation 10 $ const $
   mkGroup
   [ mkBackground "black"
-  , scale 0.5 $ githubIcon ]
+  , scale 0.5 githubIcon ]
