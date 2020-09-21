@@ -23,7 +23,7 @@ extra_css:
   - https://reanimate.github.io/reanimate/playground/embed.css
   - https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/codemirror.min.css
 nav:
-  - Reanimate: index.md
+#  - Reanimate: index.md
 #  - Morphology (incomplete): morphology.md
 #  - How to:
 #    - Use fonts (incomplete): fonts.md
