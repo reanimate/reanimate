@@ -24,7 +24,7 @@ jobs:
       run: |
         set -o xtrace
         sudo npm i -g wscat
-        wscat --execute "GET /\n" --connect "wss://reanimate.clozecards.com:443/ws/"
+        wscat --execute "GET /\n" --connect "https://reanimate.clozecards.com/ws/"
     # - name: Check links at reanimate.github.io
     #   run: |
     #     checklink --quiet --broken "https://reanimate.github.io/" > failures.txt
