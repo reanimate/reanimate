@@ -1,0 +1,27 @@
+name: Site checker
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        apt install w3c-linkchecker node-ws
+    - name: Check websocket connection
+      run: |
+        wscat --connect "wss://reanimate.clozecards.com:443/ws/" --execute "GET /\n"
+    - name: Check links at reanimate.github.io
+      run: |
+        FAILURES=$(checklink --quiet --broken "https://reanimate.github.io/")
+        if [ -n "$FAILURES" ]; then
+          echo $FAILURES
+          exit 1
+        fi
