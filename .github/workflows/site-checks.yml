@@ -22,7 +22,7 @@ jobs:
         sudo apt-get -y install w3c-linkchecker node-ws
     - name: Check websocket connection
       run: |
-        #/usr/local/bin/wscat --version
+        set -o xtrace
         sudo npm i -g wscat || sudo npm i -g wscat
         wscat --version
         wscat --execute "GET /\n" --connect "wss://reanimate.clozecards.com:443/w/"
