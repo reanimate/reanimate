@@ -15,15 +15,16 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get -y install w3c-linkchecker node-ws
+        sudo apt-get -y install w3c-linkchecker
     - name: Check websocket connection
       run: |
+        npm install -g wscat
         wscat --version
         wscat --connect --help "wss://reanimate.clozecards.com:443/ws/"
     - name: Check links at reanimate.github.io
       run: |
-        FAILURES=$(checklink --quiet --broken "https://reanimate.github.io/")
-        if [ -n "$FAILURES" ]; then
-          echo $FAILURES
+        checklink --quiet --broken "https://reanimate.github.io/" > failures.txt
+        if [ -s failures.txt ]; then
+          cat failures.txt
           exit 1
         fi
