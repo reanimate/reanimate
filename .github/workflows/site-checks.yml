@@ -14,7 +14,8 @@ jobs:
     - uses: actions/checkout@v2
     - name: Install dependencies
       run: |
-        sudo apt install w3c-linkchecker node-ws
+        #sudo apt-get 
+        sudo apt-get -y install w3c-linkchecker node-ws
     - name: Check websocket connection
       run: |
         wscat --connect "wss://reanimate.clozecards.com:443/ws/" --execute "GET /\n"
