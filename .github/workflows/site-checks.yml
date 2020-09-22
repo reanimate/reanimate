@@ -19,11 +19,11 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get -y install w3c-linkchecker
+        sudo apt-get -y install w3c-linkchecker node-ws
     - name: Check websocket connection
       run: |
-        /usr/local/bin/wscat --version
-        sudo npm install -g wscat
+        #/usr/local/bin/wscat --version
+        #sudo npm install -g wscat
         wscat --version
         wscat --connect --help "wss://reanimate.clozecards.com:443/ws/"
     - name: Check links at reanimate.github.io
