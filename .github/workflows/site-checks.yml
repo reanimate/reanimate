@@ -23,7 +23,7 @@ jobs:
     - name: Check websocket connection
       run: |
         #/usr/local/bin/wscat --version
-        sudo npm i wscatsd
+        sudo npm i -g wscat
         wscat --version
         wscat --help --connect "wss://reanimate.clozecards.com:443/ws/"
     # - name: Check links at reanimate.github.io
