@@ -18,7 +18,8 @@ jobs:
         sudo apt-get -y install w3c-linkchecker node-ws
     - name: Check websocket connection
       run: |
-        wscat --connect "wss://reanimate.clozecards.com:443/ws/" --execute "GET /\n"
+        wscat --version
+        wscat --connect --help "wss://reanimate.clozecards.com:443/ws/"
     - name: Check links at reanimate.github.io
       run: |
         FAILURES=$(checklink --quiet --broken "https://reanimate.github.io/")
