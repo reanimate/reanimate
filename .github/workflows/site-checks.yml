@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: "0 * * * *"
   push:
-    branches: [ master ]
+    branches: [ master, feature-ci ]
 
 jobs:
   build:
@@ -12,18 +12,27 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Use Node.js 10.x
+      uses: actions/setup-node@v1
+      with:
+        node-version: 10.x
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get -y install w3c-linkchecker
     - name: Check websocket connection
       run: |
-        #sudo npm install -g wscat
-        wscat --version
-        wscat --connect --help "wss://reanimate.clozecards.com:443/ws/"
+        set -o xtrace
+        sudo npm i -g wscat
+        wscat --execute "GET /\n" --connect "https://reanimate.clozecards.com/ws/" || echo "Connection failed."
     - name: Check links at reanimate.github.io
+      run: checklink --quiet --broken "https://reanimate.github.io/" >> failures.txt
+    - name: Check links at reanimate.readthedocs.io
+      run: checklink --quiet --broken "https://reanimate.readthedocs.io/" >> failures.txt
+    - name: Check links in haddock docs
+      run: checklink --quiet --broken "https://hackage.haskell.org/package/reanimate/docs/Reanimate.html" >> failures.txt
+    - name: Check for failures
       run: |
-        checklink --quiet --broken "https://reanimate.github.io/" > failures.txt
         if [ -s failures.txt ]; then
           cat failures.txt
           exit 1
