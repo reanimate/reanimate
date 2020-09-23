@@ -29,8 +29,9 @@ jobs:
       run: checklink --quiet --broken "https://reanimate.github.io/" >> failures.txt
     - name: Check links at reanimate.readthedocs.io
       run: checklink --quiet --broken "https://reanimate.readthedocs.io/" >> failures.txt
-    - name: Check links in haddock docs
-      run: checklink --quiet --broken "https://hackage.haskell.org/package/reanimate/docs/Reanimate.html" >> failures.txt
+    # Haddock generates 404 links by default. :(
+    #- name: Check links in haddock docs
+    #  run: checklink --quiet --broken "https://hackage.haskell.org/package/reanimate/docs/Reanimate.html" >> failures.txt
     - name: Check for failures
       run: |
         if [ -s failures.txt ]; then
