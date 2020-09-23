@@ -25,6 +25,7 @@ function playgroundInit(elt) {
   function sendSocketCommand(wat) {
     if (wat.cmd == "connect") {
       scheduleConnect(function () {
+        if ( mySockets[wat.name] ) return;
         socket = new WebSocket(wat.address);
         socket.onopen = function (event) {
           if( socket.readyState !== 1 ) {
