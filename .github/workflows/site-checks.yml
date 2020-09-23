@@ -25,10 +25,15 @@ jobs:
         set -o xtrace
         sudo npm i -g wscat
         wscat --execute "GET /\n" --connect "https://reanimate.clozecards.com/ws/" || echo "Connection failed."
-    # - name: Check links at reanimate.github.io
-    #   run: |
-    #     checklink --quiet --broken "https://reanimate.github.io/" > failures.txt
-    #     if [ -s failures.txt ]; then
-    #       cat failures.txt
-    #       exit 1
-    #     fi
+    - name: Check links at reanimate.github.io
+      run: checklink --quiet --broken "https://reanimate.github.io/" >> failures.txt
+    - name: Check links at reanimate.readthedocs.io
+      run: checklink --quiet --broken "https://reanimate.readthedocs.io/" >> failures.txt
+    - name: Check links in haddock docs
+      run: checklink --quiet --broken "https://hackage.haskell.org/package/reanimate/docs/Reanimate.html" >> failures.txt
+    - name: Check for failures
+      run: |
+        if [ -s failures.txt ]; then
+          cat failures.txt
+          exit 1
+        fi
