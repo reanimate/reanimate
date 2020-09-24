@@ -8,7 +8,7 @@ All of the code snippets are interactive and require JavaScript.
 
 By the end of this tutorial, we will have a short animation that shows an equation and then draws an explanation of each term:
 
-<video width="640" height="320" muted autoplay loop style="display:block;margin:auto;">
+<video style="width:100%" muted autoplay loop>
   <source src="https://i.imgur.com/5a78Ot5.mp4">
 </video>
 
