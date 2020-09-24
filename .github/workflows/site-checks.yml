@@ -23,8 +23,9 @@ jobs:
     - name: Check websocket connection
       run: |
         set -o xtrace
-        sudo npm i -g wscat
-        wscat --execute "GET /\n" --connect "https://reanimate.clozecards.com/ws/" || echo "Connection failed."
+        wget https://github.com/vi/websocat/releases/download/v1.6.0/websocat_amd64-linux-static -O websocat
+        chmod +x websocat
+        ./websocat -q -uU "wss://reanimate.clozecards.com/ws/"
     - name: Check links at reanimate.github.io
       run: checklink --quiet --broken "https://reanimate.github.io/" >> failures.txt
     - name: Check links at reanimate.readthedocs.io
