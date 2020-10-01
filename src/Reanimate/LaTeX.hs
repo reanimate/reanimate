@@ -192,8 +192,6 @@ removeClipPaths = mapTree worker
 latexToSVG :: TexEngine -> String -> String -> [String] -> Text -> IO Tree
 latexToSVG engine dviExt latexExec latexArgs tex = do
   latexBin <- requireExecutable latexExec
-  dvisvgm <- requireExecutable "dvisvgm"
-  pdf2svg <- requireExecutable "pdf2svg"
   withTempDir $ \tmp_dir -> withTempFile "tex" $ \tex_file ->
     withTempFile "svg" $ \svg_file -> do
       let dvi_file =
@@ -209,11 +207,13 @@ latexToSVG engine dviExt latexExec latexArgs tex = do
                ]
         )
       if dviExt == "pdf"
-        then
+        then do
+          pdf2svg <- requireExecutable "pdf2svg"
           runCmd
             pdf2svg
             [dvi_file, svg_file]
-        else
+        else do
+          dvisvgm <- requireExecutable "dvisvgm"
           runCmd
             dvisvgm
             [ dvi_file,
