@@ -34,6 +34,7 @@ main =
           $ latexCfg artemisia "Hello Artemisia $\\frac{H}{b}$"
         ]
 
+artemisia :: TexConfig
 artemisia = TexConfig LaTeX
   [ "\\usepackage{gfsartemisia}"
   , "\\usepackage[T1]{fontenc}"
