@@ -1,7 +1,7 @@
 
 # Reanimate is:
  * **An animation library** - a system for turning code into movies, similar to [3b1b's manim](https://github.com/3b1b/manim) of [YouTube fame](https://www.youtube.com/channel/UCYO_jab_esuFRV4b17AJtAw).
- * **User friendly** - extensively documented with example animations covering the [entire API](http://hackage.haskell.org/package/reanimate/docs/Reanimate.html).
+ * **User friendly** - extensively documented with example animations covering the [entire API](https://hackage.haskell.org/package/reanimate/docs/Reanimate.html).
  * **Cross-platform** - works on Linux, Mac and Windows.
 
 
@@ -92,7 +92,7 @@ $ stack ./examples/doc_andThen.hs render --format gif
 
 # Learning resources
 
-* [API documentation](http://hackage.haskell.org/package/reanimate/docs/Reanimate.html)
+* [API documentation](https://hackage.haskell.org/package/reanimate/docs/Reanimate.html)
 * [Core concepts](introduction)
 * [Examples](https://github.com/reanimate/reanimate/tree/master/examples)
 * [Design overview](glue_tut)

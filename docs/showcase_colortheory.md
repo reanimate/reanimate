@@ -3,9 +3,9 @@
 <iframe width="560" height="315" src="https://www.youtube.com/embed/txSAC6mJQDk" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 There are several interesting color maps in reanimate, like
-[viridis](http://hackage.haskell.org/package/reanimate/docs/Reanimate.html#v:viridis)
+[viridis](https://hackage.haskell.org/package/reanimate/docs/Reanimate.html#v:viridis)
 and
-[parula](http://hackage.haskell.org/package/reanimate/docs/Reanimate.html#v:parula).
+[parula](https://hackage.haskell.org/package/reanimate/docs/Reanimate.html#v:parula).
 This got me interested in the color theory that underpins them and I decided to make
 a short video presenting what I learned. This is not about color theory, though,
 but rather the technical details involved with writing and rendering a fairly long
@@ -92,7 +92,7 @@ I wrote nearly all of the color-theory animation before Reanimate had
 way more difficult than I expected. It even affected my development
 process. I used to write small fragments of animation and then combined them
 into larger segments. Now I focus more on
-[sprites](http://hackage.haskell.org/package/reanimate/docs/Reanimate-Scene.html#g:3),
+[sprites](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Scene.html#g:3),
 their parameters, and their lifetime effects, and leave all timing/durations to
 be settled at a later time.
 
