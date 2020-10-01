@@ -61,6 +61,7 @@ lowerTransformations = worker False Transform.identity
             line & linePoint1 %~ updPoint m
                  & linePoint2 %~ updPoint m
         ClipPathTree{} -> t
+        DefinitionTree{} -> t
         -- If we encounter an unknown node and we've already tried to convert
         -- to paths, give up and insert an explicit transformation.
         _ | hasPathified ->
@@ -75,6 +76,12 @@ lowerIds = mapTree worker
     worker t@GroupTree{} = t & attrId .~ Nothing
     worker t@PathTree{}  = t & attrId .~ Nothing
     worker t             = t
+
+-- | Remove all draw attributes such as 'stroke', 'fill' and 'fill-opacity'.
+clearDrawAttributes :: SVG -> SVG
+clearDrawAttributes = mapTree worker
+  where
+    worker t = t & drawAttributes .~ defaultSvg
 
 -- | Optimize SVG tree without affecting how it is rendered.
 simplify :: SVG -> SVG
