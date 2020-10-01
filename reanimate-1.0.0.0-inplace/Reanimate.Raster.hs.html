@@ -280,59 +280,58 @@ span.spaces    { background: white }
 <span class="lineno">  261 </span>vectorize_ :: [String] -&gt; FilePath -&gt; SVG
 <span class="lineno">  262 </span><span class="decl"><span class="nottickedoff">vectorize_ _ path | pNoExternals = mkText $ T.pack path</span>
 <span class="lineno">  263 </span><span class="spaces"></span><span class="nottickedoff">vectorize_ args path             = unsafePerformIO $ do</span>
-<span class="lineno">  264 </span><span class="spaces">  </span><span class="nottickedoff">root &lt;- getXdgDirectory XdgCache &quot;reanimate&quot;</span>
-<span class="lineno">  265 </span><span class="spaces">  </span><span class="nottickedoff">createDirectoryIfMissing True root</span>
-<span class="lineno">  266 </span><span class="spaces">  </span><span class="nottickedoff">let svgPath = root &lt;/&gt; encodeInt key &lt;.&gt; &quot;svg&quot;</span>
-<span class="lineno">  267 </span><span class="spaces">  </span><span class="nottickedoff">hit &lt;- doesFileExist svgPath</span>
-<span class="lineno">  268 </span><span class="spaces">  </span><span class="nottickedoff">unless hit $ withSystemTempFile &quot;file.svg&quot; $ \tmpSvgPath svgH -&gt;</span>
-<span class="lineno">  269 </span><span class="spaces">    </span><span class="nottickedoff">withSystemTempFile &quot;file.bmp&quot; $ \tmpBmpPath bmpH -&gt; do</span>
-<span class="lineno">  270 </span><span class="spaces">      </span><span class="nottickedoff">hClose svgH</span>
-<span class="lineno">  271 </span><span class="spaces">      </span><span class="nottickedoff">hClose bmpH</span>
-<span class="lineno">  272 </span><span class="spaces">      </span><span class="nottickedoff">potrace &lt;- requireExecutable &quot;potrace&quot;</span>
-<span class="lineno">  273 </span><span class="spaces">      </span><span class="nottickedoff">magick &lt;- requireExecutable magickCmd</span>
-<span class="lineno">  274 </span><span class="spaces">      </span><span class="nottickedoff">runCmd magick [path, &quot;-flatten&quot;, tmpBmpPath]</span>
-<span class="lineno">  275 </span><span class="spaces">      </span><span class="nottickedoff">runCmd potrace (args ++ [&quot;--svg&quot;, &quot;--output&quot;, tmpSvgPath, tmpBmpPath])</span>
-<span class="lineno">  276 </span><span class="spaces">      </span><span class="nottickedoff">renameOrCopyFile tmpSvgPath svgPath</span>
-<span class="lineno">  277 </span><span class="spaces">  </span><span class="nottickedoff">svg_data &lt;- B.readFile svgPath</span>
-<span class="lineno">  278 </span><span class="spaces">  </span><span class="nottickedoff">case parseSvgFile svgPath svg_data of</span>
-<span class="lineno">  279 </span><span class="spaces">    </span><span class="nottickedoff">Nothing -&gt; do</span>
-<span class="lineno">  280 </span><span class="spaces">      </span><span class="nottickedoff">removeFile svgPath</span>
-<span class="lineno">  281 </span><span class="spaces">      </span><span class="nottickedoff">error &quot;Malformed svg&quot;</span>
-<span class="lineno">  282 </span><span class="spaces">    </span><span class="nottickedoff">Just svg -&gt; return $ unbox $ replaceUses svg</span>
-<span class="lineno">  283 </span><span class="spaces">  </span><span class="nottickedoff">where key = hash (path, args)</span></span>
-<span class="lineno">  284 </span>
-<span class="lineno">  285 </span>-- imageAsFile :: DynamicImage -&gt; FilePath
-<span class="lineno">  286 </span>-- imageAsFile img
-<span class="lineno">  287 </span>
-<span class="lineno">  288 </span>-- | Convert an SVG object to a pixel-based image and save it to disk, returning
-<span class="lineno">  289 </span>--   the filepath. The default resolution is 2560x1440. See also 'svgAsPngFile''.
-<span class="lineno">  290 </span>--   Multiple raster engines are supported and are selected using the '--raster'
-<span class="lineno">  291 </span>--   flag in the driver.
-<span class="lineno">  292 </span>svgAsPngFile :: SVG -&gt; FilePath
-<span class="lineno">  293 </span><span class="decl"><span class="nottickedoff">svgAsPngFile = svgAsPngFile' width height</span>
-<span class="lineno">  294 </span><span class="spaces"> </span><span class="nottickedoff">where</span>
-<span class="lineno">  295 </span><span class="spaces">  </span><span class="nottickedoff">width  = 2560</span>
-<span class="lineno">  296 </span><span class="spaces">  </span><span class="nottickedoff">height = width * 9 `div` 16</span></span>
-<span class="lineno">  297 </span>
-<span class="lineno">  298 </span>-- | Convert an SVG object to a pixel-based image and save it to disk, returning
-<span class="lineno">  299 </span>--   the filepath.
-<span class="lineno">  300 </span>svgAsPngFile'
-<span class="lineno">  301 </span>  :: Width  -- ^ Width
-<span class="lineno">  302 </span>  -&gt; Height -- ^ Height
-<span class="lineno">  303 </span>  -&gt; SVG    -- ^ SVG object
-<span class="lineno">  304 </span>  -&gt; FilePath
-<span class="lineno">  305 </span><span class="decl"><span class="nottickedoff">svgAsPngFile' _ _ _ | pNoExternals = &quot;/svgAsPngFile/has/been/disabled&quot;</span>
-<span class="lineno">  306 </span><span class="spaces"></span><span class="nottickedoff">svgAsPngFile' width height svg =</span>
-<span class="lineno">  307 </span><span class="spaces">  </span><span class="nottickedoff">unsafePerformIO $ cacheFile template $ \pngPath -&gt; do</span>
-<span class="lineno">  308 </span><span class="spaces">    </span><span class="nottickedoff">let svgPath = replaceExtension pngPath &quot;svg&quot;</span>
-<span class="lineno">  309 </span><span class="spaces">    </span><span class="nottickedoff">writeFile svgPath rendered</span>
-<span class="lineno">  310 </span><span class="spaces">    </span><span class="nottickedoff">engine &lt;- requireRaster pRaster</span>
-<span class="lineno">  311 </span><span class="spaces">    </span><span class="nottickedoff">applyRaster engine svgPath</span>
-<span class="lineno">  312 </span><span class="spaces"> </span><span class="nottickedoff">where</span>
-<span class="lineno">  313 </span><span class="spaces">  </span><span class="nottickedoff">template = encodeInt (hash rendered) &lt;.&gt; &quot;png&quot;</span>
-<span class="lineno">  314 </span><span class="spaces">  </span><span class="nottickedoff">rendered = renderSvg (Just $ Px $ fromIntegral width)</span>
-<span class="lineno">  315 </span><span class="spaces">                       </span><span class="nottickedoff">(Just $ Px $ fromIntegral height)</span>
-<span class="lineno">  316 </span><span class="spaces">                       </span><span class="nottickedoff">svg</span></span>
+<span class="lineno">  264 </span><span class="spaces">  </span><span class="nottickedoff">root &lt;- getReanimateCacheDirectory</span>
+<span class="lineno">  265 </span><span class="spaces">  </span><span class="nottickedoff">let svgPath = root &lt;/&gt; encodeInt key &lt;.&gt; &quot;svg&quot;</span>
+<span class="lineno">  266 </span><span class="spaces">  </span><span class="nottickedoff">hit &lt;- doesFileExist svgPath</span>
+<span class="lineno">  267 </span><span class="spaces">  </span><span class="nottickedoff">unless hit $ withSystemTempFile &quot;file.svg&quot; $ \tmpSvgPath svgH -&gt;</span>
+<span class="lineno">  268 </span><span class="spaces">    </span><span class="nottickedoff">withSystemTempFile &quot;file.bmp&quot; $ \tmpBmpPath bmpH -&gt; do</span>
+<span class="lineno">  269 </span><span class="spaces">      </span><span class="nottickedoff">hClose svgH</span>
+<span class="lineno">  270 </span><span class="spaces">      </span><span class="nottickedoff">hClose bmpH</span>
+<span class="lineno">  271 </span><span class="spaces">      </span><span class="nottickedoff">potrace &lt;- requireExecutable &quot;potrace&quot;</span>
+<span class="lineno">  272 </span><span class="spaces">      </span><span class="nottickedoff">magick &lt;- requireExecutable magickCmd</span>
+<span class="lineno">  273 </span><span class="spaces">      </span><span class="nottickedoff">runCmd magick [path, &quot;-flatten&quot;, tmpBmpPath]</span>
+<span class="lineno">  274 </span><span class="spaces">      </span><span class="nottickedoff">runCmd potrace (args ++ [&quot;--svg&quot;, &quot;--output&quot;, tmpSvgPath, tmpBmpPath])</span>
+<span class="lineno">  275 </span><span class="spaces">      </span><span class="nottickedoff">renameOrCopyFile tmpSvgPath svgPath</span>
+<span class="lineno">  276 </span><span class="spaces">  </span><span class="nottickedoff">svg_data &lt;- B.readFile svgPath</span>
+<span class="lineno">  277 </span><span class="spaces">  </span><span class="nottickedoff">case parseSvgFile svgPath svg_data of</span>
+<span class="lineno">  278 </span><span class="spaces">    </span><span class="nottickedoff">Nothing -&gt; do</span>
+<span class="lineno">  279 </span><span class="spaces">      </span><span class="nottickedoff">removeFile svgPath</span>
+<span class="lineno">  280 </span><span class="spaces">      </span><span class="nottickedoff">error &quot;Malformed svg&quot;</span>
+<span class="lineno">  281 </span><span class="spaces">    </span><span class="nottickedoff">Just svg -&gt; return $ unbox $ replaceUses svg</span>
+<span class="lineno">  282 </span><span class="spaces">  </span><span class="nottickedoff">where key = hash (path, args)</span></span>
+<span class="lineno">  283 </span>
+<span class="lineno">  284 </span>-- imageAsFile :: DynamicImage -&gt; FilePath
+<span class="lineno">  285 </span>-- imageAsFile img
+<span class="lineno">  286 </span>
+<span class="lineno">  287 </span>-- | Convert an SVG object to a pixel-based image and save it to disk, returning
+<span class="lineno">  288 </span>--   the filepath. The default resolution is 2560x1440. See also 'svgAsPngFile''.
+<span class="lineno">  289 </span>--   Multiple raster engines are supported and are selected using the '--raster'
+<span class="lineno">  290 </span>--   flag in the driver.
+<span class="lineno">  291 </span>svgAsPngFile :: SVG -&gt; FilePath
+<span class="lineno">  292 </span><span class="decl"><span class="nottickedoff">svgAsPngFile = svgAsPngFile' width height</span>
+<span class="lineno">  293 </span><span class="spaces"> </span><span class="nottickedoff">where</span>
+<span class="lineno">  294 </span><span class="spaces">  </span><span class="nottickedoff">width  = 2560</span>
+<span class="lineno">  295 </span><span class="spaces">  </span><span class="nottickedoff">height = width * 9 `div` 16</span></span>
+<span class="lineno">  296 </span>
+<span class="lineno">  297 </span>-- | Convert an SVG object to a pixel-based image and save it to disk, returning
+<span class="lineno">  298 </span>--   the filepath.
+<span class="lineno">  299 </span>svgAsPngFile'
+<span class="lineno">  300 </span>  :: Width  -- ^ Width
+<span class="lineno">  301 </span>  -&gt; Height -- ^ Height
+<span class="lineno">  302 </span>  -&gt; SVG    -- ^ SVG object
+<span class="lineno">  303 </span>  -&gt; FilePath
+<span class="lineno">  304 </span><span class="decl"><span class="nottickedoff">svgAsPngFile' _ _ _ | pNoExternals = &quot;/svgAsPngFile/has/been/disabled&quot;</span>
+<span class="lineno">  305 </span><span class="spaces"></span><span class="nottickedoff">svgAsPngFile' width height svg =</span>
+<span class="lineno">  306 </span><span class="spaces">  </span><span class="nottickedoff">unsafePerformIO $ cacheFile template $ \pngPath -&gt; do</span>
+<span class="lineno">  307 </span><span class="spaces">    </span><span class="nottickedoff">let svgPath = replaceExtension pngPath &quot;svg&quot;</span>
+<span class="lineno">  308 </span><span class="spaces">    </span><span class="nottickedoff">writeFile svgPath rendered</span>
+<span class="lineno">  309 </span><span class="spaces">    </span><span class="nottickedoff">engine &lt;- requireRaster pRaster</span>
+<span class="lineno">  310 </span><span class="spaces">    </span><span class="nottickedoff">applyRaster engine svgPath</span>
+<span class="lineno">  311 </span><span class="spaces"> </span><span class="nottickedoff">where</span>
+<span class="lineno">  312 </span><span class="spaces">  </span><span class="nottickedoff">template = encodeInt (hash rendered) &lt;.&gt; &quot;png&quot;</span>
+<span class="lineno">  313 </span><span class="spaces">  </span><span class="nottickedoff">rendered = renderSvg (Just $ Px $ fromIntegral width)</span>
+<span class="lineno">  314 </span><span class="spaces">                       </span><span class="nottickedoff">(Just $ Px $ fromIntegral height)</span>
+<span class="lineno">  315 </span><span class="spaces">                       </span><span class="nottickedoff">svg</span></span>
 
 </pre>
 </body>
