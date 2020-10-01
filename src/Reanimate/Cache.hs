@@ -20,7 +20,7 @@ import qualified Data.Text           as T
 import qualified Data.Text.IO        as T
 import           Graphics.SvgTree    (Tree, unparse, pattern None)
 import           Reanimate.Animation (renderTree)
-import           Reanimate.Misc      (renameOrCopyFile)
+import           Reanimate.Misc      (renameOrCopyFile,getReanimateCacheDirectory)
 import           System.Directory
 import           System.FilePath
 import           System.IO
@@ -32,8 +32,7 @@ import           Text.XML.Light      (Content (..), parseXML)
 
 cacheFile :: FilePath -> (FilePath -> IO ()) -> IO FilePath
 cacheFile template gen = do
-    root <- getXdgDirectory XdgCache "reanimate"
-    createDirectoryIfMissing True root
+    root <- getReanimateCacheDirectory
     let path = root </> template
     hit <- doesFileExist path
     unless hit $ withSystemTempFile template $ \tmp h -> do
@@ -44,8 +43,7 @@ cacheFile template gen = do
 
 cacheDisk :: String -> (T.Text -> Maybe a) -> (a -> T.Text) -> (Text -> IO a) -> (Text -> IO a)
 cacheDisk cacheType parse render gen key = do
-    root <- getXdgDirectory XdgCache "reanimate"
-    createDirectoryIfMissing True root
+    root <- getReanimateCacheDirectory
     let path = root </> encodeInt (hash key) <.> cacheType
     hit <- doesFileExist path
     if hit

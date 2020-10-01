@@ -23,6 +23,7 @@ replaceUses :: Document -> Document
 replaceUses doc = doc & documentElements %~ map (mapTree replace)
   where
     replaceDefinition PathTree{} = None
+    replaceDefinition SymbolTree{} = None
     replaceDefinition t          = t
 
     replace t@DefinitionTree{} = mapTree replaceDefinition t
@@ -30,8 +31,13 @@ replaceUses doc = doc & documentElements %~ map (mapTree replace)
     replace (UseTree use Nothing) =
       case Map.lookup (use^.useName) idMap of
         Nothing -> error $ "Unknown id: " ++ (use^.useName)
+        Just (SymbolTree children) -> mapTree replace $
+          GroupTree children
+          & transform ?~
+              fromMaybe [] (use^.transform) ++
+              [baseToTransformation (use^.useBase)]
         Just tree -> mapTree replace $
-          groupTree (defaultSvg & groupChildren .~ [tree])
+          GroupTree (defaultSvg & groupChildren .~ [tree])
           & transform ?~
               fromMaybe [] (use^.transform) ++
               [baseToTransformation (use^.useBase)]

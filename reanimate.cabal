@@ -82,6 +82,7 @@ library
                       Reanimate.Builtin.Images
                       Reanimate.Debug
                       Reanimate.Voice
+                      Reanimate.External
                       Geom2D.CubicBezier.Linear
   other-modules:      Reanimate.Cache
                       Reanimate.Morph.Cache
@@ -142,7 +143,9 @@ library
     vector               >=0.12.0.0,
     vector-space         >=0.13,
     websockets           >=0.12.7.0,
-    xml                  >=1.3.14
+    xml                  >=1.3.14,
+    cryptohash-sha256,
+    base64-bytestring
   ghc-options: -Wall -fno-ignore-asserts
 
 test-suite spec

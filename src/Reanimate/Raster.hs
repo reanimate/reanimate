@@ -261,8 +261,7 @@ vectorize = vectorize_ []
 vectorize_ :: [String] -> FilePath -> SVG
 vectorize_ _ path | pNoExternals = mkText $ T.pack path
 vectorize_ args path             = unsafePerformIO $ do
-  root <- getXdgDirectory XdgCache "reanimate"
-  createDirectoryIfMissing True root
+  root <- getReanimateCacheDirectory
   let svgPath = root </> encodeInt key <.> "svg"
   hit <- doesFileExist svgPath
   unless hit $ withSystemTempFile "file.svg" $ \tmpSvgPath svgH ->
