@@ -26,6 +26,8 @@ nav:
 #    - Use fonts (incomplete): fonts.md
   - Tutorials:
     - Animating an Equation: tut_equation.md
+  - How To:
+    - Use the LaTeX Font Catelogue: font_catelogue.md
   - Concepts:
     - Core concepts: introduction.md
     - Gluing together animations: glue_tut.md

@@ -14,7 +14,8 @@ RUN apt-get update && \
       curl blender povray texlive texlive-latex-base texlive-latex-extra \
       texlive-fonts-extra texlive-science texlive-xetex \
       texlive-latex-recommended texlive-lang-english \
-      texlive-lang-chinese texlive-plain-generic
+      texlive-lang-chinese texlive-plain-generic \
+      unzip
 
 WORKDIR /src
 
