@@ -28,6 +28,7 @@ nav:
     - Animating an Equation: tut_equation.md
   - How To:
     - Use the LaTeX Font Catalogue: font_catalogue.md
+    - Use system (TTF/OTF) fonts: font_system.md
   - Concepts:
     - Core concepts: introduction.md
     - Gluing together animations: glue_tut.md
