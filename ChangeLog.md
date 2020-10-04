@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and the
 project adheres to the [Haskell Package Versioning
 Policy (PVP)](https://pvp.haskell.org)
 
+## 1.1.0.0 -- Unpublished
+
+### Added
+
+ * LaTeX font configurations.
+
 ## 1.0.0.0 -- 2020-09-20
 
 ### Changed
