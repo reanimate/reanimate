@@ -280,7 +280,7 @@ mkTexScript latexExec latexArgs texHeaders tex =
 chalkduster :: TexConfig
 chalkduster =
   TexConfig
-    { texConfigEngine = LuaLaTeX,
+    { texConfigEngine = XeLaTeX,
       texConfigHeaders =
         [ "\\usepackage[no-math]{fontspec}",
           "\\setmainfont[Mapping=tex-text,Path={" <> chalkdusterFont <> "/},Extension=.ttf]{Chalkduster}",
