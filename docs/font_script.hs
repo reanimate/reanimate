@@ -29,5 +29,6 @@ showCfg name cfg = do
 
 oBelow a b = do
   aBot <- oRead b oBottomY
-  oModify a $
-    oTopY .~ aBot
+  oModifyS a $ do
+    oMarginTop .= 0
+    oTopY .= aBot
