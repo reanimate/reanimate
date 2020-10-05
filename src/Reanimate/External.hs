@@ -17,8 +17,10 @@ import System.FilePath ((</>))
 import System.IO.Unsafe (unsafePerformIO)
 import System.Process (callProcess)
 
+-- | Resource address
 type URL = String
 
+-- | Resource hash
 type SHA256 = String
 
 fetchStaticFile :: URL -> SHA256 -> (FilePath -> FilePath -> IO ()) -> IO FilePath

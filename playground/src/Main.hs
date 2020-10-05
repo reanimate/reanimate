@@ -378,6 +378,7 @@ withHaskellFile m action = withSystemTempFile "playground.hs" $ \target h -> do
       \import Reanimate.Morph.Linear\n\
       \import Reanimate.Scene\n\
       \import Reanimate.LaTeX\n\
+      \import Reanimate.External\n\
       \import qualified Graphics.SvgTree as SVG\n\
       \import Control.Lens\n\
       \import Control.Monad\n\
