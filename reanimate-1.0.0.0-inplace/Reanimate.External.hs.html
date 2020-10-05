@@ -36,80 +36,82 @@ span.spaces    { background: white }
 <span class="lineno">   17 </span>import System.IO.Unsafe (unsafePerformIO)
 <span class="lineno">   18 </span>import System.Process (callProcess)
 <span class="lineno">   19 </span>
-<span class="lineno">   20 </span>type URL = String
-<span class="lineno">   21 </span>
-<span class="lineno">   22 </span>type SHA256 = String
-<span class="lineno">   23 </span>
-<span class="lineno">   24 </span>fetchStaticFile :: URL -&gt; SHA256 -&gt; (FilePath -&gt; FilePath -&gt; IO ()) -&gt; IO FilePath
-<span class="lineno">   25 </span><span class="decl"><span class="nottickedoff">fetchStaticFile url sha256 unpack = do</span>
-<span class="lineno">   26 </span><span class="spaces">  </span><span class="nottickedoff">root &lt;- getReanimateCacheDirectory</span>
-<span class="lineno">   27 </span><span class="spaces">  </span><span class="nottickedoff">let folder = root &lt;/&gt; sha256</span>
-<span class="lineno">   28 </span><span class="spaces">  </span><span class="nottickedoff">hit &lt;- doesDirectoryExist folder</span>
-<span class="lineno">   29 </span><span class="spaces">  </span><span class="nottickedoff">unless hit $</span>
-<span class="lineno">   30 </span><span class="spaces">    </span><span class="nottickedoff">downloadFile url $ \path -&gt; do</span>
-<span class="lineno">   31 </span><span class="spaces">      </span><span class="nottickedoff">inp &lt;- B.readFile path</span>
-<span class="lineno">   32 </span><span class="spaces">      </span><span class="nottickedoff">let inpSha = B8.unpack (encode (hash inp))</span>
-<span class="lineno">   33 </span><span class="spaces">      </span><span class="nottickedoff">if inpSha == sha256</span>
-<span class="lineno">   34 </span><span class="spaces">        </span><span class="nottickedoff">then do</span>
-<span class="lineno">   35 </span><span class="spaces">          </span><span class="nottickedoff">unpack folder path</span>
-<span class="lineno">   36 </span><span class="spaces">        </span><span class="nottickedoff">else</span>
-<span class="lineno">   37 </span><span class="spaces">          </span><span class="nottickedoff">error $</span>
-<span class="lineno">   38 </span><span class="spaces">            </span><span class="nottickedoff">&quot;URL &quot; ++ url ++ &quot;\n&quot;</span>
-<span class="lineno">   39 </span><span class="spaces">              </span><span class="nottickedoff">++ &quot;  Expected SHA256: &quot;</span>
-<span class="lineno">   40 </span><span class="spaces">              </span><span class="nottickedoff">++ sha256</span>
-<span class="lineno">   41 </span><span class="spaces">              </span><span class="nottickedoff">++ &quot;\n&quot;</span>
-<span class="lineno">   42 </span><span class="spaces">              </span><span class="nottickedoff">++ &quot;  Actual SHA256:   &quot;</span>
-<span class="lineno">   43 </span><span class="spaces">              </span><span class="nottickedoff">++ inpSha</span>
-<span class="lineno">   44 </span><span class="spaces">  </span><span class="nottickedoff">return folder</span></span>
-<span class="lineno">   45 </span>
-<span class="lineno">   46 </span>{-# NOINLINE zipArchive #-}
+<span class="lineno">   20 </span>-- | Resource address
+<span class="lineno">   21 </span>type URL = String
+<span class="lineno">   22 </span>
+<span class="lineno">   23 </span>-- | Resource hash
+<span class="lineno">   24 </span>type SHA256 = String
+<span class="lineno">   25 </span>
+<span class="lineno">   26 </span>fetchStaticFile :: URL -&gt; SHA256 -&gt; (FilePath -&gt; FilePath -&gt; IO ()) -&gt; IO FilePath
+<span class="lineno">   27 </span><span class="decl"><span class="nottickedoff">fetchStaticFile url sha256 unpack = do</span>
+<span class="lineno">   28 </span><span class="spaces">  </span><span class="nottickedoff">root &lt;- getReanimateCacheDirectory</span>
+<span class="lineno">   29 </span><span class="spaces">  </span><span class="nottickedoff">let folder = root &lt;/&gt; sha256</span>
+<span class="lineno">   30 </span><span class="spaces">  </span><span class="nottickedoff">hit &lt;- doesDirectoryExist folder</span>
+<span class="lineno">   31 </span><span class="spaces">  </span><span class="nottickedoff">unless hit $</span>
+<span class="lineno">   32 </span><span class="spaces">    </span><span class="nottickedoff">downloadFile url $ \path -&gt; do</span>
+<span class="lineno">   33 </span><span class="spaces">      </span><span class="nottickedoff">inp &lt;- B.readFile path</span>
+<span class="lineno">   34 </span><span class="spaces">      </span><span class="nottickedoff">let inpSha = B8.unpack (encode (hash inp))</span>
+<span class="lineno">   35 </span><span class="spaces">      </span><span class="nottickedoff">if inpSha == sha256</span>
+<span class="lineno">   36 </span><span class="spaces">        </span><span class="nottickedoff">then do</span>
+<span class="lineno">   37 </span><span class="spaces">          </span><span class="nottickedoff">unpack folder path</span>
+<span class="lineno">   38 </span><span class="spaces">        </span><span class="nottickedoff">else</span>
+<span class="lineno">   39 </span><span class="spaces">          </span><span class="nottickedoff">error $</span>
+<span class="lineno">   40 </span><span class="spaces">            </span><span class="nottickedoff">&quot;URL &quot; ++ url ++ &quot;\n&quot;</span>
+<span class="lineno">   41 </span><span class="spaces">              </span><span class="nottickedoff">++ &quot;  Expected SHA256: &quot;</span>
+<span class="lineno">   42 </span><span class="spaces">              </span><span class="nottickedoff">++ sha256</span>
+<span class="lineno">   43 </span><span class="spaces">              </span><span class="nottickedoff">++ &quot;\n&quot;</span>
+<span class="lineno">   44 </span><span class="spaces">              </span><span class="nottickedoff">++ &quot;  Actual SHA256:   &quot;</span>
+<span class="lineno">   45 </span><span class="spaces">              </span><span class="nottickedoff">++ inpSha</span>
+<span class="lineno">   46 </span><span class="spaces">  </span><span class="nottickedoff">return folder</span></span>
 <span class="lineno">   47 </span>
-<span class="lineno">   48 </span>-- | Download and unpack zip archive. The returned path is the unpacked folder.
-<span class="lineno">   49 </span>zipArchive :: URL -&gt; SHA256 -&gt; FilePath
-<span class="lineno">   50 </span><span class="decl"><span class="nottickedoff">zipArchive url sha256 = unsafePerformIO $</span>
-<span class="lineno">   51 </span><span class="spaces">  </span><span class="nottickedoff">fetchStaticFile url sha256 $ \folder zipfile -&gt;</span>
-<span class="lineno">   52 </span><span class="spaces">    </span><span class="nottickedoff">callProcess &quot;unzip&quot; [&quot;-qq&quot;, &quot;-d&quot;, folder, zipfile]</span></span>
-<span class="lineno">   53 </span>
-<span class="lineno">   54 </span>{-# NOINLINE tarball #-}
+<span class="lineno">   48 </span>{-# NOINLINE zipArchive #-}
+<span class="lineno">   49 </span>
+<span class="lineno">   50 </span>-- | Download and unpack zip archive. The returned path is the unpacked folder.
+<span class="lineno">   51 </span>zipArchive :: URL -&gt; SHA256 -&gt; FilePath
+<span class="lineno">   52 </span><span class="decl"><span class="nottickedoff">zipArchive url sha256 = unsafePerformIO $</span>
+<span class="lineno">   53 </span><span class="spaces">  </span><span class="nottickedoff">fetchStaticFile url sha256 $ \folder zipfile -&gt;</span>
+<span class="lineno">   54 </span><span class="spaces">    </span><span class="nottickedoff">callProcess &quot;unzip&quot; [&quot;-qq&quot;, &quot;-d&quot;, folder, zipfile]</span></span>
 <span class="lineno">   55 </span>
-<span class="lineno">   56 </span>-- | Download and unpack tarball. The returned path is the unpacked folder.
-<span class="lineno">   57 </span>tarball :: URL -&gt; SHA256 -&gt; FilePath
-<span class="lineno">   58 </span><span class="decl"><span class="nottickedoff">tarball url sha256 = unsafePerformIO $</span>
-<span class="lineno">   59 </span><span class="spaces">  </span><span class="nottickedoff">fetchStaticFile url sha256 $ \folder tarfile -&gt;</span>
-<span class="lineno">   60 </span><span class="spaces">    </span><span class="nottickedoff">callProcess &quot;tar&quot; [&quot;--overwrite&quot;, &quot;--one-top-level=&quot; ++ folder, &quot;-xf&quot;, tarfile]</span></span>
-<span class="lineno">   61 </span>
-<span class="lineno">   62 </span>downloadFile :: URL -&gt; (FilePath -&gt; IO a) -&gt; IO a
-<span class="lineno">   63 </span><span class="decl"><span class="nottickedoff">downloadFile url action = do</span>
-<span class="lineno">   64 </span><span class="spaces">  </span><span class="nottickedoff">mbCurl &lt;- findExecutable &quot;curl&quot;</span>
-<span class="lineno">   65 </span><span class="spaces">  </span><span class="nottickedoff">mbWget &lt;- findExecutable &quot;wget&quot;</span>
-<span class="lineno">   66 </span><span class="spaces">  </span><span class="nottickedoff">case (mbCurl, mbWget) of</span>
-<span class="lineno">   67 </span><span class="spaces">    </span><span class="nottickedoff">(Just curl, _) -&gt; downloadFileCurl curl url action</span>
-<span class="lineno">   68 </span><span class="spaces">    </span><span class="nottickedoff">(_, Just wget) -&gt; downloadFileWget wget url action</span>
-<span class="lineno">   69 </span><span class="spaces">    </span><span class="nottickedoff">(Nothing, Nothing) -&gt; error &quot;curl/wget required to download files&quot;</span></span>
-<span class="lineno">   70 </span>
-<span class="lineno">   71 </span>downloadFileCurl :: FilePath -&gt; URL -&gt; (FilePath -&gt; IO a) -&gt; IO a
-<span class="lineno">   72 </span><span class="decl"><span class="nottickedoff">downloadFileCurl curl url action = withTempFile &quot;dl&quot; $ \path -&gt; do</span>
-<span class="lineno">   73 </span><span class="spaces">  </span><span class="nottickedoff">callProcess</span>
-<span class="lineno">   74 </span><span class="spaces">    </span><span class="nottickedoff">curl</span>
-<span class="lineno">   75 </span><span class="spaces">    </span><span class="nottickedoff">[ url,</span>
-<span class="lineno">   76 </span><span class="spaces">      </span><span class="nottickedoff">&quot;--output&quot;,</span>
-<span class="lineno">   77 </span><span class="spaces">      </span><span class="nottickedoff">path,</span>
-<span class="lineno">   78 </span><span class="spaces">      </span><span class="nottickedoff">&quot;--silent&quot;,</span>
-<span class="lineno">   79 </span><span class="spaces">      </span><span class="nottickedoff">&quot;--show-error&quot;,</span>
-<span class="lineno">   80 </span><span class="spaces">      </span><span class="nottickedoff">&quot;--max-filesize&quot;,</span>
-<span class="lineno">   81 </span><span class="spaces">      </span><span class="nottickedoff">&quot;10M&quot;</span>
-<span class="lineno">   82 </span><span class="spaces">    </span><span class="nottickedoff">]</span>
-<span class="lineno">   83 </span><span class="spaces">  </span><span class="nottickedoff">action path</span></span>
-<span class="lineno">   84 </span>
-<span class="lineno">   85 </span>downloadFileWget :: FilePath -&gt; URL -&gt; (FilePath -&gt; IO a) -&gt; IO a
-<span class="lineno">   86 </span><span class="decl"><span class="nottickedoff">downloadFileWget wget url action = withTempFile &quot;dl&quot; $ \path -&gt; do</span>
-<span class="lineno">   87 </span><span class="spaces">  </span><span class="nottickedoff">callProcess</span>
-<span class="lineno">   88 </span><span class="spaces">    </span><span class="nottickedoff">wget</span>
-<span class="lineno">   89 </span><span class="spaces">    </span><span class="nottickedoff">[ url,</span>
-<span class="lineno">   90 </span><span class="spaces">      </span><span class="nottickedoff">&quot;--output-document=&quot; ++ path,</span>
-<span class="lineno">   91 </span><span class="spaces">      </span><span class="nottickedoff">&quot;--quiet&quot;</span>
-<span class="lineno">   92 </span><span class="spaces">    </span><span class="nottickedoff">]</span>
-<span class="lineno">   93 </span><span class="spaces">  </span><span class="nottickedoff">action path</span></span>
+<span class="lineno">   56 </span>{-# NOINLINE tarball #-}
+<span class="lineno">   57 </span>
+<span class="lineno">   58 </span>-- | Download and unpack tarball. The returned path is the unpacked folder.
+<span class="lineno">   59 </span>tarball :: URL -&gt; SHA256 -&gt; FilePath
+<span class="lineno">   60 </span><span class="decl"><span class="nottickedoff">tarball url sha256 = unsafePerformIO $</span>
+<span class="lineno">   61 </span><span class="spaces">  </span><span class="nottickedoff">fetchStaticFile url sha256 $ \folder tarfile -&gt;</span>
+<span class="lineno">   62 </span><span class="spaces">    </span><span class="nottickedoff">callProcess &quot;tar&quot; [&quot;--overwrite&quot;, &quot;--one-top-level=&quot; ++ folder, &quot;-xf&quot;, tarfile]</span></span>
+<span class="lineno">   63 </span>
+<span class="lineno">   64 </span>downloadFile :: URL -&gt; (FilePath -&gt; IO a) -&gt; IO a
+<span class="lineno">   65 </span><span class="decl"><span class="nottickedoff">downloadFile url action = do</span>
+<span class="lineno">   66 </span><span class="spaces">  </span><span class="nottickedoff">mbCurl &lt;- findExecutable &quot;curl&quot;</span>
+<span class="lineno">   67 </span><span class="spaces">  </span><span class="nottickedoff">mbWget &lt;- findExecutable &quot;wget&quot;</span>
+<span class="lineno">   68 </span><span class="spaces">  </span><span class="nottickedoff">case (mbCurl, mbWget) of</span>
+<span class="lineno">   69 </span><span class="spaces">    </span><span class="nottickedoff">(Just curl, _) -&gt; downloadFileCurl curl url action</span>
+<span class="lineno">   70 </span><span class="spaces">    </span><span class="nottickedoff">(_, Just wget) -&gt; downloadFileWget wget url action</span>
+<span class="lineno">   71 </span><span class="spaces">    </span><span class="nottickedoff">(Nothing, Nothing) -&gt; error &quot;curl/wget required to download files&quot;</span></span>
+<span class="lineno">   72 </span>
+<span class="lineno">   73 </span>downloadFileCurl :: FilePath -&gt; URL -&gt; (FilePath -&gt; IO a) -&gt; IO a
+<span class="lineno">   74 </span><span class="decl"><span class="nottickedoff">downloadFileCurl curl url action = withTempFile &quot;dl&quot; $ \path -&gt; do</span>
+<span class="lineno">   75 </span><span class="spaces">  </span><span class="nottickedoff">callProcess</span>
+<span class="lineno">   76 </span><span class="spaces">    </span><span class="nottickedoff">curl</span>
+<span class="lineno">   77 </span><span class="spaces">    </span><span class="nottickedoff">[ url,</span>
+<span class="lineno">   78 </span><span class="spaces">      </span><span class="nottickedoff">&quot;--output&quot;,</span>
+<span class="lineno">   79 </span><span class="spaces">      </span><span class="nottickedoff">path,</span>
+<span class="lineno">   80 </span><span class="spaces">      </span><span class="nottickedoff">&quot;--silent&quot;,</span>
+<span class="lineno">   81 </span><span class="spaces">      </span><span class="nottickedoff">&quot;--show-error&quot;,</span>
+<span class="lineno">   82 </span><span class="spaces">      </span><span class="nottickedoff">&quot;--max-filesize&quot;,</span>
+<span class="lineno">   83 </span><span class="spaces">      </span><span class="nottickedoff">&quot;10M&quot;</span>
+<span class="lineno">   84 </span><span class="spaces">    </span><span class="nottickedoff">]</span>
+<span class="lineno">   85 </span><span class="spaces">  </span><span class="nottickedoff">action path</span></span>
+<span class="lineno">   86 </span>
+<span class="lineno">   87 </span>downloadFileWget :: FilePath -&gt; URL -&gt; (FilePath -&gt; IO a) -&gt; IO a
+<span class="lineno">   88 </span><span class="decl"><span class="nottickedoff">downloadFileWget wget url action = withTempFile &quot;dl&quot; $ \path -&gt; do</span>
+<span class="lineno">   89 </span><span class="spaces">  </span><span class="nottickedoff">callProcess</span>
+<span class="lineno">   90 </span><span class="spaces">    </span><span class="nottickedoff">wget</span>
+<span class="lineno">   91 </span><span class="spaces">    </span><span class="nottickedoff">[ url,</span>
+<span class="lineno">   92 </span><span class="spaces">      </span><span class="nottickedoff">&quot;--output-document=&quot; ++ path,</span>
+<span class="lineno">   93 </span><span class="spaces">      </span><span class="nottickedoff">&quot;--quiet&quot;</span>
+<span class="lineno">   94 </span><span class="spaces">    </span><span class="nottickedoff">]</span>
+<span class="lineno">   95 </span><span class="spaces">  </span><span class="nottickedoff">action path</span></span>
 
 </pre>
 </body>
