@@ -3,6 +3,8 @@ module Reanimate.External
     SHA256,
     zipArchive,
     tarball,
+    -- * External Icon Datasets
+    simpleIcon
   )
 where
 
@@ -11,9 +13,12 @@ import Crypto.Hash.SHA256 (hash)
 import qualified Data.ByteString as B (readFile)
 import Data.ByteString.Base64 (encode)
 import qualified Data.ByteString.Char8 as B8 (unpack)
+import Reanimate.Animation (SVG)
+import Reanimate.Constants (screenHeight, screenWidth)
 import Reanimate.Misc (getReanimateCacheDirectory, withTempFile)
-import System.Directory (doesDirectoryExist, findExecutable)
-import System.FilePath ((</>))
+import Reanimate.Raster (mkImage)
+import System.Directory (doesDirectoryExist, doesFileExist, findExecutable)
+import System.FilePath ((<.>), (</>))
 import System.IO.Unsafe (unsafePerformIO)
 import System.Process (callProcess)
 
@@ -59,7 +64,7 @@ zipArchive url sha256 = unsafePerformIO $
 tarball :: URL -> SHA256 -> FilePath
 tarball url sha256 = unsafePerformIO $
   fetchStaticFile url sha256 $ \folder tarfile ->
-    callProcess "tar" ["--overwrite", "--one-top-level=" ++ folder, "-xf", tarfile]
+    callProcess "tar" ["--overwrite", "--one-top-level=" ++ folder, "-xzf", tarfile]
 
 downloadFile :: URL -> (FilePath -> IO a) -> IO a
 downloadFile url action = do
@@ -75,12 +80,15 @@ downloadFileCurl curl url action = withTempFile "dl" $ \path -> do
   callProcess
     curl
     [ url,
+      "--location",
       "--output",
       path,
       "--silent",
       "--show-error",
       "--max-filesize",
-      "10M"
+      "10M",
+      "--max-time",
+      "60"
     ]
   action path
 
@@ -93,3 +101,22 @@ downloadFileWget wget url action = withTempFile "dl" $ \path -> do
       "--quiet"
     ]
   action path
+
+simpleIconsFolder :: FilePath
+simpleIconsFolder =
+  tarball
+    "https://github.com/simple-icons/simple-icons/archive/3.11.0.tar.gz"
+    "NXa8TrHHuQofrPbqTf0pBGt1GDRfuQ4IcQ7kNEk9OcQ="
+    </> "simple-icons-3.11.0"
+
+{-# NOINLINE simpleIconPath #-}
+simpleIconPath :: String -> FilePath
+simpleIconPath key = unsafePerformIO $ do
+  let path = simpleIconsFolder </> "icons" </> key <.> "svg"
+  hit <- doesFileExist path
+  if hit
+    then pure path
+    else error $ "Key not found in simple-icons dataset: " ++ show key
+
+simpleIcon :: String -> SVG
+simpleIcon = mkImage screenWidth screenHeight . simpleIconPath
