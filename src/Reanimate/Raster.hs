@@ -87,7 +87,7 @@ mkImage width height path | takeExtension path == ".svg" = unsafePerformIO $ do
     Just svg ->
       return
         $ scaleXY (width / screenWidth) (height / screenHeight)
-        $ embedDocument svg
+        $ unboxFit svg
 mkImage width height path | pRaster == RasterNone = unsafePerformIO $ do
   inp <- LBS.readFile path
   let imgData = LBS.unpack $ Base64.encode inp

@@ -8,6 +8,7 @@ Portability : POSIX
 module Reanimate.Svg.Unuse
   ( replaceUses
   , unbox
+  , unboxFit
   , embedDocument
   ) where
 
@@ -56,12 +57,28 @@ replaceUses doc = doc & documentElements %~ map (mapTree replace)
 -- FIXME: the viewbox is ignored. Can we use the viewbox as a mask?
 -- | Transform out viewbox. Definitions and CSS rules are discarded.
 unbox :: Document -> Tree
-unbox doc@Document{_documentViewBox = Just (_minx, _minw, _width, _height)} =
+unbox doc@Document{_documentViewBox = Just (_minx, _miny, _width, _height)} =
   groupTree $ defaultSvg
           & groupChildren .~ doc^.documentElements
 unbox doc =
   groupTree $ defaultSvg
     & groupChildren .~ doc^.documentElements
+
+-- | Transform out viewbox and fit image to screen size.
+unboxFit :: Document -> Tree
+unboxFit doc@Document{_documentViewBox = Just (minx, miny, width, height)} =
+  let widthScale = screenWidth/width
+      heightScale = screenHeight/height
+      scaler = min widthScale heightScale
+  in
+    scaleXY scaler (-scaler) $
+    translate (-minx-width/2) (-miny-height/2) $
+    groupTree $ defaultSvg
+      & groupChildren .~ doc^.documentElements
+unboxFit doc =
+  groupTree $ defaultSvg
+    & groupChildren .~ doc^.documentElements
+
 
 -- | Embed 'Document'. This keeps the entire document intact but makes
 --   it more difficult to use, say, `Reanimate.Svg.pathify` on it.
