@@ -8,3 +8,4 @@ Made it easier to use built-in LaTeX fonts as well as TTF/OTF font files.
 ![Inconsolata](changelog/inconsolata.svg)
 ![ComputerModern](changelog/computermodern.svg)
 ![Magnolia](changelog/magnolia.svg)
+![Chalkduster](changelog/chalkduster.svg)
