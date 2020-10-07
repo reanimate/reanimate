@@ -1,0 +1,192 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>{-# LANGUAGE LambdaCase #-}
+<span class="lineno">    2 </span>{-# LANGUAGE RecordWildCards #-}
+<span class="lineno">    3 </span>
+<span class="lineno">    4 </span>module Reanimate.Scene.Var where
+<span class="lineno">    5 </span>
+<span class="lineno">    6 </span>import Control.Monad.ST (ST)
+<span class="lineno">    7 </span>import qualified Data.Map as M
+<span class="lineno">    8 </span>import Data.STRef
+<span class="lineno">    9 </span>import Reanimate.Animation (Duration, Time)
+<span class="lineno">   10 </span>import Reanimate.Scene.Core (Scene, liftST, queryNow, wait)
+<span class="lineno">   11 </span>
+<span class="lineno">   12 </span>-- | Time dependent variable.
+<span class="lineno">   13 </span>newtype Var s a = Var (STRef s (VarData a))
+<span class="lineno">   14 </span>
+<span class="lineno">   15 </span>-- Note: We must ensure that upon transforming an VarData,
+<span class="lineno">   16 </span>--       1. evarDefault old == evarDefault new
+<span class="lineno">   17 </span>--       2. isNothing (evarLastTime old) || isJust (evarLastTime new) i.e. once evarLastValue has a Just value,
+<span class="lineno">   18 </span>--          it shouldn't be Nothing again.
+<span class="lineno">   19 </span>--       3. isNothing (evarLastTime var) =&gt; M.null (evarTimeline var)
+<span class="lineno">   20 </span>data VarData a = VarData
+<span class="lineno">   21 </span>  { <span class="istickedoff"><span class="decl"><span class="istickedoff">evarDefault</span></span></span> :: a,
+<span class="lineno">   22 </span>    <span class="istickedoff"><span class="decl"><span class="istickedoff">evarTimeline</span></span></span> :: Timeline a,
+<span class="lineno">   23 </span>    <span class="istickedoff"><span class="decl"><span class="istickedoff">evarLastTime</span></span></span> :: Maybe Time,
+<span class="lineno">   24 </span>    <span class="istickedoff"><span class="decl"><span class="istickedoff">evarLastValue</span></span></span> :: a
+<span class="lineno">   25 </span>  }
+<span class="lineno">   26 </span>
+<span class="lineno">   27 </span>data Modifier a = StaticValue a | TweenValue Duration (a -&gt; Time -&gt; a)
+<span class="lineno">   28 </span>
+<span class="lineno">   29 </span>type Timeline a = M.Map Time (Modifier a)
+<span class="lineno">   30 </span>
+<span class="lineno">   31 </span>-- | Create a new variable with a default value.
+<span class="lineno">   32 </span>--   Variables always have a defined value even if they are read at a timestamp that is
+<span class="lineno">   33 </span>--   earlier than when the variable was created. For example:
+<span class="lineno">   34 </span>--
+<span class="lineno">   35 </span>-- @
+<span class="lineno">   36 </span>-- do v \&lt;- 'Reanimate.Scene.fork' ('wait' 10 \&gt;\&gt; 'newVar' 0) -- Create a variable at timestamp '10'.
+<span class="lineno">   37 </span>--    'readVar' v                       -- Read the variable at timestamp '0'.
+<span class="lineno">   38 </span>--                                    -- The value of the variable will be '0'.
+<span class="lineno">   39 </span>-- @
+<span class="lineno">   40 </span>newVar :: a -&gt; Scene s (Var s a)
+<span class="lineno">   41 </span><span class="decl"><span class="istickedoff">newVar def = Var &lt;$&gt; liftST (newSTRef $ VarData def M.empty Nothing <span class="nottickedoff">def</span>)</span></span>
+<span class="lineno">   42 </span>
+<span class="lineno">   43 </span>-- | Read the value of a variable at the current timestamp.
+<span class="lineno">   44 </span>readVar :: Var s a -&gt; Scene s a
+<span class="lineno">   45 </span><span class="decl"><span class="istickedoff">readVar (Var ref) = readVarData &lt;$&gt; liftST (readSTRef ref) &lt;*&gt; queryNow</span></span>
+<span class="lineno">   46 </span>
+<span class="lineno">   47 </span>unpackVar :: Var s a -&gt; ST s (Time -&gt; a)
+<span class="lineno">   48 </span><span class="decl"><span class="istickedoff">unpackVar (Var ref) = readVarData &lt;$&gt; readSTRef ref</span></span>
+<span class="lineno">   49 </span>
+<span class="lineno">   50 </span>-- | Write the value of a variable at the current timestamp.
+<span class="lineno">   51 </span>--
+<span class="lineno">   52 </span>--   Example:
+<span class="lineno">   53 </span>--
+<span class="lineno">   54 </span>-- @
+<span class="lineno">   55 </span>-- do v \&lt;- 'newVar' 0
+<span class="lineno">   56 </span>--    'Reanimate.Scene.newSprite' $ 'Reanimate.Svg.Constructors.mkCircle' \&lt;$\&gt; 'Reanimate.Scene.unVar' v
+<span class="lineno">   57 </span>--    'writeVar' v 1; 'wait' 1
+<span class="lineno">   58 </span>--    'writeVar' v 2; 'wait' 1
+<span class="lineno">   59 </span>--    'writeVar' v 3; 'wait' 1
+<span class="lineno">   60 </span>-- @
+<span class="lineno">   61 </span>--
+<span class="lineno">   62 </span>--   &lt;&lt;docs/gifs/doc_writeVar.gif&gt;&gt;
+<span class="lineno">   63 </span>writeVar :: Var s a -&gt; a -&gt; Scene s ()
+<span class="lineno">   64 </span><span class="decl"><span class="istickedoff">writeVar (Var ref) val = do</span>
+<span class="lineno">   65 </span><span class="spaces">  </span><span class="istickedoff">now &lt;- queryNow</span>
+<span class="lineno">   66 </span><span class="spaces">  </span><span class="istickedoff">liftST $ modifySTRef ref $ writeVarData now val</span></span>
+<span class="lineno">   67 </span>
+<span class="lineno">   68 </span>-- | Modify the value of a variable at the current timestamp and all future timestamps.
+<span class="lineno">   69 </span>modifyVar :: Var s a -&gt; (a -&gt; a) -&gt; Scene s ()
+<span class="lineno">   70 </span><span class="decl"><span class="nottickedoff">modifyVar (Var ref) fn = do</span>
+<span class="lineno">   71 </span><span class="spaces">  </span><span class="nottickedoff">now &lt;- queryNow</span>
+<span class="lineno">   72 </span><span class="spaces">  </span><span class="nottickedoff">liftST $ modifySTRef ref $ modifyVarData now fn</span></span>
+<span class="lineno">   73 </span>
+<span class="lineno">   74 </span>-- | Modify a variable between @now@ and @now+duration@.
+<span class="lineno">   75 </span>tweenVar :: Var s a -&gt; Duration -&gt; (a -&gt; Time -&gt; a) -&gt; Scene s ()
+<span class="lineno">   76 </span><span class="decl"><span class="istickedoff">tweenVar _ dur _ | <span class="tickonlyfalse">dur &lt; 0</span> = <span class="nottickedoff">error &quot;Reanimate.tweenVar: durations must be non-negative&quot;</span></span>
+<span class="lineno">   77 </span><span class="spaces"></span><span class="istickedoff">tweenVar (Var ref) dur fn = do</span>
+<span class="lineno">   78 </span><span class="spaces">  </span><span class="istickedoff">now &lt;- queryNow</span>
+<span class="lineno">   79 </span><span class="spaces">  </span><span class="istickedoff">liftST $ modifySTRef ref $ tweenVarData now dur fn</span>
+<span class="lineno">   80 </span><span class="spaces">  </span><span class="istickedoff">wait dur</span></span>
+<span class="lineno">   81 </span>
+<span class="lineno">   82 </span>readVarData :: VarData a -&gt; Time -&gt; a
+<span class="lineno">   83 </span><span class="decl"><span class="istickedoff">readVarData (VarData def _ Nothing _) _ = def</span>
+<span class="lineno">   84 </span><span class="spaces"></span><span class="istickedoff">readVarData (VarData def timeline (Just lastTime) lastValue) now</span>
+<span class="lineno">   85 </span><span class="spaces">  </span><span class="istickedoff">| now &lt; lastTime = lookupTimeline timeline def now</span>
+<span class="lineno">   86 </span><span class="spaces">  </span><span class="istickedoff">| <span class="tickonlytrue">otherwise</span> = lastValue</span></span>
+<span class="lineno">   87 </span>
+<span class="lineno">   88 </span>lookupTimeline :: Timeline a -&gt; a -&gt; Time -&gt; a
+<span class="lineno">   89 </span><span class="decl"><span class="istickedoff">lookupTimeline timeline def now = case M.lookupLE now timeline of</span>
+<span class="lineno">   90 </span><span class="spaces">  </span><span class="istickedoff">Just (_, StaticValue sVal) -&gt; sVal</span>
+<span class="lineno">   91 </span><span class="spaces">  </span><span class="istickedoff">Just (t, TweenValue dur f)</span>
+<span class="lineno">   92 </span><span class="spaces">    </span><span class="istickedoff">| <span class="tickonlytrue">t + dur &gt; now</span> -&gt; f <span class="nottickedoff">def</span> now</span>
+<span class="lineno">   93 </span><span class="spaces">  </span><span class="istickedoff">_ -&gt; def</span></span>
+<span class="lineno">   94 </span>
+<span class="lineno">   95 </span>writeVarData :: Time -&gt; a -&gt; VarData a -&gt; VarData a
+<span class="lineno">   96 </span><span class="decl"><span class="istickedoff">writeVarData now x var =</span>
+<span class="lineno">   97 </span><span class="spaces">  </span><span class="istickedoff">let before = keepBefore now var</span>
+<span class="lineno">   98 </span><span class="spaces">      </span><span class="istickedoff">after = VarData (evarDefault var) M.empty (Just now) x</span>
+<span class="lineno">   99 </span><span class="spaces">   </span><span class="istickedoff">in after `elseVar` before</span></span>
+<span class="lineno">  100 </span>
+<span class="lineno">  101 </span>modifyVarData :: Time -&gt; (a -&gt; a) -&gt; VarData a -&gt; VarData a
+<span class="lineno">  102 </span><span class="decl"><span class="nottickedoff">modifyVarData now fn var =</span>
+<span class="lineno">  103 </span><span class="spaces">  </span><span class="nottickedoff">let before = keepBefore now var</span>
+<span class="lineno">  104 </span><span class="spaces">      </span><span class="nottickedoff">after = keepFrom now var</span>
+<span class="lineno">  105 </span><span class="spaces">      </span><span class="nottickedoff">timeline = flip M.map (evarTimeline after) $ \case</span>
+<span class="lineno">  106 </span><span class="spaces">        </span><span class="nottickedoff">StaticValue s -&gt; StaticValue $ fn s</span>
+<span class="lineno">  107 </span><span class="spaces">        </span><span class="nottickedoff">TweenValue dur f -&gt; TweenValue dur $ \a t -&gt; fn (f a t)</span>
+<span class="lineno">  108 </span><span class="spaces">   </span><span class="nottickedoff">in after {evarTimeline = timeline, evarLastValue = fn $ evarLastValue after} `elseVar` before</span></span>
+<span class="lineno">  109 </span>
+<span class="lineno">  110 </span>-- Note: The function passed here takes time on the scale 0 to 1
+<span class="lineno">  111 </span>--       while the function in `TweenValue` takes time on an absolute scale.
+<span class="lineno">  112 </span>tweenVarData :: Time -&gt; Duration -&gt; (a -&gt; Time -&gt; a) -&gt; VarData a -&gt; VarData a
+<span class="lineno">  113 </span><span class="decl"><span class="istickedoff">tweenVarData st dur fn var@VarData {..} =</span>
+<span class="lineno">  114 </span><span class="spaces">  </span><span class="istickedoff">let nd = st + dur</span>
+<span class="lineno">  115 </span><span class="spaces">      </span><span class="istickedoff">before = keepBefore st var</span>
+<span class="lineno">  116 </span><span class="spaces">      </span><span class="istickedoff">during = keepInRange (Just st) (Just nd) var</span>
+<span class="lineno">  117 </span><span class="spaces">      </span><span class="istickedoff">tweenFn a t =</span>
+<span class="lineno">  118 </span><span class="spaces">        </span><span class="istickedoff">let idx = (t - st) / dur</span>
+<span class="lineno">  119 </span><span class="spaces">            </span><span class="istickedoff">idx' = if <span class="tickonlyfalse">isNaN idx</span> then <span class="nottickedoff">1</span> else idx</span>
+<span class="lineno">  120 </span><span class="spaces">         </span><span class="istickedoff">in fn (readVarData (during {evarDefault = <span class="nottickedoff">a</span>}) t) idx'</span>
+<span class="lineno">  121 </span><span class="spaces">      </span><span class="istickedoff">valueTweenEnd = tweenFn <span class="nottickedoff">evarDefault</span> nd -- we'll never use the def here, replace with error?</span>
+<span class="lineno">  122 </span><span class="spaces">      </span><span class="istickedoff">after = VarData evarDefault (M.singleton st $ TweenValue dur tweenFn) (Just nd) valueTweenEnd</span>
+<span class="lineno">  123 </span><span class="spaces">   </span><span class="istickedoff">in after `elseVar` before</span></span>
+<span class="lineno">  124 </span>
+<span class="lineno">  125 </span>-- Returns the union of two vars such that we use the second var if first var doesn't have a value.
+<span class="lineno">  126 </span>-- Assumes both vars have same default value.
+<span class="lineno">  127 </span>elseVar :: VarData a -&gt; VarData a -&gt; VarData a
+<span class="lineno">  128 </span><span class="decl"><span class="istickedoff">elseVar var1 var2</span>
+<span class="lineno">  129 </span><span class="spaces">  </span><span class="istickedoff">| Just t &lt;- evarLastTime var1 =</span>
+<span class="lineno">  130 </span><span class="spaces">    </span><span class="istickedoff">let afterTimeline = evarTimeline var1</span>
+<span class="lineno">  131 </span><span class="spaces">        </span><span class="istickedoff">joinAt = maybe t fst $ M.lookupMin afterTimeline</span>
+<span class="lineno">  132 </span><span class="spaces">        </span><span class="istickedoff">beforeTimeline = case keepBefore joinAt var2 of</span>
+<span class="lineno">  133 </span><span class="spaces">          </span><span class="istickedoff">x</span>
+<span class="lineno">  134 </span><span class="spaces">            </span><span class="istickedoff">| Just lastTime &lt;- evarLastTime x, lastTime &lt; joinAt -&gt; M.insert lastTime (StaticValue $ evarLastValue x) $ evarTimeline x</span>
+<span class="lineno">  135 </span><span class="spaces">            </span><span class="istickedoff">| <span class="tickonlytrue">otherwise</span> -&gt; evarTimeline x</span>
+<span class="lineno">  136 </span><span class="spaces">     </span><span class="istickedoff">in var1 {evarTimeline = M.union afterTimeline beforeTimeline}</span>
+<span class="lineno">  137 </span><span class="spaces">  </span><span class="istickedoff">| <span class="nottickedoff">otherwise</span> = <span class="nottickedoff">var2</span></span></span>
+<span class="lineno">  138 </span>
+<span class="lineno">  139 </span>-- Restrict a var to a given time interval.
+<span class="lineno">  140 </span>keepInRange :: Maybe Time -&gt; Maybe Time -&gt; VarData a -&gt; VarData a
+<span class="lineno">  141 </span><span class="decl"><span class="istickedoff">keepInRange st nd = maybe <span class="nottickedoff">id</span> keepFrom st . maybe <span class="nottickedoff">id</span> keepBefore nd</span></span>
+<span class="lineno">  142 </span>
+<span class="lineno">  143 </span>-- Restrict a var to start at given timestamp.
+<span class="lineno">  144 </span>keepFrom :: Time -&gt; VarData a -&gt; VarData a
+<span class="lineno">  145 </span><span class="decl"><span class="istickedoff">keepFrom st VarData {..} =</span>
+<span class="lineno">  146 </span><span class="spaces">  </span><span class="istickedoff">let <span class="nottickedoff">timeline' = M.dropWhileAntitone (&lt; st) evarTimeline</span></span>
+<span class="lineno">  147 </span><span class="spaces">      </span><span class="istickedoff">-- if there is no modifier in timeline starting at st,</span>
+<span class="lineno">  148 </span><span class="spaces">      </span><span class="istickedoff">-- we must get the modifier that starts before and truncate it to start at st.</span>
+<span class="lineno">  149 </span><span class="spaces">      </span><span class="istickedoff"><span class="nottickedoff">timeline'' = case M.lookupLE st evarTimeline of</span></span>
+<span class="lineno">  150 </span><span class="spaces">        </span><span class="istickedoff"><span class="nottickedoff">Just (t, val@(StaticValue _))</span></span>
+<span class="lineno">  151 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">| t &lt; st -&gt; M.insert st val timeline'</span></span>
+<span class="lineno">  152 </span><span class="spaces">        </span><span class="istickedoff"><span class="nottickedoff">Just (t, TweenValue dur fn)</span></span>
+<span class="lineno">  153 </span><span class="spaces">          </span><span class="istickedoff"><span class="nottickedoff">| t &lt; st, t + dur &gt; st -&gt; M.insert st (TweenValue (t + dur - st) fn) timeline'</span></span>
+<span class="lineno">  154 </span><span class="spaces">        </span><span class="istickedoff"><span class="nottickedoff">_ -&gt; timeline'</span></span>
+<span class="lineno">  155 </span><span class="spaces">   </span><span class="istickedoff">in VarData <span class="nottickedoff">evarDefault</span> <span class="nottickedoff">timeline''</span> (max evarLastTime $ Just st) evarLastValue</span></span>
+<span class="lineno">  156 </span>
+<span class="lineno">  157 </span>-- Restrict a var to end(clamp) at given timestamp.
+<span class="lineno">  158 </span>keepBefore :: Time -&gt; VarData a -&gt; VarData a
+<span class="lineno">  159 </span><span class="decl"><span class="istickedoff">keepBefore nd var@VarData {..} =</span>
+<span class="lineno">  160 </span><span class="spaces">  </span><span class="istickedoff">let timeline' = M.takeWhileAntitone (&lt; nd) evarTimeline</span>
+<span class="lineno">  161 </span><span class="spaces">      </span><span class="istickedoff">lastModifier = M.lookupMax timeline'</span>
+<span class="lineno">  162 </span><span class="spaces">      </span><span class="istickedoff">timeline'' = case lastModifier of</span>
+<span class="lineno">  163 </span><span class="spaces">        </span><span class="istickedoff">Just (t, TweenValue dur fn)</span>
+<span class="lineno">  164 </span><span class="spaces">          </span><span class="istickedoff">| <span class="tickonlyfalse">t + dur &gt; nd</span> -&gt; <span class="nottickedoff">M.insert t (TweenValue (nd - t) fn) timeline'</span></span>
+<span class="lineno">  165 </span><span class="spaces">        </span><span class="istickedoff">_ -&gt; timeline'</span>
+<span class="lineno">  166 </span><span class="spaces">      </span><span class="istickedoff">lastTime = case lastModifier of</span>
+<span class="lineno">  167 </span><span class="spaces">        </span><span class="istickedoff">Just (t, TweenValue dur _) -&gt; Just $ min nd (t + dur)</span>
+<span class="lineno">  168 </span><span class="spaces">        </span><span class="istickedoff">_ -&gt; min nd &lt;$&gt; evarLastTime</span>
+<span class="lineno">  169 </span><span class="spaces">   </span><span class="istickedoff">in VarData <span class="nottickedoff">evarDefault</span> timeline'' lastTime (maybe evarDefault (readVarData var) lastTime)</span></span>
+
+</pre>
+</body>
+</html>

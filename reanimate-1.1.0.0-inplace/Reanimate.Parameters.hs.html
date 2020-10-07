@@ -1,0 +1,145 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style type="text/css">
+span.lineno { color: white; background: #aaaaaa; border-right: solid white 12px }
+span.nottickedoff { background: yellow}
+span.istickedoff { background: white }
+span.tickonlyfalse { margin: -1px; border: 1px solid #f20913; background: #f20913 }
+span.tickonlytrue  { margin: -1px; border: 1px solid #60de51; background: #60de51 }
+span.funcount { font-size: small; color: orange; z-index: 2; position: absolute; right: 20 }
+span.decl { font-weight: bold }
+span.spaces    { background: white }
+</style>
+</head>
+<body>
+<pre>
+<span class="decl"><span class="nottickedoff">never executed</span> <span class="tickonlytrue">always true</span> <span class="tickonlyfalse">always false</span></span>
+</pre>
+<pre>
+<span class="lineno">    1 </span>{- |
+<span class="lineno">    2 </span>  Parameters define the global context of an animation. They are set once
+<span class="lineno">    3 </span>  before an animation is rendered and may not change during rendering.
+<span class="lineno">    4 </span>-}
+<span class="lineno">    5 </span>module Reanimate.Parameters
+<span class="lineno">    6 </span>  ( Raster(..)
+<span class="lineno">    7 </span>  , Width
+<span class="lineno">    8 </span>  , Height
+<span class="lineno">    9 </span>  , FPS
+<span class="lineno">   10 </span>  , pRaster
+<span class="lineno">   11 </span>  , pFPS
+<span class="lineno">   12 </span>  , pWidth
+<span class="lineno">   13 </span>  , pHeight
+<span class="lineno">   14 </span>  , pNoExternals
+<span class="lineno">   15 </span>  , pRootDirectory
+<span class="lineno">   16 </span>  , setRaster
+<span class="lineno">   17 </span>  , setFPS
+<span class="lineno">   18 </span>  , setWidth
+<span class="lineno">   19 </span>  , setHeight
+<span class="lineno">   20 </span>  , setNoExternals
+<span class="lineno">   21 </span>  , setRootDirectory
+<span class="lineno">   22 </span>  ) where
+<span class="lineno">   23 </span>
+<span class="lineno">   24 </span>import System.IO.Unsafe
+<span class="lineno">   25 </span>import Data.IORef
+<span class="lineno">   26 </span>
+<span class="lineno">   27 </span>-- | Width of animation in pixels.
+<span class="lineno">   28 </span>type Width = Int
+<span class="lineno">   29 </span>-- | Height of animation in pixels.
+<span class="lineno">   30 </span>type Height = Int
+<span class="lineno">   31 </span>-- | Framerate of animation in frames per second.
+<span class="lineno">   32 </span>type FPS = Int
+<span class="lineno">   33 </span>
+<span class="lineno">   34 </span>-- | Raster engines turn SVG images into pixels.
+<span class="lineno">   35 </span>data Raster
+<span class="lineno">   36 </span>  = RasterNone     -- ^ Do not use any external raster engine. Rely on the browser or ffmpeg.
+<span class="lineno">   37 </span>  | RasterAuto     -- ^ Scan for installed raster engines and pick the fastest one.
+<span class="lineno">   38 </span>  | RasterInkscape -- ^ Use Inkscape to raster SVG images.
+<span class="lineno">   39 </span>  | RasterRSvg     -- ^ Use rsvg-convert to raster SVG images.
+<span class="lineno">   40 </span>  | RasterMagick   -- ^ Use imagemagick to raster SVG images.
+<span class="lineno">   41 </span>  deriving (<span class="decl"><span class="nottickedoff">Show</span></span>, <span class="decl"><span class="nottickedoff">Eq</span></span>)
+<span class="lineno">   42 </span>
+<span class="lineno">   43 </span>{-# NOINLINE pRasterRef #-}
+<span class="lineno">   44 </span>pRasterRef :: IORef Raster
+<span class="lineno">   45 </span><span class="decl"><span class="nottickedoff">pRasterRef = unsafePerformIO (newIORef RasterNone)</span></span>
+<span class="lineno">   46 </span>
+<span class="lineno">   47 </span>{-# NOINLINE pRaster #-}
+<span class="lineno">   48 </span>-- | Selected raster engine.
+<span class="lineno">   49 </span>pRaster :: Raster
+<span class="lineno">   50 </span><span class="decl"><span class="nottickedoff">pRaster = unsafePerformIO (readIORef pRasterRef)</span></span>
+<span class="lineno">   51 </span>
+<span class="lineno">   52 </span>-- | Set raster engine.
+<span class="lineno">   53 </span>setRaster :: Raster -&gt; IO ()
+<span class="lineno">   54 </span><span class="decl"><span class="nottickedoff">setRaster = writeIORef pRasterRef</span></span>
+<span class="lineno">   55 </span>
+<span class="lineno">   56 </span>{-# NOINLINE pFPSRef #-}
+<span class="lineno">   57 </span>pFPSRef :: IORef FPS
+<span class="lineno">   58 </span><span class="decl"><span class="nottickedoff">pFPSRef = unsafePerformIO (newIORef 0)</span></span>
+<span class="lineno">   59 </span>
+<span class="lineno">   60 </span>{-# NOINLINE pFPS #-}
+<span class="lineno">   61 </span>-- | Selected framerate.
+<span class="lineno">   62 </span>pFPS :: FPS
+<span class="lineno">   63 </span><span class="decl"><span class="nottickedoff">pFPS = unsafePerformIO (readIORef pFPSRef)</span></span>
+<span class="lineno">   64 </span>
+<span class="lineno">   65 </span>-- | Set desired framerate.
+<span class="lineno">   66 </span>setFPS :: FPS -&gt; IO ()
+<span class="lineno">   67 </span><span class="decl"><span class="nottickedoff">setFPS = writeIORef pFPSRef</span></span>
+<span class="lineno">   68 </span>
+<span class="lineno">   69 </span>{-# NOINLINE pWidthRef #-}
+<span class="lineno">   70 </span>pWidthRef :: IORef FPS
+<span class="lineno">   71 </span><span class="decl"><span class="nottickedoff">pWidthRef = unsafePerformIO (newIORef 0)</span></span>
+<span class="lineno">   72 </span>
+<span class="lineno">   73 </span>{-# NOINLINE pWidth #-}
+<span class="lineno">   74 </span>-- | Width of animation in pixel.
+<span class="lineno">   75 </span>pWidth :: Width
+<span class="lineno">   76 </span><span class="decl"><span class="nottickedoff">pWidth = unsafePerformIO (readIORef pWidthRef)</span></span>
+<span class="lineno">   77 </span>
+<span class="lineno">   78 </span>-- | Set desired width of animation in pixel.
+<span class="lineno">   79 </span>setWidth :: Width -&gt; IO ()
+<span class="lineno">   80 </span><span class="decl"><span class="nottickedoff">setWidth = writeIORef pWidthRef</span></span>
+<span class="lineno">   81 </span>
+<span class="lineno">   82 </span>{-# NOINLINE pHeightRef #-}
+<span class="lineno">   83 </span>pHeightRef :: IORef FPS
+<span class="lineno">   84 </span><span class="decl"><span class="nottickedoff">pHeightRef = unsafePerformIO (newIORef 0)</span></span>
+<span class="lineno">   85 </span>
+<span class="lineno">   86 </span>{-# NOINLINE pHeight #-}
+<span class="lineno">   87 </span>-- | Height of animation in pixel.
+<span class="lineno">   88 </span>pHeight :: Height
+<span class="lineno">   89 </span><span class="decl"><span class="nottickedoff">pHeight = unsafePerformIO (readIORef pHeightRef)</span></span>
+<span class="lineno">   90 </span>
+<span class="lineno">   91 </span>-- | Set desired height of animation in pixel.
+<span class="lineno">   92 </span>setHeight :: Height -&gt; IO ()
+<span class="lineno">   93 </span><span class="decl"><span class="nottickedoff">setHeight = writeIORef pHeightRef</span></span>
+<span class="lineno">   94 </span>
+<span class="lineno">   95 </span>{-# NOINLINE pNoExternalsRef #-}
+<span class="lineno">   96 </span>pNoExternalsRef :: IORef Bool
+<span class="lineno">   97 </span><span class="decl"><span class="istickedoff">pNoExternalsRef = unsafePerformIO (newIORef <span class="nottickedoff">False</span>)</span></span>
+<span class="lineno">   98 </span>
+<span class="lineno">   99 </span>{-# NOINLINE pNoExternals #-}
+<span class="lineno">  100 </span>-- | This parameter determined whether or not external tools are allowed.
+<span class="lineno">  101 </span>--   If this flag is True then tools such as 'Reanimate.LaTeX.latex' and
+<span class="lineno">  102 </span>--   'Reanimate.Blender.blender' will not be invoked.
+<span class="lineno">  103 </span>pNoExternals :: Bool
+<span class="lineno">  104 </span><span class="decl"><span class="istickedoff">pNoExternals = unsafePerformIO (readIORef pNoExternalsRef)</span></span>
+<span class="lineno">  105 </span>
+<span class="lineno">  106 </span>-- | Set whether external tools are allowed.
+<span class="lineno">  107 </span>setNoExternals :: Bool -&gt; IO ()
+<span class="lineno">  108 </span><span class="decl"><span class="istickedoff">setNoExternals = writeIORef pNoExternalsRef</span></span>
+<span class="lineno">  109 </span>
+<span class="lineno">  110 </span>{-# NOINLINE pRootDirectoryRef #-}
+<span class="lineno">  111 </span>pRootDirectoryRef :: IORef FilePath
+<span class="lineno">  112 </span><span class="decl"><span class="nottickedoff">pRootDirectoryRef = unsafePerformIO (newIORef (error &quot;root directory not set&quot;))</span></span>
+<span class="lineno">  113 </span>
+<span class="lineno">  114 </span>{-# NOINLINE pRootDirectory #-}
+<span class="lineno">  115 </span>-- | Root directory of animation. Images and other data has to be placed
+<span class="lineno">  116 </span>--   here if they are referenced in an SVG image.
+<span class="lineno">  117 </span>pRootDirectory :: FilePath
+<span class="lineno">  118 </span><span class="decl"><span class="nottickedoff">pRootDirectory = unsafePerformIO (readIORef pRootDirectoryRef)</span></span>
+<span class="lineno">  119 </span>
+<span class="lineno">  120 </span>-- | Set the root animation directory.
+<span class="lineno">  121 </span>setRootDirectory :: FilePath -&gt; IO ()
+<span class="lineno">  122 </span><span class="decl"><span class="nottickedoff">setRootDirectory = writeIORef pRootDirectoryRef</span></span>
+
+</pre>
+</body>
+</html>
