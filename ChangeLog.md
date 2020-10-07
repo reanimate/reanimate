@@ -6,11 +6,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and the
 project adheres to the [Haskell Package Versioning
 Policy (PVP)](https://pvp.haskell.org)
 
-## 1.1.0.0 -- Unpublished
+## 1.1.0.0 -- 2020-10-07
 
 ### Added
 
  * LaTeX font configurations.
+ * SVG support for all filter effects.
 
 ## 1.0.0.0 -- 2020-09-20
 
