@@ -106,7 +106,7 @@ span.spaces    { background: white }
 <span class="lineno">   87 </span><span class="spaces">    </span><span class="nottickedoff">Just svg -&gt;</span>
 <span class="lineno">   88 </span><span class="spaces">      </span><span class="nottickedoff">return</span>
 <span class="lineno">   89 </span><span class="spaces">        </span><span class="nottickedoff">$ scaleXY (width / screenWidth) (height / screenHeight)</span>
-<span class="lineno">   90 </span><span class="spaces">        </span><span class="nottickedoff">$ embedDocument svg</span>
+<span class="lineno">   90 </span><span class="spaces">        </span><span class="nottickedoff">$ unboxFit svg</span>
 <span class="lineno">   91 </span><span class="spaces"></span><span class="nottickedoff">mkImage width height path | pRaster == RasterNone = unsafePerformIO $ do</span>
 <span class="lineno">   92 </span><span class="spaces">  </span><span class="nottickedoff">inp &lt;- LBS.readFile path</span>
 <span class="lineno">   93 </span><span class="spaces">  </span><span class="nottickedoff">let imgData = LBS.unpack $ Base64.encode inp</span>
