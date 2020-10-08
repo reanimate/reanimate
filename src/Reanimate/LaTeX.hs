@@ -29,6 +29,9 @@ module Reanimate.LaTeX
     noto,
     helvet,
     libertine,
+    biolinum,
+    droidSerif,
+    droidSans,
   )
 where
 
@@ -267,10 +270,8 @@ mkTexScript latexExec latexArgs texHeaders tex =
 \\\usepackage{microtype}\n\
 -}
 
--- | Chalkduster configuration. Depends on lualatex.
+-- | Chalkduster font. Depends on lualatex.
 --   Font files are automatically downloaded.
---
---   Example:
 --
 -- @
 -- `latexCfg` `chalkduster` "chalkduster"
@@ -295,10 +296,7 @@ chalkduster =
           "https://www.ffonts.net/Chalkduster.font.zip"
           "Wplv4RjuFiI0hDQnAM5MVHl2evrZqWstRLdVAfBomCM="
 
--- | Calligra configuration.
---
---   Example:
---
+-- |
 -- @
 -- `latexCfg` `calligra` "calligra"
 -- @
@@ -312,10 +310,7 @@ calligra =
       texConfigPostScript = ["\\calligra"]
     }
 
--- | Noto configuration.
---
---   Example:
---
+-- |
 -- @
 -- `latexCfg` `noto` "noto"
 -- @
@@ -329,10 +324,7 @@ noto =
       texConfigPostScript = []
     }
 
--- | Helvetica configuration.
---
---   Example:
---
+-- |
 -- @
 -- `latexCfg` `helvet` "helvet"
 -- @
@@ -346,10 +338,7 @@ helvet =
       texConfigPostScript = []
     }
 
--- | Libertine configuration.
---
---   Example:
---
+-- |
 -- @
 -- `latexCfg` `libertine` "libertine"
 -- @
@@ -360,5 +349,53 @@ libertine =
   TexConfig
     { texConfigEngine = LaTeX,
       texConfigHeaders = ["\\usepackage{libertine}"],
+      texConfigPostScript = []
+    }
+
+-- |
+-- @
+-- `latexCfg` `biolinum` "biolinum"
+-- @
+--
+--   <<docs/gifs/doc_biolinum.gif>>
+biolinum :: TexConfig
+biolinum =
+  TexConfig
+    { texConfigEngine = LaTeX,
+      texConfigHeaders =
+        ["\\usepackage{libertine}"
+        ,"\\renewcommand{\\familydefault}{\\sfdefault}"],
+      texConfigPostScript = []
+    }
+
+-- |
+-- @
+-- `latexCfg` `droidSerif` "droidSerif"
+-- @
+--
+--   <<docs/gifs/doc_droidSerif.gif>>
+droidSerif :: TexConfig
+droidSerif =
+  TexConfig
+    { texConfigEngine = LaTeX,
+      texConfigHeaders =
+        ["\\usepackage[default]{droidserif}"
+        ,"\\let\\varepsilon\\epsilon"],
+      texConfigPostScript = []
+    }
+
+-- |
+-- @
+-- `latexCfg` `droidSans` "droidSans"
+-- @
+--
+--   <<docs/gifs/doc_droidSans.gif>>
+droidSans :: TexConfig
+droidSans =
+  TexConfig
+    { texConfigEngine = LaTeX,
+      texConfigHeaders =
+        ["\\usepackage[default]{droidsans}"
+        ,"\\let\\varepsilon\\epsilon"],
       texConfigPostScript = []
     }
