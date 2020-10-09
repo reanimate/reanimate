@@ -33,6 +33,7 @@ jobs:
       run: |
         cabal v2-update
         cabal v2-build --enable-coverage --only-dependencies
+        mkdir pages
 
     - name: Build
       run: |
@@ -67,21 +68,21 @@ jobs:
     #         \"label\": \"api tests\", \
     #         \"message\": \"$COVERAGE%\", \
     #         \"color\": \"success\" \
-    #       }" > hpc/hpc_badge.json
+    #       }" > pages/hpc_badge.json
 
     - name: Haddock Badge
       run: |
         # Stack is required because cabal doesn't build docs for dependencies.
         # Without those, coverage will not reach 100%
         stack build --haddock --only-dependencies
-        stack haddock 2>&1 | grep ") in " | sort -hr > hpc/haddock.txt
-        COVERAGE=$(awk '{good += $3; total += $5} END {printf "%.0f", good/total*100}' hpc/haddock.txt)
+        stack haddock 2>&1 | grep ") in " | sort -hr > pages/haddock.txt
+        COVERAGE=$(awk '{good += $3; total += $5} END {printf "%.0f", good/total*100}' pages/haddock.txt)
         echo "\
           { \"schemaVersion\": 1, \
             \"label\": \"api docs\", \
             \"message\": \"$COVERAGE%\", \
             \"color\": \"success\" \
-          }" > hpc/haddock_badge.json
+          }" > pages/haddock_badge.json
 
     # Is there a way to reuse the script from playground.yml?
     - name: Playground
@@ -96,12 +97,12 @@ jobs:
         cd viewer-elm
         npm install
         npm run build
-        mkdir $CWD/hpc/playground
-        cp dist/* $CWD/hpc/playground/
+        mkdir $CWD/pages/playground
+        cp dist/* $CWD/pages/playground/
 
     - name: Deploy 🚀
       uses: JamesIves/github-pages-deploy-action@3.5.9
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         BRANCH: gh-pages # The branch the action should deploy to.
-        FOLDER: hpc # The folder the action should deploy.
+        FOLDER: pages # The folder the action should deploy.
