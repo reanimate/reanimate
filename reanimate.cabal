@@ -14,7 +14,7 @@ synopsis:            Animation library based on SVGs.
 homepage:            https://reanimate.github.io
 bug-reports:         https://github.com/reanimate/reanimate/issues
 build-type:          Simple
-extra-source-files:  ChangeLog.md, examples/*.hs, examples/*.golden
+extra-source-files:  ChangeLog.md, examples/*.hs, examples/golden/*.golden
 extra-doc-files:     docs/gifs/*.gif
 
 
