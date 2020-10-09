@@ -47,7 +47,8 @@ unitTestsDisabled =
 unitTestFolder :: FilePath -> IO TestTree
 unitTestFolder _ | unitTestsDisabled = return $ testGroup "animate (disabled)" []
 unitTestFolder path = do
-  files <- sort <$> getDirectoryContents path
+  let goldenPath = path </> "golden"
+  files <- sort <$> getDirectoryContents goldenPath
   mbWDiff <- findExecutable "wdiff"
   let diff = case mbWDiff of
         Nothing    -> ["diff", "--strip-trailing-cr"]
@@ -55,8 +56,8 @@ unitTestFolder path = do
   return $ testGroup "animate"
     [ goldenVsStringDiff file (\ref new -> diff ++ [ref, new]) fullPath (genGolden hsPath)
     | file <- files
-    , let fullPath = path </> file
-          hsPath = replaceExtension fullPath "hs"
+    , let fullPath = goldenPath </> file
+          hsPath = path </> replaceExtension file "hs"
     , takeExtension fullPath == ".golden"
     ]
 
@@ -81,6 +82,7 @@ compileTestFolder :: FilePath -> IO TestTree
 compileTestFolder _ | unitTestsDisabled = return $ testGroup "compile (disabled)" []
 compileTestFolder path = do
   files <- sort <$> getDirectoryContents path
+  goldenFiles <- getDirectoryContents $ path </> "golden"
   return $ testGroup "compile"
     [ testCase file $ do
         (ret, _stdout, err) <-
@@ -95,7 +97,7 @@ compileTestFolder path = do
     | file <- files
     , let fullPath = path </> file
     , takeExtension file == ".hs" || takeExtension file == ".lhs"
-    , notElem (replaceExtension file "golden") files
+    , notElem (replaceExtension file "golden") goldenFiles
     ]
   where
     ghcOpts = ["-fno-code", "-O0", "-Werror", "-Wall"]
