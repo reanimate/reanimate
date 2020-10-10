@@ -36,6 +36,7 @@ import qualified Data.ByteString.Base64.Lazy   as Base64
 import qualified Data.ByteString.Lazy.Char8    as LBS
 import           Data.Hashable
 import qualified Data.Text                     as T
+import qualified Data.Text.IO                  as T
 import           Graphics.SvgTree                         ( Number(..)
                                                           , defaultSvg
                                                           , parseSvgFile
@@ -81,7 +82,7 @@ mkImage
   -> FilePath -- ^ Path to external image file.
   -> SVG
 mkImage width height path | takeExtension path == ".svg" = unsafePerformIO $ do
-  svg_data <- B.readFile path
+  svg_data <- T.readFile path
   case parseSvgFile path svg_data of
     Nothing -> error "Malformed svg"
     Just svg ->
@@ -273,7 +274,7 @@ vectorize_ args path             = unsafePerformIO $ do
       runCmd magick [path, "-flatten", tmpBmpPath]
       runCmd potrace (args ++ ["--svg", "--output", tmpSvgPath, tmpBmpPath])
       renameOrCopyFile tmpSvgPath svgPath
-  svg_data <- B.readFile svgPath
+  svg_data <- T.readFile svgPath
   case parseSvgFile svgPath svg_data of
     Nothing -> do
       removeFile svgPath

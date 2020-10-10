@@ -41,6 +41,7 @@ import Data.Hashable
 import Data.Monoid
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.IO as T
 import qualified Data.Text.Encoding as T
 import GHC.Generics (Generic)
 import Graphics.SvgTree
@@ -227,7 +228,7 @@ latexToSVG engine dviExt latexExec latexArgs tex = do
               "-o",
               svg_file
             ]
-      svg_data <- B.readFile svg_file
+      svg_data <- T.readFile svg_file
       case parseSvgFile svg_file svg_data of
         Nothing -> error "Malformed svg"
         Just svg ->
