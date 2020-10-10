@@ -2,11 +2,11 @@
 
 module Reanimate.Scene.Core where
 
-import Control.Monad.Fix (MonadFix (..))
-import Control.Monad.ST
-import Data.List
-import Reanimate.Animation
-import Reanimate.Svg.Constructors
+import           Control.Monad.Fix          (MonadFix (..))
+import           Control.Monad.ST           (ST, runST)
+import           Data.List                  (sortOn)
+import           Reanimate.Animation        (Animation, Duration, SVG, Time, mkAnimation)
+import           Reanimate.Svg.Constructors (mkGroup)
 
 -- | The ZIndex property specifies the stack order of sprites and animations. Elements
 --   with a higher ZIndex will be drawn on top of elements with a lower index.

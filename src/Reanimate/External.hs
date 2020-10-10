@@ -13,26 +13,27 @@ module Reanimate.External
   )
 where
 
-import Codec.Picture (PixelRGB8 (..))
-import Control.Monad (unless)
-import Crypto.Hash.SHA256 (hash)
-import Data.Aeson (decodeFileStrict)
-import qualified Data.ByteString as B (readFile)
-import Data.ByteString.Base64 (encode)
-import qualified Data.ByteString.Char8 as B8 (unpack)
-import Data.Char (isSpace, toLower)
-import Data.List (sort)
-import Data.Map (Map)
-import qualified Data.Map as M
-import Numeric (readHex)
-import Reanimate.Animation (SVG)
-import Reanimate.Constants (screenHeight, screenWidth)
-import Reanimate.Misc (getReanimateCacheDirectory, withTempFile)
-import Reanimate.Raster (mkImage)
-import System.Directory (doesDirectoryExist, doesFileExist, findExecutable, getDirectoryContents)
-import System.FilePath (splitExtension, (<.>), (</>))
-import System.IO.Unsafe (unsafePerformIO)
-import System.Process (callProcess)
+import           Codec.Picture          (PixelRGB8 (..))
+import           Control.Monad          (unless)
+import           Crypto.Hash.SHA256     (hash)
+import           Data.Aeson             (decodeFileStrict)
+import qualified Data.ByteString        as B (readFile)
+import           Data.ByteString.Base64 (encode)
+import qualified Data.ByteString.Char8  as B8 (unpack)
+import           Data.Char              (isSpace, toLower)
+import           Data.List              (sort)
+import           Data.Map               (Map)
+import qualified Data.Map               as M
+import           Numeric                (readHex)
+import           Reanimate.Animation    (SVG)
+import           Reanimate.Constants    (screenHeight, screenWidth)
+import           Reanimate.Misc         (getReanimateCacheDirectory, withTempFile)
+import           Reanimate.Raster       (mkImage)
+import           System.Directory       (doesDirectoryExist, doesFileExist, findExecutable,
+                                         getDirectoryContents)
+import           System.FilePath        (splitExtension, (<.>), (</>))
+import           System.IO.Unsafe       (unsafePerformIO)
+import           System.Process         (callProcess)
 
 -- | Resource address
 type URL = String
@@ -83,8 +84,8 @@ downloadFile url action = do
   mbCurl <- findExecutable "curl"
   mbWget <- findExecutable "wget"
   case (mbCurl, mbWget) of
-    (Just curl, _) -> downloadFileCurl curl url action
-    (_, Just wget) -> downloadFileWget wget url action
+    (Just curl, _)     -> downloadFileCurl curl url action
+    (_, Just wget)     -> downloadFileWget wget url action
     (Nothing, Nothing) -> error "curl/wget required to download files"
 
 downloadFileCurl :: FilePath -> URL -> (FilePath -> IO a) -> IO a
@@ -151,7 +152,7 @@ simpleIcon = mkImage screenWidth screenHeight . simpleIconPath
 simpleIconColor :: String -> PixelRGB8
 simpleIconColor key =
   case M.lookup key simpleIconColors of
-    Nothing -> error $ "Key not found in simple-icons dataset: " ++ show key
+    Nothing    -> error $ "Key not found in simple-icons dataset: " ++ show key
     Just pixel -> pixel
 
 -- | Complete list of all Simple Icons.
@@ -168,7 +169,7 @@ simpleIconColors = unsafePerformIO $ do
             ]
   case parsed of
     Nothing -> error "Invalid json in simpleIcons"
-    Just v -> pure v
+    Just v  -> pure v
   where
     fromTitle :: String -> String
     fromTitle = replaceChars . map toLower
@@ -194,7 +195,7 @@ simpleIconColors = unsafePerformIO $ do
       where
         p offset = case readHex (take 2 $ drop offset hex) of
           [(num, "")] -> num
-          _ -> error $ "Invalid hex: " ++ (take 2 $ drop offset hex)
+          _           -> error $ "Invalid hex: " ++ (take 2 $ drop offset hex)
 
 {-# NOINLINE simpleIcons #-}
 simpleIcons :: [String]
@@ -227,7 +228,7 @@ svgLogoPath key = unsafePerformIO $ do
 -- `svgLogo` "cassandra"
 -- @
 --
---   <<docs/gifs/doc_svgLogo.gif>>
+--   <<docs/gifs/doc_svgLogo2.gif>>
 svgLogo :: String -> SVG
 svgLogo = mkImage screenWidth screenHeight . svgLogoPath
 

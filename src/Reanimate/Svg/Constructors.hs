@@ -63,11 +63,11 @@ import           Data.Attoparsec.Text         (parseOnly)
 import qualified Data.Map                     as Map
 import qualified Data.Text                    as T
 import           Graphics.SvgTree
-import           Graphics.SvgTree.NamedColors
-import           Graphics.SvgTree.PathParser
-import           Linear.V2                    hiding (angle)
-import           Reanimate.Constants
-import           Reanimate.Svg.BoundingBox
+import           Graphics.SvgTree.NamedColors (svgNamedColors)
+import           Graphics.SvgTree.PathParser  (pathParser)
+import           Linear.V2                    (V2 (V2))
+import           Reanimate.Constants          (screenHeight, screenWidth)
+import           Reanimate.Svg.BoundingBox    (boundingBox)
 
 -- | Apply list of transformations to given image.
 withTransformations :: [Transformation] -> Tree -> Tree

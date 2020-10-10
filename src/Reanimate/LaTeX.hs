@@ -1,9 +1,8 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE DeriveAnyClass      #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE PatternSynonyms     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-
 -- |
 -- Copyright   : Written by David Himmelstrup
 -- License     : Unlicense
@@ -35,37 +34,25 @@ module Reanimate.LaTeX
   )
 where
 
-import Control.Lens
-import qualified Data.ByteString as B
-import Data.Hashable
-import Data.Monoid
-import Data.Text (Text)
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
-import qualified Data.Text.Encoding as T
-import GHC.Generics (Generic)
-import Graphics.SvgTree
-  ( Tree,
-    clipPathRef,
-    clipRule,
-    mapTree,
-    parseSvgFile,
-    strokeColor,
-    pattern ClipPathTree,
-    pattern None,
-  )
-import Reanimate.Animation (SVG)
-import Reanimate.Cache
-import Reanimate.External
-import Reanimate.Misc
-import Reanimate.Parameters
-import Reanimate.Svg
-import System.FilePath
-  ( replaceExtension,
-    takeFileName,
-    (</>),
-  )
-import System.IO.Unsafe (unsafePerformIO)
+import           Control.Lens         ((&), (.~))
+import qualified Data.ByteString      as B
+import           Data.Hashable        (Hashable)
+import           Data.Monoid          (Last (Last))
+import           Data.Text            (Text)
+import qualified Data.Text            as T
+import qualified Data.Text.Encoding   as T
+import qualified Data.Text.IO         as T
+import           GHC.Generics         (Generic)
+import           Graphics.SvgTree     (Tree, clipPathRef, clipRule, mapTree, parseSvgFile,
+                                       pattern ClipPathTree, pattern None, strokeColor)
+import           Reanimate.Animation  (SVG)
+import           Reanimate.Cache      (cacheDiskSvg, cacheMem)
+import           Reanimate.External   (zipArchive)
+import           Reanimate.Misc       (requireExecutable, runCmd, withTempDir, withTempFile)
+import           Reanimate.Parameters (pNoExternals)
+import           Reanimate.Svg
+import           System.FilePath      (replaceExtension, takeFileName, (</>))
+import           System.IO.Unsafe     (unsafePerformIO)
 
 -- | TeX backends. They have different features and capabilities.
 data TexEngine = LaTeX | XeLaTeX | LuaLaTeX
@@ -73,8 +60,8 @@ data TexEngine = LaTeX | XeLaTeX | LuaLaTeX
 
 -- | TeX configurations can load packages and set up environments for tex scripts.
 data TexConfig = TexConfig
-  { texConfigEngine :: TexEngine,
-    texConfigHeaders :: [T.Text],
+  { texConfigEngine     :: TexEngine,
+    texConfigHeaders    :: [T.Text],
     texConfigPostScript :: [T.Text]
   }
   deriving (Generic, Hashable, Read, Show, Eq, Ord)
@@ -86,8 +73,8 @@ latexCfg (TexConfig engine headers postscript) =
   where
     gen =
       case engine of
-        LaTeX -> someTexWithHeaders engine "latex" "dvi" []
-        XeLaTeX -> someTexWithHeaders engine "xelatex" "xdv" ["-no-pdf"]
+        LaTeX    -> someTexWithHeaders engine "latex" "dvi" []
+        XeLaTeX  -> someTexWithHeaders engine "xelatex" "xdv" ["-no-pdf"]
         LuaLaTeX -> someTexWithHeaders engine "lualatex" "pdf" []
 
 -- | Invoke latex and import the result as an SVG object. SVG objects are
@@ -184,13 +171,13 @@ postprocess =
 
 enginePostprocess :: TexEngine -> Tree -> Tree
 enginePostprocess LuaLaTeX svg = translate 0 (svgHeight svg) svg
-enginePostprocess _ svg = svg
+enginePostprocess _ svg        = svg
 
 removeClipPaths :: SVG -> SVG
 removeClipPaths = mapTree worker
   where
     worker ClipPathTree {} = None
-    worker t = t & clipRule .~ Last Nothing & clipPathRef .~ Last Nothing
+    worker t               = t & clipRule .~ Last Nothing & clipPathRef .~ Last Nothing
 
 -- executable, arguments, header, tex
 latexToSVG :: TexEngine -> String -> String -> [String] -> Text -> IO Tree

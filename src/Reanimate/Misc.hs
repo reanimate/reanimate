@@ -10,46 +10,25 @@ module Reanimate.Misc
   )
 where
 
-import Control.Concurrent
-import Control.Exception (catch, evaluate, finally, throw)
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
-import Foreign.C.Error
-import GHC.IO.Exception
-import System.Directory
-  ( XdgDirectory (XdgCache),
-    copyFile,
-    createDirectoryIfMissing,
-    findExecutable,
-    getXdgDirectory,
-    removeFile,
-    renameFile,
-  )
-import System.FilePath ((<.>), (</>))
-import System.IO
-  ( hClose,
-    hGetContents,
-    hIsEOF,
-    hPutStr,
-    stderr,
-  )
-import System.IO.Temp
-  ( withSystemTempDirectory,
-    withSystemTempFile,
-  )
-import System.Process
-  ( readProcessWithExitCode,
-    runInteractiveProcess,
-    showCommandForUser,
-    terminateProcess,
-    waitForProcess,
-  )
+import           Control.Concurrent (forkIO)
+import           Control.Exception  (catch, evaluate, finally, throw)
+import qualified Data.Text          as T
+import qualified Data.Text.IO       as T
+import           Foreign.C.Error    (Errno (Errno), eXDEV)
+import           GHC.IO.Exception   (ExitCode (ExitFailure, ExitSuccess), IOException (ioe_errno))
+import           System.Directory   (XdgDirectory (XdgCache), copyFile, createDirectoryIfMissing,
+                                     findExecutable, getXdgDirectory, removeFile, renameFile)
+import           System.FilePath    ((<.>), (</>))
+import           System.IO          (hClose, hGetContents, hIsEOF, hPutStr, stderr)
+import           System.IO.Temp     (withSystemTempDirectory, withSystemTempFile)
+import           System.Process     (readProcessWithExitCode, runInteractiveProcess,
+                                     showCommandForUser, terminateProcess, waitForProcess)
 
 requireExecutable :: String -> IO FilePath
 requireExecutable exec = do
   mbPath <- findExecutable exec
   case mbPath of
-    Nothing -> error $ "Couldn't find executable: " ++ exec
+    Nothing   -> error $ "Couldn't find executable: " ++ exec
     Just path -> return path
 
 runCmd :: FilePath -> [String] -> IO ()
@@ -96,7 +75,7 @@ runCmdLazy exec args handler = do
             _ <- evaluate (length errOutput)
             ret <- waitForProcess pid
             case ret of
-              ExitSuccess -> return (Left "")
+              ExitSuccess    -> return (Left "")
               ExitFailure {} -> return (Left errOutput)
           else {-ExitFailure errMsg -> do
                  return $ Left $

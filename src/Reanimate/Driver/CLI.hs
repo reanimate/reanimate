@@ -9,12 +9,10 @@ module Reanimate.Driver.CLI
   , showRaster
   ) where
 
-import           Data.Char
-import           Data.Monoid
+import           Data.Char           (toLower)
 import           Options.Applicative
 import           Prelude
-import           Reanimate.Render    (FPS, Format (..), Height, Raster (..),
-                                      Width)
+import           Reanimate.Render    (FPS, Format (..), Height, Raster (..), Width)
 
 newtype Options = Options
   { optsCommand :: Command
@@ -29,10 +27,10 @@ data Command
   | Test
   | Check
   | View
-    { viewVerbose   :: Bool
-    , viewGHCPath   :: Maybe FilePath
-    , viewGHCOpts   :: [String]
-    , viewOrigin    :: Maybe FilePath
+    { viewVerbose :: Bool
+    , viewGHCPath :: Maybe FilePath
+    , viewGHCOpts :: [String]
+    , viewOrigin  :: Maybe FilePath
     }
   | Render
     { renderTarget  :: Maybe String
@@ -54,12 +52,12 @@ data Preset = Youtube | ExampleGif | Quick | MediumQ | HighQ | LowFPS
 readRaster :: String -> Maybe Raster
 readRaster raster =
   case map toLower raster of
-    "none"          -> Just RasterNone
-    "auto"          -> Just RasterAuto
-    "inkscape"      -> Just RasterInkscape
-    "rsvg"          -> Just RasterRSvg
-    "imagemagick"   -> Just RasterMagick
-    _               -> Nothing
+    "none"        -> Just RasterNone
+    "auto"        -> Just RasterAuto
+    "inkscape"    -> Just RasterInkscape
+    "rsvg"        -> Just RasterRSvg
+    "imagemagick" -> Just RasterMagick
+    _             -> Nothing
 
 showRaster :: Raster -> String
 showRaster RasterNone     = "none"

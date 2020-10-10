@@ -16,21 +16,21 @@ module Reanimate.Builtin.Images
   )
 where
 
-import Codec.Picture
-import qualified Data.ByteString as B
-import qualified Data.Text.IO as T
-import Graphics.SvgTree (parseSvgFile)
-import Paths_reanimate
-import Reanimate.Animation
-import Reanimate.Svg
-import System.IO.Unsafe
+import           Codec.Picture
+import qualified Data.ByteString     as B
+import qualified Data.Text.IO        as T
+import           Graphics.SvgTree    (parseSvgFile)
+import           Paths_reanimate
+import           Reanimate.Animation
+import           Reanimate.Svg
+import           System.IO.Unsafe
 
 embedImage :: FilePath -> IO SVG
 embedImage key = do
   svg_file <- getDataFileName key
   svg_data <- T.readFile svg_file
   case parseSvgFile svg_file svg_data of
-    Nothing -> error "Malformed svg"
+    Nothing  -> error "Malformed svg"
     Just svg -> return $ embedDocument svg
 
 loadJPG :: FilePath -> Image PixelRGBA8
@@ -38,7 +38,7 @@ loadJPG key = unsafePerformIO $ do
   jpg_file <- getDataFileName key
   dat <- B.readFile jpg_file
   case decodeJpeg dat of
-    Left err -> error err
+    Left err  -> error err
     Right img -> return $ convertRGBA8 img
 
 {- HLINT ignore svgLogo -}

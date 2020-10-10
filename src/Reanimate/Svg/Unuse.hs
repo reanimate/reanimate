@@ -14,18 +14,19 @@ module Reanimate.Svg.Unuse
 
 import           Control.Lens               ((%~), (&), (.~), (?~), (^.))
 import qualified Data.Map                   as Map
-import           Data.Maybe
+import           Data.Maybe                 (fromMaybe)
 import           Graphics.SvgTree
-import           Reanimate.Constants
-import           Reanimate.Svg.Constructors
+import           Reanimate.Constants        (defaultDPI, screenHeight, screenWidth)
+import           Reanimate.Svg.Constructors (flipYAxis, mkGroup, scaleXY, translate,
+                                             withFillOpacity, withStrokeWidth)
 
 -- | Replace all @<use>@ nodes with their definition.
 replaceUses :: Document -> Document
 replaceUses doc = doc & documentElements %~ map (mapTree replace)
   where
-    replaceDefinition PathTree{} = None
+    replaceDefinition PathTree{}   = None
     replaceDefinition SymbolTree{} = None
-    replaceDefinition t          = t
+    replaceDefinition t            = t
 
     replace t@DefinitionTree{} = mapTree replaceDefinition t
     replace (UseTree _ Just{}) = error "replaceUses: subtree in use?"

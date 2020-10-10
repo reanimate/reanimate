@@ -14,17 +14,17 @@ module Reanimate.Svg
   , module Reanimate.Svg.Unuse
   ) where
 
-import           Control.Lens                 ((%~), (&), (.~), (^.), (?~))
+import           Control.Lens               ((%~), (&), (.~), (?~), (^.))
 import           Control.Monad.State
 import           Graphics.SvgTree
-import           Linear.V2                    hiding (angle)
-import           Reanimate.Constants
-import           Reanimate.Animation (SVG)
+import           Linear.V2                  (V2 (V2))
+import           Reanimate.Animation        (SVG)
+import           Reanimate.Constants        (defaultDPI)
+import           Reanimate.Svg.BoundingBox  (boundingBox, svgHeight, svgWidth)
 import           Reanimate.Svg.Constructors
 import           Reanimate.Svg.LineCommand
-import           Reanimate.Svg.BoundingBox
-import           Reanimate.Svg.Unuse
-import qualified Reanimate.Transform          as Transform
+import           Reanimate.Svg.Unuse        (embedDocument, replaceUses, unbox, unboxFit)
+import qualified Reanimate.Transform        as Transform
 
 -- | Remove transformations (such as translations, rotations, scaling)
 --   and apply them directly to the SVG nodes. Note, this function
@@ -343,9 +343,9 @@ mapSvgLines fn = mapSvgPaths (lineToPath . fn . toLineCommands)
 mapSvgPoints :: (RPoint -> RPoint) -> SVG -> SVG
 mapSvgPoints fn = mapSvgLines (map worker)
   where
-    worker (LineMove p) = LineMove (fn p)
+    worker (LineMove p)    = LineMove (fn p)
     worker (LineBezier ps) = LineBezier (map fn ps)
-    worker (LineEnd p) = LineEnd (fn p)
+    worker (LineEnd p)     = LineEnd (fn p)
 
 -- | Convert coordinate system from degrees to radians.
 svgPointsToRadians :: SVG -> SVG

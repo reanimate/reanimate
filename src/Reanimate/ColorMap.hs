@@ -19,15 +19,15 @@ module Reanimate.ColorMap
   , greyscale
   ) where
 
-import Data.Text (Text)
-import Data.Vector (Vector)
-import qualified Data.Text as T
-import qualified Data.Vector as V
-import Codec.Picture
-import Data.Char
-import Data.Bits
+import           Codec.Picture            (Pixel8, PixelRGB8 (..))
+import           Data.Bits                (Bits (shiftL))
+import           Data.Char                (digitToInt)
+import           Data.Colour.RGBSpace     (RGB (RGB))
 import qualified Data.Colour.RGBSpace.HSV as HSV
-import           Data.Colour.RGBSpace
+import           Data.Text                (Text)
+import qualified Data.Text                as T
+import           Data.Vector              (Vector)
+import qualified Data.Vector              as V
 
 -- | Given a number t in the range [0,1], returns the corresponding color from
 --   the “turbo” color scheme by Anton Mikhailov.

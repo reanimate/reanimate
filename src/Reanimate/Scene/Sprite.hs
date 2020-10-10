@@ -1,39 +1,21 @@
-{-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE ApplicativeDo   #-}
 {-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes      #-}
 
 module Reanimate.Scene.Sprite where
 
-import Control.Monad (void)
-import Control.Monad.ST (ST)
-import Data.Bifunctor (Bifunctor (first))
-import Data.STRef (STRef, modifySTRef, newSTRef, readSTRef)
-import Graphics.SvgTree
-  ( pattern None,
-  )
-import Reanimate.Animation
-  ( Animation,
-    Duration,
-    SVG,
-    Sync (SyncStretch),
-    Time,
-    dropA,
-    duration,
-    getAnimationFrame,
-  )
-import Reanimate.Effect (Effect, delayE)
-import Reanimate.Scene.Core
-  ( Scene (M),
-    ZIndex,
-    addGen,
-    fork,
-    liftST,
-    queryNow,
-    scene,
-    wait,
-  )
-import Reanimate.Scene.Var (unpackVar, Var (..), newVar, readVar)
-import Reanimate.Transition (Transition, overlapT)
+import           Control.Monad        (void)
+import           Control.Monad.ST     (ST)
+import           Data.Bifunctor       (Bifunctor (first))
+import           Data.STRef           (STRef, modifySTRef, newSTRef, readSTRef)
+import           Graphics.SvgTree     (pattern None)
+import           Reanimate.Animation  (Animation, Duration, SVG, Sync (SyncStretch), Time, dropA,
+                                       duration, getAnimationFrame)
+import           Reanimate.Effect     (Effect, delayE)
+import           Reanimate.Scene.Core (Scene (M), ZIndex, addGen, fork, liftST, queryNow, scene,
+                                       wait)
+import           Reanimate.Scene.Var  (Var (..), newVar, readVar, unpackVar)
+import           Reanimate.Transition (Transition, overlapT)
 
 -- | Create and render a variable. The rendering will be born at the current timestamp
 --   and will persist until the end of the scene.

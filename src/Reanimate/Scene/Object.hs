@@ -1,32 +1,26 @@
-{-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE ApplicativeDo   #-}
 {-# LANGUAGE RecordWildCards #-}
 module Reanimate.Scene.Object where
 
-import Linear.V2
-import Linear.Vector
-import Control.Lens
-import Control.Monad (forM_, void)
-import Control.Monad.State (State, execState)
-import Data.Monoid ( Last(getLast) )
-import Graphics.SvgTree
-  ( Number (..),
-    Tree,
-    strokeWidth,
-    toUserUnit,
-    pattern None,
-  )
-import Reanimate.Animation
-import Reanimate.Constants (defaultDPI, defaultStrokeWidth)
-import Reanimate.Ease (Signal, curveS, fromToS)
-import Reanimate.Effect ( applyE, fadeLineOutE, overEnding )
-import Reanimate.Math.Balloon ( balloon )
-import Reanimate.Morph.Common (morph)
-import Reanimate.Morph.Linear (linear)
-import Reanimate.Svg
+import           Control.Lens
+import           Control.Monad          (forM_, void)
+import           Control.Monad.State    (State, execState)
+import           Data.Monoid            (Last (getLast))
+import           Graphics.SvgTree       (Number (..), Tree, pattern None, strokeWidth, toUserUnit)
+import           Linear.V2              (R1 (_x), R2 (_y), V2 (..))
+import           Linear.Vector          (Additive (lerp), (^*))
+import           Reanimate.Animation
+import           Reanimate.Constants    (defaultDPI, defaultStrokeWidth)
+import           Reanimate.Ease         (Signal, curveS, fromToS)
+import           Reanimate.Effect       (applyE, fadeLineOutE, overEnding)
+import           Reanimate.Math.Balloon (balloon)
+import           Reanimate.Morph.Common (morph)
+import           Reanimate.Morph.Linear (linear)
+import           Reanimate.Svg
 
-import Reanimate.Scene.Core
-import Reanimate.Scene.Sprite
-import Reanimate.Scene.Var
+import           Reanimate.Scene.Core   (Scene, fork, scene, wait)
+import           Reanimate.Scene.Sprite (Sprite, newSprite, newSpriteA', play, spriteModify, unVar)
+import           Reanimate.Scene.Var    (Var, modifyVar, newVar, readVar, tweenVar)
 
 -------------------------------------------------------
 -- Objects
@@ -43,23 +37,23 @@ instance Renderable Tree where
 --   change over time.
 data Object s a = Object
   { objectSprite :: Sprite s,
-    objectData :: Var s (ObjectData a)
+    objectData   :: Var s (ObjectData a)
   }
 
 -- | Container for object properties.
 data ObjectData a = ObjectData
-  { _oTranslate :: V2 Double,
-    _oValueRef :: a,
-    _oSVG :: SVG,
-    _oContext :: SVG -> SVG,
+  { _oTranslate   :: V2 Double,
+    _oValueRef    :: a,
+    _oSVG         :: SVG,
+    _oContext     :: SVG -> SVG,
     -- | Top, right, bottom, left
-    _oMargin :: (Double, Double, Double, Double),
-    _oBB :: (Double, Double, Double, Double),
-    _oOpacity :: Double,
-    _oShown :: Bool,
-    _oZIndex :: Int,
-    _oEasing :: Signal,
-    _oScale :: Double,
+    _oMargin      :: (Double, Double, Double, Double),
+    _oBB          :: (Double, Double, Double, Double),
+    _oOpacity     :: Double,
+    _oShown       :: Bool,
+    _oZIndex      :: Int,
+    _oEasing      :: Signal,
+    _oScale       :: Double,
     _oScaleOrigin :: V2 Double
   }
 
@@ -508,7 +502,7 @@ oDraw = oStagger $ \svg -> scene $
     let sWidth =
           case toUserUnit defaultDPI <$> getLast (attr ^. strokeWidth) of
             Just (Num d) -> max defaultStrokeWidth d
-            _ -> defaultStrokeWidth
+            _            -> defaultStrokeWidth
     -- wait 1
     play $
       mapA ctx $

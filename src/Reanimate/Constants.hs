@@ -14,7 +14,7 @@ module Reanimate.Constants
   , defaultStrokeWidth
   ) where
 
-import           Graphics.SvgTree
+import           Graphics.SvgTree (Dpi)
 
 -- | Number of units from the left-most point to the right-most point on the screen.
 screenWidth :: Fractional a => a

@@ -48,7 +48,7 @@ import qualified Data.Geometry.Point                                  as Geo
 import qualified Data.Geometry.Polygon                                as Geo
 import           Data.List                                            (nub, partition, sortOn)
 import qualified Data.PlaneGraph                                      as Geo
-import           Data.Proxy
+import           Data.Proxy                                           (Proxy (Proxy))
 import qualified Data.Vector                                          as V
 import           Geom2D.CubicBezier.Linear                            (ClosedPath (..),
                                                                        CubicBezier (..),

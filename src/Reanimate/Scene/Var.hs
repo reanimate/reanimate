@@ -1,13 +1,13 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase      #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Reanimate.Scene.Var where
 
-import Control.Monad.ST (ST)
-import qualified Data.Map as M
-import Data.STRef
-import Reanimate.Animation (Duration, Time)
-import Reanimate.Scene.Core (Scene, liftST, queryNow, wait)
+import           Control.Monad.ST     (ST)
+import qualified Data.Map             as M
+import           Data.STRef           (STRef, modifySTRef, newSTRef, readSTRef)
+import           Reanimate.Animation  (Duration, Time)
+import           Reanimate.Scene.Core (Scene, liftST, queryNow, wait)
 
 -- | Time dependent variable.
 newtype Var s a = Var (STRef s (VarData a))
@@ -18,9 +18,9 @@ newtype Var s a = Var (STRef s (VarData a))
 --          it shouldn't be Nothing again.
 --       3. isNothing (evarLastTime var) => M.null (evarTimeline var)
 data VarData a = VarData
-  { evarDefault :: a,
-    evarTimeline :: Timeline a,
-    evarLastTime :: Maybe Time,
+  { evarDefault   :: a,
+    evarTimeline  :: Timeline a,
+    evarLastTime  :: Maybe Time,
     evarLastValue :: a
   }
 
@@ -103,7 +103,7 @@ modifyVarData now fn var =
   let before = keepBefore now var
       after = keepFrom now var
       timeline = flip M.map (evarTimeline after) $ \case
-        StaticValue s -> StaticValue $ fn s
+        StaticValue s    -> StaticValue $ fn s
         TweenValue dur f -> TweenValue dur $ \a t -> fn (f a t)
    in after {evarTimeline = timeline, evarLastValue = fn $ evarLastValue after} `elseVar` before
 
@@ -165,5 +165,5 @@ keepBefore nd var@VarData {..} =
         _ -> timeline'
       lastTime = case lastModifier of
         Just (t, TweenValue dur _) -> Just $ min nd (t + dur)
-        _ -> min nd <$> evarLastTime
+        _                          -> min nd <$> evarLastTime
    in VarData evarDefault timeline'' lastTime (maybe evarDefault (readVarData var) lastTime)

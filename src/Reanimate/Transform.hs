@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns   #-}
+{-# LANGUAGE BangPatterns #-}
 {-|
   2D transformation matrices capable of translating, scaling,
   rotating, and skewing.
@@ -11,12 +11,12 @@ module Reanimate.Transform
   ) where
 
 -- XXX: Use Linear.Matrix instead of Data.Matrix to drop the 'matrix' dependency.
-import           Data.List
-import           Data.Matrix (Matrix)
-import qualified Data.Matrix as M
-import           Data.Maybe
-import           Graphics.SvgTree
-import           Linear.V2
+import           Data.List        (foldl')
+import           Data.Matrix      (Matrix)
+import qualified Data.Matrix      as M
+import           Data.Maybe       (fromMaybe)
+import           Graphics.SvgTree (Coord, RPoint, Transformation (..))
+import           Linear.V2        (V2 (V2))
 
 -- | Identity matrix.
 --

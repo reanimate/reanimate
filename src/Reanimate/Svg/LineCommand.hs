@@ -15,17 +15,20 @@ module Reanimate.Svg.LineCommand
   )
 where
 
-import Control.Lens ((%~), (&), (.~))
-import Control.Monad.Fix
-import Control.Monad.State
-import Data.Functor
-import Data.Maybe
-import qualified Data.Vector.Unboxed as V
+import           Control.Lens              ((%~), (&), (.~))
+import           Control.Monad.Fix         (MonadFix (mfix))
+import           Control.Monad.State       (MonadState (get, put), State, evalState, forM, gets,
+                                            modify)
+import           Data.Functor              (($>))
+import           Data.Maybe                (mapMaybe)
+import qualified Data.Vector.Unboxed       as V
 import qualified Geom2D.CubicBezier.Linear as Bezier
-import Graphics.SvgTree
-import Linear.Metric
-import Linear.V2 hiding (angle)
-import Linear.Vector
+import           Graphics.SvgTree          (Coord, Origin (OriginAbsolute, OriginRelative),
+                                            PathCommand (..), RPoint, Tree, mapTree, pathDefinition,
+                                            pattern PathTree)
+import           Linear.Metric             (Metric (distance))
+import           Linear.V2                 (R1 (_x), R2 (_y), V2 (V2))
+import           Linear.Vector             (Additive (lerp, zero))
 
 -- | Line command monad used for keeping track of the current location.
 type CmdM a = State RPoint a
@@ -42,13 +45,13 @@ data LineCommand
 lineToPath :: [LineCommand] -> [PathCommand]
 lineToPath = map worker
   where
-    worker (LineMove p) = MoveTo OriginAbsolute [p]
+    worker (LineMove p)           = MoveTo OriginAbsolute [p]
     -- worker (LineDraw p)         = LineTo OriginAbsolute [p]
     worker (LineBezier [a, b, c]) = CurveTo OriginAbsolute [(a, b, c)]
-    worker (LineBezier [a, b]) = QuadraticBezier OriginAbsolute [(a, b)]
-    worker (LineBezier [a]) = LineTo OriginAbsolute [a]
-    worker LineBezier {} = error "Reanimate.Svg.lineToPath: invalid bezier curve"
-    worker LineEnd {} = EndPath
+    worker (LineBezier [a, b])    = QuadraticBezier OriginAbsolute [(a, b)]
+    worker (LineBezier [a])       = LineTo OriginAbsolute [a]
+    worker LineBezier {}          = error "Reanimate.Svg.lineToPath: invalid bezier curve"
+    worker LineEnd {}             = EndPath
 
 -- | Using @n@ control points, approximate the path of the curves.
 lineToPoints :: Int -> [LineCommand] -> [RPoint]
@@ -56,9 +59,9 @@ lineToPoints nPoints cmds =
   mapMaybe lineEnd lineSegments
   where
     lineSegments = [partialLine (fromIntegral n / fromIntegral nPoints) cmds | n <- [0 .. nPoints -1]]
-    lineEnd [] = Nothing
+    lineEnd []               = Nothing
     lineEnd [LineBezier pts] = Just (last pts)
-    lineEnd (_ : xs) = lineEnd xs
+    lineEnd (_ : xs)         = lineEnd xs
 
 partialLine :: Double -> [LineCommand] -> [LineCommand]
 partialLine alpha cmds = evalState (worker 0 cmds) zero
@@ -78,9 +81,9 @@ adjustLineLength :: Double -> RPoint -> LineCommand -> LineCommand
 adjustLineLength alpha from cmd =
   case cmd of
     LineBezier points -> LineBezier $ drop 1 $ partialBezierPoints (from : points) 0 alpha
-    LineMove p -> LineMove p
+    LineMove p        -> LineMove p
     -- LineDraw t -> LineDraw (lerp alpha t from)
-    LineEnd p -> LineBezier [lerp alpha p from]
+    LineEnd p         -> LineBezier [lerp alpha p from]
 
 -- | Estimated length of all segments in a line.
 lineLength :: LineCommand -> CmdM Double
@@ -101,10 +104,10 @@ lineLength cmd =
 rpointsToBezier :: [RPoint] -> Bezier.CubicBezier Double
 rpointsToBezier lst =
   case lst of
-    [a, b] -> Bezier.CubicBezier a a b b
-    [a, b, c] -> Bezier.quadToCubic (Bezier.QuadBezier a b c)
+    [a, b]       -> Bezier.CubicBezier a a b b
+    [a, b, c]    -> Bezier.quadToCubic (Bezier.QuadBezier a b c)
     [a, b, c, d] -> Bezier.CubicBezier a b c d
-    _ -> error $ "rpointsToBezier: Invalid list of points: " ++ show lst
+    _            -> error $ "rpointsToBezier: Invalid list of points: " ++ show lst
 
 -- | Convert from path commands to line commands.
 toLineCommands :: [PathCommand] -> [LineCommand]
@@ -116,12 +119,12 @@ toLineCommands ps = evalState (worker zero Nothing ps) zero
       let startPos' =
             case lcmds of
               [LineMove pos] -> pos
-              _ -> startPos
+              _              -> startPos
       (lcmds ++) <$> worker startPos' (cmdToControlPoint $ last lcmds) cmds
 
 cmdToControlPoint :: LineCommand -> Maybe RPoint
 cmdToControlPoint (LineBezier points) = Just (last (init points))
-cmdToControlPoint _ = Nothing
+cmdToControlPoint _                   = Nothing
 
 mkStraightLine :: RPoint -> LineCommand
 mkStraightLine p = LineBezier [p]
@@ -180,7 +183,7 @@ toLineCommand startPos mbPrevControlPt cmd =
     adjustPosition OriginRelative p = modify (+ p)
     adjustPosition OriginAbsolute p = put p
     makeAbsolute OriginAbsolute _from p = p
-    makeAbsolute OriginRelative from p = from + p
+    makeAbsolute OriginRelative from p  = from + p
 
 calculateVectorAngle :: Double -> Double -> Double -> Double -> Double
 calculateVectorAngle ux uy vx vy

@@ -12,15 +12,16 @@ module Reanimate.Debug
   )
 where
 
-import           Data.IORef
-import           System.IO.Unsafe
-import           Control.Exception
-import           Reanimate.Animation
-import           Reanimate.Svg
-import           Reanimate.LaTeX
-import           Reanimate.Constants
-import           Text.Printf
-import qualified Data.Text                     as T
+import           Control.Exception   (evaluate)
+import           Data.IORef          (IORef, atomicModifyIORef', modifyIORef', newIORef)
+import qualified Data.Text           as T
+import           Reanimate.Animation (Animation, SVG, duration, parA, pause, seqA, staticFrame)
+import           Reanimate.Constants (defaultStrokeWidth)
+import           Reanimate.LaTeX     (latex)
+import           Reanimate.Svg       (center, mkGroup, translate, withFillColor, withStrokeColor,
+                                      withStrokeWidth)
+import           System.IO.Unsafe    (unsafePerformIO)
+import           Text.Printf         (printf)
 
 {-# NOINLINE traceBuffer #-}
 traceBuffer :: IORef [Animation]

@@ -8,17 +8,17 @@ module Reanimate.Driver.Check
   ) where
 
 import           Control.Exception            (SomeException, handle)
-import           Control.Monad
-import           Data.Maybe
-import           Data.Version
-import           Reanimate.Misc               (runCmd_)
+import           Control.Monad                (forM_)
+import           Data.Maybe                   (fromMaybe, listToMaybe)
+import           Data.Version                 (Version (Version), parseVersion, showVersion)
 import           Reanimate.Driver.Magick      (magickCmd)
+import           Reanimate.Misc               (runCmd_)
 import           System.Console.ANSI.Codes
 import           System.Directory             (findExecutable)
-import           System.IO
-import           System.IO.Temp
-import           Text.ParserCombinators.ReadP
-import           Text.Printf
+import           System.IO                    (hClose, hPutStr)
+import           System.IO.Temp               (withSystemTempDirectory, withTempFile)
+import           Text.ParserCombinators.ReadP (readP_to_S)
+import           Text.Printf                  (printf)
 
 --------------------------------------------------------------------------
 -- Check environment

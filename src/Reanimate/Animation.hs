@@ -53,14 +53,13 @@ module Reanimate.Animation
   , renderSvg
   ) where
 
-import           Control.Arrow              ()
 import           Data.Fixed                 (mod')
 import           Graphics.SvgTree
-import           Graphics.SvgTree.Printer
-import           Reanimate.Constants
-import           Reanimate.Ease
-import           Reanimate.Svg.Constructors
-import           Text.XML.Light.Output
+import           Graphics.SvgTree.Printer   (ppDocument)
+import           Reanimate.Constants        (defaultStrokeWidth)
+import           Reanimate.Ease             (Signal, reverseS)
+import           Reanimate.Svg.Constructors (mkGroup, scaleXY, withStrokeWidth)
+import           Text.XML.Light.Output      (ppElement)
 
 -- | Duration of an animation or effect. Usually measured in seconds.
 type Duration = Double

@@ -7,10 +7,10 @@ Portability : POSIX
 -}
 module Reanimate.Builtin.Slide where
 
-import Reanimate.Transition
-import Reanimate.Constants
-import Reanimate.Svg
-import Reanimate.Effect
+import           Reanimate.Constants  (screenHeight, screenWidth)
+import           Reanimate.Effect     (constE, translateE)
+import           Reanimate.Svg        (translate)
+import           Reanimate.Transition (Transition, effectT)
 
 -- | <<docs/gifs/doc_slideLeftT.gif>>
 slideLeftT :: Transition

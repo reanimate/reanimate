@@ -21,8 +21,8 @@ module Reanimate.Parameters
   , setRootDirectory
   ) where
 
-import System.IO.Unsafe
-import Data.IORef
+import           Data.IORef       (IORef, newIORef, readIORef, writeIORef)
+import           System.IO.Unsafe (unsafePerformIO)
 
 -- | Width of animation in pixels.
 type Width = Int

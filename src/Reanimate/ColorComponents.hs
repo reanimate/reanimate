@@ -22,16 +22,16 @@ module Reanimate.ColorComponents
   , fromRGB8
   ) where
 
-import           Codec.Picture
-import           Codec.Picture.Types
-import           Data.Colour
-import           Data.Colour.CIE
+import           Codec.Picture              (Pixel (pixelOpacity), PixelRGB8 (..), PixelRGBA8 (..))
+import           Codec.Picture.Types        (TransparentPixel (dropTransparency))
+import           Data.Colour                (Colour)
+import           Data.Colour.CIE            (cieLAB, cieLABView, cieXYZ, cieXYZView)
 import           Data.Colour.CIE.Illuminant (d65)
-import           Data.Colour.RGBSpace
-import           Data.Colour.RGBSpace.HSV
-import           Data.Colour.SRGB
-import           Data.Fixed
-import           Reanimate.Ease
+import           Data.Colour.RGBSpace       (RGB (RGB), uncurryRGB)
+import           Data.Colour.RGBSpace.HSV   (hsv, hsvView)
+import           Data.Colour.SRGB           (sRGB, sRGB24, toSRGB, toSRGBBounded)
+import           Data.Fixed                 (mod')
+import           Reanimate.Ease             (fromToS)
 
 -- | Constructor and destructor for color's three components.
 data ColorComponents = ColorComponents

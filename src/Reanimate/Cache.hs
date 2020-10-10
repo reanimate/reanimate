@@ -8,24 +8,24 @@ module Reanimate.Cache
   , encodeInt
   ) where
 
-import           Control.Exception
+import           Control.Exception   (evaluate)
 import           Control.Monad       (unless)
-import           Data.Bits
-import           Data.Hashable
-import           Data.IORef
+import           Data.Bits           (Bits (shiftR))
+import           Data.Hashable       (Hashable (hash))
+import           Data.IORef          (IORef, atomicModifyIORef, newIORef, readIORef)
 import           Data.Map            (Map)
 import qualified Data.Map            as Map
 import           Data.Text           (Text)
 import qualified Data.Text           as T
 import qualified Data.Text.IO        as T
-import           Graphics.SvgTree    (Tree, unparse, pattern None)
+import           Graphics.SvgTree    (Tree, pattern None, unparse)
 import           Reanimate.Animation (renderTree)
-import           Reanimate.Misc      (renameOrCopyFile,getReanimateCacheDirectory)
-import           System.Directory
-import           System.FilePath
-import           System.IO
-import           System.IO.Temp
-import           System.IO.Unsafe
+import           Reanimate.Misc      (getReanimateCacheDirectory, renameOrCopyFile)
+import           System.Directory    (doesFileExist)
+import           System.FilePath     ((<.>), (</>))
+import           System.IO           (hClose)
+import           System.IO.Temp      (openTempFile, withSystemTempFile)
+import           System.IO.Unsafe    (unsafePerformIO)
 import           Text.XML.Light      (Content (..), parseXML)
 
 -- Memory cache and disk cache
