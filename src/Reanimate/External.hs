@@ -8,6 +8,8 @@ module Reanimate.External
     simpleIcon,
     simpleIconColor,
     simpleIcons,
+    svgLogo,
+    svgLogos,
   )
 where
 
@@ -133,7 +135,7 @@ simpleIconPath key = unsafePerformIO $ do
     then pure path
     else error $ "Key not found in simple-icons dataset: " ++ show key
 
--- | Icons from <http://simpleicons.org/>. Version 3.11.0. License: CC0
+-- | Icons from <https://simpleicons.org/>. Version 3.11.0. License: CC0
 --
 -- @
 -- let icon = "cplusplus" in `Reanimate.mkGroup`
@@ -199,6 +201,41 @@ simpleIcons :: [String]
 simpleIcons = unsafePerformIO $ do
   let folder = simpleIconsFolder </> "icons"
   files <- getDirectoryContents folder
+  return $
+    sort
+      [key | file <- files, let (key, ext) = splitExtension file, ext == ".svg"]
+
+
+svgLogosFolder :: FilePath
+svgLogosFolder = tarball
+    "https://github.com/gilbarbara/logos/archive/2018.01.tar.gz"
+    "kRRA0cF6sVOyqtfVW8EMew4OB4WJcY81DEGS3FLEY8Y="
+    </> "logos-2018.01" </> "logos"
+
+{-# NOINLINE svgLogoPath #-}
+svgLogoPath :: String -> FilePath
+svgLogoPath key = unsafePerformIO $ do
+  let path = svgLogosFolder </> key <.> "svg"
+  hit <- doesFileExist path
+  if hit
+    then pure path
+    else error $ "Key not found in svg logos dataset: " ++ show key
+
+-- | Icons from <https://svgporn.com/>. Version 3.11.0. License: CC0
+--
+-- @
+-- `svgLogo` "cassandra"
+-- @
+--
+--   <<docs/gifs/doc_svgLogo.gif>>
+svgLogo :: String -> SVG
+svgLogo = mkImage screenWidth screenHeight . svgLogoPath
+
+{-# NOINLINE svgLogos #-}
+-- | Complete list of all SVG Icons.
+svgLogos :: [String]
+svgLogos = unsafePerformIO $ do
+  files <- getDirectoryContents svgLogosFolder
   return $
     sort
       [key | file <- files, let (key, ext) = splitExtension file, ext == ".svg"]
