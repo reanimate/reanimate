@@ -59,7 +59,7 @@ type Edge a = (V2 a, V2 a)
 data Topology = MutableSegment | ImmutableSegment Int
   deriving (Eq, Show)
 
-{- INLINE pTopology -}
+{-# INLINE pTopology #-}
 pTopology :: Eq a => [Edge a] -> APolygon a -> [Topology]
 pTopology immutableEdges p = worker
   [ maybe MutableSegment ImmutableSegment isImmutable

@@ -1,7 +1,5 @@
 #!/usr/bin/env stack
 -- stack --resolver lts-13.14 runghc --package reanimate
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE PackageImports    #-}
 module Main (main) where
 
@@ -41,9 +39,9 @@ digitCount = 10
 
 main :: IO ()
 main = reanimate $ fixed bg $ pauseAtEnd 1 $
-    -- sceneAnimation (bubbleSort lst) `seqA` sceneAnimation (simpleSort lst)
-    -- sceneAnimation (simpleSort_ lst)
-    sceneAnimation (quicksort__ lst)
+    -- scene (bubbleSort lst) `seqA` scene (simpleSort lst)
+    -- scene (simpleSort_ lst)
+    scene (quicksort__ lst)
     -- mkAnimation 5 $ \t ->
     --   withFillColor "white" $ translate (negate $ digitWidth*digitCount/2) 0 $
         -- sortingTransition (zip [9,0,1,2,3,4,5,6,8,7] squares) s

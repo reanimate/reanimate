@@ -7,7 +7,7 @@ import qualified Data.ByteString        as B
 import           Data.Hashable
 import           Data.Serialize
 import           Reanimate.Cache        (encodeInt)
-import           Reanimate.Misc         (renameOrCopyFile)
+import           Reanimate.Misc         (renameOrCopyFile,getReanimateCacheDirectory)
 import           Reanimate.Morph.Common
 import           System.Directory
 import           System.FilePath
@@ -18,8 +18,7 @@ import           System.IO.Unsafe
 -- type PointCorrespondence = Polygon → Polygon → (Polygon, Polygon)
 cachePointCorrespondence :: Int -> PointCorrespondence -> PointCorrespondence
 cachePointCorrespondence ident fn src dst = unsafePerformIO $ do
-    root <- getXdgDirectory XdgCache "reanimate"
-    createDirectoryIfMissing True root
+    root <- getReanimateCacheDirectory
     let path = root </> template
     hit <- doesFileExist path
     if hit

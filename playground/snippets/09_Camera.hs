@@ -1,5 +1,5 @@
 animation :: Animation
-animation = docEnv $ mapA (withFillOpacity 1) $ sceneAnimation $ do
+animation = docEnv $ mapA (withFillOpacity 1) $ scene $ do
   cam <- newObject Camera
 
   txt <- newObject $ center $ latex "Fixed (non-cam)"
@@ -36,4 +36,4 @@ animation = docEnv $ mapA (withFillOpacity 1) $ sceneAnimation $ do
   
   wait 2
   cameraZoom cam 3 1
-  cameraPan cam 1 (0,0)
+  cameraPan cam 1 (V2 0 0)

@@ -54,7 +54,7 @@ pCuts' p =
 --   lowerTransformations $ pathify $ center $ latex "$1$"
 
 main :: IO ()
-main = reanimate $ sceneAnimation $ do
+main = reanimate $ scene $ do
   bg <- newSpriteSVG $ mkBackground "black"
   spriteZ bg (-1)
   newSpriteSVG_ $ translate 0 1 $ mkGroup
@@ -65,12 +65,11 @@ main = reanimate $ sceneAnimation $ do
     play $ mkAnimation (1/60) $ \_ -> mkGroup
       [ translate (-3) 0 $ withFillColor "grey" $ polygonShape l
       , translate (-3) 0 $ polygonNumDots l
-      , translate (3) 0 $ withFillColor "grey" $ polygonShape r
-      , translate (3) 0 $ polygonNumDots r
+      , translate 3 0 $ withFillColor "grey" $ polygonShape r
+      , translate 3 0 $ polygonNumDots r
       ]
   -- wait 1
   -- fork $ play $ drawTriangulation shape1 earCut'
   --   # mapA (translate (-3) 0)
   -- play $ drawTriangulation shape1 earClip'
-  --   # mapA (translate (3) 0)
-  return ()
+  --   # mapA (translate 3 0)

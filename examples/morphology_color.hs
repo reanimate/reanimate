@@ -19,7 +19,7 @@ main = reanimate $
   setDuration 5 $
   mapA (withStrokeWidth 0) $
   mapA (withFillOpacity 1) $
-    sceneAnimation $ do
+    scene $ do
       doMorph yellow blue
       doMorph blue yellow
   where

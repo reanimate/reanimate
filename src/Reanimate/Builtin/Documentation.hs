@@ -12,11 +12,11 @@ GIFs for a consistent look and feel.
 -}
 module Reanimate.Builtin.Documentation where
 
-import Reanimate.Animation
-import Reanimate.Svg
-import Reanimate.Raster
-import Reanimate.Constants
-import Codec.Picture
+import           Codec.Picture       (PixelRGB8, PixelRGBA8 (..), generateImage)
+import           Reanimate.Animation (Animation, SVG, mapA, mkAnimation)
+import           Reanimate.Constants (screenHeight, screenWidth)
+import           Reanimate.Raster    (embedImage)
+import           Reanimate.Svg
 
 -- | Default environment for API documentation GIFs.
 docEnv :: Animation -> Animation

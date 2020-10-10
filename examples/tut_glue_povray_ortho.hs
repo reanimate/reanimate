@@ -16,14 +16,14 @@ import           Control.Monad
 import           Data.Monoid
 import           Data.Text             (Text)
 import qualified Data.Text             as T
-import           Graphics.SvgTree      hiding (Text,text)
+import           Graphics.SvgTree      hiding (Text)
 import           NeatInterpolation
 import           System.Random
 import "random-shuffle" System.Random.Shuffle
 
 
 main :: IO ()
-main = reanimate $ parA bg $ sceneAnimation $ do
+main = reanimate $ addStatic bg $ scene $ do
     xRot <- newVar (-30)
     yRot <- newVar 180
     zRot <- newVar 0
@@ -46,7 +46,7 @@ main = reanimate $ parA bg $ sceneAnimation $ do
     wait tDuration
     wait 2
   where
-    bg = animate $ const $ mkBackgroundPixel $ PixelRGBA8 252 252 252 0xFF
+    bg = mkBackgroundPixel $ PixelRGBA8 252 252 252 0xFF
 
 texture :: Double -> SVG
 texture t = mkGroup
@@ -103,8 +103,7 @@ checker w h =
   withStrokeColor "lightblue" $
   withStrokeWidth (defaultStrokeWidth/2) $
   mkGroup
-  [ withStrokeWidth 0 $
-    withFillOpacity 0.8 $ mkBackground "white"
+  [ withFillOpacity 0.8 $ mkBackground "white"
   , mkGroup
     [ translate (stepX*x-offsetX + stepX/2) 0 $
       mkLine (0, -screenHeight/2*0.9) (0, screenHeight/2*0.9)
@@ -131,18 +130,18 @@ checker w h =
 
 
 latexExample :: Animation
-latexExample = sceneAnimation $ do
+latexExample = scene $ do
     -- Draw equation
     play $ drawAnimation strokedSvg
     sprites <- forM glyphs $ \(fn, _, elt) ->
       newSpriteSVG $ fn elt
     -- Yoink each glyph
     forM_ (reverse sprites) $ \sprite -> do
-      spriteE sprite (overBeginning 1 $ aroundCenterE $ highlightE)
+      spriteE sprite (overBeginning 1 $ aroundCenterE highlightE)
       wait 0.5
     -- Flash glyphs randomly with color
     forM_ (shuffleList (sprites++sprites)) $ \sprite -> do
-      spriteE sprite (overBeginning 0.5 $ aroundCenterE $ flashE)
+      spriteE sprite (overBeginning 0.5 $ aroundCenterE flashE)
       wait 0.1
     wait 0.5
     mapM_ destroySprite sprites
@@ -181,7 +180,7 @@ drawAnimation :: SVG -> Animation
 drawAnimation = drawAnimation' Nothing 0.5 0.3
 
 drawAnimation' :: Maybe Int -> Double -> Double -> SVG -> Animation
-drawAnimation' mbSeed fillDur step svg = sceneAnimation $ do
+drawAnimation' mbSeed fillDur step svg = scene $ do
   forM_ (zip [0..] $ shuf $ svgGlyphs svg) $ \(n, (fn, attr, tree)) -> do
     let sWidth =
           case toUserUnit defaultDPI <$> getLast (attr ^. strokeWidth) of
@@ -189,7 +188,7 @@ drawAnimation' mbSeed fillDur step svg = sceneAnimation $ do
             _            -> defaultStrokeWidth
     fork $ do
       wait (n*step)
-      play $ mapA fn $ (animate (\t -> withFillOpacity 0 $ partialSvg t tree)
+      play $ mapA fn (animate (\t -> withFillOpacity 0 $ partialSvg t tree)
         & applyE (overEnding fillDur $ fadeLineOutE sWidth))
     fork $ do
       wait (n*step+(1-fillDur))

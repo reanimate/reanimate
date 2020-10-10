@@ -1,5 +1,12 @@
-#!/usr/bin/env stack
--- stack runghc --package reanimate
+#!/usr/bin/env cabal
+{- cabal:
+build-depends: base
+            , reanimate
+            , reanimate-svg
+            , vector
+            , random
+            , JuicyPixels
+-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ParallelListComp #-}
 module Main
@@ -16,7 +23,7 @@ import           Codec.Picture.Types
 import qualified Data.Vector                   as V
 
 main :: IO ()
-main = reanimate $ sceneAnimation $ do
+main = reanimate $ scene $ do
   newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
   play $ trails 0.05 starAnimation
 
@@ -26,7 +33,7 @@ starAnimation = mkAnimation 10 $ \t ->
   in  withStrokeWidth 0 $ rotate (t * 360) $ mkGroup
         [ translate (x / newZ) (y / newZ) $ dot (1 - newZ)
         | (x, y, z) <-
-          reverse $ take nStars $ dropWhile (\(_, _, z) -> z < camZ) $ allStars
+          reverse $ take nStars $ dropWhile (\(_, _, z) -> z < camZ) allStars
         , let newZ = z - camZ
         ]
  where

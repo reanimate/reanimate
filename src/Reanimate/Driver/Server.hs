@@ -125,7 +125,7 @@ slaveHandler verbose mbGHCPath extraGHCOpts conn ghci self svgDir =
         first <- readIORef firstFrame
         writeIORef firstFrame False
         if first
-          then do
+          then
             modifyMVar_ sentFrameCount $ \sent -> do
               unless sent $
                 sendWebMessage conn $ WebFrameCount frameIdx
@@ -177,17 +177,19 @@ slaveHandler verbose mbGHCPath extraGHCOpts conn ghci self svgDir =
       case T.decimal frame of
         Left err -> do
           hPutStrLn stderr (T.unpack frame)
-          hPutStrLn stderr $ "expectFrame: " ++ err
-          sendWebMessage conn $ WebError err
-          exitWith (ExitFailure 1)
+          raiseError conn err
         Right (frameNumber, "") ->
           pure frameNumber
         Right {} -> do
           let err = "Unexpected output"
           hPutStrLn stderr (T.unpack frame)
-          hPutStrLn stderr $ "expectFrame: " ++ err
-          sendWebMessage conn $ WebError err
-          exitWith (ExitFailure 1)
+          raiseError conn err
+
+raiseError :: Connection -> String -> IO a
+raiseError conn err = do
+  hPutStrLn stderr $ "expectFrame: " ++ err
+  sendWebMessage conn $ WebError err
+  exitWith (ExitFailure 1)
 
 watchFile :: WatchManager -> FilePath -> IO () -> IO StopListening
 watchFile watch file action = watchTree watch (takeDirectory file) check (const action)
@@ -249,7 +251,7 @@ logMsg msg = do
 -- cabal
 -- raw
 -- none?
-data GhciBackend = GhciBackend (MVar Ghci)
+newtype GhciBackend = GhciBackend (MVar Ghci)
 
 ghciBackend :: Maybe FilePath -> FilePath -> IO GhciBackend
 ghciBackend mbGHCPath self = do
@@ -270,7 +272,7 @@ ghciReload (GhciBackend ref) =
     void $ reload ghci
 
 ghciGenerate :: GhciBackend -> FilePath -> (Int -> IO ()) -> IO ()
-ghciGenerate (GhciBackend ref) target cb = withMVar ref $ \ghci -> do
+ghciGenerate (GhciBackend ref) target cb = withMVar ref $ \ghci ->
   execStream ghci (":main raw --output=" ++ target ++ " --offset=1")
     $ \_ msg ->
       case reads msg of

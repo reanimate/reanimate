@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash    #-}
-{-# LANGUAGE MultiWayIf   #-}
+{-# LANGUAGE PatternSynonyms   #-}
 {-|
 Module      : Reanimate.GeoProjection
 Copyright   : Written by David Himmelstrup
@@ -74,7 +74,7 @@ import           Debug.Trace
 import           Foreign
 import           GHC.Exts                (Double (..), cosDouble#, sinDouble#,
                                           (*##), (+##), (-##), (/##))
-import           Graphics.SvgTree        (Tree (None))
+import           Graphics.SvgTree        (pattern None)
 import           Linear                  (distance, lerp)
 import           Linear.V2               hiding (angle)
 import           Reanimate
@@ -126,12 +126,12 @@ srcPixelFast src wMax hMax (LonLat lam phi) = unsafeIOToST $
 interpP :: Image PixelRGBA8 -> Projection -> Projection -> Double -> Image PixelRGBA8
 interpP src p1 _ 0 = project src p1
 interpP src _ p2 1 = project src p2
-interpP !src (Projection _label1 p1 p1_inv) !(Projection _label2 p2 p2_inv) !t = runST $ do
+interpP !src (Projection _label1 p1 p1_inv) (Projection _label2 p2 p2_inv) !t = runST $ do
     !img <- newMutableImage w h
 
     let factor = 2
-    let l1 = do
-          loopTo (w*factor) $ \x -> do
+    let l1 =
+          loopTo (w*factor) $ \x ->
             loopTo (h*factor) $ \y -> do
               let !x1' = fromIntegral x / (wMax*fromIntegral factor)
                   !y1' = fromIntegral y / (hMax*fromIntegral factor)
@@ -146,7 +146,7 @@ interpP !src (Projection _label1 p1 p1_inv) !(Projection _label2 p2 p2_inv) !t =
                       !y3 = round $ (1 - fromToS y1 y2 t) * hMax
                   when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $
                     writePixel img x3 y3 p
-        l2 = do
+        l2 =
           loopTo (w*factor) $ \x ->
             loopTo (h*factor) $ \y -> do
               let !x2' = fromIntegral x / (wMax*fromIntegral factor)
@@ -159,7 +159,7 @@ interpP !src (Projection _label1 p1 p1_inv) !(Projection _label2 p2 p2_inv) !t =
                       XYCoord x1 y1 = p1 lonlat
                       !x3 = round $ fromToS x1 x2 t * wMax
                       !y3 = round $ (1 - fromToS y1 y2 t) * hMax
-                  when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $ do
+                  when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $
                     writePixel img x3 y3 p
     if t < 0.5
       then l1 >> l2
@@ -181,11 +181,11 @@ interpP !src (Projection _label1 p1 p1_inv) !(Projection _label2 p2 p2_inv) !t =
 --   are undefined.
 interpBBP :: Image PixelRGBA8 -> Projection -> Projection ->
             (Double,Double,Double,Double) -> (Double,Double,Double,Double) -> Double -> Image PixelRGBA8
-interpBBP !src (Projection _ p1 p1_inv) !(Projection _ p2 p2_inv) (fx,fy,fw,fh) (tx, ty, tw, th) !t = runST $ do
+interpBBP !src (Projection _ p1 p1_inv) (Projection _ p2 p2_inv) (fx,fy,fw,fh) (tx, ty, tw, th) !t = runST $ do
     !img <- newMutableImage w h
     let factor = 2
     let l1 =
-          loopTo (w*factor) $ \x -> do
+          loopTo (w*factor) $ \x ->
             loopTo (h*factor) $ \y -> do
               let !x1' = fromIntegral x / (wMax*fromIntegral factor)
                   !y1' = fromIntegral y / (hMax*fromIntegral factor)
@@ -215,7 +215,7 @@ interpBBP !src (Projection _ p1 p1_inv) !(Projection _ p2 p2_inv) (fx,fy,fw,fh) 
                         XYCoord x1 y1 = p1 lonlat
                         !x3 = round $ fromToS x1 x2 t * wMax
                         !y3 = round $ (1 - fromToS y1 y2 t) * hMax
-                    when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $ do
+                    when (x3 >= 0 && x3 < w && y3 >= 0 && y3 < h) $
                       writePixel img x3 y3 p
     if t < 0.5
       then l1 >> l2
@@ -354,8 +354,9 @@ mergeP p1 p2 t = Projection (projectionLabel p1 ++ "/" ++ projectionLabel p2) p 
       let LonLat lon1 lat1 = projectionInverse p1 coord
           LonLat lon2 lat2 = projectionInverse p2 coord
       in
-        if | oob lon1 lat1 && oob lon2 lat2 -> LonLat (0/0) (0/0)
-           | otherwise     -> LonLat (fromToS lon1 lon2 t) (fromToS lat1 lat2 t)
+        if oob lon1 lat1 && oob lon2 lat2
+          then LonLat (0/0) (0/0)
+          else LonLat (fromToS lon1 lon2 t) (fromToS lat1 lat2 t)
     oob lon lat = lon < (-pi) || lon > pi || lat < (-pi/2) || lat > pi/2
 
 -- | <<docs/gifs/doc_equirectangularP.gif>>
@@ -374,7 +375,7 @@ mercatorP = Projection "mercator" forward inverse
   where
     forward (LonLat lam phi) =
       XYCoord ((lam+pi)/tau)
-        (min 1 $ max (0) $ (((log(tan(pi/4+phi/2))) + pi)/tau))
+        (min 1 $ max 0 $ (log(tan(pi/4+phi/2)) + pi)/tau)
     inverse (XYCoord x y) = LonLat xPi (atan (sinh yPi))
       where
         xPi = fromToS (-pi) pi x
@@ -382,7 +383,7 @@ mercatorP = Projection "mercator" forward inverse
 
 thetas :: V.Vector Double
 thetas = V.fromList $
-  map (find_theta_fast . fromIndex) [0 .. granularity]
+  map (findThetaFast . fromIndex) [0 .. granularity]
 
 granularity :: Int
 granularity = 50000
@@ -419,9 +420,9 @@ mollweideP = Projection "mollweide" forward inverse
         lam = pi*x/(2*sqrt2*cos theta)
         phi = asin ((2*theta+sin(2*theta))/pi)
 
-find_theta_fast :: Double -> Double
-find_theta_fast !phi | abs phi == pi/2 = signum phi * halfPi
-find_theta_fast !(D# phi) = go phi
+findThetaFast :: Double -> Double
+findThetaFast !phi | abs phi == pi/2 = signum phi * halfPi
+findThetaFast (D# phi) = go phi
   where
     !(D# pi#) = pi
     go acc =
@@ -429,7 +430,7 @@ find_theta_fast !(D# phi) = go phi
           s = sinDouble# (acc +## acc)
           next =
             acc -##
-            (acc +## acc +## s -## pi# *## (sinDouble# phi))
+            (acc +## acc +## s -## pi# *## sinDouble# phi)
             /## (2.0## +## c +## c) in
       if abs (D# (next -## acc)) < epsilon
         then D# next
@@ -876,10 +877,10 @@ applyProjection' tolerance p = mapSvgLines start
     start _                 = []
     worker a (LineEnd b : rest) =
       let (x:xs) = reverse $ drop 1 $ mkChunks a b
-      in map (\v -> LineBezier [v]) (map proj $ reverse xs) ++ LineEnd (proj x) : start rest
+      in map (\v -> LineBezier [proj v]) (reverse xs) ++ LineEnd (proj x) : start rest
     worker a (LineBezier [b] : rest) =
       let (x:xs) = reverse $ drop 1 $ mkChunks a b
-      in map (\v -> LineBezier [v]) (map proj $ reverse xs) ++ LineBezier [proj x] : worker x rest
+      in map (\v -> LineBezier [proj v]) (reverse xs) ++ LineBezier [proj x] : worker x rest
     worker _ (LineBezier ps : rest) =
       LineBezier (map proj ps) : worker (last ps) rest
     worker _ (LineMove x:rest) = LineMove (proj x) : worker x rest

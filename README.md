@@ -1,6 +1,6 @@
-[![Hackage](https://img.shields.io/hackage/v/reanimate.svg?color=success)](http://hackage.haskell.org/package/reanimate)
-[![packagename on Stackage LTS](http://stackage.org/package/reanimate/badge/lts)](http://stackage.org/lts/package/reanimate)
-[![packagename on Stackage Nightly](http://stackage.org/package/reanimate/badge/nightly)](http://stackage.org/nightly/package/reanimate)
+[![Hackage](https://img.shields.io/hackage/v/reanimate.svg?color=success)](https://hackage.haskell.org/package/reanimate)
+[![packagename on Stackage LTS](https://stackage.org/package/reanimate/badge/lts)](https://stackage.org/lts/package/reanimate)
+[![packagename on Stackage Nightly](https://stackage.org/package/reanimate/badge/nightly)](https://stackage.org/nightly/package/reanimate)
 [![Build Status](https://dev.azure.com/lemmih0612/reanimate/_apis/build/status/reanimate.reanimate?branchName=master)](https://dev.azure.com/lemmih0612/reanimate/_build/latest?definitionId=2&branchName=master)
 [![Documentation Status](https://readthedocs.org/projects/reanimate/badge/?version=latest)](https://reanimate.readthedocs.io/en/latest/?badge=latest)
 ![Platforms](https://img.shields.io/badge/platform-linux%20%7C%20osx%20%7C%20windows-informational)
@@ -79,6 +79,9 @@ $ stack ./examples/doc_drawCircle.hs
 This should render the `doc_drawCircle` example in a new browser window. If you then change the
 animation source code, the browser window will automatically reload and show the updated animation.
 
+
+## Using Cabal
+
 It's also possible to use cabal instead of stack:
 
 ```console
@@ -86,9 +89,33 @@ $ git clone https://github.com/reanimate/reanimate.git
 $ cd reanimate/
 $ cabal v2-build
 $ # Workaround for a cabal bug: https://github.com/haskell/cabal/issues/6235
-$ export reanimate_datadir=`pwd` 
+$ export reanimate_datadir=`pwd`
 $ cabal v2-exec -- runhaskell examples/doc_drawCircle.hs --ghc ghc
 ```
+
+## Using Nix
+
+If you'd rather use nix to build an environment with all of the system dependencies mentioned previously do:
+
+```console
+$ git clone https://github.com/reanimate/reanimate.git
+$ cd reanimate/
+$ nix-shell
+[nix-shell:./reanimate]$ cabal v2-build --write-ghc-environment-files=always
+```
+
+If you have cachix available run `cachix use cdodev` before you drop into the nix shell. This will significantly speed things up!
+
+This will write a file in the working directory like
+`.ghc.environment.x86_64-linux-8.8.3` which will enable commands like `runhaskell`
+to pick up reanimate.
+
+Now, still within the `nix-shell` you can run:
+
+```console
+[nix-shell:./reanimate]$ reanimate_datadir=. runhaskell examples/doc_drawCircle.hs --ghc `which ghc`
+```
+
 
 # Documentation
 
@@ -106,12 +133,13 @@ $ cabal v2-exec -- runhaskell examples/doc_drawCircle.hs --ghc ghc
 - [x] Voice control: Align animation timings with a transcript.
 - [x] 3D graphics: Built-in support for integrating povray and blender.
 - [x] Mapping: Built-in support for GeoJSON and map projections.
+- [x] Online playground for toying with reanimate scripts.
 
 # Roadmap
 
-- Online playground for toying with reanimate scripts.
 - Easy-to-use font selection when using latex/xelatex/luatex.
 - Polygon morphing framework with support for several algorithms, including: linear interpolation, as-rigid-as-possible interpolation, and intersection-free interpolation.
+- Built-in tools for creating presentations.
 
 # Authors
 

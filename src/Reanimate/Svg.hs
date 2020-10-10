@@ -14,18 +14,17 @@ module Reanimate.Svg
   , module Reanimate.Svg.Unuse
   ) where
 
-import           Control.Lens                 ((%~), (&), (.~), (^.), (?~))
+import           Control.Lens               ((%~), (&), (.~), (?~), (^.))
 import           Control.Monad.State
-import           Graphics.SvgTree             hiding (height, line, path, use,
-                                               width)
-import           Linear.V2                    hiding (angle)
-import           Reanimate.Constants
-import           Reanimate.Animation (SVG)
+import           Graphics.SvgTree
+import           Linear.V2                  (V2 (V2))
+import           Reanimate.Animation        (SVG)
+import           Reanimate.Constants        (defaultDPI)
+import           Reanimate.Svg.BoundingBox  (boundingBox, svgHeight, svgWidth)
 import           Reanimate.Svg.Constructors
 import           Reanimate.Svg.LineCommand
-import           Reanimate.Svg.BoundingBox
-import           Reanimate.Svg.Unuse
-import qualified Reanimate.Transform          as Transform
+import           Reanimate.Svg.Unuse        (embedDocument, replaceUses, unbox, unboxFit)
+import qualified Reanimate.Transform        as Transform
 
 -- | Remove transformations (such as translations, rotations, scaling)
 --   and apply them directly to the SVG nodes. Note, this function
@@ -34,7 +33,7 @@ import qualified Reanimate.Transform          as Transform
 --   width is affected by directly applying scaling.
 --
 --   @lowerTransformations (scale 2 (mkCircle 1)) = mkCircle 2@
-lowerTransformations :: Tree -> Tree
+lowerTransformations :: SVG -> SVG
 lowerTransformations = worker False Transform.identity
   where
     updLineCmd m cmd =
@@ -62,6 +61,7 @@ lowerTransformations = worker False Transform.identity
             line & linePoint1 %~ updPoint m
                  & linePoint2 %~ updPoint m
         ClipPathTree{} -> t
+        DefinitionTree{} -> t
         -- If we encounter an unknown node and we've already tried to convert
         -- to paths, give up and insert an explicit transformation.
         _ | hasPathified ->
@@ -70,15 +70,21 @@ lowerTransformations = worker False Transform.identity
         _ -> worker True m (pathify t)
 
 -- | Remove all @id@ attributes.
-lowerIds :: Tree -> Tree
+lowerIds :: SVG -> SVG
 lowerIds = mapTree worker
   where
     worker t@GroupTree{} = t & attrId .~ Nothing
     worker t@PathTree{}  = t & attrId .~ Nothing
     worker t             = t
 
+-- | Remove all draw attributes such as 'stroke', 'fill' and 'fill-opacity'.
+clearDrawAttributes :: SVG -> SVG
+clearDrawAttributes = mapTree worker
+  where
+    worker t = t & drawAttributes .~ defaultSvg
+
 -- | Optimize SVG tree without affecting how it is rendered.
-simplify :: Tree -> Tree
+simplify :: SVG -> SVG
 simplify root =
   case worker root of
     []  -> None
@@ -90,7 +96,7 @@ simplify root =
       concatMap dropNulls
       [DefinitionTree $ d & groupChildren %~ concatMap worker]
     worker (GroupTree g)
-      | g ^. drawAttributes == defaultSvg =
+      | g^.drawAttributes == defaultSvg =
         concatMap dropNulls $
         concatMap worker (g^.groupChildren)
       | otherwise =
@@ -110,7 +116,7 @@ simplify root =
 -- @removeGroups (withFillColor "blue" $ mkGroup [mkCircle 1, mkRect 1 1])
 --    = [ withFillColor "blue" $ mkCircle 1
 --      , withFillColor "blue" $ mkRect 1 1 ]@
-removeGroups :: Tree -> [Tree]
+removeGroups :: SVG -> [SVG]
 removeGroups = worker defaultSvg
   where
     worker _attr None = []
@@ -118,11 +124,11 @@ removeGroups = worker defaultSvg
       concatMap dropNulls
       [DefinitionTree $ d & groupChildren %~ concatMap (worker defaultSvg)]
     worker attr (GroupTree g)
-      | g ^. drawAttributes == defaultSvg =
+      | g^.drawAttributes == defaultSvg =
         concatMap dropNulls $
         concatMap (worker attr) (g^.groupChildren)
       | otherwise =
-        concatMap (worker (attr <> g ^. drawAttributes)) (g^.groupChildren)
+        concatMap (worker (attr <> g^.drawAttributes)) (g^.groupChildren)
     worker attr t = dropNulls (t & drawAttributes .~ attr)
 
     dropNulls None = []
@@ -133,7 +139,7 @@ removeGroups = worker defaultSvg
     dropNulls t = [t]
 
 -- | Extract all path commands from a node (and its children) and concatenate them.
-extractPath :: Tree -> [PathCommand]
+extractPath :: SVG -> [PathCommand]
 extractPath = worker . simplify . lowerTransformations . pathify
   where
     worker (GroupTree g) = concatMap worker (g^.groupChildren)
@@ -144,7 +150,7 @@ extractPath = worker . simplify . lowerTransformations . pathify
 --
 --   @withSubglyphs [0,2] (scale 2) (mkGroup [mkCircle 1, mkRect 2, mkEllipse 1 2])
 --      = mkGroup [scale 2 (mkCircle 1), mkRect 2, scale 2 (mkEllipse 1 2)]@
-withSubglyphs :: [Int] -> (Tree -> Tree) -> Tree -> Tree
+withSubglyphs :: [Int] -> (SVG -> SVG) -> SVG -> SVG
 withSubglyphs target fn = \t -> evalState (worker t) 0
   where
     worker :: Tree -> State Int Tree
@@ -172,18 +178,18 @@ withSubglyphs target fn = \t -> evalState (worker t) 0
 --
 --   @splitGlyphs [0,2] (mkGroup [mkCircle 1, mkRect 2, mkEllipse 1 2])
 --      = ([mkRect 2], [mkCircle 1, mkEllipse 1 2])@
-splitGlyphs :: [Int] -> Tree -> (Tree, Tree)
+splitGlyphs :: [Int] -> SVG -> (SVG, SVG)
 splitGlyphs target = \t ->
     let (_, l, r) = execState (worker id t) (0, [], [])
     in (mkGroup l, mkGroup r)
   where
-    handleGlyph :: Tree -> State (Int, [Tree], [Tree]) ()
+    handleGlyph :: SVG -> State (Int, [SVG], [SVG]) ()
     handleGlyph t = do
       (n, l, r) <- get
       if n `elem` target
         then put (n+1, l, t:r)
         else put (n+1, t:l, r)
-    worker :: (Tree -> Tree) -> Tree -> State (Int, [Tree], [Tree]) ()
+    worker :: (SVG -> SVG) -> SVG -> State (Int, [SVG], [SVG]) ()
     worker acc t =
       case t of
         GroupTree g -> do
@@ -213,7 +219,7 @@ splitGlyphs target = \t ->
 , (\svg -> <g transform="translate(10,10)"><g transform="scale(0.5)">svg</g></g>, <rect/>)]
 -}
 -- | Split symbols and include their context and drawing attributes.
-svgGlyphs :: Tree -> [(Tree -> Tree, DrawAttributes, Tree)]
+svgGlyphs :: SVG -> [(SVG -> SVG, DrawAttributes, SVG)]
 svgGlyphs = worker id defaultSvg
   where
     worker acc attr =
@@ -243,7 +249,7 @@ svgGlyphs = worker id defaultSvg
 
     <<docs/gifs/doc_pathify.gif>>
  -}
-pathify :: Tree -> Tree
+pathify :: SVG -> SVG
 pathify = mapTree worker
   where
     worker =
@@ -337,9 +343,9 @@ mapSvgLines fn = mapSvgPaths (lineToPath . fn . toLineCommands)
 mapSvgPoints :: (RPoint -> RPoint) -> SVG -> SVG
 mapSvgPoints fn = mapSvgLines (map worker)
   where
-    worker (LineMove p) = LineMove (fn p)
+    worker (LineMove p)    = LineMove (fn p)
     worker (LineBezier ps) = LineBezier (map fn ps)
-    worker (LineEnd p) = LineEnd (fn p)
+    worker (LineEnd p)     = LineEnd (fn p)
 
 -- | Convert coordinate system from degrees to radians.
 svgPointsToRadians :: SVG -> SVG

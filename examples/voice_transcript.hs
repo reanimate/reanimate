@@ -15,7 +15,7 @@ transcript :: Transcript
 transcript = loadTranscript "voice_transcript.txt"
 
 main :: IO ()
-main = reanimate $ sceneAnimation $ do
+main = reanimate $ scene $ do
   newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
   waitOn $ forM_ (splitTranscript transcript) $ \(svg, tword) -> fork $ do
     let render v = centerUsing (latex $ transcriptText transcript) $ masked

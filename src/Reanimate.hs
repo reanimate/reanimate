@@ -77,7 +77,7 @@ module Reanimate
     -- ** Scenes
     Scene
   , ZIndex
-  , sceneAnimation    -- :: (forall s. Scene s a) -> Animation
+  , scene             -- :: (forall s. Scene s a) -> Animation
   , play              -- :: Animation -> Scene s ()
   , fork              -- :: Scene s a -> Scene s a
   , queryNow          -- :: Scene s Time
@@ -93,7 +93,6 @@ module Reanimate
   , writeVar          -- :: Var s a -> a -> Scene s ()
   , modifyVar         -- :: Var s a -> (a -> a) -> Scene s ()
   , tweenVar          -- :: Var s a -> Duration -> (a -> Time -> a) -> Scene s ()
-  , tweenVarUnclamped -- :: Var s a -> Duration -> (a -> Time -> a) -> Scene s ()
   , simpleVar         -- :: (a -> SVG) -> a -> Scene s (Var s a)
   , findVar           -- :: (a -> Bool) -> [Var s a] -> Scene s (Var s a)
   -- *** Sprites

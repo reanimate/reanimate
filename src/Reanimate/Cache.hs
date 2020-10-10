@@ -8,32 +8,31 @@ module Reanimate.Cache
   , encodeInt
   ) where
 
-import           Control.Exception
+import           Control.Exception   (evaluate)
 import           Control.Monad       (unless)
-import           Data.Bits
-import           Data.Hashable
-import           Data.IORef
+import           Data.Bits           (Bits (shiftR))
+import           Data.Hashable       (Hashable (hash))
+import           Data.IORef          (IORef, atomicModifyIORef, newIORef, readIORef)
 import           Data.Map            (Map)
 import qualified Data.Map            as Map
 import           Data.Text           (Text)
 import qualified Data.Text           as T
 import qualified Data.Text.IO        as T
-import           Graphics.SvgTree    (Tree (..), unparse)
+import           Graphics.SvgTree    (Tree, pattern None, unparse)
 import           Reanimate.Animation (renderTree)
-import           Reanimate.Misc      (renameOrCopyFile)
-import           System.Directory
-import           System.FilePath
-import           System.IO
-import           System.IO.Temp
-import           System.IO.Unsafe
+import           Reanimate.Misc      (getReanimateCacheDirectory, renameOrCopyFile)
+import           System.Directory    (doesFileExist)
+import           System.FilePath     ((<.>), (</>))
+import           System.IO           (hClose)
+import           System.IO.Temp      (openTempFile, withSystemTempFile)
+import           System.IO.Unsafe    (unsafePerformIO)
 import           Text.XML.Light      (Content (..), parseXML)
 
 -- Memory cache and disk cache
 
 cacheFile :: FilePath -> (FilePath -> IO ()) -> IO FilePath
 cacheFile template gen = do
-    root <- getXdgDirectory XdgCache "reanimate"
-    createDirectoryIfMissing True root
+    root <- getReanimateCacheDirectory
     let path = root </> template
     hit <- doesFileExist path
     unless hit $ withSystemTempFile template $ \tmp h -> do
@@ -44,8 +43,7 @@ cacheFile template gen = do
 
 cacheDisk :: String -> (T.Text -> Maybe a) -> (a -> T.Text) -> (Text -> IO a) -> (Text -> IO a)
 cacheDisk cacheType parse render gen key = do
-    root <- getXdgDirectory XdgCache "reanimate"
-    createDirectoryIfMissing True root
+    root <- getReanimateCacheDirectory
     let path = root </> encodeInt (hash key) <.> cacheType
     hit <- doesFileExist path
     if hit
@@ -96,7 +94,7 @@ cacheMem gen key = do
       case svg of
         -- None usually indicates that latex or another tool was misconfigured. In this case,
         -- don't store the result.
-        None -> pure None
+        None -> pure svg
         _    -> atomicModifyIORef cache (\m -> (Map.insert key svg m, svg))
 
 encodeInt :: Int -> String

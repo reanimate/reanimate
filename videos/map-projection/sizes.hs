@@ -42,14 +42,14 @@ earthMax = "earth-max.jpg"
 
 main :: IO ()
 main = reanimate $
-    parA (staticFrame 1 $ mkBackground "darkgrey") $
+    addStatic (mkBackground "darkgrey") $
     overlapT 2 (signalT (curveS 2) flipTransition)
       mainScene
       endScene
 
 mainScene :: Animation
 mainScene = seq equirectangular $ -- takeA 10 $ dropA 21 $
-  mapA (withStrokeColor "black") $ sceneAnimation $ do
+  mapA (withStrokeColor "black") $ scene $ do
     bg <- newSpriteSVG $ mkBackground "white"
     spriteZ bg (-1)
 
@@ -72,7 +72,7 @@ mainScene = seq equirectangular $ -- takeA 10 $ dropA 21 $
               subImg =
                 convertRGBA8 $ rasterSized srcWidth srcHeight $ mkGroup
                     [ mkGroup []
-                    , mkClipPath idName $
+                    , mkClipPath idName
                       clipSvg
                     , withClipPathRef (Ref idName) $
                       scaleToSize screenWidth screenHeight $
@@ -124,12 +124,12 @@ mainScene = seq equirectangular $ -- takeA 10 $ dropA 21 $
                 mkImage screenWidth screenHeight imgFile
               , withStrokeWidth (fromToS 0 (defaultStrokeWidth*0.3) t) $
                 lowerTransformations $ setPos $ scale orthoScale $
-                  (proj (orthoP lonlat))
+                  proj (orthoP lonlat)
               ]
           -- destroySprite region1Shadow
           fork $ tweenVar move 1 $ \v -> fromToS v 1 . curveS 2
-          fork $ play $ (staticFrame 2 $
-            withStrokeWidth 0 $
+          fork $ play $ staticFrame 2
+            (withStrokeWidth 0 $
             translate 0 (-screenHeight*0.40) $
             center $ latex label)
             # applyE (overBeginning 0.2 fadeInE)
@@ -182,22 +182,22 @@ mainScene = seq equirectangular $ -- takeA 10 $ dropA 21 $
           ]
     spriteMap mapS offset
 
-    play $ (staticFrame (projMorphT+projWaitT) $
-      withStrokeWidth 0 $
+    play $ staticFrame (projMorphT+projWaitT)
+      (withStrokeWidth 0 $
       translate 0 (-screenHeight*0.43) $
       center $ latex "Equirectangular")
       # applyE (overBeginning 0.2 fadeInE)
       # applyE (overEnding 0.2 fadeOutE)
 
     let push proj label = do
-          fork $ play $ (staticFrame (projMorphT+projWaitT) $
-            withStrokeWidth 0 $
+          fork $ play $ staticFrame (projMorphT+projWaitT)
+            (withStrokeWidth 0 $
             translate 0 (-screenHeight*0.43) $
             center $ latex label)
             # applyE (overBeginning 0.2 fadeInE)
             # applyE (overEnding 0.2 fadeOutE)
           (_, prev) <- readVar projs
-          writeVar projs (const $ prev, proj)
+          writeVar projs (const prev, proj)
           writeVar morph 0
           tweenVar morph projMorphT $ \v -> fromToS v 1 . curveS 2
           wait projWaitT
@@ -226,7 +226,7 @@ mainScene = seq equirectangular $ -- takeA 10 $ dropA 21 $
     projWaitT = 3
 
 centerWithDelta :: Double -> Tree -> Tree -> Tree
-centerWithDelta d orig t = translate ((-x-w/2)*d) ((-y-h/2)*d) t
+centerWithDelta d orig = translate ((-x-w/2)*d) ((-y-h/2)*d)
   where
     (x, y, w, h) = boundingBox orig
 
@@ -271,8 +271,8 @@ fetchCountry :: Projection -> (Map String Value -> SVG -> Maybe SVG) -> SVG
 fetchCountry p checker =
     lowerTransformations $
     scaleXY
-      (screenWidth)
-      (screenHeight)
+      screenWidth
+      screenHeight
      $
     translate (-1/2) (-1/2) $
 
@@ -323,7 +323,7 @@ americaE = america equirectangularP
 uk :: Projection -> SVG
 uk p = fetchCountry p $ \props svg -> do
   name <- Map.lookup "NAME" props
-  guard (name `elem` ["United Kingdom"])
+  guard (name == "United Kingdom")
   return svg
 
 ukE :: SVG
@@ -361,8 +361,8 @@ grid :: Projection -> SVG
 grid p =
   lowerTransformations $
   scaleXY
-    (screenWidth)
-    (screenHeight)
+    screenWidth
+    screenHeight
    $
   translate (-1/2) (-1/2) $
 
@@ -387,11 +387,11 @@ landGeo = loadFeatureCollection "land.geojson"
 gridLines :: Int -> Int -> SVG
 gridLines latLines lonLines = mkGroup $ map mkLinePath $
     map longitudeLine (stepper (-halfPi) halfPi (lonLines+1)) ++
-    map latitudeLine (stepper (-pi) pi (latLines))
+    map latitudeLine (stepper (-pi) pi latLines)
   where
     segments = 100
     stepper from to nMax =
-      [ fromToS from to (fromIntegral n / fromIntegral (nMax))
+      [ fromToS from to (fromIntegral n / fromIntegral nMax)
       | n <- [0 .. nMax-1] ]
     maxLat = halfPi -- atan (sinh pi)
     latitudeLine lam =

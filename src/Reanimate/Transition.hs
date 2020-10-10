@@ -15,9 +15,10 @@ module Reanimate.Transition
   , fadeT
   ) where
 
-import Reanimate.Animation
-import Reanimate.Ease
-import Reanimate.Effect
+import           Reanimate.Animation (Animation, dropA, duration, lastA, parA, pause, seqA, signalA,
+                                      takeA)
+import           Reanimate.Ease      (Signal)
+import           Reanimate.Effect    (Effect, applyE, fadeInE, fadeOutE)
 
 -- | A transition transforms one animation into another.
 type Transition = Animation -> Animation -> Animation
@@ -66,7 +67,7 @@ effectT eA eB a b = applyE eA a `parA` applyE eB b
 --
 --   <<docs/gifs/doc_chainT.gif>>
 chainT :: Transition -> [Animation] -> Animation
-chainT _ [] = pause 0
+chainT _ []     = pause 0
 chainT t (x:xs) = foldl t x xs
 
 -- | Fade out left-hand-side animation while fading in right-hand-side animation.

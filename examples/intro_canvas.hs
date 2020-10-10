@@ -18,7 +18,7 @@ import           Geom2D.CubicBezier.Linear
 import           Text.Printf
 
 main :: IO ()
-main = reanimate $ sceneAnimation $ do
+main = reanimate $ scene $ do
   newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
   newSpriteSVG_ static
   dotPath  <- newVar (QuadBezier (V2 0 0) (V2 0 0) (V2 0 0))
@@ -33,10 +33,10 @@ main = reanimate $ sceneAnimation $ do
   wait 1
   moveDot (V2 0 1)    (V2 4 2)
   moveDot (V2 (-1) 0) (V2 (-4) 3)
-  moveDot (V2 (0) 0)  (V2 (-4) (-3))
-  moveDot (V2 (0) 0)  (V2 (5) (-2))
-  moveDot (V2 (6) 2)  (V2 2 1)
-  moveDot (V2 (0) 0)  (V2 0 0)
+  moveDot (V2 0 0)  (V2 (-4) (-3))
+  moveDot (V2 0 0)  (V2 5 (-2))
+  moveDot (V2 6 2)  (V2 2 1)
+  moveDot (V2 0 0)  (V2 0 0)
 
 redDot :: V2 Double -> SVG
 redDot (V2 x y) = translate x y $ mkGroup
@@ -89,12 +89,12 @@ grid = withStrokeColor "grey" $ withStrokeWidth (defaultStrokeWidth * 0.5) $ mkG
   [ mkGroup
     [ translate
           0
-          (i / (screenHeight) * screenHeight - screenHeight / 2 - screenHeight / 18)
+          (i / screenHeight * screenHeight - screenHeight / 2 - screenHeight / 18)
         $ mkLine (-screenWidth, 0) (screenWidth, 0)
     | i <- [0 .. screenHeight]
     ]
   , mkGroup
-    [ translate (i / (screenWidth) * screenWidth - screenWidth / 2) 0
+    [ translate (i / screenWidth * screenWidth - screenWidth / 2) 0
         $ mkLine (0, -screenHeight) (0, screenHeight)
     | i <- [0 .. screenWidth]
     ]

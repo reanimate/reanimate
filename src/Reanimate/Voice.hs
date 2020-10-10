@@ -1,6 +1,6 @@
+{-# LANGUAGE ApplicativeDo     #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ApplicativeDo #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards   #-}
 {-|
   Reanimate can automatically synchronize animations to your voice if you have
   a transcript and an audio recording. This works with the help of Gentle
@@ -20,27 +20,27 @@ module Reanimate.Voice
   )
 where
 
+import           Control.Monad       (forM_)
 import           Data.Aeson
-import           Data.Char
-import           System.IO.Unsafe                         ( unsafePerformIO )
-import           System.Directory
-import           System.FilePath
-import           System.Process
-import           System.Exit
-import           Control.Monad
-import           Data.List
-import           Data.Maybe
-import qualified Data.Map                      as Map
-import           Data.Map                                 ( Map )
-import           Data.Text                                ( Text )
-import qualified Data.Text                     as T
-import qualified Data.Text.IO                  as T
-import           Reanimate.Misc
-import           Reanimate.LaTeX
-import           Reanimate.Scene
-import           Reanimate.Animation
-import           Reanimate.Svg
-import           Reanimate.Constants
+import           Data.Char           (isAlphaNum, isSpace)
+import           Data.List           (sortOn)
+import           Data.Map            (Map)
+import qualified Data.Map            as Map
+import           Data.Maybe          (listToMaybe)
+import           Data.Text           (Text)
+import qualified Data.Text           as T
+import qualified Data.Text.IO        as T
+import           Reanimate.Animation (SVG, staticFrame)
+import           Reanimate.Constants (defaultStrokeWidth, screenHeight, screenWidth)
+import           Reanimate.LaTeX     (latex, latexChunks)
+import           Reanimate.Misc      (withTempFile)
+import           Reanimate.Scene     (Scene, play, waitUntil)
+import           Reanimate.Svg       (mkGroup, scale, translate, withStrokeColor, withStrokeWidth)
+import           System.Directory    (doesFileExist)
+import           System.Exit         (ExitCode (ExitFailure, ExitSuccess))
+import           System.FilePath     (replaceExtension)
+import           System.IO.Unsafe    (unsafePerformIO)
+import           System.Process      (rawSystem, showCommandForUser)
 
 -- | Aligned transcript. Contains the transcript text as well as
 --   timing data for each word.

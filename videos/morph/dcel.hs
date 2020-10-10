@@ -1,7 +1,6 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ApplicativeDo #-}
 module Main where
 
@@ -71,7 +70,7 @@ step1 = uncurry delaunayFlip step0
 step2 = doSmooth step1
 
 main :: IO ()
-main = reanimate $ sceneAnimation $ do
+main = reanimate $ scene $ do
   -- newSpriteSVG_ $ mkBackground "black"
   newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
   -- let m = buildMesh $ polygonMesh $ map (fmap realToFrac) $ V.toList $ polygonPoints p2
@@ -112,17 +111,15 @@ main = reanimate $ sceneAnimation $ do
   let pipeline1 = last . take 20 . iterate (
           uncurry delaunayFlip .
           -- uncurry splitInternalEdges . 
-          doSmooth .
-          id
+          doSmooth
           )
-      stages = take 30 $ iterate (
-         pipeline1 .
+      stages = take 30 $ iterate
+         pipeline1
         --  uncurry splitInternalEdges . 
         --  pipeline1 .
         --  uncurry splitLongestEdge .
          --pipeline1
-         id
-         ) (m1,m2)
+         (m1,m2)
   let pipeline = do
         modifyVar mVar (uncurry delaunayFlip)
         modifyVar mVar (uncurry splitInternalEdges)
@@ -154,8 +151,6 @@ main = reanimate $ sceneAnimation $ do
   --   mkGroup $ map (polygonDots . pScale 6) p2s
   -- newSpriteSVG_ $ withFillColor "red" $ scale 3 $ polygonNumDots p2
   -- wait 1
-  return ()
- where
    
 
 drawTrigs :: V.Vector (V2 Double) -> V.Vector RelTrig -> SVG

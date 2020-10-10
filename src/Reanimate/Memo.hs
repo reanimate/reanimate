@@ -23,13 +23,13 @@ module Reanimate.Memo
   , memo
   ) where
 
-import           Data.Dynamic
-import           Data.IORef
-import qualified Data.Map                as Map
-import           Data.Maybe
-import           Data.Typeable
-import           System.IO.Unsafe
-import           System.Mem.StableName
+import           Data.Dynamic          (Dynamic, fromDynamic, toDyn)
+import           Data.IORef            (IORef, atomicModifyIORef', newIORef)
+import qualified Data.Map              as Map
+import           Data.Maybe            (fromMaybe)
+import           Data.Typeable         (Typeable, cast, typeOf)
+import           System.IO.Unsafe      (unsafePerformIO)
+import           System.Mem.StableName (StableName, eqStableName, hashStableName, makeStableName)
 
 data DynamicName = forall a. DynamicName !(StableName a) | forall a. (Eq a, Ord a, Typeable a) => DynamicKey a
 instance Eq DynamicName where

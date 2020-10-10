@@ -1,4 +1,4 @@
-resolver: lts-16.0
+resolver: lts-16.12
 
 allow-newer: false
 
@@ -6,6 +6,6 @@ packages:
 - .
 
 extra-deps:
-- discord-haskell-1.6.0@sha256:31fa17a469dabee9e543a264fa958dc6fbf8119b3626fa06a595208114b7c3a2,3798
+- discord-haskell-1.8.0
 - emoji-0.1.0.2@sha256:d995572a5c7dcd28f98eb15c6e387a7b3bda1ac2477ab0d9dba8580d5d7b161f,1273
 - req-3.1.0@sha256:b058fd588ccdbced9e7d33b9112cd41960f29ce90acc7d77e2dd7518da171a01,4926

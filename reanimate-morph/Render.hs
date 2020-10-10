@@ -60,12 +60,12 @@ import           Reanimate.Svg
 --   ]
 
 -- drawCompatible :: Polygon -> Polygon -> Animation
--- drawCompatible a b = sceneAnimation $ do
+-- drawCompatible a b = scene $ do
 --   newSpriteSVG $ translate (-3) 0 $ mkGroup
 --     [ withFillColor "grey" $ polygonShape a
 --     , withFillColor "grey" $ polygonNumDots a
 --     ]
---   newSpriteSVG $ translate (3) 0 $ mkGroup
+--   newSpriteSVG $ translate 3 0 $ mkGroup
 --     [ withFillColor "grey" $ polygonShape b
 --     , withFillColor "grey" $ polygonNumDots b
 --     ]
@@ -75,7 +75,7 @@ import           Reanimate.Svg
 --       translate (-3) 0 $ withStrokeColor "white" $ withStrokeWidth (defaultStrokeWidth*0.2) $
 --       withFillOpacity 0 $ polygonShape l
 --     fork $ play $ staticFrame 1 $
---       translate (3) 0 $ withStrokeColor "white" $ withStrokeWidth (defaultStrokeWidth*0.2) $
+--       translate 3 0 $ withStrokeColor "white" $ withStrokeWidth (defaultStrokeWidth*0.2) $
 --       withFillOpacity 0 $ polygonShape r
 
 -- drawWindow :: Polygon -> SVG
@@ -187,7 +187,7 @@ renderSSSP p s = withFillOpacity 0 $ withStrokeColor "white" $ mkGroup
       in (ax,ay) : if next == i then [] else lineFrom next
 
 drawTriangulation :: Polygon -> (Ring Rational -> [Triangulation]) -> Animation
-drawTriangulation p gen = sceneAnimation $
+drawTriangulation p gen = scene $
   forM_ (gen $ pRing p) $ \t -> play $ staticFrame 1 $ renderTriangulation p t
 
 renderTriangulation :: Polygon -> Triangulation -> SVG

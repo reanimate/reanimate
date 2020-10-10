@@ -1,4 +1,4 @@
-FROM haskell:8.8.3
+FROM haskell:8.8.4
 
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
@@ -14,13 +14,17 @@ RUN apt-get update && \
       curl blender povray texlive texlive-latex-base texlive-latex-extra \
       texlive-fonts-extra texlive-science texlive-xetex \
       texlive-latex-recommended texlive-lang-english \
-      texlive-lang-chinese texlive-plain-generic
+      texlive-lang-chinese texlive-plain-generic \
+      unzip
 
 WORKDIR /src
 
 # Install reanimate dependencies and cache the layer
 ADD reanimate.cabal stack.yaml ./
-RUN stack build --only-dependencies --no-install-ghc --system-ghc --haddock
+RUN for i in 1 2 3; \
+    do \
+      stack build --only-dependencies --no-install-ghc --system-ghc --haddock && break || echo "retry"; \
+    done
 
 # Install discord-bot dependencies and cache the layer
 ADD playground/playground.cabal playground/stack.yaml ./playground/

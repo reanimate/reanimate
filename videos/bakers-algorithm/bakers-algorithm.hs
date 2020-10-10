@@ -28,8 +28,8 @@ run out.
 [flat (1/3) 0, linear (1/3) 0 1, linear (1/3) 1 0]
 -}
 main :: IO ()
-main = reanimate $ pauseAtEnd 2
-  (animate $ const $ mkBackground "black") `parA`
+main = reanimate $ pauseAtEnd 2 $
+  addStatic (mkBackground "black")
   drawBox
 
 drawBox :: Animation

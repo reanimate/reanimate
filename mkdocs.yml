@@ -5,24 +5,35 @@ theme:
   highlightjs: true
   hljs_languages:
     - haskell
-    - plaintext
-    - text
-    - txt
 markdown_extensions:
   - markdown_include.include
   - pymdownx.arithmatex
 extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML
+  - https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/codemirror.min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/mode/haskell/haskell.min.js
+  - https://reanimate.github.io/reanimate/playground/elm.js
+  - https://reanimate.github.io/reanimate/playground/playground.js
+  - https://reanimate.github.io/reanimate/playground/embed.js
 extra_css:
   - fix.css
+  - https://reanimate.github.io/reanimate/playground/embed.css
+  - https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.56.0/codemirror.min.css
 nav:
-  - Reanimate: index.md
-  - Core concepts: introduction.md
-  - Gluing together animations: glue_tut.md
+#  - Reanimate: index.md
 #  - Morphology (incomplete): morphology.md
-#  - Voice control: voice.md
 #  - How to:
 #    - Use fonts (incomplete): fonts.md
+  - Tutorials:
+    - Animating an Equation: tut_equation.md
+  - How To:
+    - Use the LaTeX Font Catalogue: font_catalogue.md
+    - Use TTF/OTF fonts: font_system.md
+  - Concepts:
+    - Core concepts: introduction.md
+    - Gluing together animations: glue_tut.md
+    - Voice control: voice.md
   - Showcase:
     - Color Theory: showcase_colortheory.md
   - Discord bot: discord_bot.md
+  - Change log: changelog.md

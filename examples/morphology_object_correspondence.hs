@@ -1,7 +1,6 @@
 #!/usr/bin/env stack
 -- stack runghc --package reanimate
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ParallelListComp  #-}
 module Main(main) where
 
 import           Codec.Picture
@@ -19,7 +18,7 @@ main = reanimate $
   mapA (withStrokeWidth 0) $
   mapA (withStrokeColor "black") $
   mapA (withFillOpacity 1) $
-    sceneAnimation $ do
+    scene $ do
       let showLabel label = do
             fork $ play $ staticFrame 4 (center $ latex label)
               & mapA (translate 0 4)

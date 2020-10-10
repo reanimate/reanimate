@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# OPTIONS_GHC -w      #-}
 {-# LANGUAGE TemplateHaskell      #-}
 module Properties where
@@ -22,7 +21,7 @@ import Debug.Trace
 prop_pGenerate (PolyParam a) (PolyParam b) (PolyParam c) (PolyParam d) =
   pIsSimple $ pGenerate [a,b,c,d]
 
-prop_pIsSimple p = pIsSimple p
+prop_pIsSimple = pIsSimple
 
 prop_isBetween a b = percent $ \t ->
     a /= b ==>
@@ -61,6 +60,12 @@ prop_dualInv p =
 prop_ssspEq p =
   pSize p < 20 ==>
   naive (pRing p) == polygonSSSP p V.! 0
+
+prop_ssspEq2 :: Polygon -> Bool
+prop_ssspEq2 p =
+  let t = polygonTriangulation p
+      d = dual (polygonOffset p) t
+  in sssp (pRing p) d == ssspFinger (pRing p) d
 
 prop_ssspSize :: Polygon -> Bool
 prop_ssspSize p =

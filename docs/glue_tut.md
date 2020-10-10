@@ -82,7 +82,7 @@ Scripting in Haskell also gives access to the extensive body of code libraries. 
 <details>
   <summary>Toggle source code.</summary>
   <pre><code class="haskell">
-  {!examples/tut_glue_physics.hs!}
+  {!reanimate-examples/tut_glue_physics.hs!}
   </code></pre>
 </details>
 <br/>

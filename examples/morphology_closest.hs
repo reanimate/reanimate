@@ -23,12 +23,12 @@ main = reanimate $
   mapA (withStrokeColor "black") $
   mapA (withStrokeLineJoin JoinRound) $
   mapA (withFillOpacity 1) $
-    sceneAnimation $ do
+    scene $ do
       _ <- newSpriteSVG $
         withStrokeWidth 0 $ translate (-4) 4 $
         center $ latex "no-op"
       _ <- newSpriteSVG $
-        withStrokeWidth 0 $ translate (4) 4 $
+        withStrokeWidth 0 $ translate 4 4 $
         center $ latex "closest"
       forM_ pairs $ uncurry showPair
   where
@@ -38,7 +38,7 @@ main = reanimate $
           & mapA (translate (-4) (-0.5))
           & signalA (curveS 4)
         fork $ play $ mkAnimation 4 (morph linear from to)
-          & mapA (translate (4) (-0.5))
+          & mapA (translate 4 (-0.5))
           & signalA (curveS 4)
 
     pairs = zip stages (tail stages ++ [head stages])

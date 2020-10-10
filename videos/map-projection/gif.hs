@@ -23,7 +23,7 @@ import           System.IO.Unsafe
 
 
 main :: IO ()
-main = reanimate $ sceneAnimation $ do
+main = reanimate $ scene $ do
     -- Set the background to 'rtfdBackgroundColor'
     newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
 
@@ -107,11 +107,11 @@ longitudeLines p =
       , let lam = fromToS (-pi) pi (n/segments)
       , let XYCoord x y = projectionForward p $ LonLat lam phi ]
 
-landBorders :: [(GeospatialGeometry)]
+landBorders :: [GeospatialGeometry]
 landBorders = unsafePerformIO $ do
   Just geo <- decodeFileStrict "countries.json"
   return
-    [ (feature ^. geometry)
+    [ feature ^. geometry
     | feature <- toList $ geo ^. geofeatures :: [GeoFeature Value]
     ]
 

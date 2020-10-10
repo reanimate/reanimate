@@ -6,6 +6,6 @@ import Reanimate
 import Reanimate.Builtin.Documentation
 
 main :: IO ()
-main = reanimate $ docEnv $ sceneAnimation $ do
+main = reanimate $ docEnv $ scene $ do
   var <- simpleVar mkCircle 0
   tweenVar var 2 $ \val -> fromToS val (screenHeight/2)

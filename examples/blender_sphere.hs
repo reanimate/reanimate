@@ -9,12 +9,10 @@ import           NeatInterpolation
 import           Reanimate
 
 main :: IO ()
-main = reanimate $ mkAnimation 5 $ \t ->
-    let s = t * pi * 2 in
-    mkGroup
-    [ mkBackground "black"
-    , blender (script $ T.pack $ show s)
-    ]
+main = reanimate $ addStatic (mkBackground "black") $ mkAnimation 5 $ \t ->
+    let s = t * pi * 2
+    in blender (script $ T.pack $ show s)
+    
 
 texture :: T.Text
 texture = T.pack $ svgAsPngFile (mkGroup
@@ -65,8 +63,7 @@ checker w h =
   withStrokeColor "white" $
   withStrokeWidth 0.1 $
   mkGroup
-  [ withStrokeWidth 0 $
-    withFillOpacity 0.8 $ mkBackground "blue"
+  [ withFillOpacity 0.8 $ mkBackground "blue"
   , mkGroup
     [ translate (stepX*x-offsetX + stepX/2) 0 $
       mkLine (0, -screenHeight/2*0.9) (0, screenHeight/2*0.9)

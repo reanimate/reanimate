@@ -1,0 +1,50 @@
+name: Playground checks
+
+on:
+  pull_request:
+    branches: [ master ]
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-haskell@v1
+      with:
+        ghc-version: '8.8'
+        cabal-version: 'latest'
+    - uses: jorelali/setup-elm@v2
+      with:
+        elm-version: 0.19.1
+
+    - name: Cache
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.stack
+          ~/.stack-work
+          ~/.ghc
+        key: ${{ runner.os }}-${{ hashFiles('**/*.cabal') }}-cache-version2
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get -y install texlive texlive-latex-base texlive-latex-extra
+        stack build --only-dependencies
+        (cd playground && stack build --only-dependencies)
+
+    - name: Build
+      run: |
+        stack build
+        (cd playground && stack build)
+
+    - name: Playground
+      run: |
+        CWD=`pwd`
+        cd playground
+        # We need to install latex before we can generate the snippets.
+        stack exec --cwd ../ playground snippets playground/snippets > viewer-elm/dist/snippets.js
+        cd viewer-elm
+        npm install || npm install || npm install
+        npm run build

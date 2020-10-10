@@ -15,7 +15,7 @@ import qualified Data.Text         as T
 import           NeatInterpolation
 
 main :: IO ()
-main = reanimate $ parA bg $ sceneAnimation $ do
+main = reanimate $ addStatic bg $ scene $ do
     play $ mkAnimation drawDuration $ \t -> partialSvg t (wireframe (-45) 220)
     xRot <- newVar (-45)
     yRot <- newVar 220
@@ -32,7 +32,7 @@ main = reanimate $ parA bg $ sceneAnimation $ do
     wobbles = 3
     wobbleDur = 3
     spinDur = fromIntegral wobbles * wobbleDur
-    bg = animate $ const $ mkBackgroundPixel $ PixelRGBA8 252 252 252 0xFF
+    bg = mkBackgroundPixel $ PixelRGBA8 252 252 252 0xFF
 
 wireframe :: Double -> Double -> SVG
 wireframe rotX rotY =

@@ -9,20 +9,22 @@ Portability : POSIX
 Convenience module for rendering circle plots.
 
 -}
-module Reanimate.Builtin.CirclePlot where
+module Reanimate.Builtin.CirclePlot
+  ( circlePlot
+  ) where
 
-import           Codec.Picture
-import           Graphics.SvgTree (Tree)
-import           Reanimate.Raster
-import           Reanimate.Svg
-import           Reanimate.Constants
+import           Codec.Picture       (PixelRGBA8 (..), generateImage)
+import           Graphics.SvgTree    (Tree)
+import           Reanimate.Constants (screenHeight)
+import           Reanimate.Raster    (embedImage)
+import           Reanimate.Svg       (flipYAxis, scaleToHeight)
 
 -- | Circle plots are scaled to 'screenHeight'.
 --
 --   Example:
 --
 -- @
--- 'circlePlot' 500 $ \ang r ->
+-- 'circlePlot' 500 $ \\ang r ->
 --   'Codec.Picture.Types.promotePixel' $ toRGB8 $ uncurryRGB sRGB $ hsv (ang/pi*180) r 1
 -- @
 --

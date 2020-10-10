@@ -12,39 +12,39 @@ import           Reanimate.LaTeX
 import           Reanimate.Scene
 
 main :: IO ()
-main = reanimate $ docEnv $ mapA (withFillOpacity 1) $ sceneAnimation $ do
+main = reanimate $ docEnv $ mapA (withFillOpacity 1) $ scene $ do
   line1 <- newLaTeX ["$>$ ", "knock!", " ", "knock!"]
   oModifyMany line1 $
     oTopY .~ screenTop
 
-  oFadeIn (line1!!0) 1
+  oShowWith (line1!!0) oFadeIn
   oShow (line1!!1); wait 0.3
   oShow (line1!!3); wait 0.6
 
   line2 <- newLaTeX ["$>$ ", "who's there?"]
   mapM_ (`placeBelow` head line1) line2
 
-  oFadeIn (line2!!0) 1
-  oDraw (line2!!1) 1
+  oShowWith (line2!!0) oFadeIn 
+  oShowWith (line2!!1) oDraw
 
   line3 <- newLaTeX ["$>$ ", "$(\\lambda x . x)$"]
   mapM_ (`placeBelow` head line2) line3
 
-  oFadeIn (line3!!0) 1
-  oFadeIn (line3!!1) 1
+  oShowWith (line3!!0) oFadeIn
+  oShowWith (line3!!1) oFadeIn
 
   line4 <- newLaTeX ["$>$ ", "$(\\lambda x . x)$", " ", "who?"]
   mapM_ (`placeBelow` head line3) line4
 
-  oFadeIn (line4!!0) 1
-  oFadeIn (line4!!1) 1
-  oDraw (line4!!3) 1
+  oShowWith (line4!!0) oFadeIn
+  oShowWith (line4!!1) oFadeIn
+  oShowWith (line4!!3) oDraw
 
   line5 <- newLaTeX ["$>$ ", "who?"]
   mapM_ (`placeBelow` head line4) line5
 
-  oFadeIn (line5!!0) 1
-  oDraw (line5!!1) 1
+  oShowWith (line5!!0) oFadeIn
+  oShowWith (line5!!1) oDraw
 
   wait 1
 
@@ -58,10 +58,4 @@ placeBelow a b = do
     oTopY .~ bBot
 
 newLaTeX :: [Text] -> Scene s [Object s SVG]
-newLaTeX chunks = mapM newObject $ map (translate (-4) 0) $ latexChunks chunks
-
-oDraw :: Object s a -> Duration -> Scene s ()
-oDraw o d = do
-  oShow o
-  oTweenS o d $ \t ->
-    oContext .= withFillOpacity (max 0 $ t*10-9) . partialSvg t
+newLaTeX chunks = mapM (newObject . translate (-4) 0) $ latexChunks chunks

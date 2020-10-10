@@ -24,12 +24,12 @@ main = reanimate $
   mapA (withStrokeColor "black") $
   mapA (withStrokeLineJoin JoinRound) $
   mapA (withFillOpacity 1) $
-    sceneAnimation $ do
+    scene $ do
       _ <- newSpriteSVG $
         withStrokeWidth 0 $ translate (-3) 4 $
         center $ latex "linear"
       _ <- newSpriteSVG $
-        withStrokeWidth 0 $ translate (3) 4 $
+        withStrokeWidth 0 $ translate 3 4 $
         center $ latex "rotational"
       forM_ pairs $ uncurry showPair
   where
@@ -39,7 +39,7 @@ main = reanimate $
           & mapA (translate (-3) (-0.5))
           & signalA (curveS 4)
         fork $ play $ mkAnimation 4 (morph myMorph from to)
-          & mapA (translate (3) (-0.5))
+          & mapA (translate 3 (-0.5))
           & signalA (curveS 4)
     myMorph = linear{morphTrajectory = rotationalTrajectory origin }
     origin = (0.5, 0.5)

@@ -21,7 +21,7 @@ transcript =
     \during development"
 
 main :: IO ()
-main = reanimate $ sceneAnimation $ do
+main = reanimate $ scene $ do
   newSpriteSVG_ $ mkBackgroundPixel rtfdBackgroundColor
   waitOn $ forM_ (splitTranscript transcript) $ \(svg, tword) -> do
     highlighted <- newVar 0

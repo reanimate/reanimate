@@ -21,10 +21,10 @@ module Reanimate.Builtin.TernaryPlot
   , fromCartesianCoords
   ) where
 
-import           Codec.Picture
+import           Codec.Picture    (PixelRGBA8 (..), generateImage)
 import           Graphics.SvgTree (Tree)
-import           Reanimate.Raster
-import           Reanimate.Svg
+import           Reanimate.Raster (embedImage)
+import           Reanimate.Svg    (flipYAxis, scaleToWidth, translate)
 
 -- a+b+c=1
 -- | Left-most coordinate.

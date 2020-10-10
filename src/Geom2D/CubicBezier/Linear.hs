@@ -1,8 +1,5 @@
-{-# LANGUAGE DeriveFoldable         #-}
-{-# LANGUAGE DeriveFunctor          #-}
 {-# LANGUAGE DeriveTraversable      #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE UndecidableInstances   #-}
 {-|
 Module      : Geom2D.CubicBezier.Linear
@@ -84,7 +81,7 @@ data OpenPath a = OpenPath [(V2 a, PathJoin a)] (V2 a)
   deriving (Show, Eq)
 
 -- | Closed cubicbezier path.
-data ClosedPath a = ClosedPath [(V2 a, PathJoin a)]
+newtype ClosedPath a = ClosedPath [(V2 a, PathJoin a)]
   deriving (Show, Eq)
 
 -- | Join two points with either a straight line or a bezier
@@ -95,7 +92,7 @@ data PathJoin a
   deriving (Show, Eq)
 
 -- | Closed meta path.
-data ClosedMetaPath a = ClosedMetaPath [(V2 a, MetaJoin a)]
+newtype ClosedMetaPath a = ClosedMetaPath [(V2 a, MetaJoin a)]
   deriving (Show, Eq)
 
 -- | Open meta path
@@ -108,11 +105,11 @@ data OpenMetaPath a = OpenMetaPath [(V2 a, MetaJoin a)] (V2 a)
 --   doesn't allow values below 3/4.
 data Tension a
   = Tension
-  { tensionValue :: a }
+    { tensionValue :: a }
   | TensionAtLeast -- ^ Like Tension, but keep the segment inside the
                    --   bounding triangle defined by the control points,
                    --   if there is one.
-  { tensionValue :: a }
+    { tensionValue :: a }
   deriving (Functor, Foldable, Traversable, Eq, Show)
 
 -- | Join two meta points with either a bezier curve or tension
@@ -144,16 +141,16 @@ quadToCubic = upCast . C.quadToCubic . downCast
 -- | @arcLength c t tol@ finds the arclength of the bezier @c@ at @t@,
 --   within given tolerance @tol@.
 arcLength :: CubicBezier Double -> Double -> Double -> Double
-arcLength bezier t tol = C.arcLength (downCast bezier) t tol
+arcLength bezier = C.arcLength (downCast bezier)
 
 -- | @arcLengthParam c len tol@ finds the parameter where the curve @c@
 --   has the arclength @len@, within tolerance @tol@.
 arcLengthParam :: CubicBezier Double -> Double -> Double -> Double
-arcLengthParam bezier t tol = C.arcLengthParam (downCast bezier) t tol
+arcLengthParam bezier = C.arcLengthParam (downCast bezier)
 
 -- | Return @False@ if some points fall outside a line with a thickness of the given tolerance.
 colinear :: CubicBezier Double -> Double -> Bool
-colinear bezier tol = C.colinear (downCast bezier) tol
+colinear bezier = C.colinear (downCast bezier)
 
 -- | Calculate a value on the bezier curve.
 evalBezier :: (C.GenericBezier b, V.Unbox a, Fractional a) => b a -> a -> V2 a
@@ -187,12 +184,12 @@ union p fill tol = upCast (C.union (downCast p) (downCast fill) tol)
 -- | Find the intersections between two Bezier curves, using the Bezier Clip algorithm.
 --   Returns the parameters for both curves.
 bezierIntersection :: CubicBezier Double -> CubicBezier Double -> Double -> [(Double, Double)]
-bezierIntersection a b t = C.bezierIntersection (downCast a) (downCast b) t
+bezierIntersection a b = C.bezierIntersection (downCast a) (downCast b)
 
 -- | Find the closest value on the bezier to the given point, within tolerance.
 --   Return the first value found.
 closest :: CubicBezier Double -> V2 Double -> Double -> Double
-closest c p t = C.closest (downCast c) (downCast p) t
+closest c p = C.closest (downCast c) (downCast p)
 
 -- | Return the closed path as a list of curves.
 closedPathCurves :: Fractional a => ClosedPath a -> [CubicBezier a]
@@ -281,7 +278,7 @@ instance V.Unbox a => Cast (AnyBezier a) (C.AnyBezier a) where
   downCast (AnyBezier arr) = C.AnyBezier $
     V.map (\(V2 a b) -> (a,b)) arr
   upCast (C.AnyBezier arr) = AnyBezier $
-    V.map (\(a, b) -> V2 a b) arr
+    V.map (uncurry V2) arr
 
 instance Cast (MetaNodeType a) (C.MetaNodeType a) where
   downCast Open            = C.Open

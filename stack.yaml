@@ -1,4 +1,4 @@
-resolver: lts-16.0
+resolver: lts-16.12
 
 allow-newer: false
 
@@ -7,7 +7,7 @@ packages:
 
 extra-deps:
 - earcut-0.1.0.4
-- reanimate-svg-0.10.0.0
+- reanimate-svg-0.13.0.0
 - hgeometry-0.11.0.0@sha256:09ead201a6ac3492c0be8dda5a6b32792b9ae87cab730b8362d46ee8d5c2acb4,11714
 - hgeometry-combinatorial-0.11.0.0@sha256:03176f235a1c49a415fe1266274dafca84deb917cbcbf9a654452686b4cd2bfe,8286
 - vinyl-0.13.0@sha256:0f247cd3f8682b30881a07de18e6fec52d540646fbcb328420049cc8d63cd407,3724

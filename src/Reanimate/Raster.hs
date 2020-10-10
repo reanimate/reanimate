@@ -26,36 +26,35 @@ module Reanimate.Raster
   )
 where
 
-import           Codec.Picture
-import           Control.Lens                             ( (&)
-                                                          , (.~)
-                                                          )
-import           Control.Monad
-import qualified Data.ByteString               as B
-import qualified Data.ByteString.Base64.Lazy   as Base64
-import qualified Data.ByteString.Lazy.Char8    as LBS
-import           Data.Hashable
-import qualified Data.Text                     as T
-import           Graphics.SvgTree                         ( Number(..)
-                                                          , Tree(..)
-                                                          , defaultSvg
-                                                          , parseSvgFile
-                                                          )
-import qualified Graphics.SvgTree              as Svg
-import           Reanimate.Animation
-import           Reanimate.Cache
-import           Reanimate.Driver.Magick
-import           Reanimate.Misc
-import           Reanimate.Render
-import           Reanimate.Parameters
-import           Reanimate.Constants
-import           Reanimate.Svg.Constructors
-import           Reanimate.Svg.Unuse
-import           System.Directory
-import           System.FilePath
-import           System.IO
-import           System.IO.Temp
-import           System.IO.Unsafe
+import           Codec.Picture               (DynamicImage, Image (imageHeight, imageWidth),
+                                              PngSavable (encodePng), decodePng, dynamicMap,
+                                              encodeDynamicPng, writePng)
+import           Control.Lens                ((&), (.~))
+import           Control.Monad               (unless)
+import qualified Data.ByteString             as B
+import qualified Data.ByteString.Base64.Lazy as Base64
+import qualified Data.ByteString.Lazy.Char8  as LBS
+import           Data.Hashable               (Hashable (hash))
+import qualified Data.Text                   as T
+import qualified Data.Text.IO                as T
+import           Graphics.SvgTree            (Number (..), defaultSvg, parseSvgFile)
+import qualified Graphics.SvgTree            as Svg
+import           Reanimate.Animation         (SVG, renderSvg)
+import           Reanimate.Cache             (cacheFile, encodeInt)
+import           Reanimate.Constants         (screenHeight, screenWidth)
+import           Reanimate.Driver.Magick     (magickCmd)
+import           Reanimate.Misc              (getReanimateCacheDirectory, renameOrCopyFile,
+                                              requireExecutable, runCmd)
+import           Reanimate.Parameters        (Height, Raster (RasterNone), Width, pHeight,
+                                              pNoExternals, pRaster, pRootDirectory, pWidth)
+import           Reanimate.Render            (applyRaster, requireRaster)
+import           Reanimate.Svg.Constructors  (flipYAxis, mkText, scaleXY)
+import           Reanimate.Svg.Unuse         (replaceUses, unbox, unboxFit)
+import           System.Directory            (copyFile, doesFileExist, removeFile)
+import           System.FilePath             (replaceExtension, takeExtension, (<.>), (</>))
+import           System.IO                   (hClose)
+import           System.IO.Temp              (withSystemTempFile)
+import           System.IO.Unsafe            (unsafePerformIO)
 
 -- | Load an external image. Width and height must be specified,
 --   ignoring the image's aspect ratio. The center of the image is
@@ -82,19 +81,19 @@ mkImage
   -> FilePath -- ^ Path to external image file.
   -> SVG
 mkImage width height path | takeExtension path == ".svg" = unsafePerformIO $ do
-  svg_data <- B.readFile path
+  svg_data <- T.readFile path
   case parseSvgFile path svg_data of
     Nothing -> error "Malformed svg"
     Just svg ->
       return
         $ scaleXY (width / screenWidth) (height / screenHeight)
-        $ embedDocument svg
+        $ unboxFit svg
 mkImage width height path | pRaster == RasterNone = unsafePerformIO $ do
   inp <- LBS.readFile path
   let imgData = LBS.unpack $ Base64.encode inp
   return
     $  flipYAxis
-    $  ImageTree
+    $  Svg.imageTree
     $  defaultSvg
     &  Svg.imageWidth
     .~ Svg.Num width
@@ -116,7 +115,7 @@ mkImage width height path = unsafePerformIO $ do
   unless exists $ copyFile path target
   return
     $  flipYAxis
-    $  ImageTree
+    $  Svg.imageTree
     $  defaultSvg
     &  Svg.imageWidth
     .~ Svg.Num width
@@ -194,7 +193,7 @@ embedPng
 --     path = "/tmp" </> show (hash png) <.> "png"
 embedPng w h png =
   flipYAxis
-    $  ImageTree
+    $  Svg.imageTree
     $  defaultSvg
     &  Svg.imageCornerUpperLeft
     .~ (Svg.Num (-w / 2), Svg.Num (-h / 2))
@@ -262,8 +261,7 @@ vectorize = vectorize_ []
 vectorize_ :: [String] -> FilePath -> SVG
 vectorize_ _ path | pNoExternals = mkText $ T.pack path
 vectorize_ args path             = unsafePerformIO $ do
-  root <- getXdgDirectory XdgCache "reanimate"
-  createDirectoryIfMissing True root
+  root <- getReanimateCacheDirectory
   let svgPath = root </> encodeInt key <.> "svg"
   hit <- doesFileExist svgPath
   unless hit $ withSystemTempFile "file.svg" $ \tmpSvgPath svgH ->
@@ -275,7 +273,7 @@ vectorize_ args path             = unsafePerformIO $ do
       runCmd magick [path, "-flatten", tmpBmpPath]
       runCmd potrace (args ++ ["--svg", "--output", tmpSvgPath, tmpBmpPath])
       renameOrCopyFile tmpSvgPath svgPath
-  svg_data <- B.readFile svgPath
+  svg_data <- T.readFile svgPath
   case parseSvgFile svgPath svg_data of
     Nothing -> do
       removeFile svgPath

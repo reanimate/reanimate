@@ -129,7 +129,7 @@ main = do
 genSnippet :: Ghci -> FilePath -> IO (String, String, Text)
 genSnippet ghci path = do
     inp <- T.readFile path
-    let ParseOk m = parseHaskell inp
+    let m = fromParseResult $ parseHaskell inp
         h = sourceHash m
     withHaskellFile m $ \hsFile -> do
       _ <- reqGhcOutput ghci $ ":load " ++ hsFile
@@ -270,7 +270,7 @@ newBackend = do
           now <- getCurrentTime
           emptyQueue <- isEmptyMVar queue
           let timeLimit = if emptyQueue then totalTimeLimitLong else totalTimeLimitShort
-          if (diffUTCTime now startTime < timeLimit)
+          if diffUTCTime now startTime < timeLimit
             then action
             else do
               renderWarning req "Render timed out"
@@ -364,6 +364,7 @@ withHaskellFile m action = withSystemTempFile "playground.hs" $ \target h -> do
     hClose h
     T.writeFile target
       "{-# LANGUAGE OverloadedStrings #-}\n\
+      \{-# LANGUAGE FlexibleContexts #-}\n\
       \module Animation where\n\
       \import Reanimate\n\
       \import Reanimate.Builtin.Documentation\n\
@@ -376,14 +377,18 @@ withHaskellFile m action = withSystemTempFile "playground.hs" $ \target h -> do
       \import Reanimate.Morph.Common\n\
       \import Reanimate.Morph.Linear\n\
       \import Reanimate.Scene\n\
+      \import Reanimate.LaTeX\n\
+      \import Reanimate.External\n\
       \import qualified Graphics.SvgTree as SVG\n\
       \import Control.Lens\n\
+      \import Control.Monad\n\
       \import qualified Data.Text as T\n\
       \import Linear.V2\n\
       \import Linear.Metric\n\
       \import Linear.Vector\n\
       \import Text.Printf\n\
       \import Codec.Picture.Types\n\
+      \import Control.Monad.State\n\
       \-- Used for testing:\n\
       \-- import System.IO.Unsafe\n\
       \-- import Control.Concurrent\n\

@@ -62,13 +62,12 @@ import           Control.Lens                 ((&), (.~), (?~))
 import           Data.Attoparsec.Text         (parseOnly)
 import qualified Data.Map                     as Map
 import qualified Data.Text                    as T
-import           Graphics.SvgTree             hiding (height, line, path, use,
-                                               width)
-import           Graphics.SvgTree.NamedColors
-import           Graphics.SvgTree.PathParser
-import           Linear.V2                    hiding (angle)
-import           Reanimate.Constants
-import           Reanimate.Svg.BoundingBox
+import           Graphics.SvgTree
+import           Graphics.SvgTree.NamedColors (svgNamedColors)
+import           Graphics.SvgTree.PathParser  (pathParser)
+import           Linear.V2                    (V2 (V2))
+import           Reanimate.Constants          (screenHeight, screenWidth)
+import           Reanimate.Svg.BoundingBox    (boundingBox)
 
 -- | Apply list of transformations to given image.
 withTransformations :: [Transformation] -> Tree -> Tree
@@ -251,7 +250,7 @@ withId idTag = attrId ?~ idTag
 -- | @mkRect width height@ creates a rectangle with given @with@ and @height@, centered at @(0, 0)@.
 -- See <https://developer.mozilla.org/en-US/docs/Web/SVG/Element/rect>
 mkRect :: Double -> Double -> Tree
-mkRect width height = translate (-width/2) (-height/2) $ RectangleTree $ defaultSvg
+mkRect width height = translate (-width/2) (-height/2) $ rectangleTree $ defaultSvg
   & rectUpperLeftCorner .~ (Num 0, Num 0)
   & rectWidth ?~ Num width
   & rectHeight ?~ Num height
@@ -259,14 +258,14 @@ mkRect width height = translate (-width/2) (-height/2) $ RectangleTree $ default
 -- | Create a circle with given radius, centered at @(0, 0)@.
 -- See <https://developer.mozilla.org/en-US/docs/Web/SVG/Element/circle>
 mkCircle :: Double -> Tree
-mkCircle radius = CircleTree $ defaultSvg
+mkCircle radius = circleTree $ defaultSvg
   & circleCenter .~ (Num 0, Num 0)
   & circleRadius .~ Num radius
 
 -- | Create an ellipse given X-axis radius, and Y-axis radius, with center at @(0, 0)@.
 -- See <https://developer.mozilla.org/en-US/docs/Web/SVG/Element/ellipse>
 mkEllipse :: Double -> Double -> Tree
-mkEllipse rx ry = EllipseTree $ defaultSvg
+mkEllipse rx ry = ellipseTree $ defaultSvg
   & ellipseCenter .~ (Num 0, Num 0)
   & ellipseXRadius .~ Num rx
   & ellipseYRadius .~ Num ry
@@ -274,20 +273,20 @@ mkEllipse rx ry = EllipseTree $ defaultSvg
 -- | Create a line segment between two points given by their @(x, y)@ coordinates.
 -- See <https://developer.mozilla.org/en-US/docs/Web/SVG/Element/line>
 mkLine :: (Double,Double) -> (Double, Double) -> Tree
-mkLine (x1,y1) (x2,y2) = LineTree $ defaultSvg
+mkLine (x1,y1) (x2,y2) = lineTree $ defaultSvg
   & linePoint1 .~ (Num x1, Num y1)
   & linePoint2 .~ (Num x2, Num y2)
 
 -- | Merges multiple images into one.
 -- See <https://developer.mozilla.org/en-US/docs/Web/SVG/Element/g>
 mkGroup :: [Tree] -> Tree
-mkGroup forest = GroupTree $ defaultSvg
+mkGroup forest = groupTree $ defaultSvg
   & groupChildren .~ forest
 
 -- | Create definition of graphical objects that can be used at later time.
 --   See <https://developer.mozilla.org/en-US/docs/Web/SVG/Element/defs>
 mkDefinitions :: [Tree] -> Tree
-mkDefinitions forest = DefinitionTree $ defaultSvg
+mkDefinitions forest = definitionTree $ defaultSvg
   & groupChildren .~ forest
 
 -- | Create an element by referring to existing element defined previously.
@@ -295,7 +294,7 @@ mkDefinitions forest = DefinitionTree $ defaultSvg
 -- 'mkDefinitions' and then use it via @use "myId"@.
 -- See <https://developer.mozilla.org/en-US/docs/Web/SVG/Element/use>
 mkUse :: String -> Tree
-mkUse name = UseTree (defaultSvg & useName .~ name) Nothing
+mkUse name = useTree (defaultSvg & useName .~ name)
 
 -- | A clip path restricts the region to which paint can be applied.
 -- See <https://developer.mozilla.org/en-US/docs/Web/SVG/Element/clipPath>
@@ -303,13 +302,13 @@ mkClipPath :: String  -- ^ ID of the clip path, which can then be referred to by
                       --   using 'withClipPathRef'.
            -> [Tree] -- ^ List of shapes that will determine the final shape of the clipping region
            -> Tree
-mkClipPath idTag forest = withId idTag $ ClipPathTree $ defaultSvg
+mkClipPath idTag forest = withId idTag $ clipPathTree $ defaultSvg
   & clipPathContent .~ forest
 
 -- | Create a path from the list of path commands.
 --   See <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/d#Path_commands>
 mkPath :: [PathCommand] -> Tree
-mkPath cmds = PathTree $ defaultSvg & pathDefinition .~ cmds
+mkPath cmds = pathTree $ defaultSvg & pathDefinition .~ cmds
 
 -- | Similar to 'mkPathText', but taking SVG path command as a String.
 mkPathString :: String -> Tree
@@ -328,7 +327,7 @@ mkPathText str =
 mkLinePath :: [(Double, Double)] -> Tree
 mkLinePath [] = mkGroup []
 mkLinePath ((startX, startY):rest) =
-    PathTree $ defaultSvg & pathDefinition .~ cmds
+    pathTree $ defaultSvg & pathDefinition .~ cmds
   where
     cmds = [ MoveTo OriginAbsolute [V2 startX startY]
            , LineTo OriginAbsolute [ V2 x y | (x, y) <- rest ] ]
@@ -337,7 +336,7 @@ mkLinePath ((startX, startY):rest) =
 mkLinePathClosed :: [(Double, Double)] -> Tree
 mkLinePathClosed [] = mkGroup []
 mkLinePathClosed ((startX, startY):rest) =
-    PathTree $ defaultSvg & pathDefinition .~ cmds
+    pathTree $ defaultSvg & pathDefinition .~ cmds
   where
     cmds = [ MoveTo OriginAbsolute [V2 startX startY]
            , LineTo OriginAbsolute [ V2 x y | (x, y) <- rest ]
@@ -416,12 +415,12 @@ mkText str =
 --   <<docs/gifs/doc_withViewBox.gif>>
 withViewBox :: (Double, Double, Double, Double) -> Tree -> Tree
 withViewBox vbox child = translate (-screenWidth/2) (-screenHeight/2) $
-  SvgTree $ Document
-  { _viewBox = Just vbox
-  , _width = Just (Num screenWidth)
-  , _height = Just (Num screenHeight)
-  , _elements = [child]
-  , _description = ""
+  svgTree Document
+  { _documentViewBox = Just vbox
+  , _documentWidth = Just (Num screenWidth)
+  , _documentHeight = Just (Num screenHeight)
+  , _documentElements = [child]
+  , _documentDescription = ""
   , _documentLocation = ""
   , _documentAspectRatio = PreserveAspectRatio False AlignNone Nothing
   }

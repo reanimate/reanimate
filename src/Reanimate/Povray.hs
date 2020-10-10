@@ -14,17 +14,17 @@ module Reanimate.Povray
   , povrayExtreme'
   ) where
 
-import           Data.Hashable
+import           Data.Hashable              (Hashable (hash))
 import           Data.Text                  (Text)
 import qualified Data.Text                  as T
 import qualified Data.Text.IO               as T
-import           Graphics.SvgTree           (Tree (..))
-import           Reanimate.Cache
-import           Reanimate.Constants
-import           Reanimate.Misc
-import           Reanimate.Parameters
-import           Reanimate.Raster
-import           Reanimate.Svg.Constructors
+import           Graphics.SvgTree           (Tree)
+import           Reanimate.Cache            (cacheFile, encodeInt)
+import           Reanimate.Constants        (screenHeight, screenWidth)
+import           Reanimate.Misc             (requireExecutable, runCmd)
+import           Reanimate.Parameters       (pNoExternals)
+import           Reanimate.Raster           (mkImage)
+import           Reanimate.Svg.Constructors (mkText)
 import           System.FilePath            (replaceExtension, (<.>))
 import           System.IO.Unsafe           (unsafePerformIO)
 

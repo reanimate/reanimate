@@ -4,7 +4,7 @@ env =
 
 animation :: Animation
 animation = env $
-  sceneAnimation $ do
+  scene $ do
     -- Configure objects
     txt <- newText "Center"
     top <- newText "Top"
@@ -16,11 +16,11 @@ animation = env $
       oRightX .= screenRight
     botR <- newText "Bottom right"
     oModifyS botR $ do
-      oTranslate .= (0, screenBottom+0.5)
+      oTranslateY .= screenBottom+0.5
       oRightX .= screenRight
     botL <- newText "Bottom left"
     oModifyS botL $ do
-      oTranslate .= (0, screenBottom+0.5)
+      oTranslateY .= screenBottom+0.5
       oLeftX .= screenLeft
     topL <- newText "Top left"
     oModifyS topL $ do
@@ -37,9 +37,8 @@ animation = env $
     switchTo topL txt
 
 switchTo src dst = do
-  fork $ oFadeOut src 1
-  oModify dst $ oOpacity .~ 1
-  oFadeIn dst 1
+  fork $ oHideWith src oFadeOut
+  oShowWith dst oFadeIn
   wait 1
 
 newText txt =

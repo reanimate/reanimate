@@ -1,0 +1,41 @@
+name: Site checker
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  push:
+    branches: [ master, feature-ci ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js 10.x
+      uses: actions/setup-node@v1
+      with:
+        node-version: 10.x
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install w3c-linkchecker
+    - name: Check websocket connection
+      run: |
+        set -o xtrace
+        wget https://github.com/vi/websocat/releases/download/v1.6.0/websocat_amd64-linux-static -O websocat
+        chmod +x websocat
+        ./websocat -q -uU "wss://reanimate.clozecards.com/ws/"
+    - name: Check links at reanimate.github.io
+      run: checklink --quiet --broken "https://reanimate.github.io/" >> failures.txt
+    - name: Check links at reanimate.readthedocs.io
+      run: checklink --quiet --broken "https://reanimate.readthedocs.io/" >> failures.txt
+    # Haddock generates 404 links by default. :(
+    #- name: Check links in haddock docs
+    #  run: checklink --quiet --broken "https://hackage.haskell.org/package/reanimate/docs/Reanimate.html" >> failures.txt
+    - name: Check for failures
+      run: |
+        if [ -s failures.txt ]; then
+          cat failures.txt
+          exit 1
+        fi

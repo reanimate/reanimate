@@ -22,10 +22,10 @@ transitionTime :: Double
 transitionTime = 0.5
 
 main :: IO ()
-main = reanimate $ bg `parA` chainT (overlapT transitionTime fadeT)
+main = reanimate $ addStatic bg $ chainT (overlapT transitionTime fadeT)
       [comp1, comp2, comp3, comp4, comp5, comp6, comp7, setDuration transitionTime comp1]
   where
-    bg = animate $ const $ mkBackgroundPixel bgColor
+    bg = mkBackgroundPixel bgColor
     comp1 = svgComponent "Circles" (mkCircle 2)
     comp2 = svgComponent "Rects" (mkRect 4 3)
     comp3 = svgComponent "Lines" (mkLine (-2,0) (2,0))

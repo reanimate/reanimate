@@ -50,10 +50,10 @@ extraPoints = 0
 -- p1 = centerPolygon shape2
 -- p2 = pScale 2 $ pAtCenter $ pAddPoints extraPoints (pSetOffset shape14 0 )
 
--- p1 = pAddPoints extraPoints $ (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "S")
--- p2 = pAddPoints extraPoints $ (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "C")
-p1 = pAddPoints extraPoints $ (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "X")
-p2 = pAddPoints extraPoints $ (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "I")
+-- p1 = pAddPoints extraPoints (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "S")
+-- p2 = pAddPoints extraPoints (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "C")
+p1 = pAddPoints extraPoints (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "X")
+p2 = pAddPoints extraPoints (pAtCenter $ unsafeSVGToPolygon 0.1 $ scale 6 $ latex "I")
 
 p1_ = castPolygon p1
 p2_ = castPolygon p2
@@ -70,7 +70,7 @@ polys'' = compatTriagPairs polys'
 
 main :: IO ()
 -- main = reanimate $ playTraces $ seq (last $ triangulate [] p1 p2) ()
-main = reanimate $ sceneAnimation $ do
+main = reanimate $ scene $ do
   bg <- newSpriteSVG $ mkBackground "black"
   spriteZ bg (-1)
 
@@ -86,23 +86,23 @@ main = reanimate $ sceneAnimation $ do
       -- , polygonNumDots (castPolygon l)
       ]
     newSpriteSVG_ $ 
-      translate (2) 0 $ withFillColorPixel c $ mkGroup
+      translate 2 0 $ withFillColorPixel c $ mkGroup
       [ polygonShape (castPolygon r)
       -- , polygonNumDots (castPolygon r)
       ]
     nums <- newSpriteSVG $ mkGroup
       [ translate (-2) 0 $ polygonNumDots (castPolygon l)
-      , translate (2) 0 $ polygonNumDots (castPolygon r)
+      , translate 2 0 $ polygonNumDots (castPolygon r)
       ]
     wait (1/60)
     destroySprite nums
   
   -- fork $ play $ staticFrame (1/60) $ mkGroup
-  --   [ translate (2) 0 $ mkGroup
+  --   [ translate 2 0 $ mkGroup
   --     [ withFillColor "grey" $ polygonShape p2_circ
   --     , polygonNumDots p2_circ
   --     ]
-  --   , translate (6) 0 $ mkGroup
+  --   , translate 6 0 $ mkGroup
   --     [ withFillColor "grey" $ polygonShape p2
   --     , polygonNumDots p2
   --     ]
@@ -117,9 +117,6 @@ main = reanimate $ sceneAnimation $ do
   --     , polygonNumDots p1
   --     ]
   --   ]
-
-  
-  return ()
 
 
 showP p = mkGroup

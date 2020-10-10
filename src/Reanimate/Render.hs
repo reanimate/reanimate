@@ -26,22 +26,22 @@ module Reanimate.Render
 import           Control.Concurrent
 import           Control.Exception
 import           Control.Monad             (forM_, forever, unless, void, when)
-import           Data.Either
-import           Data.Function
+import           Data.Either               (isRight)
+import           Data.Function             (fix)
 import qualified Data.Text                 as T
 import qualified Data.Text.IO              as T
 import           Data.Time
 import           Graphics.SvgTree          (Number (..))
-import           Numeric
-import           Reanimate.Animation
-import           Reanimate.Driver.Check
-import           Reanimate.Driver.Magick
+import           Numeric                   (showFFloat)
+import           Reanimate.Animation       (Animation, duration, frameAt, renderSvg)
+import           Reanimate.Driver.Check    (hasInkscape, hasMagick, hasRSvg)
+import           Reanimate.Driver.Magick   (magickCmd)
 import           Reanimate.Misc
 import           Reanimate.Parameters
-import           System.Console.ANSI.Codes
-import           System.Exit
-import           System.FileLock (withTryFileLock, SharedExclusive(..), unlockFile)
-import           System.Directory
+import           System.Console.ANSI.Codes (clearFromCursorToLineEndCode)
+import           System.Directory          (doesFileExist, removeFile)
+import           System.Exit               (ExitCode (ExitFailure), exitWith)
+import           System.FileLock           (SharedExclusive (..), unlockFile, withTryFileLock)
 import           System.FilePath           (replaceExtension, (<.>), (</>))
 import           System.IO
 import           Text.Printf               (printf)
@@ -63,15 +63,15 @@ renderSvgs :: FilePath -> Int -> Bool -> Animation -> IO ()
 renderSvgs folder offset _prettyPrint ani = do
   print frameCount
   lock <- newMVar ()
-
   handle errHandler $ concurrentForM_ (frameOrder rate frameCount) $ \nth' -> do
     let nth = (nth'+offset) `mod` frameCount
         now = (duration ani / (fromIntegral frameCount - 1)) * fromIntegral nth
         frame = frameAt (if frameCount <= 1 then 0 else now) ani
-        svg = renderSvg Nothing Nothing frame
         path = folder </> show nth <.> "svg"
+        svg = renderSvg Nothing Nothing frame
 
-    idempotentFile path $ writeFile path svg
+    idempotentFile path $
+      writeFile path svg
     withMVar lock $ \_ -> do
       print nth
       hFlush stdout

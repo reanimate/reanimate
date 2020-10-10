@@ -11,18 +11,18 @@ module Reanimate.Svg.BoundingBox
   , svgWidth
   ) where
 
-import           Control.Arrow ((***))
-import           Control.Lens ((^.))
-import           Data.List
-import           Data.Maybe (mapMaybe)
-import qualified Data.Vector.Unboxed as V
+import           Control.Arrow             ((***))
+import           Control.Lens              ((^.))
+import           Data.List                 (foldl')
+import           Data.Maybe                (mapMaybe)
+import qualified Data.Vector.Unboxed       as V
 import qualified Geom2D.CubicBezier.Linear as Bezier
-import           Graphics.SvgTree hiding (height, line, path, use, width)
-import           Linear.V2 hiding (angle)
-import           Linear.Vector
-import           Reanimate.Constants
-import           Reanimate.Svg.LineCommand
-import qualified Reanimate.Transform as Transform
+import           Graphics.SvgTree
+import           Linear.V2                 (V2 (V2))
+import           Linear.Vector             (Additive (zero))
+import           Reanimate.Constants       (defaultDPI)
+import           Reanimate.Svg.LineCommand (LineCommand (..), toLineCommands)
+import qualified Reanimate.Transform       as Transform
 
 -- | Return bounding box of SVG tree.
 --  The four numbers returned are (minimal X-coordinate, minimal Y-coordinate, width, height)
@@ -79,7 +79,7 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
       None            -> []
       UseTree{}       -> []
       GroupTree g     -> concatMap svgBoundingPoints (g^.groupChildren)
-      SymbolTree (Symbol g) -> concatMap svgBoundingPoints (g^.groupChildren)
+      SymbolTree g    -> concatMap svgBoundingPoints (g^.groupChildren)
       FilterTree{}    -> []
       DefinitionTree{} -> []
       PathTree p      -> linePoints $ toLineCommands (p^.pathDefinition)
@@ -114,7 +114,7 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
           rnum = circ ^. circleRadius
       in case mapMaybe unpackNumber [xnum, ynum, rnum] of
         [x, y, r] -> [ V2 (x + r * cos angle) (y + r * sin angle) | angle <- [0, pi/10 .. 2 * pi]]
-        _  -> []
+        _         -> []
 
     ellipseBoundingPoints e =
       let (xnum,ynum) = e ^. ellipseCenter

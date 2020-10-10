@@ -22,13 +22,13 @@ main = reanimate $
   mapA (withStrokeColor "black") $
   mapA (withStrokeLineJoin JoinRound) $
   mapA (withFillOpacity 1) $
-    sceneAnimation $
+    scene $
       showPair (stages ++ take 1 stages)
   where
     showPair (from:to:rest) =
       waitOn $ do
         toS <- newSpriteSVG $
-          translate (4) 0 to
+          translate 4 0 to
         spriteE toS $ overBeginning 0.2 fadeInE
         spriteE toS $ overEnding 0.2 fadeOutE
         m <- fork $ newSpriteA $ animate (morph linear from to)

@@ -4,3 +4,6 @@ pre code {
 body {
   text-align: justify;
 }
+nav {
+  text-align: initial;
+}

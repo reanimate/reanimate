@@ -1,5 +1,22 @@
 const backend = "149.56.132.163";
 
+var lastConnect;
+
+function scheduleConnect(cb) {
+  let minDelay = 2000;
+  if( lastConnect === undefined ) {
+    console.log('Connecting immediately');
+    lastConnect = new Date().getTime();
+    cb();
+  } else {
+    let now = new Date().getTime();
+    let target = Math.max(now, lastConnect + minDelay);
+    console.log('Connecting in', target-now);
+    lastConnect = target;
+    setTimeout(cb, target-now);
+  }
+}
+
 function playgroundInit(elt) {
   var mySockets = {};
   var frames = {};
@@ -7,45 +24,58 @@ function playgroundInit(elt) {
 
   function sendSocketCommand(wat) {
     if (wat.cmd == "connect") {
-      socket = new WebSocket(wat.address);
-      socket.onopen = function (event) {
-        socket.send(lastScript);
-        app.ports.receiveSocketMsg.send({
-          name: wat.name,
-          msg: "data",
-          data: "connection established"
-        });
-      }
-      socket.onmessage = function (event) {
-        const lines = event.data.split('\n');
-        const cmd = lines[0];
-        if( cmd === "frame_count" ) {
-          frames = {};
-        } else if ( cmd === "frame") {
-          // Prefetch image.
-          const nth = parseInt(lines[1]);
-          const url = lines[2];
-          frames[nth] = new Image();
-          frames[nth].src = "https://reanimate.clozecards.com/"+url;
+      scheduleConnect(function () {
+        if ( mySockets[wat.name] ) return;
+        socket = new WebSocket(wat.address);
+        socket.onopen = function (event) {
+          if( socket.readyState !== 1 ) {
+            app.ports.receiveSocketMsg.send({
+              name: wat.name,
+              msg: "data",
+              data: "connection failed"
+            });
+            return;
+          }
+          console.log('onopen', socket, mySockets);
+          socket.send(lastScript);
+          app.ports.receiveSocketMsg.send({
+            name: wat.name,
+            msg: "data",
+            data: "connection established"
+          });
         }
-        app.ports.receiveSocketMsg.send({
-          name: wat.name,
-          msg: "data",
-          data: event.data
-        });
-      }
-      connectionFailedHandler = function (event) {
-        app.ports.receiveSocketMsg.send({
-          name: wat.name,
-          msg: "data",
-          data: "connection failed"
-        });
-      }
-      socket.onerror = connectionFailedHandler;
-      socket.onclose = connectionFailedHandler;
-      mySockets[wat.name] = socket;
+        socket.onmessage = function (event) {
+          const lines = event.data.split('\n');
+          const cmd = lines[0];
+          if( cmd === "frame_count" ) {
+            frames = {};
+          } else if ( cmd === "frame") {
+            // Prefetch image.
+            const nth = parseInt(lines[1]);
+            const url = lines[2];
+            frames[nth] = new Image();
+            frames[nth].src = "https://reanimate.clozecards.com/"+url;
+          }
+          app.ports.receiveSocketMsg.send({
+            name: wat.name,
+            msg: "data",
+            data: event.data
+          });
+        }
+        connectionFailedHandler = function (event) {
+          app.ports.receiveSocketMsg.send({
+            name: wat.name,
+            msg: "data",
+            data: "connection failed"
+          });
+        }
+        socket.onerror = connectionFailedHandler;
+        socket.onclose = connectionFailedHandler;
+        mySockets[wat.name] = socket;
+        console.log('mySockets set');
+      });
     } else if (wat.cmd == "send") {
-      if( mySockets[wat.name].readyState === mySockets[wat.name].OPEN ) {
+      if( mySockets[wat.name] && mySockets[wat.name].readyState === mySockets[wat.name].OPEN ) {
         mySockets[wat.name].send(wat.content);
       }
     } else if (wat.cmd == "close") {

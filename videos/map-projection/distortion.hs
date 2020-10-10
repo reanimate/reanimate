@@ -29,7 +29,7 @@ import           System.IO.Unsafe
 
 
 main :: IO ()
-main = seq equirectangular $ reanimate $ setDuration 59 $ sceneAnimation $ do
+main = seq equirectangular $ reanimate $ setDuration 59 $ scene $ do
     bg <- newSpriteSVG $ mkBackground "white"
     spriteZ bg (-1)
     prevProj <- newVar equirectangularP
@@ -49,7 +49,7 @@ main = seq equirectangular $ reanimate $ setDuration 59 $ sceneAnimation $ do
                            ,"distort"::String)
                   imgFile = cacheImage imgKey $
                     interpP src prev proj t
-              in mkGroup $
+              in mkGroup
                 [ --scaleToSize screenWidth screenHeight $
                 --  embedImage $ interP src prev proj t
                   mkImage screenWidth screenHeight imgFile
@@ -59,7 +59,7 @@ main = seq equirectangular $ reanimate $ setDuration 59 $ sceneAnimation $ do
           fork $ tweenVar txtVar morphT $ \v t -> if t > 0 then mkLabel t else v
           play $ pauseAtEnd waitT $ signalA (curveS 2) $
             mkAnimation morphT $ \t ->
-              mkGroup $
+              mkGroup
               [ scaleToSize screenWidth screenHeight $
                 embedImage $ project src $ mkProj t
               , grid $ mkProj t ]
@@ -112,9 +112,9 @@ renderLabel label =
   let ref = scale 1.5 $ latex "\\texttt{Tygv123}"
       glyphs = scale 1.5 $ latex ("\\texttt{" <> label <> "}")
       svgTxt = mkGroup
-        [ withStrokeColor "black" $ withFillColor "white" $
+        [ withStrokeColor "black" $ withFillColor "white"
           glyphs
-        , withFillColor "white" $
+        , withFillColor "white"
           glyphs ]
   in
     translate (screenWidth*0.01) (screenHeight*0.02) $
@@ -136,8 +136,8 @@ grid :: Projection -> SVG
 grid p =
   lowerTransformations $
   scaleXY
-    (screenWidth)
-    (screenHeight)
+    screenWidth
+    screenHeight
    $
   translate (-1/2) (-1/2) $
   withStrokeWidth strokeWidth $
@@ -203,11 +203,11 @@ longitudeLines p =
 halfPi :: Double
 halfPi = pi/2
 
-landBorders :: [(GeospatialGeometry)]
+landBorders :: [GeospatialGeometry]
 landBorders = unsafePerformIO $ do
   Just geo <- decodeFileStrict "land.geojson"
   return
-    [ (feature ^. geometry)
+    [ feature ^. geometry
     | feature <- toList $ geo ^. geofeatures
     , let p = feature ^. properties :: Map String Value
     ]

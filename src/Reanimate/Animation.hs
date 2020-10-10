@@ -53,17 +53,13 @@ module Reanimate.Animation
   , renderSvg
   ) where
 
-import           Control.Arrow              ()
 import           Data.Fixed                 (mod')
-import           Graphics.SvgTree           (Alignment (..), Document (..),
-                                             Number (..),
-                                             PreserveAspectRatio (..),
-                                             Tree (..), xmlOfTree)
-import           Graphics.SvgTree.Printer
-import           Reanimate.Constants
-import           Reanimate.Ease
-import           Reanimate.Svg.Constructors
-import           Text.XML.Light.Output
+import           Graphics.SvgTree
+import           Graphics.SvgTree.Printer   (ppDocument)
+import           Reanimate.Constants        (defaultStrokeWidth)
+import           Reanimate.Ease             (Signal, reverseS)
+import           Reanimate.Svg.Constructors (mkGroup, scaleXY, withStrokeWidth)
+import           Text.XML.Light.Output      (ppElement)
 
 -- | Duration of an animation or effect. Usually measured in seconds.
 type Duration = Double
@@ -210,11 +206,11 @@ renderSvg w h t = ppDocument doc
     width = 16
     height = 9
     doc = Document
-      { _viewBox = Just (-width/2, -height/2, width, height)
-      , _width = w
-      , _height = h
-      , _elements = [withStrokeWidth defaultStrokeWidth $ scaleXY 1 (-1) t]
-      , _description = ""
+      { _documentViewBox = Just (-width/2, -height/2, width, height)
+      , _documentWidth = w
+      , _documentHeight = h
+      , _documentElements = [withStrokeWidth defaultStrokeWidth $ scaleXY 1 (-1) t]
+      , _documentDescription = ""
       , _documentLocation = ""
       , _documentAspectRatio = PreserveAspectRatio False AlignNone Nothing
       }

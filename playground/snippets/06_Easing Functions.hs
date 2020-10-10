@@ -1,5 +1,5 @@
 animation :: Animation
-animation = docEnv $ pauseAtEnd 1 $ sceneAnimation $ do
+animation = docEnv $ pauseAtEnd 1 $ scene $ do
   showEasing 0 "curveS" (curveS 2)
   showEasing 1 "bellS" (bellS 2)
   showEasing 2 "constantS" (constantS 0.7)
@@ -25,7 +25,7 @@ label txt =
   scale 0.7 $
   center $
   withStrokeWidth 0 $
-  withFillOpacity 1 $
+  withFillOpacity 1
   svg
   where
     svg = latex txt
