@@ -43,8 +43,8 @@ import qualified Data.Text            as T
 import qualified Data.Text.Encoding   as T
 import qualified Data.Text.IO         as T
 import           GHC.Generics         (Generic)
-import           Graphics.SvgTree     (Tree, clipPathRef, clipRule, mapTree, parseSvgFile,
-                                       pattern ClipPathTree, pattern None, strokeColor)
+import           Graphics.SvgTree     (pattern ClipPathTree, pattern None, Tree, clipPathRef,
+                                       clipRule, mapTree, parseSvgFile, strokeColor)
 import           Reanimate.Animation  (SVG)
 import           Reanimate.Cache      (cacheDiskSvg, cacheMem)
 import           Reanimate.External   (zipArchive)
@@ -128,7 +128,7 @@ xelatex = xelatexWithHeaders []
 
 -- | Invoke xelatex with extra script headers.
 xelatexWithHeaders :: [T.Text] -> T.Text -> Tree
-xelatexWithHeaders = someTexWithHeaders XeLaTeX "xelatex" "xdv" [] ["-no-pdf"]
+xelatexWithHeaders = someTexWithHeaders XeLaTeX "xelatex" "xdv" ["-no-pdf"] []
 
 -- | Invoke xelatex with "\usepackage[UTF8]{ctex}" and import the result as an
 --   SVG object. SVG objects are cached to improve performance. Xelatex has
