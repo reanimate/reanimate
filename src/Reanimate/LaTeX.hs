@@ -43,8 +43,8 @@ import qualified Data.Text            as T
 import qualified Data.Text.Encoding   as T
 import qualified Data.Text.IO         as T
 import           GHC.Generics         (Generic)
-import           Graphics.SvgTree     (Tree, clipPathRef, clipRule, mapTree, parseSvgFile,
-                                       pattern ClipPathTree, pattern None, strokeColor)
+import           Graphics.SvgTree     (pattern ClipPathTree, pattern None, Tree, clipPathRef,
+                                       clipRule, mapTree, parseSvgFile, strokeColor)
 import           Reanimate.Animation  (SVG)
 import           Reanimate.Cache      (cacheDiskSvg, cacheMem)
 import           Reanimate.External   (zipArchive)
@@ -109,17 +109,23 @@ someTexWithHeaders engine exec dvi args headers postscript tex =
   where
     script = mkTexScript exec args headers (T.unlines (postscript ++ [tex]))
 
--- | Invoke latex and separate results.
-latexChunks :: [T.Text] -> [Tree]
-latexChunks chunks | pNoExternals = map mkText chunks
-latexChunks chunks = worker (svgGlyphs $ latex $ T.concat chunks) chunks
+-- | Invoke latex using a given configuration and separate results.
+latexCfgChunks :: TexConfig -> [T.Text] -> [Tree]
+latexCfgChunks _cfg chunks | pNoExternals = map mkText chunks
+latexCfgChunks cfg chunks = worker chunks $ svgGlyphs $ tex $ T.concat chunks
   where
+    tex = latexCfg cfg
     merge lst = mkGroup [fmt svg | (fmt, _, svg) <- lst]
     worker [] [] = []
-    worker _ [] = error "latex chunk mismatch"
-    worker everything (x : xs) =
-      let width = length $ svgGlyphs (latex x)
-       in merge (take width everything) : worker (drop width everything) xs
+    worker [] _ = error "latex chunk mismatch"
+    worker (x : xs) everything =
+      let width = length $ svgGlyphs (tex x)
+          (first, rest) = splitAt width everything
+       in merge first : worker xs rest
+
+-- | Invoke latex and separate results.
+latexChunks :: [T.Text] -> [Tree]
+latexChunks = latexCfgChunks (TexConfig LaTeX [] [])
 
 -- | Invoke xelatex and import the result as an SVG object. SVG objects are
 --   cached to improve performance. Xelatex has support for non-western scripts.
@@ -128,7 +134,7 @@ xelatex = xelatexWithHeaders []
 
 -- | Invoke xelatex with extra script headers.
 xelatexWithHeaders :: [T.Text] -> T.Text -> Tree
-xelatexWithHeaders = someTexWithHeaders XeLaTeX "xelatex" "xdv" [] ["-no-pdf"]
+xelatexWithHeaders = someTexWithHeaders XeLaTeX "xelatex" "xdv" ["-no-pdf"] []
 
 -- | Invoke xelatex with "\usepackage[UTF8]{ctex}" and import the result as an
 --   SVG object. SVG objects are cached to improve performance. Xelatex has

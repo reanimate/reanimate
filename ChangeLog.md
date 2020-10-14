@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and the
 project adheres to the [Haskell Package Versioning
 Policy (PVP)](https://pvp.haskell.org)
 
+## 1.1.1.0 -- 2020-10-10
+
+### Added
+
+ * External icon sets.
+ * Font configurations.
+
+### Other/Non-visible
+
+  * Improved unicode support.
+  * Improved support for filter effects.
+  * Bug fix in the path parser.
+
 ## 1.1.0.0 -- 2020-10-07
 
 ### Added

@@ -155,7 +155,6 @@ simpleIconColor key =
     Nothing    -> error $ "Key not found in simple-icons dataset: " ++ show key
     Just pixel -> pixel
 
--- | Complete list of all Simple Icons.
 simpleIconColors :: Map String PixelRGB8
 simpleIconColors = unsafePerformIO $ do
   let path = simpleIconsFolder </> "_data" </> "simple-icons.json"
@@ -198,6 +197,7 @@ simpleIconColors = unsafePerformIO $ do
           _           -> error $ "Invalid hex: " ++ (take 2 $ drop offset hex)
 
 {-# NOINLINE simpleIcons #-}
+-- | Complete list of all Simple Icons.
 simpleIcons :: [String]
 simpleIcons = unsafePerformIO $ do
   let folder = simpleIconsFolder </> "icons"
@@ -222,7 +222,7 @@ svgLogoPath key = unsafePerformIO $ do
     then pure path
     else error $ "Key not found in svg logos dataset: " ++ show key
 
--- | Icons from <https://svgporn.com/>. Version 3.11.0. License: CC0
+-- | Icons from <https://svgporn.com/>. Version 2018.01. License: CC0
 --
 -- @
 -- `svgLogo` "cassandra"
