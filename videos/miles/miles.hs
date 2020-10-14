@@ -19,7 +19,7 @@ env :: Animation -> Animation
 env = mapA (withStrokeColor "black")
 
 main :: IO ()
-main = reanimate $ env $ sceneAnimation $ do
+main = reanimate $ env $ scene $ do
   newSpriteSVG_ $ mkBackground "grey"
   aPlot <- newObject $ ArcPlot
     { _arcPlotPartial = 1
@@ -35,8 +35,8 @@ main = reanimate $ env $ sceneAnimation $ do
   oModify rFn $
     oContext %~ \o -> lowerTransformations . scale 3 . o
 
-  oDraw rFn 1
-  oFadeIn aPlot 1
+  oShowWith rFn oDraw
+  oShowWith aPlot oFadeIn
   -- oShow rFn
 
   -- oTweenV aPlot 1 $ \t ->
@@ -56,9 +56,3 @@ main = reanimate $ env $ sceneAnimation $ do
   --   arcPlotPartial %~ \v -> fromToS v 0 t
 
   wait 1
-
-oDraw :: Object s a -> Duration -> Scene s ()
-oDraw o d = do
-  oShow o
-  oTweenS o d $ \t ->
-    oContext %= \c -> withFillOpacity (max 0 $ t*10-9) . partialSvg t . c
