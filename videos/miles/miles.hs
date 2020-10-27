@@ -34,10 +34,18 @@ main = reanimate $ env $ scene $ do
     oContext %~ \o -> scale 3 . o
   oModify rFn $
     oContext %~ \o -> lowerTransformations . scale 3 . o
+  oModify sFn $
+    oContext %~ \o -> lowerTransformations . scale 3 . o
 
-  oShowWith rFn oDraw
-  oShowWith aPlot oFadeIn
-  -- oShow rFn
+  -- oShowWith rFn oDrawLine
+  -- oShowWith aPlot oFadeIn
+  -- oShowWith sFn $ adjustDuration (*2) . oDrawLine
+
+  oShow rFn
+  b1 <- newObject $ GoBoard 5 [] [] []
+  oModify b1 $
+    oContext %~ \o -> lowerTransformations . scale 2.5 . o
+  oShow b1
 
   -- oTweenV aPlot 1 $ \t ->
   --   arcPlotAngle %~ \v -> fromToS v (60/180*pi) t
@@ -56,3 +64,7 @@ main = reanimate $ env $ scene $ do
   --   arcPlotPartial %~ \v -> fromToS v 0 t
 
   wait 1
+
+oDrawLine :: SVG -> Animation
+oDrawLine = oStagger $ \svg -> animate $ \t -> partialSvg t svg
+

@@ -31,6 +31,27 @@ data ArcPlot = ArcPlot
   , _arcPlotCenter  :: Double
   , _arcPlotQuality :: Int
   }
+
+{-
+operations:
+  Fade in new board
+  Add go pieces
+  Highlight piece
+  Move piece
+-}
+data GoBoard = GoBoard
+  { _goBoardSize :: Int
+  , _goBoardWhite :: [Int]
+  , _goBoardBlack :: [Int]
+  , _goBoardSelected :: [Int]
+  }
+
+data GoPiece = GoPiece
+  { _goPieceBoardSize :: Int
+  , _goPieceLocation :: Int
+  , _goPieceColor :: String
+  }
+
 -- circlePlot :: Int -- ^ Number of diagonal pixels. Only affects quality, not size.
 --            -> (Double -> Double -> PixelRGBA8)
 --               -- ^ Angle and radius in radians and percent respectively.
@@ -40,6 +61,13 @@ data ArcPlot = ArcPlot
 makeLenses ''RoundFunction
 makeLenses ''SquareFunction
 makeLenses ''ArcPlot
+
+makeLenses ''GoBoard
+makeLenses ''GoPiece
+
+instance Renderable GoBoard where
+  toSVG (GoBoard size white black selected) = withFillOpacity 0 $ mkGroup
+    [ mkRect 1 1 ]
 
 instance Renderable RoundFunction where
   toSVG (RoundFunction mouthHeight mouthDepth) =
