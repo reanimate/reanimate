@@ -4,8 +4,7 @@ fonts =
   , ("Calligra", calligra)
   , ("Noto", noto)
   , ("Helvetica", helvet)
-  , ("Liberine", libertine)
-  , ("Chalkduster", chalkduster) ]
+  , ("Liberine", libertine) ]
 
 animation :: Animation
 animation = env $

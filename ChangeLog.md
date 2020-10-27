@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and the
 project adheres to the [Haskell Package Versioning
 Policy (PVP)](https://pvp.haskell.org)
 
+## 1.1.2.0 -- 2020-10-27
+
+### Added
+
+ * Reanimate.LaTeX.latexCfgChunks.
+
+### Other/Non-visible
+
+ * xeLaTeX bug fixes.
+ * Documentation for external data sets.
+
 ## 1.1.1.0 -- 2020-10-10
 
 ### Added
