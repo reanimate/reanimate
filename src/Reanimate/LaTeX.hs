@@ -69,7 +69,7 @@ data TexConfig = TexConfig
 -- | Render TeX script using a given configuration.
 latexCfg :: TexConfig -> T.Text -> SVG
 latexCfg (TexConfig engine headers postscript) =
-  gen headers postscript
+  gen postscript headers
   where
     gen =
       case engine of
@@ -101,9 +101,9 @@ someTexWithHeaders ::
   [T.Text] ->
   T.Text ->
   Tree
-someTexWithHeaders _engine _exec _dvi _args _headers _postscript tex
+someTexWithHeaders _engine _exec _dvi _args _postscript _headers tex
   | pNoExternals = mkText tex
-someTexWithHeaders engine exec dvi args headers postscript tex =
+someTexWithHeaders engine exec dvi args postscript headers tex =
   (unsafePerformIO . (cacheMem . cacheDiskSvg) (latexToSVG engine dvi exec args))
     script
   where
