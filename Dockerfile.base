@@ -11,24 +11,8 @@ ENV LANG=C.UTF-8 \
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       libblas-dev liblapack-dev ffmpeg \
-      curl blender povray texlive texlive-latex-base texlive-latex-extra \
+      curl texlive texlive-latex-base texlive-latex-extra \
       texlive-fonts-extra texlive-science texlive-xetex \
       texlive-latex-recommended texlive-lang-english \
       texlive-lang-chinese texlive-plain-generic \
       unzip
-
-WORKDIR /src
-
-# Install reanimate dependencies and cache the layer
-ADD reanimate.cabal stack.yaml ./
-RUN stack build --only-dependencies --no-install-ghc --system-ghc --haddock
-
-# Add source after dependencies have been installed as to not invalidate the caches
-ADD data data
-ADD src src
-ADD .git .git
-ADD viewer-elm viewer-elm
-ADD Setup.hs ./
-
-# Build reanimate
-RUN stack build --no-install-ghc --system-ghc
