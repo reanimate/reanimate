@@ -16,3 +16,10 @@ RUN apt-get update && \
       texlive-latex-recommended texlive-lang-english \
       texlive-lang-chinese texlive-plain-generic \
       unzip
+
+WORKDIR /src
+
+# Install reanimate dependencies and cache the layer
+ADD reanimate.cabal stack.yaml ./
+RUN stack build --only-dependencies --no-install-ghc --system-ghc --haddock
+RUN rm reanimate.cabal stack.yaml
