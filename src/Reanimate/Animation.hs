@@ -148,7 +148,7 @@ parLoopA (Animation d1 f1) (Animation d2 f2) =
 --
 --   Example:
 --
---   @'Reanimate.Builtin.Documentation.drawBox' `'parLoopA'` 'adjustDuration' (*2) 'Reanimate.Builtin.Documentation.drawCircle'@
+--   @'Reanimate.Builtin.Documentation.drawBox' `'parDropA'` 'adjustDuration' (*2) 'Reanimate.Builtin.Documentation.drawCircle'@
 --
 --   <<docs/gifs/doc_parDropA.gif>>
 parDropA :: Animation -> Animation -> Animation
