@@ -35,7 +35,9 @@ module Reanimate.LaTeX
 where
 
 import           Control.Lens         ((&), (.~))
+import           Control.Monad.State  (runState, state)
 import qualified Data.ByteString      as B
+import           Data.Foldable        (Foldable (fold))
 import           Data.Hashable        (Hashable)
 import           Data.Monoid          (Last (Last))
 import           Data.Text            (Text)
@@ -43,8 +45,8 @@ import qualified Data.Text            as T
 import qualified Data.Text.Encoding   as T
 import qualified Data.Text.IO         as T
 import           GHC.Generics         (Generic)
-import           Graphics.SvgTree     (pattern ClipPathTree, pattern None, Tree, clipPathRef,
-                                       clipRule, mapTree, parseSvgFile, strokeColor)
+import           Graphics.SvgTree     (Tree, clipPathRef, clipRule, mapTree, parseSvgFile,
+                                       pattern ClipPathTree, pattern None, strokeColor)
 import           Reanimate.Animation  (SVG)
 import           Reanimate.Cache      (cacheDiskSvg, cacheMem)
 import           Reanimate.External   (zipArchive)
@@ -110,21 +112,22 @@ someTexWithHeaders engine exec dvi args postscript headers tex =
     script = mkTexScript exec args headers (T.unlines (postscript ++ [tex]))
 
 -- | Invoke latex using a given configuration and separate results.
-latexCfgChunks :: TexConfig -> [T.Text] -> [Tree]
-latexCfgChunks _cfg chunks | pNoExternals = map mkText chunks
-latexCfgChunks cfg chunks = worker chunks $ svgGlyphs $ tex $ T.concat chunks
+latexCfgChunks :: Traversable t => TexConfig -> t T.Text -> t Tree
+latexCfgChunks _cfg chunks | pNoExternals = fmap mkText chunks
+latexCfgChunks cfg chunks = worker $ svgGlyphs $ tex $ fold chunks
   where
     tex = latexCfg cfg
     merge lst = mkGroup [fmt svg | (fmt, _, svg) <- lst]
-    worker [] [] = []
-    worker [] _ = error "latex chunk mismatch"
-    worker (x : xs) everything =
+    checkResult (r, []) = r
+    checkResult (_, _)  = error "latex chunk mismatch"
+    worker = checkResult . runState (mapM (state . workerSingle) chunks)
+    workerSingle x everything =
       let width = length $ svgGlyphs (tex x)
           (first, rest) = splitAt width everything
-       in merge first : worker xs rest
+       in (merge first, rest)
 
 -- | Invoke latex and separate results.
-latexChunks :: [T.Text] -> [Tree]
+latexChunks :: Traversable t => t T.Text -> t Tree
 latexChunks = latexCfgChunks (TexConfig LaTeX [] [])
 
 -- | Invoke xelatex and import the result as an SVG object. SVG objects are
