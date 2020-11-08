@@ -16,6 +16,7 @@ module Reanimate.LaTeX
     latex,
     latexWithHeaders,
     latexChunks,
+    latexCfgChunks,
     xelatex,
     xelatexWithHeaders,
     ctex,
