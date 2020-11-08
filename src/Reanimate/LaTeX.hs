@@ -17,6 +17,8 @@ module Reanimate.LaTeX
     latexWithHeaders,
     latexChunks,
     latexCfgChunks,
+    latexCfgChunksTrans,
+    mathChunks,
     xelatex,
     xelatexWithHeaders,
     ctex,
@@ -69,6 +71,9 @@ data TexConfig = TexConfig
   }
   deriving (Generic, Hashable, Read, Show, Eq, Ord)
 
+defaultTexConfig :: TexConfig
+defaultTexConfig = TexConfig LaTeX [] []
+
 -- | Render TeX script using a given configuration.
 latexCfg :: TexConfig -> T.Text -> SVG
 latexCfg (TexConfig engine headers postscript) =
@@ -113,23 +118,33 @@ someTexWithHeaders engine exec dvi args postscript headers tex =
     script = mkTexScript exec args headers (T.unlines (postscript ++ [tex]))
 
 -- | Invoke latex using a given configuration and separate results.
-latexCfgChunks :: Traversable t => TexConfig -> t T.Text -> t Tree
-latexCfgChunks _cfg chunks | pNoExternals = fmap mkText chunks
-latexCfgChunks cfg chunks = worker $ svgGlyphs $ tex $ fold chunks
+--   Apply the transformation to the LaTeX segments.
+--   See also 'mathChunks', the transformation is @(\s -> "$" <> s <> "$")@.
+latexCfgChunksTrans :: Traversable t => TexConfig -> (T.Text -> T.Text) -> t T.Text -> t Tree
+latexCfgChunksTrans _cfg f chunks | pNoExternals = fmap (mkText . f) chunks
+latexCfgChunksTrans cfg f chunks = worker $ svgGlyphs $ tex $ f $ fold chunks
   where
     tex = latexCfg cfg
     merge lst = mkGroup [fmt svg | (fmt, _, svg) <- lst]
     checkResult (r, []) = r
     checkResult (_, _)  = error "latex chunk mismatch"
-    worker = checkResult . runState (mapM (state . workerSingle) chunks)
+    worker = checkResult . runState (mapM (state . workerSingle) (fmap f chunks))
     workerSingle x everything =
       let width = length $ svgGlyphs (tex x)
           (first, rest) = splitAt width everything
        in (merge first, rest)
 
+-- | Render math formula and separate results.
+mathChunks :: Traversable t => t T.Text -> t Tree
+mathChunks = latexCfgChunksTrans defaultTexConfig (\s -> "$" <> s <> "$")
+
+-- | Invoke latex using a given configuration and separate results.
+latexCfgChunks :: Traversable t => TexConfig -> t T.Text -> t Tree
+latexCfgChunks cfg = latexCfgChunksTrans cfg id
+
 -- | Invoke latex and separate results.
 latexChunks :: Traversable t => t T.Text -> t Tree
-latexChunks = latexCfgChunks (TexConfig LaTeX [] [])
+latexChunks = latexCfgChunksTrans defaultTexConfig id
 
 -- | Invoke xelatex and import the result as an SVG object. SVG objects are
 --   cached to improve performance. Xelatex has support for non-western scripts.
