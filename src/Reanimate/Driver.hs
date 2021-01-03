@@ -5,16 +5,16 @@ module Reanimate.Driver
 where
 
 import           Control.Applicative      ((<|>))
+import           Control.Concurrent
 import           Control.Monad
-import           Data.Maybe
 import           Data.Either
-import           Reanimate.Animation      (Animation)
-import           Reanimate.Driver.Check
+import           Data.Maybe
+import           Reanimate.Animation      (Animation, duration)
 import           Reanimate.Driver.CLI
-import           Reanimate.Driver.Compile
-import           Reanimate.Driver.Server
+import           Reanimate.Driver.Check
+import           Reanimate.Driver.Daemon
 import           Reanimate.Parameters
-import           Reanimate.Render         (render, renderSnippets, renderSvgs,
+import           Reanimate.Render         (render, renderSnippets, renderSvgs, renderSvgs_,
                                            selectRaster)
 import           System.Directory
 import           System.Exit
@@ -116,7 +116,7 @@ reanimate animation = do
       -- hSetBinaryMode stdout True
       renderSnippets animation
     Check       -> checkEnvironment
-    View {..}   -> serve viewVerbose viewGHCPath viewGHCOpts viewOrigin
+    View {..}   -> viewAnimation viewDetach animation
     Render {..} -> do
       let fmt =
             guessParameter renderFormat (fmap presetFormat renderPreset)
@@ -132,7 +132,7 @@ reanimate animation = do
 
       target <- case renderTarget of
         Nothing -> do
-          mbSelf <- findOwnSource
+          mbSelf <- pure Nothing
           let ext = formatExtension fmt
               self = fromMaybe "output" mbSelf
           pure $ replaceExtension self ext
@@ -161,47 +161,26 @@ reanimate animation = do
                 exitWith (ExitFailure 1)
               return raster
         else selectRaster renderRaster
+      setRaster raster
+      setFPS fps
+      setWidth width
+      setHeight height
+      printf
+        "Animation options:\n\
+              \  fps:    %d\n\
+              \  width:  %d\n\
+              \  height: %d\n\
+              \  fmt:    %s\n\
+              \  target: %s\n\
+              \  raster: %s\n"
+        fps
+        width
+        height
+        (showFormat fmt)
+        target
+        (show raster)
 
-      if renderCompile
-        then compile $
-          [ "render"
-          , "--fps"
-          , show fps
-          , "--width"
-          , show width
-          , "--height"
-          , show height
-          , "--format"
-          , showFormat fmt
-          , "--raster"
-          , showRaster raster
-          , "--target"
-          , target
-          , "+RTS"
-          , "-N"
-          , "-RTS"
-          ] ++ [ "--partial" | renderPartial ]
-        else do
-          setRaster raster
-          setFPS fps
-          setWidth width
-          setHeight height
-          printf
-            "Animation options:\n\
-                 \  fps:    %d\n\
-                 \  width:  %d\n\
-                 \  height: %d\n\
-                 \  fmt:    %s\n\
-                 \  target: %s\n\
-                 \  raster: %s\n"
-            fps
-            width
-            height
-            (showFormat fmt)
-            target
-            (show raster)
-
-          render animation target raster fmt width height fps renderPartial
+      render animation target raster fmt width height fps renderPartial
 
 guessParameter :: Maybe a -> Maybe a -> a -> a
 guessParameter a b def = fromMaybe def (a <|> b)
@@ -220,3 +199,21 @@ userPreferredDimensions Nothing Nothing = Nothing
 makeEven :: Int -> Int
 makeEven x | even x    = x
            | otherwise = x - 1
+
+
+-- serve viewVerbose viewGHCPath viewGHCOpts viewOrigin
+viewAnimation :: Bool -> Animation -> IO ()
+viewAnimation _detach animation = do
+  hadDaemon <- hasDaemon
+  ensureDaemon
+
+  let rate = 60
+      count = round (duration animation * rate) :: Int
+  sendCommand $ DaemonCount count
+  renderSvgs_ animation $ \nth path -> do
+    sendCommand $ DaemonFrame nth path
+
+  unless hadDaemon $ do
+    putStrLn "Daemon mode. Hit ctrl-c to terminate."
+    forever $ threadDelay (10^(6::Int))
+
