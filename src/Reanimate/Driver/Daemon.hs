@@ -78,6 +78,9 @@ Daemon port: 9162?
 -- @
 -- :cmd reanimateLive
 -- @
+--
+-- This works by sending the commands ':r' and ':main' to your GHCi instance
+-- when any source file is changed.
 reanimateLive :: IO String
 reanimateLive = do
   void ensureDaemon
@@ -95,6 +98,9 @@ reanimateLive = do
 -- @
 -- :cmd reanimateLiveEntry "drawCircle"
 -- @
+--
+-- This works by sending the commands ':r' and 'Reanimate.reanimate {entry}' to your
+-- GHCi instance when any source file is changed.
 reanimateLiveEntry :: String -> IO String
 reanimateLiveEntry animation = do
   void ensureDaemon
