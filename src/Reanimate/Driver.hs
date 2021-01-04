@@ -204,8 +204,7 @@ makeEven x | even x    = x
 -- serve viewVerbose viewGHCPath viewGHCOpts viewOrigin
 viewAnimation :: Bool -> Animation -> IO ()
 viewAnimation _detach animation = do
-  hadDaemon <- hasDaemon
-  ensureDaemon
+  detached <- ensureDaemon
 
   let rate = 60
       count = round (duration animation * rate) :: Int
@@ -213,7 +212,7 @@ viewAnimation _detach animation = do
   renderSvgs_ animation $ \nth path -> do
     sendCommand $ DaemonFrame nth path
 
-  unless hadDaemon $ do
+  unless detached $ do
     putStrLn "Daemon mode. Hit ctrl-c to terminate."
     forever $ threadDelay (10^(6::Int))
 

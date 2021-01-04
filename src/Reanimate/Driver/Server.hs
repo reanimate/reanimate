@@ -14,9 +14,9 @@ import qualified Data.Map                  as Map
 import qualified Data.Text                 as T
 import           Network.Socket            (AddrInfo (..), AddrInfoFlag (..), SocketOption (..),
                                             SocketType (Stream), accept, bind, close, defaultHints,
-                                            getAddrInfo, gracefulClose, listen,
-                                            setCloseOnExecIfNeeded, setSocketOption, socket,
-                                            withFdSocket, withSocketsDo)
+                                            getAddrInfo, gracefulClose, listen, openSocket,
+                                            setCloseOnExecIfNeeded, setSocketOption, withFdSocket,
+                                            withSocketsDo)
 import           Network.Socket.ByteString (recv)
 import           Network.WebSockets
 import           Paths_reanimate           (getDataFileName)
@@ -34,16 +34,15 @@ daemon = do
   state <- newMVar (0, Map.empty)
   connsRef <- newMVar Map.empty
 
-  parent <- newEmptyMVar
+  self <- myThreadId
 
-  dTid <- daemonReceive parent $ \msg ->
+  dTid <- daemonReceive self $ \msg ->
     case msg of
       WebStatus _status -> return ()
       WebError _err -> return ()
       WebFrameCount count -> do
         void $ swapMVar state (count, Map.empty)
         conns <- readMVar connsRef
-        putStrLn $ "Browser connections: " ++ show (Map.size conns)
         F.forM_ conns $ \(conn) -> do
           sendWebMessage conn (WebFrameCount count)
         when (Map.null conns) openViewer
@@ -56,37 +55,59 @@ daemon = do
 
   openViewer
 
-
   let options = ServerOptions
         { serverHost = "127.0.0.1"
         , serverPort = 9161
         , serverConnectionOptions = opts
         , serverRequirePong = Nothing }
-  putMVar parent =<< forkIO (runServerWithOptions options (\pending -> do
-      tid <- myThreadId
 
-      conn <- acceptRequest pending
+  logMsg "WS server is running."
 
-      modifyMVar_ connsRef $ pure . Map.insert tid conn
 
-      (count, frames) <- readMVar state
-      sendWebMessage conn (WebFrameCount count)
-      forM_ (Map.toList frames) $ \(nth, path) ->
-        sendWebMessage conn (WebFrame nth path)
+  runServerWithOptions options (\pending -> do
+        tid <- myThreadId
 
-      let loop = do
-            -- FIXME: We don't use msg here.
-            _msg <- receiveData conn :: IO T.Text
-            loop
-          cleanup =
-            modifyMVar_ connsRef $ pure . Map.delete tid
-      loop `finally` cleanup)
-    `finally` (killThread dTid >> putStrLn "daemon server quit"))
+        conn <- acceptRequest pending
 
-daemonReceive :: MVar ThreadId -> (WebMessage -> IO ()) -> IO ThreadId
+        modifyMVar_ connsRef $ pure . Map.insert tid conn
+
+        conns <- readMVar connsRef
+        logMsg $ "Browser connections: " ++ show (Map.size conns)
+
+        (count, frames) <- readMVar state
+        when (count > 0) $ do
+          sendWebMessage conn (WebFrameCount count)
+          forM_ (Map.toList frames) $ \(nth, path) ->
+            sendWebMessage conn (WebFrame nth path)
+
+        let loop = do
+              -- FIXME: We don't use msg here.
+              _msg <- receiveData conn :: IO T.Text
+              loop
+            cleanup = do
+              modifyMVar_ connsRef $ pure . Map.delete tid
+              nConns <- Map.size <$> readMVar connsRef
+              logMsg $ "Browser connections: " ++ show nConns
+              when (nConns == 0) $ do
+                threadDelay (second * 5)
+                nConns' <- Map.size <$> readMVar connsRef
+                logMsg $ "Browser connections (check): " ++ show nConns'
+                when (nConns'==0) $ killThread self
+        loop `finally` cleanup)
+     `finally` (killThread dTid >> logMsg "daemon server quit")
+     `E.catch` (\e@E.SomeException{} -> logMsg $ "Exception: " ++ show e)
+
+second :: Int
+second = 10^(6::Int)
+
+logMsg :: String -> IO ()
+logMsg msg = appendFile "log" (msg++"\n")
+
+daemonReceive :: ThreadId -> (WebMessage -> IO ()) -> IO ThreadId
 daemonReceive parent cb = withSocketsDo $ do
     addr <- resolve
     sock <- open addr
+    logMsg "daemon sock is open"
     forkIO $ handler sock `finally` close sock
   where
     handler sock = forever $ E.bracketOnError (accept sock) (close . fst) $ \(conn, _peer) -> do
@@ -94,7 +115,9 @@ daemonReceive parent cb = withSocketsDo $ do
       case words inp of
         ["frame_count", n]   -> cb $ WebFrameCount (read n)
         ["frame", nth, path] -> cb $ WebFrame (read nth) path
-        ["stop"]             -> killThread =<< readMVar parent
+        ["stop"]             -> do
+          logMsg "Received STOP"
+          killThread parent
         []                   -> return ()
         _                    -> error $ "Bad message: " ++ inp
       gracefulClose conn 5000
@@ -104,9 +127,7 @@ daemonReceive parent cb = withSocketsDo $ do
               , addrSocketType = Stream
               }
         head <$> getAddrInfo (Just hints) (Just "127.0.0.1") (Just "9162")
-    -- openSocket is only available in newer versions of 'network'.
-    oSocket addr = socket (addrFamily addr) (addrSocketType addr) (addrProtocol addr)
-    open addr = E.bracketOnError (oSocket addr) close $ \sock -> do
+    open addr = E.bracketOnError (openSocket addr) close $ \sock -> do
       setSocketOption sock ReuseAddr 1
       withFdSocket sock setCloseOnExecIfNeeded
       bind sock $ addrAddress addr

@@ -39,6 +39,11 @@ Source-Repository head
 
 library
   hs-source-dirs:     src
+  if os(windows)
+    hs-source-dirs:   windows
+  else
+    hs-source-dirs:   unix
+    build-depends:    unix
   default-language:   Haskell2010
   default-extensions: PackageImports, PatternSynonyms
   exposed-modules:    Reanimate
@@ -98,6 +103,7 @@ library
                       Reanimate.Scene.Var
                       Reanimate.Scene.Sprite
                       Reanimate.Scene.Object
+                      Detach
   autogen-modules:    Paths_reanimate
   build-depends:
     base                 >=4.10 && <5,
@@ -145,8 +151,9 @@ library
     xml                  >=1.3.14,
     cryptohash-sha256,
     base64-bytestring,
-    network
+    network              >=3.1.2.0
   ghc-options: -Wall -fno-ignore-asserts
+
 
 test-suite spec
   type: exitcode-stdio-1.0

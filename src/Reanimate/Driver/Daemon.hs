@@ -10,6 +10,9 @@ import qualified Reanimate.Driver.Server   as Server
 import           System.FSNotify
 import           System.FilePath
 import           System.Environment
+
+import Detach
+
 {-
 Main run message:
 
@@ -72,7 +75,7 @@ Daemon port: 9162?
 
 reanimateLive :: IO String
 reanimateLive = do
-  ensureDaemon
+  void ensureDaemon
   args <- getArgs
   case args of
     ["primed"] -> waitForChanges
@@ -115,7 +118,7 @@ sendCommand cmd = withSocketsDo $ handle (\SomeException{} -> return ()) $ do
     resolve = do
         let hints = defaultHints { addrSocketType = Stream }
         head <$> getAddrInfo (Just hints) (Just "127.0.0.1") (Just "9162")
-    open addr = E.bracketOnError (oSocket addr) close $ \sock -> do
+    open addr = E.bracketOnError (openSocket addr) close $ \sock -> do
       connect sock $ addrAddress addr
       return sock
 
@@ -127,24 +130,22 @@ hasDaemon = withSocketsDo $ handle (\SomeException{} -> return False) $ do
     resolve = do
         let hints = defaultHints { addrSocketType = Stream }
         head <$> getAddrInfo (Just hints) (Just "127.0.0.1") (Just "9162")
-    open addr = E.bracketOnError (oSocket addr) close $ \sock -> do
+    open addr = E.bracketOnError (openSocket addr) close $ \sock -> do
       connect sock $ addrAddress addr
       return sock
 
--- openSocket is only available in newer versions of 'network'.
-oSocket :: AddrInfo -> IO Socket
-oSocket addr = socket (addrFamily addr) (addrSocketType addr) (addrProtocol addr)
-
-ensureDaemon :: IO ()
+ensureDaemon :: IO Bool
 ensureDaemon = do
   daemon <- hasDaemon
-  unless daemon localDaemon
+  if daemon
+    then pure True
+    else localDaemon
 
 killDaemon :: IO ()
 killDaemon = sendCommand DaemonStop
 
-localDaemon :: IO ()
+localDaemon :: IO Bool
 localDaemon = do
   killDaemon
-  Server.daemon
+  detach Server.daemon
 
