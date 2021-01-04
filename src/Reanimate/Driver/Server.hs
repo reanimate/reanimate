@@ -12,7 +12,11 @@ import qualified Data.ByteString.Char8     as BS
 import qualified Data.Foldable             as F
 import qualified Data.Map                  as Map
 import qualified Data.Text                 as T
-import           Network.Socket
+import           Network.Socket            (AddrInfo (..), AddrInfoFlag (..), SocketOption (..),
+                                            SocketType (Stream), accept, bind, close, defaultHints,
+                                            getAddrInfo, gracefulClose, listen,
+                                            setCloseOnExecIfNeeded, setSocketOption, socket,
+                                            withFdSocket, withSocketsDo)
 import           Network.Socket.ByteString (recv)
 import           Network.WebSockets
 import           Paths_reanimate           (getDataFileName)
