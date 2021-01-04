@@ -115,7 +115,7 @@ sendCommand cmd = withSocketsDo $ handle (\SomeException{} -> return ()) $ do
     resolve = do
         let hints = defaultHints { addrSocketType = Stream }
         head <$> getAddrInfo (Just hints) (Just "127.0.0.1") (Just "9162")
-    open addr = E.bracketOnError (openSocket addr) close $ \sock -> do
+    open addr = E.bracketOnError (oSocket addr) close $ \sock -> do
       connect sock $ addrAddress addr
       return sock
 
@@ -127,9 +127,13 @@ hasDaemon = withSocketsDo $ handle (\SomeException{} -> return False) $ do
     resolve = do
         let hints = defaultHints { addrSocketType = Stream }
         head <$> getAddrInfo (Just hints) (Just "127.0.0.1") (Just "9162")
-    open addr = E.bracketOnError (openSocket addr) close $ \sock -> do
+    open addr = E.bracketOnError (oSocket addr) close $ \sock -> do
       connect sock $ addrAddress addr
       return sock
+
+-- openSocket is only available in newer versions of 'network'.
+oSocket :: AddrInfo -> IO Socket
+oSocket addr = socket (addrFamily addr) (addrSocketType addr) (addrProtocol addr)
 
 ensureDaemon :: IO ()
 ensureDaemon = do

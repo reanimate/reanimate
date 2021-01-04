@@ -100,7 +100,9 @@ daemonReceive parent cb = withSocketsDo $ do
               , addrSocketType = Stream
               }
         head <$> getAddrInfo (Just hints) (Just "127.0.0.1") (Just "9162")
-    open addr = E.bracketOnError (openSocket addr) close $ \sock -> do
+    -- openSocket is only available in newer versions of 'network'.
+    oSocket addr = socket (addrFamily addr) (addrSocketType addr) (addrProtocol addr)
+    open addr = E.bracketOnError (oSocket addr) close $ \sock -> do
       setSocketOption sock ReuseAddr 1
       withFdSocket sock setCloseOnExecIfNeeded
       bind sock $ addrAddress addr

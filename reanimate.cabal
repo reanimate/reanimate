@@ -91,7 +91,6 @@ library
                       Reanimate.Driver.CLI
                       Reanimate.Driver.Magick
                       Reanimate.Driver.Server
-                      Reanimate.Driver.Compile
                       Reanimate.Driver.Daemon
                       Reanimate.Misc
                       Paths_reanimate
