@@ -14,6 +14,8 @@ RUN cd playground && \
 # Add source after dependencies have been installed as to not invalidate the caches
 ADD data data
 ADD src src
+ADD unix unix
+ADD windows windows
 ADD .git .git
 ADD viewer-elm viewer-elm
 ADD Setup.hs ./
