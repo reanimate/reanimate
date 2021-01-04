@@ -61,18 +61,12 @@ daemon = do
         , serverConnectionOptions = opts
         , serverRequirePong = Nothing }
 
-  logMsg "WS server is running."
-
-
   runServerWithOptions options (\pending -> do
         tid <- myThreadId
 
         conn <- acceptRequest pending
 
         modifyMVar_ connsRef $ pure . Map.insert tid conn
-
-        conns <- readMVar connsRef
-        logMsg $ "Browser connections: " ++ show (Map.size conns)
 
         (count, frames) <- readMVar state
         when (count > 0) $ do
@@ -87,27 +81,20 @@ daemon = do
             cleanup = do
               modifyMVar_ connsRef $ pure . Map.delete tid
               nConns <- Map.size <$> readMVar connsRef
-              logMsg $ "Browser connections: " ++ show nConns
               when (nConns == 0) $ do
                 threadDelay (second * 5)
                 nConns' <- Map.size <$> readMVar connsRef
-                logMsg $ "Browser connections (check): " ++ show nConns'
                 when (nConns'==0) $ killThread self
         loop `finally` cleanup)
-     `finally` (killThread dTid >> logMsg "daemon server quit")
-     `E.catch` (\e@E.SomeException{} -> logMsg $ "Exception: " ++ show e)
+     `finally` (killThread dTid)
 
 second :: Int
 second = 10^(6::Int)
-
-logMsg :: String -> IO ()
-logMsg msg = appendFile "log" (msg++"\n")
 
 daemonReceive :: ThreadId -> (WebMessage -> IO ()) -> IO ThreadId
 daemonReceive parent cb = withSocketsDo $ do
     addr <- resolve
     sock <- open addr
-    logMsg "daemon sock is open"
     forkIO $ handler sock `finally` close sock
   where
     handler sock = forever $ E.bracketOnError (accept sock) (close . fst) $ \(conn, _peer) -> do
@@ -115,9 +102,7 @@ daemonReceive parent cb = withSocketsDo $ do
       case words inp of
         ["frame_count", n]   -> cb $ WebFrameCount (read n)
         ["frame", nth, path] -> cb $ WebFrame (read nth) path
-        ["stop"]             -> do
-          logMsg "Received STOP"
-          killThread parent
+        ["stop"]             -> killThread parent
         []                   -> return ()
         _                    -> error $ "Bad message: " ++ inp
       gracefulClose conn 5000

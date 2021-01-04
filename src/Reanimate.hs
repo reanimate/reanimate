@@ -36,6 +36,7 @@ no other parameters are given. Key features:
 module Reanimate
   ( reanimate,
     reanimateLive,
+    reanimateLiveEntry,
     -- * Animations
     SVG,
     Time,

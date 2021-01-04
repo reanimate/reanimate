@@ -73,6 +73,11 @@ Daemon port: 9162?
   - Refreshing the code will re-open closed browser windows.
 -}
 
+-- | Load a reanimate program in GHCi and make sure 'main' is available.
+--   Then run:
+-- @
+-- :cmd reanimateLive
+-- @
 reanimateLive :: IO String
 reanimateLive = do
   void ensureDaemon
@@ -83,6 +88,23 @@ reanimateLive = do
   return $ unlines
         [ ":r"
         , ":main"
+        , ":cmd System.Environment.withArgs [\"primed\"] Reanimate.reanimateLive" ]
+
+-- | Load an animation in GHCi. Anything of type 'Animation' can be live reloaded.
+--
+-- @
+-- :cmd reanimateLiveEntry "drawCircle"
+-- @
+reanimateLiveEntry :: String -> IO String
+reanimateLiveEntry animation = do
+  void ensureDaemon
+  args <- getArgs
+  case args of
+    ["primed"] -> waitForChanges
+    _ -> return ()
+  return $ unlines
+        [ ":r"
+        , "Reanimate.reanimate (" ++ animation ++ ")"
         , ":cmd System.Environment.withArgs [\"primed\"] Reanimate.reanimateLive" ]
 
 waitForChanges :: IO ()
