@@ -1,4 +1,4 @@
-resolver: lts-16.12
+resolver: lts-16.27
 
 allow-newer: false
 

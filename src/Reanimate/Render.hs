@@ -13,6 +13,7 @@ to ever directly use the functions in this module.
 module Reanimate.Render
   ( render
   , renderSvgs
+  , renderSvgs_
   , renderSnippets        -- :: Animation -> IO ()
   , renderLimitedFrames
   , Format(..)
@@ -44,6 +45,7 @@ import           System.Exit               (ExitCode (ExitFailure), exitWith)
 import           System.FileLock           (SharedExclusive (..), unlockFile, withTryFileLock)
 import           System.FilePath           (replaceExtension, (<.>), (</>))
 import           System.IO
+import           System.IO.Temp            (createTempDirectory, getCanonicalTemporaryDirectory)
 import           Text.Printf               (printf)
 
 idempotentFile :: FilePath -> IO () -> IO ()
@@ -75,6 +77,28 @@ renderSvgs folder offset _prettyPrint ani = do
     withMVar lock $ \_ -> do
       print nth
       hFlush stdout
+ where
+  rate       = 60
+  frameCount = round (duration ani * fromIntegral rate) :: Int
+  errHandler (ErrorCall msg) = do
+    hPutStrLn stderr msg
+    exitWith (ExitFailure 1)
+
+renderSvgs_ :: Animation -> (Int -> FilePath -> IO ()) -> IO ()
+renderSvgs_ ani cb = do
+  tmp <- getCanonicalTemporaryDirectory
+  tmpDir <- createTempDirectory tmp "reanimate"
+  lock <- newMVar ()
+  handle errHandler $ concurrentForM_ (frameOrder rate frameCount) $ \nth' -> do
+    let nth = (nth') `mod` frameCount
+        now = (duration ani / (fromIntegral frameCount - 1)) * fromIntegral nth
+        frame = frameAt (if frameCount <= 1 then 0 else now) ani
+        path = tmpDir </> show nth <.> "svg"
+        svg = renderSvg Nothing Nothing frame
+
+    idempotentFile path $
+      writeFile path svg
+    withMVar lock $ \_ -> cb nth path
  where
   rate       = 60
   frameCount = round (duration ani * fromIntegral rate) :: Int
