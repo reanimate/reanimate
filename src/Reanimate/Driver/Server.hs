@@ -14,7 +14,7 @@ import qualified Data.Map                  as Map
 import qualified Data.Text                 as T
 import           Network.Socket            (AddrInfo (..), AddrInfoFlag (..), SocketOption (..),
                                             SocketType (Stream), accept, bind, close, defaultHints,
-                                            getAddrInfo, gracefulClose, listen, socket,
+                                            getAddrInfo, listen, socket,
                                             setCloseOnExecIfNeeded, setSocketOption, withFdSocket,
                                             withSocketsDo)
 import           Network.Socket.ByteString (recv)
@@ -105,7 +105,7 @@ daemonReceive parent cb = withSocketsDo $ do
         ["stop"]             -> killThread parent
         []                   -> return ()
         _                    -> error $ "Bad message: " ++ inp
-      gracefulClose conn 5000
+      close conn
     resolve = do
         let hints = defaultHints {
                 addrFlags = [AI_PASSIVE]

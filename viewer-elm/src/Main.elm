@@ -378,7 +378,7 @@ frameView bestFrame frameIndex frameCount frames showingHelp frameDeltas isPause
         image =
             case bestFrame of
                 Just svgUrl ->
-                    Html.img [ src svgUrl ] []
+                    Html.img [ src ("file://" ++ svgUrl) ] []
 
                 Nothing ->
                     Html.text ""

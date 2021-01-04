@@ -2,7 +2,7 @@
 
 ## Build it
 ```bash
-cd reanimate/elm-viewer
+cd reanimate/viewer-elm
 npm install
 npm run build
 npm run minify
