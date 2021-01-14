@@ -113,7 +113,7 @@ library
                       Detach
   autogen-modules:    Paths_reanimate
   if flag(no-hgeometry)
-    ghc-options: -DNO_HGEOMETRY
+    cpp-options: -DNO_HGEOMETRY
   else
     build-depends:
       hgeometry               >=0.11.0.0,
