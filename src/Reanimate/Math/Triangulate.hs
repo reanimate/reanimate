@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE CPP #-}
 {-# OPTIONS_HADDOCK hide #-}
 module Reanimate.Math.Triangulate
   ( Triangulation
@@ -10,6 +11,32 @@ module Reanimate.Math.Triangulate
   , triangulate
   )
 where
+
+#if NO_HGEOMETRY
+
+import qualified Data.Vector                                          as V
+import           Control.Monad.ST
+import           Reanimate.Math.Common
+
+type Triangulation = V.Vector [Int]
+
+edgesToTriangulation :: Int -> [(Int, Int)] -> Triangulation
+edgesToTriangulation = error "no hgeometry"
+
+edgesToTriangulationM :: Int -> [(Int, Int)] -> ST s (V.MVector s [Int])
+edgesToTriangulationM = error "no hgeometry"
+
+trianglesToTriangulation :: Int -> V.Vector (Int, Int, Int) -> Triangulation
+trianglesToTriangulation = error "no hgeometry"
+
+trianglesToTriangulationM
+  :: Int -> V.Vector (Int, Int, Int) -> ST s (V.MVector s [Int])
+trianglesToTriangulationM = error "no hgeometry"
+
+triangulate :: forall a. (Fractional a, Ord a) => Ring a -> Triangulation
+triangulate = error "no hgeometry"
+
+#else
 
 import           Algorithms.Geometry.PolygonTriangulation.Triangulate (triangulate')
 import           Algorithms.Geometry.PolygonTriangulation.Types
@@ -83,3 +110,5 @@ triangulate r = edgesToTriangulation (ringSize r) ds
       [ Point2 x y :+ n
       | (n,V2 x y) <- zip [0..] (V.toList (ringUnpack r)) ]
     -- ringUnpack
+
+#endif

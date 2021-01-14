@@ -37,6 +37,13 @@ Source-Repository head
     Type:      git
     Location:  git://github.com/lemmih/reanimate.git
 
+flag no-hgeometry
+  description:
+    Disable all features that depend on hgeometry. Should only
+    be used when developing new hgeometry algorithms.
+  default: False
+  manual: True
+
 library
   hs-source-dirs:     src
   if os(windows)
@@ -105,6 +112,12 @@ library
                       Reanimate.Scene.Object
                       Detach
   autogen-modules:    Paths_reanimate
+  if flag(no-hgeometry)
+    ghc-options: -DNO_HGEOMETRY
+  else
+    build-depends:
+      hgeometry               >=0.11.0.0,
+      hgeometry-combinatorial >=0.11.0.0
   build-depends:
     base                 >=4.10 && <5,
     JuicyPixels          >=3.3.3,
@@ -126,8 +139,6 @@ library
     fsnotify             >=0.3.0.1,
     geojson              >=3.0.4,
     hashable             >=1.3.0.0,
-    hgeometry            >=0.11.0.0,
-    hgeometry-combinatorial >=0.11.0.0,
     lens                 >=4.16.1,
     linear               >=1.20.8,
     matrix               >=0.3.6.1,

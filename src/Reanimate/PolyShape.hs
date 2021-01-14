@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-|
 Module      : Reanimate.PolyShape
 Copyright   : Written by David Himmelstrup
@@ -40,15 +41,8 @@ module Reanimate.PolyShape
   , plGroupTouching
   ) where
 
-import           Algorithms.Geometry.PolygonTriangulation.Triangulate (triangulate')
 import           Control.Lens                                         ((&), (.~), (^.))
-import           Data.Ext
-import           Data.Geometry.PlanarSubdivision                      (PolygonFaceData (..))
-import qualified Data.Geometry.Point                                  as Geo
-import qualified Data.Geometry.Polygon                                as Geo
 import           Data.List                                            (nub, partition, sortOn)
-import qualified Data.PlaneGraph                                      as Geo
-import           Data.Proxy                                           (Proxy (Proxy))
 import qualified Data.Vector                                          as V
 import           Geom2D.CubicBezier.Linear                            (ClosedPath (..),
                                                                        CubicBezier (..),
@@ -71,6 +65,17 @@ import           Reanimate.Constants
 import           Reanimate.Math.Polygon                               (Polygon, mkPolygon, pArea,
                                                                        pIsCCW)
 import           Reanimate.Svg
+
+#if !defined(NO_HGEOMETRY)
+import           Algorithms.Geometry.PolygonTriangulation.Triangulate (triangulate')
+
+import           Data.Ext
+import           Data.Geometry.PlanarSubdivision                      (PolygonFaceData (..))
+import qualified Data.Geometry.Point                                  as Geo
+import qualified Data.Geometry.Polygon                                as Geo
+import qualified Data.PlaneGraph                                      as Geo
+import           Data.Proxy                                           (Proxy (Proxy))
+#endif
 
 -- | Shape drawn by continuous line. May have overlap, may be convex.
 newtype PolyShape = PolyShape { unPolyShape :: ClosedPath Double }
@@ -201,6 +206,9 @@ plDecompose' tol =
 
 -- | Split polygon into smaller, convex polygons.
 decomposePolygon :: [RPoint] -> [[RPoint]]
+#if defined(NO_HGEOMETRY)
+decomposePolygon = error "no hgeometry"
+#else
 decomposePolygon poly =
   [ [ V2 x y
     | v <- V.toList (Geo.boundaryVertices f pg)
@@ -212,6 +220,7 @@ decomposePolygon poly =
     p = Geo.fromPoints $
       [ Geo.Point2 x y :+ ()
       | V2 x y <- poly ]
+#endif
 
 plPolygonify :: Double -> PolyShape -> [RPoint]
 plPolygonify tol shape =
