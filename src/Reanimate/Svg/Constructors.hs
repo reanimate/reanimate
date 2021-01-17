@@ -250,8 +250,8 @@ withId idTag = attrId ?~ idTag
 -- | @mkRect width height@ creates a rectangle with given @with@ and @height@, centered at @(0, 0)@.
 -- See <https://developer.mozilla.org/en-US/docs/Web/SVG/Element/rect>
 mkRect :: Double -> Double -> Tree
-mkRect width height = translate (-width/2) (-height/2) $ rectangleTree $ defaultSvg
-  & rectUpperLeftCorner .~ (Num 0, Num 0)
+mkRect width height = rectangleTree $ defaultSvg
+  & rectUpperLeftCorner .~ (Num (-width/2), Num (-height/2))
   & rectWidth ?~ Num width
   & rectHeight ?~ Num height
 
