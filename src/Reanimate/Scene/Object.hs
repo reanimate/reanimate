@@ -7,6 +7,7 @@ import           Control.Monad          (forM_, void)
 import           Control.Monad.State    (State, execState)
 import           Data.Monoid            (Last (getLast))
 import           Graphics.SvgTree       (Number (..), Tree, pattern None, strokeWidth, toUserUnit)
+import           Codec.Picture
 import           Linear.V2              (R1 (_x), R2 (_y), V2 (..))
 import           Linear.Vector          (Additive (lerp), (^*))
 import           Reanimate.Animation
@@ -49,6 +50,7 @@ data ObjectData a = ObjectData
     -- | Top, right, bottom, left
     _oMargin      :: (Double, Double, Double, Double),
     _oBB          :: (Double, Double, Double, Double),
+    _oFillColor   :: (Pixel8, Pixel8, Pixel8),
     _oOpacity     :: Double,
     _oShown       :: Bool,
     _oZIndex      :: Int,
@@ -92,6 +94,10 @@ oMargin = lens _oMargin $ \obj val -> obj {_oMargin = val}
 --   and has the same limitations.
 oBB :: Getter (ObjectData a) (Double, Double, Double, Double)
 oBB = to _oBB
+
+-- | Object fill color. Default: (0, 0, 0) (black).
+oFillColor :: Lens' (ObjectData a) (Pixel8, Pixel8, Pixel8)
+oFillColor = lens _oFillColor $ \obj val -> obj {_oFillColor = val}
 
 -- | Object opacity. Default: 1
 oOpacity :: Lens' (ObjectData a) Double
@@ -296,6 +302,7 @@ newObject val = do
           _oContext = id,
           _oMargin = (0.5, 0.5, 0.5, 0.5),
           _oBB = boundingBox svg,
+          _oFillColor = (0, 0, 0),
           _oOpacity = 1,
           _oShown = False,
           _oZIndex = 1,
@@ -310,8 +317,9 @@ newObject val = do
         then
           uncurryV2 translate _oTranslate $
             oScaleApply obj $
-              withGroupOpacity _oOpacity $
-                mkGroup [_oContext _oSVG]
+              withFillColorPixel (uncurry3 opaquePixel _oFillColor) $
+              	withGroupOpacity _oOpacity $
+                  mkGroup [_oContext _oSVG]
         else None
   spriteModify sprite $ do
     ~ObjectData {_oZIndex = z} <- unVar ref
@@ -332,6 +340,12 @@ oScaleApply ObjectData {..} =
 
 uncurryV2 :: (a -> a -> b) -> V2 a -> b
 uncurryV2 fn (V2 a b) = fn a b
+
+uncurry3 :: (a -> a -> a -> b) -> (a, a, a) -> b
+uncurry3 fn (a, b, c) = fn a b c
+
+opaquePixel :: Pixel8 -> Pixel8 -> Pixel8 -> PixelRGBA8
+opaquePixel a b c = PixelRGBA8 a b c 255
 
 -------------------------------------------------------------------------------
 -- Graphical transformations

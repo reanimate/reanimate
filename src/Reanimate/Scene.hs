@@ -83,6 +83,7 @@ module Reanimate.Scene
     oBBMinY,
     oBBWidth,
     oBBHeight,
+    oFillColor,
     oOpacity,
     oShown,
     oZIndex,
