@@ -51,6 +51,7 @@ data ObjectData a = ObjectData
     _oMargin      :: (Double, Double, Double, Double),
     _oBB          :: (Double, Double, Double, Double),
     _oFillColor   :: (Pixel8, Pixel8, Pixel8),
+    _oStrokeColor :: (Pixel8, Pixel8, Pixel8),
     _oOpacity     :: Double,
     _oShown       :: Bool,
     _oZIndex      :: Int,
@@ -98,6 +99,10 @@ oBB = to _oBB
 -- | Object fill color. Default: (0, 0, 0) (black).
 oFillColor :: Lens' (ObjectData a) (Pixel8, Pixel8, Pixel8)
 oFillColor = lens _oFillColor $ \obj val -> obj {_oFillColor = val}
+
+-- | Object stroke color. Default: (0, 0, 0) (black).
+oStrokeColor :: Lens' (ObjectData a) (Pixel8, Pixel8, Pixel8)
+oStrokeColor = lens _oFillColor $ \obj val -> obj {_oStrokeColor = val}
 
 -- | Object opacity. Default: 1
 oOpacity :: Lens' (ObjectData a) Double
@@ -303,6 +308,7 @@ newObject val = do
           _oMargin = (0.5, 0.5, 0.5, 0.5),
           _oBB = boundingBox svg,
           _oFillColor = (0, 0, 0),
+          _oStrokeColor = (0, 0, 0),
           _oOpacity = 1,
           _oShown = False,
           _oZIndex = 1,
@@ -317,6 +323,7 @@ newObject val = do
         then
           uncurryV2 translate _oTranslate $
             oScaleApply obj $
+              withStrokeColorPixel (uncurry3 opaquePixel _oStrokeColor) $
               withFillColorPixel (uncurry3 opaquePixel _oFillColor) $
               	withGroupOpacity _oOpacity $
                   mkGroup [_oContext _oSVG]
