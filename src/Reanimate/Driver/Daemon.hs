@@ -111,7 +111,7 @@ reanimateLiveEntry animation = do
   return $ unlines
         [ ":r"
         , "Reanimate.reanimate (" ++ animation ++ ")"
-        , ":cmd System.Environment.withArgs [\"primed\"] Reanimate.reanimateLive" ]
+        , ":cmd System.Environment.withArgs [\"primed\"] (Reanimate.reanimateLiveEntry " ++ show animation ++ ")"]
 
 waitForChanges :: IO ()
 waitForChanges = withManager $ \mgr -> do
