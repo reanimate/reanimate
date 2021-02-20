@@ -11,7 +11,6 @@ import           Codec.Picture
 import           Codec.Picture.Types
 import           Control.Lens          ((&), (^.))
 import           Control.Monad
-import           Data.Monoid
 import           Graphics.SvgTree
 import           System.Random
 import "random-shuffle" System.Random.Shuffle
@@ -75,7 +74,7 @@ drawAnimation' :: Maybe Int -> Double -> Double -> SVG -> Animation
 drawAnimation' mbSeed fillDur step svg = scene $ do
   forM_ (zip [0..] $ shuf $ svgGlyphs svg) $ \(n, (fn, attr, tree)) -> do
     let sWidth =
-          case toUserUnit defaultDPI <$> getLast (attr ^. strokeWidth) of
+          case toUserUnit defaultDPI <$> (attr ^. strokeWidth) of
             Just (Num d) -> d
             _            -> defaultStrokeWidth
     fork $ do
