@@ -42,7 +42,6 @@ import           Control.Monad.State  (runState, state)
 import qualified Data.ByteString      as B
 import           Data.Foldable        (Foldable (fold))
 import           Data.Hashable        (Hashable)
-import           Data.Monoid          (Last (Last))
 import           Data.Text            (Text)
 import qualified Data.Text            as T
 import qualified Data.Text.Encoding   as T
@@ -192,7 +191,7 @@ postprocess =
     . lowerIds
     . mapTree clearDrawAttr
   where
-    clearDrawAttr t = t & strokeColor .~ Last Nothing
+    clearDrawAttr t = t & strokeColor .~ Nothing
 
 enginePostprocess :: TexEngine -> Tree -> Tree
 enginePostprocess LuaLaTeX svg = translate 0 (svgHeight svg) svg
@@ -202,7 +201,7 @@ removeClipPaths :: SVG -> SVG
 removeClipPaths = mapTree worker
   where
     worker ClipPathTree {} = None
-    worker t               = t & clipRule .~ Last Nothing & clipPathRef .~ Last Nothing
+    worker t               = t & clipRule .~ Nothing & clipPathRef .~ Nothing
 
 -- executable, arguments, header, tex
 latexToSVG :: TexEngine -> String -> String -> [String] -> Text -> IO Tree
