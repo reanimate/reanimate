@@ -1,4 +1,4 @@
-FROM haskell:8.10
+FROM haskell:8.8.4
 
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
@@ -21,5 +21,5 @@ WORKDIR /src
 
 # Install reanimate dependencies and cache the layer
 ADD reanimate.cabal stack.yaml ./
-RUN stack build --only-dependencies --haddock
+RUN stack build --only-dependencies --no-install-ghc --system-ghc --haddock
 RUN rm reanimate.cabal stack.yaml
