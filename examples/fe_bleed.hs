@@ -18,7 +18,6 @@ import           Codec.Picture.Types
 import           Control.Lens                    hiding (magma)
 import           Control.Monad
 import           Data.Fixed
-import           Data.Monoid
 import           Graphics.SvgTree
 import           Linear.V2
 import           Linear.Vector
@@ -129,7 +128,7 @@ main = reanimate $ scene $ do
         & filterWidth .~ pure (Percent 1)
         & filterHeight .~ pure (Percent 1)
       , FETurbulence $ defaultSvg
-        & turbulenceBaseFrequency .~ (2, Last Nothing)
+        & turbulenceBaseFrequency .~ (2, Nothing)
         & turbulenceType .~ FractalNoiseType
         & turbulenceNumOctaves .~ 1
         & turbulenceSeed .~ 1

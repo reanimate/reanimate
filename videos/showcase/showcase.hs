@@ -294,7 +294,7 @@ drawAnimation' :: Double -> Double -> SVG -> Animation
 drawAnimation' fillDur step svg = scene $ do
   forM_ (zip [0..] $ svgGlyphs svg) $ \(n, (fn, attr, tree)) -> do
     let sWidth =
-          case toUserUnit defaultDPI <$> getLast (attr ^. strokeWidth) of
+          case toUserUnit defaultDPI <$> (attr ^. strokeWidth) of
             Just (Num d) -> d
             _            -> defaultStrokeWidth
     fork $ do

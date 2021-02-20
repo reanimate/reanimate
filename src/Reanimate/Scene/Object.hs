@@ -5,7 +5,6 @@ module Reanimate.Scene.Object where
 import           Control.Lens
 import           Control.Monad          (forM_, void)
 import           Control.Monad.State    (State, execState)
-import           Data.Monoid            (Last (getLast))
 import           Graphics.SvgTree       (Number (..), Tree, pattern None, strokeWidth, toUserUnit)
 import           Linear.V2              (R1 (_x), R2 (_y), V2 (..))
 import           Linear.Vector          (Additive (lerp), (^*))
@@ -500,7 +499,7 @@ oDraw :: SVG -> Animation
 oDraw = oStagger $ \svg -> scene $
   forM_ (svgGlyphs $ pathify svg) $ \(ctx, attr, node) -> do
     let sWidth =
-          case toUserUnit defaultDPI <$> getLast (attr ^. strokeWidth) of
+          case toUserUnit defaultDPI <$> (attr ^. strokeWidth) of
             Just (Num d) -> max defaultStrokeWidth d
             _            -> defaultStrokeWidth
     -- wait 1
