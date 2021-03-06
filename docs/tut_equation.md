@@ -363,7 +363,7 @@ API references:
   [oScaleIn](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Scene.html#v:oScaleIn),
   [oGrow](https://hackage.haskell.org/package/reanimate/docs/Reanimate-Scene.html#v:oGrow).
 
-Let's use the `oDraw` function to draw text on the screen and let's make sure the text is right-aligned:
+Let's use the `oDraw` function to draw text on the screen and let's make sure the text is left-aligned:
 
 <pre class="interactive">
 animation :: Animation
