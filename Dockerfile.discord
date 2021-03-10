@@ -21,7 +21,7 @@ ADD viewer-elm viewer-elm
 ADD Setup.hs ./
 
 # Build reanimate
-RUN stack build --no-install-ghc --system-ghc
+RUN STACK_YAML=stack-lts-16.yaml stack build --no-install-ghc --system-ghc
 
 # Add bot sources and build it
 ADD discord-bot discord-bot
