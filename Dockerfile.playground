@@ -3,8 +3,8 @@ FROM reanimate/base
 WORKDIR /src
 
 # Install reanimate dependencies and cache the layer
-ADD reanimate.cabal stack.yaml ./
-RUN stack build --only-dependencies --no-install-ghc --system-ghc --haddock
+ADD reanimate.cabal stack-lts-16.yaml ./
+RUN STACK_YAML=stack-lts-16.yaml stack build --only-dependencies --no-install-ghc --system-ghc --haddock
 
 # Install playground dependencies and cache the layer
 ADD playground/playground.cabal playground/stack.yaml ./playground/
