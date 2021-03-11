@@ -1,8 +1,6 @@
 name: Stackage nightly
 
 on:
-  push:
-    branches: [ master ]
   pull_request:
     branches: [ master ]
 
@@ -35,9 +33,23 @@ jobs:
     - name: Build nightly
       run: |
         rm -fr discord-bot playground dist-newstyle
-        rm -f stack.yaml && stack init --resolver nightly
-        # Build twice because the stackage servers are incredibly unreliable.
-        stack build --resolver nightly --haddock --test --only-dependencies --bench --no-run-benchmarks || stack build --resolver nightly --haddock --test --only-dependencies --bench --no-run-benchmarks
+        rm -f stack.yaml
+        stack init --resolver nightly \
+          && echo "::set-env passed=true" \
+          || echo "::set-env passed=false"
+        stack build --resolver nightly --haddock --test --only-dependencies --bench --no-run-benchmarks \
+          && echo "::set-env passed=true" \
+          || echo "::set-env passed=false"
     - name: Test nightly
+      if: env.passed == 'true'
       run: |
         stack build --resolver nightly --haddock --test --bench --no-run-benchmarks
+    - name: Test nightly
+      if: env.passed == 'false'
+      uses: mshick/add-pr-comment@v1
+      with:
+        message: |
+          Warning: Failed to build against stack nightly.
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        repo-token-user-login: 'github-actions[bot]' # The user.login for temporary GitHub tokens
+        allow-repeats: false # This is the default
