@@ -7,7 +7,20 @@
 
 # Getting started
 
-## Viewing a basic animation
+Reanimate offers stack templates for getting started with a minimal example and
+automatic code reloading. Running the commands below will put a one-line animation
+in the 'animate' folder and then display the animation in a browser window. You can
+then edit the animation source code and watch the animation update in real time:
+
+```console
+$ stack new animate github:reanimate/plain
+$ cd animate/
+$ # both 'cabal repl' and 'stack repl' can be used here:
+$ cabal repl
+:cmd reanimateLive
+```
+
+## Running examples from the repository
 
 ```console
 $ git clone https://github.com/reanimate/reanimate.git
