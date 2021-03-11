@@ -36,5 +36,5 @@
  100% (  3 /  3) in 'Reanimate.Math.Balloon'
  100% (  3 /  3) in 'Reanimate.Blender'
  100% (  2 /  2) in 'Reanimate.Builtin.CirclePlot'
-  93% ( 13 / 14) in 'Reanimate.Render'
-  91% ( 10 / 11) in 'Reanimate.External'
+  92% ( 13 / 14) in 'Reanimate.Render'
+  90% ( 10 / 11) in 'Reanimate.External'
