@@ -31,6 +31,8 @@ jobs:
           ${{ runner.os }}-
 
     - name: Build nightly
+      env:
+        ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       run: |
         rm -fr discord-bot playground dist-newstyle
         rm -f stack.yaml
