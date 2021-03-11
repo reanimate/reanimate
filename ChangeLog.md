@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and the
 project adheres to the [Haskell Package Versioning
 Policy (PVP)](https://pvp.haskell.org)
 
+## 1.1.4.0 -- 2021-03-11
+
+ * Fix build issue on M1 MacOS.
+ * Improve documentation.
+ * Fix bug in 'reanimateLiveEntry'.
+ * Simplify 'mkRect' definition.
+
 ## 1.1.3.2 -- 2021-01-14
 
  * Add flag for disabling the HGeometry dependency.
