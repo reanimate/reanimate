@@ -3,7 +3,8 @@ FROM reanimate/base
 WORKDIR /src
 
 # Install reanimate dependencies and cache the layer
-ADD reanimate.cabal stack.yaml ./
+ADD reanimate.cabal ./
+ADD stack-lts-16.yaml ./stack.yaml
 RUN stack build --only-dependencies --no-install-ghc --system-ghc --haddock
 
 # Install discord-bot dependencies and cache the layer
