@@ -14,12 +14,12 @@ import qualified Data.Map                  as Map
 import qualified Data.Text                 as T
 import           Network.Socket            (AddrInfo (..), AddrInfoFlag (..), SocketOption (..),
                                             SocketType (Stream), accept, bind, close, defaultHints,
-                                            getAddrInfo, listen, socket,
-                                            setCloseOnExecIfNeeded, setSocketOption, withFdSocket,
-                                            withSocketsDo)
+                                            getAddrInfo, listen, setCloseOnExecIfNeeded,
+                                            setSocketOption, socket, withFdSocket, withSocketsDo)
 import           Network.Socket.ByteString (recv)
 import           Network.WebSockets
 import           Paths_reanimate           (getDataFileName)
+import           System.Exit               (exitFailure)
 import           System.IO                 (hPutStrLn, stderr)
 import           Web.Browser               (openBrowser)
 
@@ -124,8 +124,9 @@ openViewer :: IO ()
 openViewer = do
   url <- getDataFileName "viewer-elm/dist/index.html"
   bSucc <- openBrowser url
-  unless bSucc $
-    hPutStrLn stderr $ "Failed to open browser. Manually visit: " ++ url
+  unless bSucc $ do
+    hPutStrLn stderr "Failed to open browser."
+    exitFailure
 
 -------------------------------------------------------------------------------
 -- Websocket API

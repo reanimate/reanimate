@@ -4,18 +4,19 @@ module Reanimate.Driver
   )
 where
 
-import           Control.Applicative      ((<|>))
+import           Control.Applicative     ((<|>))
 import           Control.Concurrent
 import           Control.Monad
 import           Data.Either
 import           Data.Maybe
-import           Reanimate.Animation      (Animation, duration)
+import           Paths_reanimate         (getDataFileName)
+import           Reanimate.Animation     (Animation, duration)
 import           Reanimate.Driver.CLI
 import           Reanimate.Driver.Check
 import           Reanimate.Driver.Daemon
 import           Reanimate.Parameters
-import           Reanimate.Render         (render, renderSnippets, renderSvgs, renderSvgs_,
-                                           selectRaster)
+import           Reanimate.Render        (render, renderSnippets, renderSvgs, renderSvgs_,
+                                          selectRaster)
 import           System.Directory
 import           System.Exit
 import           System.FilePath
@@ -200,10 +201,21 @@ makeEven :: Int -> Int
 makeEven x | even x    = x
            | otherwise = x - 1
 
+sanityCheck :: IO ()
+sanityCheck = do
+  url <- getDataFileName "viewer-elm/dist/index.html"
+  hasClient <- doesFileExist url
+  unless hasClient $ do
+    hPutStrLn stderr $ "Couldn't find web client at: " ++ url
+    hPutStrLn stderr $ "You may need to run:"
+    hPutStrLn stderr $ "  $ export reanimate_datadir=`pwd`"
+    hPutStrLn stderr $ "For more information, see this cabal issue: https://github.com/haskell/cabal/issues/6235"
+    exitFailure
 
 -- serve viewVerbose viewGHCPath viewGHCOpts viewOrigin
 viewAnimation :: Bool -> Animation -> IO ()
 viewAnimation _detach animation = do
+  sanityCheck
   detached <- ensureDaemon
 
   let rate = 60

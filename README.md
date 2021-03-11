@@ -63,11 +63,26 @@ Optionally, you can install one or more of these programs to enable additional f
 
 I highly recommend that you install at least 'ffmpeg' and 'latex'.
 
-# Installing / Running an example
+# Getting started / Running an example
 
-Reanimate ships with a web-based viewer and automatic code reloading. To get a small demo
-up and running, clone the repository, run one of the examples (this will install the library),
-and wait for a browser window to open:
+Reanimate offers stack templates for getting started with a minimal example and
+automatic code reloading. Running the commands below will put a one-line animation
+in the 'animate' folder and then display the animation in a browser window. You can
+then edit the animation source code and watch the animation update in real time:
+
+```console
+$ stack new animate github:reanimate/plain
+$ cd animate/
+$ # both 'cabal repl' and 'stack repl' can be used here:
+$ cabal repl
+:cmd reanimateLive
+```
+
+## Running examples from the repository
+
+Reanimate has a large collection of small examples which are both used for regression testing
+and for GIFs in the API reference documentation. You can run these examples by first cloning the
+repository and then running the examples as if they were executables:
 
 ```console
 $ git clone https://github.com/reanimate/reanimate.git
@@ -76,11 +91,11 @@ $ stack build
 $ stack ./examples/doc_drawCircle.hs
 ```
 
-This should render the `doc_drawCircle` example in a new browser window. If you then change the
-animation source code, the browser window will automatically reload and show the updated animation.
+This should render the `doc_drawCircle` example in a new browser window. Automatic code reloading
+will not be enabled unless you run `:cmd reanimateLive` from a GHCi session.
 
 
-## Using Cabal
+## Running examples from the repository using Cabal
 
 It's also possible to use cabal instead of stack:
 
@@ -90,7 +105,7 @@ $ cd reanimate/
 $ cabal v2-build
 $ # Workaround for a cabal bug: https://github.com/haskell/cabal/issues/6235
 $ export reanimate_datadir=`pwd`
-$ cabal v2-exec -- runhaskell examples/doc_drawCircle.hs --ghc ghc
+$ cabal v2-exec -- runhaskell examples/doc_drawCircle.hs
 ```
 
 ## Using Nix
@@ -113,7 +128,7 @@ to pick up reanimate.
 Now, still within the `nix-shell` you can run:
 
 ```console
-[nix-shell:./reanimate]$ reanimate_datadir=. runhaskell examples/doc_drawCircle.hs --ghc `which ghc`
+[nix-shell:./reanimate]$ reanimate_datadir=. runhaskell examples/doc_drawCircle.hs
 ```
 
 
