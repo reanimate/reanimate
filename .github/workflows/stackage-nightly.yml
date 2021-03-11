@@ -35,16 +35,16 @@ jobs:
         rm -fr discord-bot playground dist-newstyle
         rm -f stack.yaml
         stack init --resolver nightly \
-          && echo "::set-env passed=true" \
-          || echo "::set-env passed=false"
+          && echo "::set-env name=passed::true" \
+          || echo "::set-env name=passed::false"
         stack build --resolver nightly --haddock --test --only-dependencies --bench --no-run-benchmarks \
-          && echo "::set-env passed=true" \
-          || echo "::set-env passed=false"
+          && echo "::set-env name=passed::true" \
+          || echo "::set-env name=passed::false"
     - name: Test nightly
       if: env.passed == 'true'
       run: |
         stack build --resolver nightly --haddock --test --bench --no-run-benchmarks
-    - name: Test nightly
+    - name: Report status
       if: env.passed == 'false'
       uses: mshick/add-pr-comment@v1
       with:
