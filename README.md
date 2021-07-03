@@ -135,8 +135,8 @@ Now, still within the `nix-shell` you can run:
 # Documentation
 
  * API reference: https://hackage.haskell.org/package/reanimate/docs/Reanimate.html
- * Core concepts: https://reanimate.readthedocs.io/en/latest/introduction/
- * Design overview: https://reanimate.readthedocs.io/en/latest/glue_tut/
+ * Core concepts: https://reanimate.readthedocs.io/en/latest/introduction.html
+ * Design overview: https://reanimate.readthedocs.io/en/latest/glue_tut.html
  * N-Queens tutorial (somewhat dated, uses reanimate from October 2019): https://williamyaoh.com/posts/2020-05-31-reanimate-nqueens-tutorial.html
  * You can also ask questions in the discord channel: <https://discord.gg/Qs28Dv6>
 
