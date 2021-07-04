@@ -3,7 +3,7 @@
 This document will introduce the foundamental concepts used in **reanimate**.
 It is assumed that you are already familiar with Haskell. After reading, you will be able to understand all the concepts used in the [API reference documentation](https://hackage.haskell.org/package/reanimate/docs/Reanimate.html). This is not a tutorial, though, and you may have to look at the examples before you can turn these concepts into beautiful animations.
 
-For a bird's eye view on the design philosophy and capabilities of **reanimate**, see [Gluing together animations](/glue_tut/). For help installing **reanimate**, see [Getting started](/#getting-started).
+For a bird's eye view on the design philosophy and capabilities of **reanimate**, see [Gluing together animations](glue_tut.md). For help installing **reanimate**, see [Getting started](/#getting-started).
 
 ## Animations as Executables
 
