@@ -120,7 +120,7 @@ hasRSvg = checkMinVersion minVersion <$> rsvgVersion
 hasInkscape :: IO (Either String String)
 hasInkscape = checkMinVersion minVersion <$> inkscapeVersion
   where
-    minVersion = Version [0,92] []
+    minVersion = Version [1,0] []
 
 hasMagick :: IO (Either String String)
 hasMagick = checkMinVersion minVersion <$> magickVersion

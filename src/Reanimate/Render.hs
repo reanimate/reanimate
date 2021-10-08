@@ -413,9 +413,8 @@ applyRaster RasterNone     _    = return ()
 applyRaster RasterAuto     _    = return ()
 applyRaster RasterInkscape path = runCmd
   "inkscape"
-  [ "--without-gui"
-  , "--file=" ++ path
-  , "--export-png=" ++ replaceExtension path "png"
+  ["--export-type=png"
+  , path
   ]
 applyRaster RasterRSvg path = runCmd
   "rsvg-convert"
