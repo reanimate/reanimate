@@ -20,6 +20,7 @@ module Reanimate.Svg.Constructors
   , withId
   , withStrokeColor
   , withStrokeColorPixel
+  , withStrokeOpacity
   , withStrokeDashArray
   , withStrokeLineJoin
   , withFillColor
@@ -208,6 +209,10 @@ withStrokeColor color = strokeColor .~ pure (mkColor color)
 -- | See <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke>
 withStrokeColorPixel :: PixelRGBA8 -> Tree -> Tree
 withStrokeColorPixel color = strokeColor .~ pure (ColorRef color)
+
+-- | See <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke-opacity>
+withStrokeOpacity :: Double -> Tree -> Tree
+withStrokeOpacity opacity = strokeOpacity ?~ realToFrac opacity
 
 -- | See <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/stroke-dasharray>
 withStrokeDashArray :: [Double] -> Tree -> Tree
