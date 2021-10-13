@@ -193,10 +193,12 @@ centerUsing a = translate (-x-w/2) (-y-h/2)
   where
     (x, y, w, h) = boundingBox a
 
--- | Create 'Texture' based on SVG color name.
---   See <https://en.wikipedia.org/wiki/Web_colors#X11_color_names> for the list of available names.
---   If the provided name doesn't correspond to valid SVG color name, white-ish color is used.
+-- | Create 'Texture' based on a SVG color name or @\"none\"@. If the provided
+--   'String' is not a valid value, a white-ish color is used.
+--   See <https://en.wikipedia.org/wiki/Web_colors#X11_color_names> for the list
+--   of available color names.
 mkColor :: String -> Texture
+mkColor "none" = FillNone
 mkColor name =
   case Map.lookup (T.pack name) svgNamedColors of
     Nothing -> ColorRef (PixelRGBA8 240 248 255 255)
