@@ -14,18 +14,13 @@ module Reanimate.Povray
   , povrayExtreme'
   ) where
 
-import           Data.Hashable              (Hashable (hash))
 import           Data.Text                  (Text)
-import qualified Data.Text                  as T
-import qualified Data.Text.IO               as T
 import           Graphics.SvgTree           (Tree)
-import           Reanimate.Cache            (cacheFile, encodeInt)
+import           POVRay                     (mkPovrayImage')
 import           Reanimate.Constants        (screenHeight, screenWidth)
-import           Reanimate.Misc             (requireExecutable, runCmd)
 import           Reanimate.Parameters       (pNoExternals)
 import           Reanimate.Raster           (mkImage)
 import           Reanimate.Svg.Constructors (mkText)
-import           System.FilePath            (replaceExtension, (<.>))
 import           System.IO.Unsafe           (unsafePerformIO)
 
 povrayRaw :: [String] -> Text -> Tree
@@ -88,14 +83,3 @@ mkPovrayImage :: [String] -> Text -> IO Tree
 mkPovrayImage _ script | pNoExternals = pure $ mkText script
 mkPovrayImage args script =
   mkImage screenWidth screenHeight <$> mkPovrayImage' args script
-
-mkPovrayImage' :: [String] -> Text -> IO FilePath
-mkPovrayImage' _ _ | pNoExternals = pure "/povray/has/been/disabled"
-mkPovrayImage' args script = cacheFile template $ \target -> do
-    exec <- requireExecutable "povray"
-    let pov_file = replaceExtension target "pov"
-    T.writeFile pov_file script
-    runCmd exec (args ++ ["-D","+UA", pov_file, "+o"++target])
-  where
-    template = encodeInt (hash key) <.> "png"
-    key = T.concat (script:map T.pack args)

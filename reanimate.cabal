@@ -111,6 +111,7 @@ library
                       Reanimate.Scene.Sprite
                       Reanimate.Scene.Object
                       Detach
+                      POVRay
   autogen-modules:    Paths_reanimate
   if flag(no-hgeometry)
     cpp-options: -DNO_HGEOMETRY
