@@ -60,6 +60,7 @@ script png rotX rotY rotZ =
       rotY_ = T.pack $ show rotY
       rotZ_ = T.pack $ show rotZ
   in [text|
+# version 3.7;
 //Files with predefined colors and textures
 #include "colors.inc"
 
@@ -74,6 +75,7 @@ camera {
   right x*16
 }
 
+global_settings { assumed_gamma 1.0 }
 
 //Ambient light to "brighten up" darker pictures
 global_settings { ambient_light White*3 }
