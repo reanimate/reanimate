@@ -72,6 +72,38 @@ be able to generate stand-alone video files (but can still view animations
 in a browser window). Without 'LaTeX' and 'dvisvgm', you won't be able use
 LaTeX for typesetting.
 
+### Obtaining the dependencies on Windows
+
+The easiest way to obtain the [FFmpeg](https://www.ffmpeg.org/),
+[rsvg-convert](https://wiki.gnome.org/Projects/LibRsvg) and
+[ImageMagick](https://imagemagick.org/index.php) dependencies on Windows is to
+use the [MSYS2](https://www.msys2.org/) installation that comes with `stack` and
+is on the path in the `stack exec` environment, and its package manager
+`pacman`. The MSYS2 `librsvg` package provides `rsvg-convert.exe`.
+
+```
+> stack exec -- pacman --sync --refresh
+> stack exec -- pacman --sync mingw64/mingw-w64-x86_64-ffmpeg
+> stack exec -- pacman --sync mingw64/mingw-w64-x86_64-librsvg
+> stack exec -- pacman --sync mingw64/mingw-w64-x86_64-imagemagick
+```
+
+However, readily-available versions of FFmpeg on Windows have not been built
+with the `--enable-librsvg` option. So, the `Has ffmpeg(rsvg)` dependency will
+be `no` on Windows.
+
+Windows versions of [POV-Ray](http://www.povray.org/),
+[Inkscape](https://inkscape.org/), and [Blender](https://www.blender.org/) can
+be downloaded and installed and the folders containing the executables added to
+the `PATH` environment variable.
+
+The [MiKTeX project](https://miktex.org/) provides a modern TeX distribution for
+Windows, which also includes the [`dvisvgm` tool](https://dvisvgm.de/). The
+folder containing the executables must be added to the `PATH` environment
+variable. The `ctex` package (for Chinese typesetting) requires the `SimHei`
+font, which is provided by the Windows Language Pack for Chinese (Simplified,
+China).
+
 ## Rendering animations
 
 **reanimate** has builtin support for rendering animations to video files and
