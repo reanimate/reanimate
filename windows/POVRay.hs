@@ -1,45 +1,29 @@
 module POVRay
   ( povrayApp
-  , mkPovrayImage'
+  , runPOVRay
   ) where
 
-import           Data.Hashable        (Hashable (hash))
-import           Data.Text            (Text)
-import qualified Data.Text            as T (concat, pack)
-import qualified Data.Text.IO         as T (writeFile)
-import           Reanimate.Cache      (cacheFile, encodeInt)
 import           Reanimate.Misc       (requireExecutable, runCmd)
-import           Reanimate.Parameters (pNoExternals)
-import           System.FilePath      (replaceExtension, (<.>))
 import           System.IO            (hClose, hPutStrLn)
 import           System.IO.Temp       (withSystemTempFile)
 
+-- | Name of the POV-Ray executable
 povrayApp :: String
 povrayApp = "pvengine64"  -- Assumes 64 bit Windows
 
-mkPovrayImage' :: [String] -> Text -> IO FilePath
-mkPovrayImage' _ _ | pNoExternals = pure "/povray/has/been/disabled"
-mkPovrayImage' args script = cacheFile template $ \target -> do
+-- | Run the POV-Ray executable with arguments
+runPOVRay :: [String] -> IO ()
+runPOVRay args = do
   exec <- requireExecutable povrayApp
-  let pov_file = replaceExtension target "pov"
-      exec' = '"' : exec ++ "\""  -- Wrap exec in "" because the path is likely
+  let exec' = '"' : exec ++ "\""  -- Wrap exec in "" because the path is likely
                                   -- to includes spaces
-      otherArgs = [ "-D"
-                  , "+UA"
-                  , "+I" ++ pov_file
-                  , "+O" ++ target
-                  , "/EXIT"  -- Note [/EXIT special command-line option]
-                  ]
-      command = concatMap (' ':) (exec' : args ++ otherArgs)
-  T.writeFile pov_file script
+      args' = "/EXIT" : args  -- Note [/EXIT special command-line option]
+      command = concatMap (' ':) (exec' : args')
   -- Note [Use of a batch file]
   withSystemTempFile "pvcommand.bat" $ \path h -> do
     hPutStrLn h command
     hClose h
     runCmd path []
- where
-  template = encodeInt (hash key) <.> "png"
-  key = T.concat (script:map T.pack args)
 
 {-
 Note [/EXIT special command-line option]
