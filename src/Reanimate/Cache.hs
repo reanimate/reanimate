@@ -104,6 +104,6 @@ encodeInt i = worker (fromIntegral i) 60
     worker key sh
       | sh < 0 = []
       | otherwise =
-        case (key `shiftR` sh) `mod` 64 of
-          idx -> alphabet !! fromIntegral idx : worker key (sh-6)
-    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+$"
+        case (key `shiftR` sh) `mod` 32 of
+          idx -> alphabet !! fromIntegral idx : worker key (sh-5)
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
