@@ -53,6 +53,8 @@ script png transZ rotX rotZ =
       transZ_ = T.pack $ show transZ
       rotZ_ = T.pack $ show rotZ
   in [text|
+#version 3.7;
+//Files with predefined colors and textures
 #include "colors.inc"
 
 //Place the camera
@@ -64,6 +66,8 @@ camera {
   right x*16/9
 }
 
+global_settings { assumed_gamma 1.0 }
+
 //Ambient light to "brighten up" darker pictures
 global_settings { ambient_light White*3 }
 
@@ -71,15 +75,15 @@ global_settings { ambient_light White*3 }
 background { color rgbt <0, 0, 0, 1> } // transparent
 
 polygon {
-  4,
-  <0, 0>, <0, 1>, <1, 1>, <1, 0>
+  5,
+  <0, 0>, <0, 1>, <1, 1>, <1, 0>, <0, 0>
   texture {
     pigment{
       image_map{ png "${png_}" }
     }
   }
   translate <-1/2,-1/2>
-  scale <16,9>
+  scale <16,9,1>
   rotate <0,${rotX_},${rotZ_}>
   translate <0,0,${transZ_}>
 }
