@@ -224,7 +224,10 @@ withStrokeDashArray arr = strokeDashArray .~ pure (map Num arr)
 withStrokeLineJoin :: LineJoin -> Tree -> Tree
 withStrokeLineJoin ljoin = strokeLineJoin .~ pure ljoin
 
--- | See <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/fill>
+-- | See <https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/fill>.
+--
+-- @withFillColor color@ takes the same approach to @color@ as 'mkColor'. For
+-- RGB color values, use 'withFillColorPixel'.
 withFillColor :: String -> Tree -> Tree
 withFillColor color = fillColor .~ pure (mkColor color)
 
