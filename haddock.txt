@@ -1,7 +1,7 @@
  100% (156 /156) in 'Reanimate'
  100% (128 /128) in 'Reanimate.Scene'
  100% ( 56 / 56) in 'Reanimate.Svg.Constructors'
- 100% ( 41 / 41) in 'Reanimate.Animation'
+ 100% ( 42 / 42) in 'Reanimate.Animation'
  100% ( 40 / 40) in 'Reanimate.GeoProjection'
  100% ( 36 / 36) in 'Geom2D.CubicBezier.Linear'
  100% ( 29 / 29) in 'Reanimate.Math.Common'
