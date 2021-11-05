@@ -29,7 +29,9 @@ import qualified Reanimate.Transform       as Transform
 --
 --  Note: Bounding boxes are computed on a best-effort basis and will not work
 --        in all cases. The only supported SVG nodes are: path, circle, polyline,
---        ellipse, line, rectangle, image. All other nodes return (0,0,0,0).
+--        ellipse, line, rectangle, image and svg. All other nodes return (0,0,0,0).
+--        The box for the svg node is based on the document's width and height
+--        (if both are present).
 boundingBox :: Tree -> (Double, Double, Double, Double)
 boundingBox t =
     case svgBoundingPoints t of
@@ -100,12 +102,18 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
             [V2 x y, V2 (x+w) (y+h)]
           _ -> []
       MeshGradientTree{} -> []
+      SvgTree d -> let mDims = (d ^. documentWidth, d ^. documentHeight)
+                   in  case mapTuple (fmap toUserUnit') mDims of
+                            (Just (Num w), Just (Num h)) ->
+                               [V2 0 0, V2 w 0, V2 w h, V2 0 h]
+                            _ -> []
       _ -> []
   where
     m = Transform.mkMatrix (t^.transform)
     mapTuple f = f *** f
+    toUserUnit' = toUserUnit defaultDPI
     pointToRPoint p =
-      case mapTuple (toUserUnit defaultDPI) p of
+      case mapTuple toUserUnit' p of
         (Num x, Num y) -> V2 x y
         _              -> error "Reanimate.Svg.svgBoundingPoints: Unrecognized number format."
 
@@ -113,7 +121,7 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
       let (xnum, ynum) = circ ^. circleCenter
           rnum = circ ^. circleRadius
       in case mapMaybe unpackNumber [xnum, ynum, rnum] of
-        [x, y, r] -> [ V2 (x + r * cos angle) (y + r * sin angle) | angle <- [0, pi/10 .. 2 * pi]]
+        [x, y, r] -> ellipsePoints x y r r
         _         -> []
 
     ellipseBoundingPoints e =
@@ -121,10 +129,13 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
           xrnum = e ^. ellipseXRadius
           yrnum = e ^. ellipseYRadius
       in case mapMaybe unpackNumber [xnum, ynum, xrnum, yrnum] of
-        [x,y,xr,yr] -> [V2 (x + xr * cos angle) (y + yr * sin angle) | angle <- [0, pi/10 .. 2 * pi]]
-        _ -> []
+        [x, y, xr, yr] -> ellipsePoints x y xr yr
+        _              -> []
+
+    ellipsePoints x y xr yr = [ V2 (x + xr * cos angle) (y + yr * sin angle)
+                              | angle <- [0, pi/10 .. 2 * pi] ]
 
     unpackNumber n =
-      case toUserUnit defaultDPI n of
+      case toUserUnit' n of
         Num d -> Just d
         _     -> Nothing
