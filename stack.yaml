@@ -1,12 +1,8 @@
-resolver: lts-18.9
+resolver: lts-18.15
 
 allow-newer: false
 
 packages:
 - .
 
-extra-deps:
-- earcut-0.1.0.4
-- reanimate-svg-0.13.0.1
-- hgeometry-0.11.0.0@sha256:09ead201a6ac3492c0be8dda5a6b32792b9ae87cab730b8362d46ee8d5c2acb4,11714
-- hgeometry-combinatorial-0.11.0.0@sha256:03176f235a1c49a415fe1266274dafca84deb917cbcbf9a654452686b4cd2bfe,8286
+extra-deps: []
