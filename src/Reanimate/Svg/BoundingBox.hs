@@ -78,38 +78,32 @@ linePoints = worker zero
 svgBoundingPoints :: Tree -> [RPoint]
 svgBoundingPoints t = map (Transform.transformPoint m) $
     case t of
-      None            -> []
-      UseTree{}       -> []
-      GroupTree g     -> concatMap svgBoundingPoints (g^.groupChildren)
-      SymbolTree g    -> concatMap svgBoundingPoints (g^.groupChildren)
-      FilterTree{}    -> []
+      None             -> []
+      UseTree{}        -> []
+      GroupTree g      -> concatMap svgBoundingPoints (g ^. groupChildren)
+      SymbolTree g     -> concatMap svgBoundingPoints (g ^. groupChildren)
+      FilterTree{}     -> []
       DefinitionTree{} -> []
-      PathTree p      -> linePoints $ toLineCommands (p^.pathDefinition)
-      CircleTree c    -> circleBoundingPoints c
-      PolyLineTree pl -> pl ^. polyLinePoints
-      EllipseTree e   -> ellipseBoundingPoints e
-      LineTree line   -> map pointToRPoint [line^.linePoint1, line^.linePoint2]
-      RectangleTree rect ->
-        case pointToRPoint (rect^.rectUpperLeftCorner) of
-          V2 x y -> V2 x y :
-            case mapTuple (fmap $ toUserUnit defaultDPI) (rect^.rectWidth, rect^.rectHeight) of
-              (Just (Num w), Just (Num h)) -> [V2 (x+w) (y+h)]
-              _                            -> []
-      TextTree{}      -> []
-      ImageTree img   ->
-        case (img^.imageCornerUpperLeft, img^.imageWidth, img^.imageHeight) of
-          ((Num x, Num y), Num w, Num h) ->
-            [V2 x y, V2 (x+w) (y+h)]
-          _ -> []
+      PathTree p       -> linePoints $ toLineCommands (p ^. pathDefinition)
+      CircleTree c     -> circleBoundingPoints c
+      PolyLineTree pl  -> pl ^. polyLinePoints
+      EllipseTree e    -> ellipseBoundingPoints e
+      LineTree l       -> map pointToRPoint [l ^. linePoint1, l ^. linePoint2]
+      RectangleTree r  ->
+        let p = pointToRPoint (r ^. rectUpperLeftCorner)
+            mDims = (r ^. rectWidth, r ^. rectHeight)
+        in  rectPoints p mDims
+      TextTree{}       -> []
+      ImageTree img    ->
+        let p = pointToRPoint (img ^. imageCornerUpperLeft)
+            dims = (img ^. imageWidth, img ^. imageHeight)
+        in  rectPoints' p dims
       MeshGradientTree{} -> []
-      SvgTree d -> let mDims = (d ^. documentWidth, d ^. documentHeight)
-                   in  case mapTuple (fmap toUserUnit') mDims of
-                            (Just (Num w), Just (Num h)) ->
-                               [V2 0 0, V2 w 0, V2 w h, V2 0 h]
-                            _ -> []
-      _ -> []
+      SvgTree d        -> let mDims = (d ^. documentWidth, d ^. documentHeight)
+                          in  rectPoints (V2 0 0) mDims
+      _                -> []
   where
-    m = Transform.mkMatrix (t^.transform)
+    m = Transform.mkMatrix (t ^. transform)
     mapTuple f = f *** f
     toUserUnit' = toUserUnit defaultDPI
     pointToRPoint p =
@@ -134,6 +128,16 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
 
     ellipsePoints x y xr yr = [ V2 (x + xr * cos angle) (y + yr * sin angle)
                               | angle <- [0, pi/10 .. 2 * pi] ]
+
+    rectPoints p mDims = case mDims of
+                           (Just w, Just h) -> rectPoints' p (w, h)
+                           _ -> [p]
+
+    rectPoints' p@(V2 x y) dims =
+      p : case mapTuple toUserUnit' dims of
+            ((Num w), (Num h)) -> let (x', y') = (x + w, y + h)
+                                  in  [V2 x' y, V2 x' y', V2 x y']
+            _ -> []
 
     unpackNumber n =
       case toUserUnit' n of
