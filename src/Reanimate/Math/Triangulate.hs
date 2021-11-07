@@ -46,7 +46,7 @@ import           Control.Monad.ST
 import           Data.Ext
 import           Data.Geometry.PlanarSubdivision                      (PolygonFaceData)
 import           Data.Geometry.Point
-import           Data.Geometry.Polygon
+import           Data.Geometry.Polygon                                (SimplePolygon, fromPoints)
 import qualified Data.IntSet                                          as ISet
 import qualified Data.PlaneGraph as Geo
 import           Data.Proxy
