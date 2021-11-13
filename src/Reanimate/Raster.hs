@@ -43,8 +43,9 @@ import           Reanimate.Animation         (SVG, renderSvg)
 import           Reanimate.Cache             (cacheFile, encodeInt)
 import           Reanimate.Constants         (screenHeight, screenWidth)
 import           Reanimate.Driver.Magick     (magickCmd)
-import           Reanimate.Misc              (getReanimateCacheDirectory, renameOrCopyFile,
-                                              requireExecutable, runCmd)
+import           Reanimate.Misc              (fileUri, getReanimateCacheDirectory,
+                                              renameOrCopyFile, requireExecutable,
+                                              runCmd)
 import           Reanimate.Parameters        (Height, Raster (RasterNone), Width, pHeight,
                                               pNoExternals, pRaster, pRootDirectory, pWidth)
 import           Reanimate.Render            (applyRaster, requireRaster)
@@ -122,7 +123,7 @@ mkImage width height path = unsafePerformIO $ do
     &  Svg.imageHeight
     .~ Svg.Num height
     &  Svg.imageHref
-    .~ ("file://" ++ target)
+    .~ (fileUri target)
     &  Svg.imageCornerUpperLeft
     .~ (Svg.Num (-width / 2), Svg.Num (-height / 2))
     &  Svg.imageAspectRatio
