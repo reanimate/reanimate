@@ -7,6 +7,7 @@ module Reanimate.Misc
     withTempFile,
     renameOrCopyFile,
     getReanimateCacheDirectory,
+    fileUri
   )
 where
 
@@ -118,3 +119,12 @@ getReanimateCacheDirectory = do
     -- Incrementing this value invalidates all cached results.
     cacheVersion :: Int
     cacheVersion = 0
+
+-- | A valid file URI is file://<hostname>/<path>. If <hostname> is absent, it
+--   is file:///<path>. On Windows, absolute paths begin (for example) "C:\".
+fileUri :: FilePath -> String
+fileUri path = "file://" <> path'
+ where
+  path' = case path of
+    '/' : _ -> path
+    _ -> '/' : path
