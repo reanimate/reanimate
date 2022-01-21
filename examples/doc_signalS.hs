@@ -6,7 +6,6 @@ module Main(main) where
 import Reanimate
 import Reanimate.Scene
 import Reanimate.Builtin.Documentation
-import Control.Lens
 
 main :: IO ()
 main = reanimate $ docEnv $ scene $ do
