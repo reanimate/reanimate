@@ -24,7 +24,7 @@ jobs:
 - template: ./.azure/azure-osx-template.yml
   parameters:
     name: macOS
-    vmImage: macOS-10.14
+    vmImage: macOS-11
     os: osx
 
 - template: ./.azure/azure-windows-template.yml
