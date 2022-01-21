@@ -17,6 +17,7 @@ module Reanimate.Animation
   , Animation
   -- * Creating animations
   , mkAnimation
+  , unsafeMkAnimation
   , animate
   , staticFrame
   , pause
@@ -72,17 +73,26 @@ type SVG = Tree
 -- | Animations are SVGs over a finite time.
 data Animation = Animation Duration (Time -> SVG)
 
--- | Construct an animation with a given duration.
+-- | Construct an animation with a given duration. If the duration is not
+--   positive throws 'Prelude.error'.
 mkAnimation :: Duration -> (Time -> SVG) -> Animation
-mkAnimation = Animation
+mkAnimation d f
+  | d > 0     = unsafeMkAnimation d f
+  | otherwise = error $ "Animation duration (" ++ show d ++ ") is not positive."
+
+-- | Construct an animation with a given duration, without checking that the
+--   duration is positive.
+unsafeMkAnimation :: Duration -> (Time -> SVG) -> Animation
+unsafeMkAnimation = Animation
 
 -- | Construct an animation with a duration of @1@.
 animate :: (Time -> SVG) -> Animation
 animate = Animation 1
 
--- | Create an animation with provided @duration@, which consists of stationary frame displayed for its entire duration.
+-- | Create an animation with provided @duration@, which consists of stationary
+--   frame displayed for its entire duration.
 staticFrame :: Duration -> SVG -> Animation
-staticFrame d svg = Animation d (const svg)
+staticFrame d svg = mkAnimation d (const svg)
 
 -- | Query the duration of an animation.
 duration :: Animation -> Duration
@@ -162,7 +172,8 @@ parDropA (Animation d1 f1) (Animation d2 f2) =
   where
     totalD = max d1 d2
 
--- | Empty animation (no SVG output) with a fixed duration.
+-- | Empty animation (no SVG output) with a fixed duration. If the duration is
+--   not positive throws 'Prelude.error'.
 --
 --   Example:
 --
@@ -170,7 +181,7 @@ parDropA (Animation d1 f1) (Animation d2 f2) =
 --
 --   <<docs/gifs/doc_pause.gif>>
 pause :: Duration -> Animation
-pause d = Animation d (const None)
+pause d = mkAnimation d (const None)
 
 -- | Play left animation and freeze on the last frame, then play the right
 --   animation. New duration is '@duration lhs + duration rhs@'.
@@ -183,9 +194,10 @@ pause d = Animation d (const None)
 andThen :: Animation -> Animation -> Animation
 andThen a b = a `parA` (pause (duration a) `seqA` b)
 
--- | Calculate the frame that would be displayed at given point in @time@ of running @animation@.
+-- | Calculate the frame that would be displayed at given point in @time@ of
+--   running @animation@.
 --
--- The provided time parameter is clamped between 0 and animation duration.
+--   The provided time parameter is clamped between 0 and animation duration.
 frameAt :: Time -> Animation -> SVG
 frameAt t (Animation d f) = f t'
   where
@@ -196,8 +208,12 @@ renderTree :: SVG -> String
 renderTree t = maybe "" ppElement $ xmlOfTree t
 
 -- | Helper function for pretty-printing SVG nodes as SVG documents.
-renderSvg :: Maybe Number -- ^ The number to use as value of the @width@ attribute of the resulting top-level svg element. If @Nothing@, the width attribute won't be rendered.
-          -> Maybe Number -- ^ Similar to previous argument, but for @height@ attribute.
+renderSvg :: Maybe Number -- ^ The number to use as value of the @width@
+                          --   attribute of the resulting top-level svg element.
+                          --   If @Nothing@, the width attribute won't be
+                          --   rendered.
+          -> Maybe Number -- ^ Similar to previous argument, but for @height@
+                          --   attribute.
           -> SVG          -- ^ SVG to render
           -> String       -- ^ String representation of SVG XML markup
 renderSvg w h t = ppDocument doc
@@ -226,7 +242,8 @@ renderSvg w h t = ppDocument doc
 mapA :: (SVG -> SVG) -> Animation -> Animation
 mapA fn (Animation d f) = Animation d (fn . f)
 
--- | Freeze the last frame for @t@ seconds at the end of the animation.
+-- | Freeze the last frame for @t@ seconds at the end of the animation. If the
+--   duration is negative throws 'Prelude.error'.
 --
 --   Example:
 --
@@ -234,9 +251,12 @@ mapA fn (Animation d f) = Animation d (fn . f)
 --
 --   <<docs/gifs/doc_pauseAtEnd.gif>>
 pauseAtEnd :: Duration -> Animation -> Animation
-pauseAtEnd t a = a `andThen` pause t
+pauseAtEnd t a
+  | t == 0    = a
+  | otherwise = a `andThen` pause t
 
 -- | Freeze the first frame for @t@ seconds at the beginning of the animation.
+--   If the duration is negative throws 'Prelude.error'.
 --
 --   Example:
 --
@@ -244,10 +264,12 @@ pauseAtEnd t a = a `andThen` pause t
 --
 --   <<docs/gifs/doc_pauseAtBeginning.gif>>
 pauseAtBeginning :: Duration -> Animation -> Animation
-pauseAtBeginning t a =
-    Animation t (freezeFrame 0 a) `seqA` a
+pauseAtBeginning t a
+  | t == 0    = a
+  | otherwise = mkAnimation t (freezeFrame 0 a) `seqA` a
 
--- | Freeze the first and the last frame of the animation for a specified duration.
+-- | Freeze the first and the last frame of the animation for a specified
+--   duration. If a duration is negative throws 'Prelude.error'.
 --
 --   Example:
 --
@@ -262,13 +284,14 @@ freezeFrame :: Time -> Animation -> (Time -> SVG)
 freezeFrame t (Animation d f) = const $ f (t/d)
 
 -- | Change the duration of an animation. Animates are stretched or squished
---   (rather than truncated) to fit the new duration.
+--   (rather than truncated) to fit the new duration. If a changed duration is
+--   not positive throws 'Prelude.error'.
 adjustDuration :: (Duration -> Duration) -> Animation -> Animation
-adjustDuration fn (Animation d gen) =
-  Animation (fn d) gen
+adjustDuration fn (Animation d gen) = mkAnimation (fn d) gen
 
 -- | Set the duration of an animation by adjusting its playback rate. The
---   animation is still played from start to finish without being cropped.
+--   animation is still played from start to finish without being cropped. If
+--   the duration is not positive throws 'Prelude.error'.
 setDuration :: Duration -> Animation -> Animation
 setDuration newD = adjustDuration (const newD)
 
@@ -295,8 +318,8 @@ playThenReverseA :: Animation -> Animation
 playThenReverseA a = a `seqA` reverseA a
 
 -- | Loop animation @n@ number of times. This number may be fractional and it
---   may be less than 1. It must be greater than or equal to 0, though.
---   New duration is @n*duration input@.
+--   may be less than 1. It must be greater than 0, though. New duration is
+--   @n*duration input@. If the duration is not positive throws 'Prelude.error'.
 --
 --   Example:
 --
@@ -304,16 +327,21 @@ playThenReverseA a = a `seqA` reverseA a
 --
 --   <<docs/gifs/doc_repeatA.gif>>
 repeatA :: Double -> Animation -> Animation
-repeatA n (Animation d f) = Animation (d*n) $ \t ->
-  f ((t*n) `mod'` 1)
+repeatA n (Animation d f) = mkAnimation (d*n) $ \t -> f ((t*n) `mod'` 1)
 
-
--- | @freezeAtPercentage time animation@ creates an animation consisting of stationary frame,
--- that would be displayed in the provided @animation@ at given @time@.
--- The duration of the new animation is the same as the duration of provided @animation@.
-freezeAtPercentage :: Time  -- ^ value between 0 and 1. The frame displayed at this point in the original animation will be displayed for the duration of the new animation
-                   -> Animation -- ^ original animation, from which the frame will be taken
-                   -> Animation -- ^ new animation consisting of static frame displayed for the duration of the original animation
+-- | @freezeAtPercentage time animation@ creates an animation consisting of
+--   stationary frame, that would be displayed in the provided @animation@ at
+--   given @time@. The duration of the new animation is the same as the duration
+--   of provided @animation@.
+freezeAtPercentage :: Time      -- ^ value between 0 and 1. The frame displayed
+                                --   at this point in the original animation
+                                --   will be displayed for the duration of the
+                                --   new animation
+                   -> Animation -- ^ original animation, from which the frame
+                                --   will be taken
+                   -> Animation -- ^ new animation consisting of static frame
+                                --   displayed for the duration of the original
+                                --   animation
 freezeAtPercentage frac (Animation d genFrame) =
   Animation d $ const $ genFrame frac
 
@@ -337,31 +365,35 @@ addStatic static = mapA (\frame -> mkGroup [static, frame])
 signalA :: Signal -> Animation -> Animation
 signalA fn (Animation d gen) = Animation d $ gen . fn
 
--- | @takeA duration animation@ creates a new animation consisting of initial segment of
---   @animation@ of given @duration@, played at the same rate as the original animation.
+-- | @takeA duration animation@ creates a new animation consisting of initial
+--   segment of @animation@ of given @duration@, played at the same rate as the
+--   original animation. If the duration is not positive throws 'Prelude.error'.
 --
---  The @duration@ parameter is clamped to be between 0 and @animation@'s duration.
---  New animation duration is equal to (eventually clamped) @duration@.
+--   The @duration@ parameter is clamped to be up to the @animation@'s duration.
+--   New animation duration is equal to (eventually clamped) @duration@.
 takeA :: Duration -> Animation -> Animation
-takeA len (Animation d gen) = Animation len' $ \t ->
-    gen (t * len'/d)
-  where
-    len' = clamp 0 d len
+takeA len a@(Animation d gen)
+  | len >= d  = a
+  | otherwise = mkAnimation len $ \t -> gen (t * len/d)
 
--- | @dropA duration animation@ creates a new animation by dropping initial segment
---   of length @duration@ from the provided @animation@, played at the same rate as the original animation.
+-- | @dropA duration animation@ creates a new animation by dropping initial
+--   segment of length @duration@ from the provided @animation@, played at the
+--   same rate as the original animation. If the duration greater than or equal
+--   to the @animation@'s duration throws 'Prelude.error'.
 --
---  The @duration@ parameter is clamped to be between 0 and @animation@'s duration.
---  The duration of the resulting animation is duration of provided @animation@ minus (eventually clamped) @duration@.
+--   The @duration@ parameter is clamped to be non-negative. The duration of the
+--   resulting animation is duration of provided @animation@ minus @duration@.
 dropA :: Duration -> Animation -> Animation
-dropA len (Animation d gen) = Animation len' $ \t ->
-    gen (t * len'/d + len/d)
+dropA len a@(Animation d gen)
+  | len <= 0  = a
+  | otherwise = mkAnimation rest $ \t -> gen (t * rest/d + len/d)
   where
-    len' = d - clamp 0 d len
+    rest = d - len
 
--- | @lastA duration animation@ return the last @duration@ seconds of the animation.
+-- | @lastA duration animation@ return the last @duration@ seconds of the
+--   animation. If the duration is not positive throws 'Prelude.error'.
 lastA :: Duration -> Animation -> Animation
-lastA len a = dropA (duration a - len) a
+lastA len a@(Animation d _) = dropA (d - len) a
 
 clamp :: Double -> Double -> Double -> Double
 clamp a b number

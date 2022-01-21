@@ -11,6 +11,7 @@ import           Control.Exception            (SomeException, handle)
 import           Control.Monad                (forM_)
 import           Data.Maybe                   (fromMaybe, listToMaybe)
 import           Data.Version                 (Version (Version), parseVersion, showVersion)
+import           POVRay                       (povrayApp)
 import           Reanimate.Driver.Magick      (magickCmd)
 import           Reanimate.Misc               (runCmd_)
 import           System.Console.ANSI.Codes
@@ -88,7 +89,7 @@ hasDvisvgm :: IO (Either String String)
 hasDvisvgm = hasProgram "dvisvgm"
 
 hasPovray :: IO (Either String String)
-hasPovray = hasProgram "povray"
+hasPovray = hasProgram povrayApp
 
 hasFFmpeg :: IO (Either String String)
 hasFFmpeg = checkMinVersion minVersion <$> ffmpegVersion
@@ -120,7 +121,7 @@ hasRSvg = checkMinVersion minVersion <$> rsvgVersion
 hasInkscape :: IO (Either String String)
 hasInkscape = checkMinVersion minVersion <$> inkscapeVersion
   where
-    minVersion = Version [0,92] []
+    minVersion = Version [1,0] []
 
 hasMagick :: IO (Either String String)
 hasMagick = checkMinVersion minVersion <$> magickVersion

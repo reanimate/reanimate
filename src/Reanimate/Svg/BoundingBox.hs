@@ -29,7 +29,9 @@ import qualified Reanimate.Transform       as Transform
 --
 --  Note: Bounding boxes are computed on a best-effort basis and will not work
 --        in all cases. The only supported SVG nodes are: path, circle, polyline,
---        ellipse, line, rectangle, image. All other nodes return (0,0,0,0).
+--        ellipse, line, rectangle, image and svg. All other nodes return (0,0,0,0).
+--        The box for the svg node is based on the document's width and height
+--        (if both are present).
 boundingBox :: Tree -> (Double, Double, Double, Double)
 boundingBox t =
     case svgBoundingPoints t of
@@ -76,36 +78,36 @@ linePoints = worker zero
 svgBoundingPoints :: Tree -> [RPoint]
 svgBoundingPoints t = map (Transform.transformPoint m) $
     case t of
-      None            -> []
-      UseTree{}       -> []
-      GroupTree g     -> concatMap svgBoundingPoints (g^.groupChildren)
-      SymbolTree g    -> concatMap svgBoundingPoints (g^.groupChildren)
-      FilterTree{}    -> []
+      None             -> []
+      UseTree{}        -> []
+      GroupTree g      -> concatMap svgBoundingPoints (g ^. groupChildren)
+      SymbolTree g     -> concatMap svgBoundingPoints (g ^. groupChildren)
+      FilterTree{}     -> []
       DefinitionTree{} -> []
-      PathTree p      -> linePoints $ toLineCommands (p^.pathDefinition)
-      CircleTree c    -> circleBoundingPoints c
-      PolyLineTree pl -> pl ^. polyLinePoints
-      EllipseTree e   -> ellipseBoundingPoints e
-      LineTree line   -> map pointToRPoint [line^.linePoint1, line^.linePoint2]
-      RectangleTree rect ->
-        case pointToRPoint (rect^.rectUpperLeftCorner) of
-          V2 x y -> V2 x y :
-            case mapTuple (fmap $ toUserUnit defaultDPI) (rect^.rectWidth, rect^.rectHeight) of
-              (Just (Num w), Just (Num h)) -> [V2 (x+w) (y+h)]
-              _                            -> []
-      TextTree{}      -> []
-      ImageTree img   ->
-        case (img^.imageCornerUpperLeft, img^.imageWidth, img^.imageHeight) of
-          ((Num x, Num y), Num w, Num h) ->
-            [V2 x y, V2 (x+w) (y+h)]
-          _ -> []
+      PathTree p       -> linePoints $ toLineCommands (p ^. pathDefinition)
+      CircleTree c     -> circleBoundingPoints c
+      PolyLineTree pl  -> pl ^. polyLinePoints
+      EllipseTree e    -> ellipseBoundingPoints e
+      LineTree l       -> map pointToRPoint [l ^. linePoint1, l ^. linePoint2]
+      RectangleTree r  ->
+        let p = pointToRPoint (r ^. rectUpperLeftCorner)
+            mDims = (r ^. rectWidth, r ^. rectHeight)
+        in  rectPoints p mDims
+      TextTree{}       -> []
+      ImageTree img    ->
+        let p = pointToRPoint (img ^. imageCornerUpperLeft)
+            dims = (img ^. imageWidth, img ^. imageHeight)
+        in  rectPoints' p dims
       MeshGradientTree{} -> []
-      _ -> []
+      SvgTree d        -> let mDims = (d ^. documentWidth, d ^. documentHeight)
+                          in  rectPoints (V2 0 0) mDims
+      _                -> []
   where
-    m = Transform.mkMatrix (t^.transform)
+    m = Transform.mkMatrix (t ^. transform)
     mapTuple f = f *** f
+    toUserUnit' = toUserUnit defaultDPI
     pointToRPoint p =
-      case mapTuple (toUserUnit defaultDPI) p of
+      case mapTuple toUserUnit' p of
         (Num x, Num y) -> V2 x y
         _              -> error "Reanimate.Svg.svgBoundingPoints: Unrecognized number format."
 
@@ -113,7 +115,7 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
       let (xnum, ynum) = circ ^. circleCenter
           rnum = circ ^. circleRadius
       in case mapMaybe unpackNumber [xnum, ynum, rnum] of
-        [x, y, r] -> [ V2 (x + r * cos angle) (y + r * sin angle) | angle <- [0, pi/10 .. 2 * pi]]
+        [x, y, r] -> ellipsePoints x y r r
         _         -> []
 
     ellipseBoundingPoints e =
@@ -121,10 +123,23 @@ svgBoundingPoints t = map (Transform.transformPoint m) $
           xrnum = e ^. ellipseXRadius
           yrnum = e ^. ellipseYRadius
       in case mapMaybe unpackNumber [xnum, ynum, xrnum, yrnum] of
-        [x,y,xr,yr] -> [V2 (x + xr * cos angle) (y + yr * sin angle) | angle <- [0, pi/10 .. 2 * pi]]
-        _ -> []
+        [x, y, xr, yr] -> ellipsePoints x y xr yr
+        _              -> []
+
+    ellipsePoints x y xr yr = [ V2 (x + xr * cos angle) (y + yr * sin angle)
+                              | angle <- [0, pi/10 .. 2 * pi] ]
+
+    rectPoints p mDims = case mDims of
+                           (Just w, Just h) -> rectPoints' p (w, h)
+                           _ -> [p]
+
+    rectPoints' p@(V2 x y) dims =
+      p : case mapTuple toUserUnit' dims of
+            ((Num w), (Num h)) -> let (x', y') = (x + w, y + h)
+                                  in  [V2 x' y, V2 x' y', V2 x y']
+            _ -> []
 
     unpackNumber n =
-      case toUserUnit defaultDPI n of
+      case toUserUnit' n of
         Num d -> Just d
         _     -> Nothing

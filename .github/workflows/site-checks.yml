@@ -13,7 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Use Node.js 10.x
-      uses: actions/setup-node@v2.4.0
+      uses: actions/setup-node@v2.5.1
       with:
         node-version: 10.x
     - name: Install dependencies
@@ -29,7 +29,7 @@ jobs:
     - name: Check links at reanimate.github.io
       run: checklink --quiet --broken "https://reanimate.github.io/" >> failures.txt
     - name: Check links at reanimate.readthedocs.io
-      run: checklink --quiet --broken "https://reanimate.readthedocs.io/" >> failures.txt
+      run: checklink --quiet --broken "https://reanimate.readthedocs.io/" --suppress-broken 403:https://inkscape.org/ --suppress-broken 403:https://wiki.gnome.org/Projects/LibRsvg >> failures.txt
     # Haddock generates 404 links by default. :(
     #- name: Check links in haddock docs
     #  run: checklink --quiet --broken "https://hackage.haskell.org/package/reanimate/docs/Reanimate.html" >> failures.txt
