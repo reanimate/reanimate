@@ -20,6 +20,7 @@ module Reanimate.Scene
     waitOn, -- :: Scene s a -> Scene s a
     adjustZ, -- :: (ZIndex -> ZIndex) -> Scene s a -> Scene s a
     withSceneDuration, -- :: Scene s () -> Scene s Duration
+    signalS, -- Signal -> Scene s a -> Scene s a
 
     -- * Variables
     Var,

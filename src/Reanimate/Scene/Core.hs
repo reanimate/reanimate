@@ -7,6 +7,7 @@ import           Control.Monad.ST           (ST, runST)
 import           Data.List                  (sortOn)
 import           Reanimate.Animation        (Animation, Duration, SVG, Time, mkAnimation)
 import           Reanimate.Svg.Constructors (mkGroup)
+import           Reanimate.Ease             (Signal)
 
 -- | The ZIndex property specifies the stack order of sprites and animations. Elements
 --   with a higher ZIndex will be drawn on top of elements with a lower index.
@@ -72,6 +73,24 @@ scene action =
                       [spriteRender dur (t * dur) | spriteRender <- genFns]
             )
     )
+
+-- | Apply easing function to all render elements created by the scene
+--   in the timespan from now to the scene duration.
+--
+--   Note that this does not affect time as seen by `queryNow` or any
+--   time-dependent variables or object properties.
+signalS :: Signal -> Scene s a -> Scene s a
+signalS signal (M action) = M $ \now -> do
+  (a, s, p, gens) <- action now
+  let action_dur = max s p
+      modify_t t
+        | t < now = t
+        | t > now+action_dur = t
+        | otherwise = now + signal ((t-now) / action_dur) * action_dur
+  let applyS gen = do
+        fn <- gen
+        return $ \dur t -> fn dur (modify_t t)
+  return (a, s, p, map applyS gens)
 
 -- | Execute actions in a scene without advancing the clock. Note that scenes do not end before
 --   all forked actions have completed.
