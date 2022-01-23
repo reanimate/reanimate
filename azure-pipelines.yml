@@ -21,11 +21,11 @@ jobs:
     vmImage: ubuntu-latest
     os: linux
 
-- template: ./.azure/azure-osx-template.yml
-  parameters:
-    name: macOS
-    vmImage: macOS-11
-    os: osx
+#- template: ./.azure/azure-osx-template.yml
+#  parameters:
+#    name: macOS
+#    vmImage: macOS-11
+#    os: osx
 
 - template: ./.azure/azure-windows-template.yml
   parameters:
