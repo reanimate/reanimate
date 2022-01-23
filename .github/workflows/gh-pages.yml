@@ -32,7 +32,7 @@ jobs:
     - name: Install dependencies
       run: |
         cabal v2-update
-        cabal v2-build --enable-coverage --only-dependencies
+        cabal v2-build --only-dependencies
         mkdir pages
 
     - name: Build
