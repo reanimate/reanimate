@@ -30,6 +30,7 @@ jobs:
 
     - name: Install dependencies
       run: |
+        sudo apt-get update
         sudo apt-get -y install texlive texlive-latex-base texlive-latex-extra
         stack build --only-dependencies
         (cd playground && stack build --only-dependencies)

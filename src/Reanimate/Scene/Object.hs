@@ -18,7 +18,7 @@ import           Reanimate.Morph.Linear (linear)
 import           Reanimate.Svg
 
 import           Reanimate.Scene.Core   (Scene, fork, scene, wait)
-import           Reanimate.Scene.Sprite (Sprite, newSprite, newSpriteA', play, spriteModify, unVar)
+import           Reanimate.Scene.Sprite (Sprite, newSprite, newSpriteA', play, spriteModify, unVar, signalS)
 import           Reanimate.Scene.Var    (Var, modifyVar, newVar, readVar, tweenVar)
 
 -------------------------------------------------------
@@ -244,6 +244,10 @@ oBBHeight = oBB . _4
 
 -------------------------------------------------------------------------------
 -- Object modifiers
+
+-- | Apply easing function before rendering object.
+signalO :: Object s a -> Duration -> Signal -> Scene s ()
+signalO obj dur signal = signalS (objectSprite obj) dur signal
 
 -- | Modify object properties.
 oModify :: Object s a -> (ObjectData a -> ObjectData a) -> Scene s ()

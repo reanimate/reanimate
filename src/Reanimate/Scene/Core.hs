@@ -73,6 +73,24 @@ scene action =
             )
     )
 
+-- -- | Apply easing function to all render elements created by the scene
+-- --   in the timespan from now to the scene duration.
+-- --
+-- --   Note that this does not affect time as seen by `queryNow` or any
+-- --   time-dependent variables or object properties.
+-- signalS :: Signal -> Scene s a -> Scene s a
+-- signalS signal (M action) = M $ \now -> do
+--   (a, s, p, gens) <- action now
+--   let action_dur = max s p
+--       modify_t t
+--         | t < now            = t
+--         | t > now+action_dur = t
+--         | otherwise          = now + signal ((t-now) / action_dur) * action_dur
+--   let applyS gen = do
+--         fn <- gen
+--         return $ \dur t -> fn dur (modify_t t)
+--   return (a, s, p, map applyS gens)
+
 -- | Execute actions in a scene without advancing the clock. Note that scenes do not end before
 --   all forked actions have completed.
 --
