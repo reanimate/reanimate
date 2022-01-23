@@ -37,7 +37,7 @@ jobs:
 
     - name: Build
       run: |
-        cabal v2-build --enable-coverage
+        cabal v2-build
 
     # - name: Generate HPC files
     #   run: |
