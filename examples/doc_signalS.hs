@@ -3,7 +3,6 @@
 module Main(main) where
 
 import Reanimate
-import Reanimate.Scene
 import Reanimate.Builtin.Documentation
 
 main :: IO ()

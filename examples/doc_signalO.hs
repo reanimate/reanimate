@@ -5,7 +5,6 @@ module Main(main) where
 import Reanimate
 import Reanimate.Scene
 import Reanimate.Builtin.Documentation
-import Reanimate.Animation
 import Control.Lens
 import Control.Monad
 
