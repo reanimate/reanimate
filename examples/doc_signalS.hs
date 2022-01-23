@@ -7,6 +7,8 @@ import Reanimate.Scene
 import Reanimate.Builtin.Documentation
 
 main :: IO ()
-main = reanimate $ docEnv $ scene $ do
-  signalS (curveS 2) $ play $ drawCircle
-  signalS reverseS $ play $ drawCircle
+main = reanimate $ docEnv $ playThenReverseA $ scene $ do
+  sprite <- fork $ newSpriteA $ drawCircle
+  signalS sprite 1 (curveS 2)
+  wait 1
+  signalS sprite 1 (powerS 2)

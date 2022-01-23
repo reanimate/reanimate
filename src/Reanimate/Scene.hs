@@ -57,6 +57,7 @@ module Reanimate.Scene
     -- * Object API
     Object,
     ObjectData,
+    signalO,
     oNew,
     newObject,
     oModify,
