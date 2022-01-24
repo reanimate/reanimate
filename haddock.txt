@@ -1,5 +1,5 @@
- 100% (156 /156) in 'Reanimate'
- 100% (128 /128) in 'Reanimate.Scene'
+ 100% (157 /157) in 'Reanimate'
+ 100% (130 /130) in 'Reanimate.Scene'
  100% ( 56 / 56) in 'Reanimate.Svg.Constructors'
  100% ( 42 / 42) in 'Reanimate.Animation'
  100% ( 40 / 40) in 'Reanimate.GeoProjection'
