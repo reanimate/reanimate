@@ -12,7 +12,7 @@ import           Graphics.SvgTree     (pattern None)
 import           Reanimate.Animation  (Animation, Duration, SVG, Sync (SyncStretch), Time, dropA,
                                        duration, getAnimationFrame)
 import           Reanimate.Effect     (Effect, delayE)
-import           Reanimate.Scene.Core (Scene (M), ZIndex, addGen, fork, liftST, queryNow, scene,
+import           Reanimate.Scene.Core (Gen, Scene (M), ZIndex, addGen, fork, liftST, queryNow, scene,
                                        wait)
 import           Reanimate.Scene.Var  (Var (..), newVar, readVar, unpackVar)
 import           Reanimate.Transition (Transition, overlapT)
@@ -58,7 +58,7 @@ play ani = newSpriteA ani >>= destroySprite
 
 -- | Sprites are animations with a given time of birth as well as a time of death.
 --   They can be controlled using variables, tweening, and effects.
-data Sprite s = Sprite Time (STRef s (Time -> Time)) (STRef s (Duration, ST s (Duration -> Time -> SVG -> (SVG, ZIndex))))
+data Sprite s = Sprite Time (STRef s (Time -> Time)) (STRef s (Duration, ST s (Duration -> Time -> SVG -> (SVG, ZIndex)))) (Gen s)
 
 -- | Sprite frame generator. Generates frames over time in a stateful environment.
 newtype Frame s a = Frame {unFrame :: ST s (Time -> Duration -> Time -> a)}
@@ -113,10 +113,19 @@ spriteDuration = Frame $ return (\_real_t d _t -> d)
 --   <<docs/gifs/doc_newSprite.gif>>
 newSprite :: Frame s SVG -> Scene s (Sprite s)
 newSprite render = do
+  s <- newSpritePart render
+  addPartToScene s
+  return s
+
+-- | Create a new sprite defined by a frame generator, but not showing
+--   as part of the scene. Such sprites can be used hierarchically within
+--   the definitions of other sprites, via the function renderSprite.
+newSpritePart :: Frame s SVG -> Scene s (Sprite s)
+newSpritePart render = do
   now <- queryNow
   tmod <- liftST $ newSTRef id
   ref <- liftST $ newSTRef (-1, return $ \_d _t svg -> (svg, 0))
-  addGen $ do
+  return $ Sprite now tmod ref $ do
     fn <- unFrame render
     time_fn <- readSTRef tmod
     (spriteDur, spriteEffectGen) <- readSTRef ref
@@ -135,7 +144,9 @@ newSprite render = do
        in if inTimeSlice || isLastFrame
             then spriteEffect relD relT (fn absT relD relT)
             else (None, 0)
-  return $ Sprite now tmod ref
+
+addPartToScene :: Sprite s -> Scene s ()
+addPartToScene (Sprite _ _ _ gen) = addGen gen
 
 -- | Create new sprite defined by a frame generator. The sprite will die at
 --   the end of the scene.
@@ -228,7 +239,7 @@ applyVar var sprite fn = spriteModify sprite $ do
 --
 --   <<docs/gifs/doc_destroySprite.gif>>
 destroySprite :: Sprite s -> Scene s ()
-destroySprite (Sprite _ _tmod ref) = do
+destroySprite (Sprite _ _tmod ref _) = do
   now <- queryNow
   liftST $
     modifySTRef ref $ \(ttl, render) ->
@@ -236,7 +247,7 @@ destroySprite (Sprite _ _tmod ref) = do
 
 -- | Low-level frame modifier.
 spriteModify :: Sprite s -> Frame s ((SVG, ZIndex) -> (SVG, ZIndex)) -> Scene s ()
-spriteModify (Sprite born _tmod ref) modFn = liftST $
+spriteModify (Sprite born _tmod ref _) modFn = liftST $
   modifySTRef ref $ \(ttl, renderGen) ->
     ( ttl,
       do
@@ -248,7 +259,7 @@ spriteModify (Sprite born _tmod ref) modFn = liftST $
 
 -- | Apply easing function before rendering sprite.
 signalS :: Sprite s -> Duration -> Signal -> Scene s ()
-signalS (Sprite _born tmod _ref) dur signal = do
+signalS (Sprite _born tmod _ref _) dur signal = do
   now <- queryNow
   let modify_t t
         | t < now     = t
@@ -271,7 +282,7 @@ signalS (Sprite _born tmod _ref) dur signal = do
 --
 --   <<docs/gifs/doc_spriteMap.gif>>
 spriteMap :: Sprite s -> (SVG -> SVG) -> Scene s ()
-spriteMap sprite@(Sprite born _ _) fn = do
+spriteMap sprite@(Sprite born _ _ _) fn = do
   now <- queryNow
   let tDelta = now - born
   spriteModify sprite $ do
@@ -289,7 +300,7 @@ spriteMap sprite@(Sprite born _ _) fn = do
 --
 --   <<docs/gifs/doc_spriteTween.gif>>
 spriteTween :: Sprite s -> Duration -> (Double -> SVG -> SVG) -> Scene s ()
-spriteTween sprite@(Sprite born _ _) dur fn = do
+spriteTween sprite@(Sprite born _ _ _) dur fn = do
   now <- queryNow
   let tDelta = now - born
   spriteModify sprite $ do
@@ -331,7 +342,7 @@ spriteVar sprite def fn = do
 --
 --   <<docs/gifs/doc_spriteE.gif>>
 spriteE :: Sprite s -> Effect -> Scene s ()
-spriteE (Sprite born _tmod ref) effect = do
+spriteE (Sprite born _tmod ref _) effect = do
   now <- queryNow
   liftST $
     modifySTRef ref $ \(ttl, renderGen) ->
@@ -357,7 +368,7 @@ spriteE (Sprite born _tmod ref) effect = do
 --
 --   <<docs/gifs/doc_spriteZ.gif>>
 spriteZ :: Sprite s -> ZIndex -> Scene s ()
-spriteZ (Sprite born _tmod ref) zindex = do
+spriteZ (Sprite born _tmod ref _) zindex = do
   now <- queryNow
   liftST $
     modifySTRef ref $ \(ttl, renderGen) ->

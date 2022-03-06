@@ -39,6 +39,7 @@ module Reanimate.Scene
     spriteT, -- :: Frame s Time
     spriteDuration, -- :: Frame s Duration
     newSprite, -- :: Frame s SVG -> Scene s (Sprite s)
+    newSpritePart, -- :: Frame s SVG -> Scene s (Sprite s)
     newSprite_, -- :: Frame s SVG -> Scene s ()
     newSpriteA, -- :: Animation -> Scene s (Sprite s)
     newSpriteA', -- :: Sync -> Animation -> Scene s (Sprite s)

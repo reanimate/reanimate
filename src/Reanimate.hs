@@ -105,6 +105,7 @@ module Reanimate
   , spriteDuration    -- :: Frame s Duration
   , signalS           -- :: Sprite s -> Duration -> Signal -> Scene s ()
   , newSprite         -- :: Frame s SVG -> Scene s (Sprite s)
+  , newSpritePart     -- :: Frame s SVG -> Scene s (Sprite s)
   , newSprite_        -- :: Frame s SVG -> Scene s ()
   , newSpriteA        -- :: Animation -> Scene s (Sprite s)
   , newSpriteA'       -- :: Sync -> Animation -> Scene s (Sprite s)
