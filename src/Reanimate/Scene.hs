@@ -46,6 +46,7 @@ module Reanimate.Scene
     newSpriteSVG, -- :: SVG -> Scene s (Sprite s)
     newSpriteSVG_, -- :: SVG -> Scene s ()
     destroySprite, -- :: Sprite s -> Scene s ()
+    renderSprite, -- :: Sprite s -> Frame s SVG
     applyVar, -- :: Var s a -> Sprite s -> (a -> SVG -> SVG) -> Scene s ()
     spriteModify, -- :: Sprite s -> Frame s ((SVG,ZIndex) -> (SVG, ZIndex)) -> Scene s ()
     spriteMap, -- :: Sprite s -> (SVG -> SVG) -> Scene s ()

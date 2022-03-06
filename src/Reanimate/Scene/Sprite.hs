@@ -58,22 +58,22 @@ play ani = newSpriteA ani >>= destroySprite
 
 -- | Sprites are animations with a given time of birth as well as a time of death.
 --   They can be controlled using variables, tweening, and effects.
-data Sprite s = Sprite Time (STRef s (Time -> Time)) (STRef s (Duration, ST s (Duration -> Time -> SVG -> (SVG, ZIndex)))) (Gen s)
+data Sprite s = Sprite Time (STRef s (Time -> Time)) (STRef s (Duration, ST s (Duration -> Duration -> Time -> SVG -> (SVG, ZIndex)))) (Gen s)
 
 -- | Sprite frame generator. Generates frames over time in a stateful environment.
-newtype Frame s a = Frame {unFrame :: ST s (Time -> Duration -> Time -> a)}
+newtype Frame s a = Frame {unFrame :: ST s (Duration -> Time -> Duration -> Time -> a)}
 
 instance Functor (Frame s) where
   fmap fn (Frame gen) = Frame $ do
     m <- gen
-    return (\real_t d t -> fn $ m real_t d t)
+    return (\scene_d real_t d t -> fn $ m scene_d real_t d t)
 
 instance Applicative (Frame s) where
-  pure v = Frame $ return (\_ _ _ -> v)
+  pure v = Frame $ return (\_ _ _ _ -> v)
   Frame f <*> Frame g = Frame $ do
     m1 <- f
     m2 <- g
-    return $ \real_t d t -> m1 real_t d t (m2 real_t d t)
+    return $ \scene_d real_t d t -> m1 scene_d real_t d t (m2 scene_d real_t d t)
 
 -- | Dereference a variable as a Sprite frame.
 --
@@ -90,15 +90,15 @@ instance Applicative (Frame s) where
 unVar :: Var s a -> Frame s a
 unVar var = Frame $ do
   fn <- unpackVar var
-  return $ \real_t _d _t -> fn real_t
+  return $ \_scene_d real_t _d _t -> fn real_t
 
 -- | Dereference seconds since sprite birth.
 spriteT :: Frame s Time
-spriteT = Frame $ return (\_real_t _d t -> t)
+spriteT = Frame $ return (\_scene_d _real_t _d t -> t)
 
 -- | Dereference duration of the current sprite.
 spriteDuration :: Frame s Duration
-spriteDuration = Frame $ return (\_real_t d _t -> d)
+spriteDuration = Frame $ return (\_scene_d _real_t d _t -> d)
 
 -- | Create new sprite defined by a frame generator. Unless otherwise specified using
 --   'destroySprite', the sprite will die at the end of the scene.
@@ -124,15 +124,15 @@ newSpritePart :: Frame s SVG -> Scene s (Sprite s)
 newSpritePart render = do
   now <- queryNow
   tmod <- liftST $ newSTRef id
-  ref <- liftST $ newSTRef (-1, return $ \_d _t svg -> (svg, 0))
+  ref <- liftST $ newSTRef (-1, return $ \_ad _d _t svg -> (svg, 0))
   return $ Sprite now tmod ref $ do
     fn <- unFrame render
     time_fn <- readSTRef tmod
     (spriteDur, spriteEffectGen) <- readSTRef ref
     spriteEffect <- spriteEffectGen
-    return $ \d absT_ ->
+    return $ \absD absT_ ->
       let absT = time_fn absT_
-          relD = (if spriteDur < 0 then d else spriteDur) - now
+          relD = (if spriteDur < 0 then absD else spriteDur) - now
           relT = absT - now
           -- Sprite is live [now;duration[
           -- If we're at the end of a scene, sprites
@@ -140,9 +140,9 @@ newSpritePart render = do
           -- This behavior is difficult to get right. See the 'bug_*' examples for
           -- automated tests.
           inTimeSlice = relT >= 0 && relT < relD
-          isLastFrame = d == absT && relT == relD
-       in if inTimeSlice || isLastFrame
-            then spriteEffect relD relT (fn absT relD relT)
+          isLastFrame = absD == absT && relT == relD
+      in if inTimeSlice || isLastFrame
+            then spriteEffect absD relD relT (fn absD absT relD relT)
             else (None, 0)
 
 addPartToScene :: Sprite s -> Scene s ()
@@ -208,6 +208,15 @@ newSpriteSVG = newSprite . pure
 newSpriteSVG_ :: SVG -> Scene s ()
 newSpriteSVG_ = void . newSpriteSVG
 
+-- | Create a frame context from the source sprite for use within another. Use of this
+--   function allows several sprites to be combined into a single one, with the
+--   method of combination controled by variables.
+renderSprite :: Sprite s -> Frame s SVG
+renderSprite (Sprite _ _ _ gen) =
+  Frame $ do
+            genFn <- gen
+            return (\absD absT _ _ -> fst $ genFn absD absT)
+
 -- | Change the rendering of a sprite using data from a variable. If data from several variables
 --   is needed, use a frame generator instead.
 --
@@ -253,8 +262,8 @@ spriteModify (Sprite born _tmod ref _) modFn = liftST $
       do
         render <- renderGen
         modRender <- unFrame modFn
-        return $ \relD relT ->
-          let absT = relT + born in modRender absT relD relT . render relD relT
+        return $ \absD relD relT ->
+          let absT = relT + born in modRender absD absT relD relT . render absD relD relT
     )
 
 -- | Apply easing function before rendering sprite.
@@ -349,8 +358,8 @@ spriteE (Sprite born _tmod ref _) effect = do
       ( ttl,
         do
           render <- renderGen
-          return $ \d t svg ->
-            let (svg', z) = render d t svg
+          return $ \ad d t svg ->
+            let (svg', z) = render ad d t svg
              in (delayE (max 0 $ now - born) effect d t svg', z)
       )
 
@@ -375,8 +384,8 @@ spriteZ (Sprite born _tmod ref _) zindex = do
       ( ttl,
         do
           render <- renderGen
-          return $ \d t svg ->
-            let (svg', z) = render d t svg in (svg', if t < now - born then z else zindex)
+          return $ \ad d t svg ->
+            let (svg', z) = render ad d t svg in (svg', if t < now - born then z else zindex)
       )
 
 -- | Destroy all local sprites at the end of a scene.
