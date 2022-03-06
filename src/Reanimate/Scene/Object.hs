@@ -18,7 +18,7 @@ import           Reanimate.Morph.Linear (linear)
 import           Reanimate.Svg
 
 import           Reanimate.Scene.Core   (Scene, fork, scene, wait)
-import           Reanimate.Scene.Sprite (Sprite, newSprite, newSpriteA', play, spriteModify, unVar, signalS)
+import           Reanimate.Scene.Sprite (Frame, Sprite, addPartToScene, newSpritePart, newSpriteA', play, spriteModify, unVar, signalS, renderSprite)
 import           Reanimate.Scene.Var    (Var, modifyVar, newVar, readVar, tweenVar)
 
 -------------------------------------------------------
@@ -290,6 +290,15 @@ oNew = newObject
 -- | Create new object.
 newObject :: Renderable a => a -> Scene s (Object s a)
 newObject val = do
+  obj <- newObjectPart val
+  addPartToScene $ objectSprite obj
+  return obj
+
+-- | Create new object, but not showing as part of the scene, Such
+--   objects can be used hierachically within the definitions of
+--   sprites, via the function renderObject.
+newObjectPart :: Renderable a => a -> Scene s (Object s a)
+newObjectPart val = do
   ref <-
     newVar
       ObjectData
@@ -306,7 +315,7 @@ newObject val = do
           _oScale = 1,
           _oScaleOrigin = V2 0 0
         }
-  sprite <- newSprite $ do
+  sprite <- newSpritePart $ do
     ~obj@ObjectData {..} <- unVar ref
     pure $
       if _oShown
@@ -326,6 +335,10 @@ newObject val = do
       }
   where
     svg = toSVG val
+
+-- | Create a frame context from an object for use within a sprite definition.
+renderObject :: Object s a -> Frame s SVG
+renderObject obj = renderSprite $ objectSprite obj
 
 oScaleApply :: ObjectData a -> (SVG -> SVG)
 oScaleApply ObjectData {..} =

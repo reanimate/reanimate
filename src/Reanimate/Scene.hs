@@ -62,6 +62,8 @@ module Reanimate.Scene
     signalO,
     oNew,
     newObject,
+    newObjectPart,
+    renderObject,
     oModify,
     oModifyS,
     oRead,
