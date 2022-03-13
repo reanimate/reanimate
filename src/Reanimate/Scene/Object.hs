@@ -337,6 +337,28 @@ newObjectPart val = do
     svg = toSVG val
 
 -- | Create a frame context from an object for use within a sprite definition.
+--
+--   Example:
+--
+-- @
+-- do opacityVar <- 'newVar' 1
+--    textObj1 <- 'newObjectPart' $ 'scale' 3 $ 'center' $ 'latex' "Fade"
+--    'oModify' textObj1 $ 'oContext' .~ 'withFillColor' "red"
+--    textObj2 <- 'newObjectPart' $ 'scale' 3 $ 'center' $ 'latex' "Overlap"
+--    'oModify' textObj2 $ 'oContext' .~ 'withFillColor' "blue"
+--    sprite <- 'newSprite' $ do
+--      opacity <- 'unVar' opacityVar
+--      text1 <- 'renderObject' textObj1
+--      text2 <- 'renderObject' textObj2
+--      'return' $ 'withGroupOpacity' opacity $ 'mkGroup' [text1, text2]
+--    'fork' $ 'oShowWith' textObj1 $ 'setDuration' 1 . 'oDraw'
+--    'wait' 0.2
+--    'fork' $ 'oShowWith' textObj2 $ 'setDuration' 1 . 'oDraw'
+--    'wait' 0.2
+--    'tweenVar' opacityVar 1 $ 'const' $ 'fromToS' 1 0
+-- @
+--
+-- <<docs/gifs/doc_renderObject.gif>>
 renderObject :: Object s a -> Frame s SVG
 renderObject obj = renderSprite $ objectSprite obj
 
