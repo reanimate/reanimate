@@ -117,8 +117,8 @@ library
     cpp-options: -DNO_HGEOMETRY
   else
     build-depends:
-      hgeometry               >=0.11.0.0,
-      hgeometry-combinatorial >=0.11.0.0
+      hgeometry               >=0.11.0.0 && < 0.14,
+      hgeometry-combinatorial >=0.11.0.0 && < 0.14
   build-depends:
     base                 >=4.10 && <5,
     JuicyPixels          >=3.3.3,
