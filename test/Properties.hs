@@ -92,4 +92,7 @@ prop_dualCycle p = forAll (choose (0,pSize p-1)) $ \n ->
 return []
 all_props :: TestTree
 all_props = testProperties "properties" $allProperties
+#else
+all_props :: TestTree
+all_props = testGroup "properties" []
 #endif
