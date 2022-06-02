@@ -166,6 +166,7 @@ test-suite spec
     Helpers
   hs-source-dirs: test
   ghc-options: -w
+  cpp-options: -DNO_HGEOMETRY
   build-depends:
     base,
     directory,
