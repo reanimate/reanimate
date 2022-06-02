@@ -41,7 +41,7 @@ module Reanimate.PolyShape
   , plGroupTouching
   ) where
 
-import           Control.Lens                                         ((&), (.~), (^.))
+import           Control.Lens                                         ((&), (.~))
 import           Data.List                                            (nub, partition, sortOn)
 import qualified Data.Vector                                          as V
 import           Geom2D.CubicBezier.Linear                            (ClosedPath (..),
@@ -67,6 +67,7 @@ import           Reanimate.Math.Polygon                               (Polygon, 
 import           Reanimate.Svg
 
 #if !defined(NO_HGEOMETRY)
+import           Control.Lens                                         ((^.))
 import           Algorithms.Geometry.PolygonTriangulation.Triangulate (triangulate')
 
 import           Data.Ext

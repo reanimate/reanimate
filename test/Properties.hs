@@ -1,13 +1,17 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleInstances    #-}
 {-# OPTIONS_GHC -w      #-}
 {-# LANGUAGE TemplateHaskell      #-}
 module Properties where
 
+import           Test.Tasty
+
+#if !defined(NO_HGEOMETRY)
+
 import qualified Data.Vector            as V
 import           Linear.V2
 import           Linear.Vector
 import           Test.QuickCheck
-import           Test.Tasty
 import           Test.Tasty.QuickCheck
 
 import           Reanimate.Math.Common
@@ -17,6 +21,8 @@ import           Reanimate.Math.Triangulate
 import           Helpers
 
 import Debug.Trace
+
+
 
 prop_pGenerate (PolyParam a) (PolyParam b) (PolyParam c) (PolyParam d) =
   pIsSimple $ pGenerate [a,b,c,d]
@@ -87,3 +93,7 @@ prop_dualCycle p = forAll (choose (0,pSize p-1)) $ \n ->
 return []
 all_props :: TestTree
 all_props = testProperties "properties" $allProperties
+#else
+all_props :: TestTree
+all_props = testGroup "properties" []
+#endif
