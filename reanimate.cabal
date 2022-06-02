@@ -37,13 +37,6 @@ Source-Repository head
     Type:      git
     Location:  git://github.com/lemmih/reanimate.git
 
-flag no-hgeometry
-  description:
-    Disable all features that depend on hgeometry. Should only
-    be used when developing new hgeometry algorithms.
-  default: False
-  manual: True
-
 library
   hs-source-dirs:     src
   if os(windows)
@@ -113,12 +106,7 @@ library
                       Detach
                       POVRay
   autogen-modules:    Paths_reanimate
-  if flag(no-hgeometry)
-    cpp-options: -DNO_HGEOMETRY
-  else
-    build-depends:
-      hgeometry               >=0.11.0.0 && < 0.14,
-      hgeometry-combinatorial >=0.11.0.0 && < 0.14
+  cpp-options: -DNO_HGEOMETRY
   build-depends:
     base                 >=4.10 && <5,
     JuicyPixels          >=3.3.3,
