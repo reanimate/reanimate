@@ -105,12 +105,14 @@ module Reanimate
   , spriteDuration    -- :: Frame s Duration
   , signalS           -- :: Sprite s -> Duration -> Signal -> Scene s ()
   , newSprite         -- :: Frame s SVG -> Scene s (Sprite s)
+  , newSpritePart     -- :: Frame s SVG -> Scene s (Sprite s)
   , newSprite_        -- :: Frame s SVG -> Scene s ()
   , newSpriteA        -- :: Animation -> Scene s (Sprite s)
   , newSpriteA'       -- :: Sync -> Animation -> Scene s (Sprite s)
   , newSpriteSVG      -- :: SVG -> Scene s (Sprite s)
   , newSpriteSVG_     -- :: SVG -> Scene s ()
   , destroySprite     -- :: Sprite s -> Scene s ()
+  , renderSprite      -- :: Sprite s -> Frame s SVG
   , applyVar          -- :: Var s a -> Sprite s -> (a -> SVG -> SVG) -> Scene s ()
   , spriteModify      -- :: Sprite s -> Frame s ((SVG,ZIndex) -> (SVG, ZIndex)) -> Scene s ()
   , spriteMap         -- :: Sprite s -> (SVG -> SVG) -> Scene s ()
