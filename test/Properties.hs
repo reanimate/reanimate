@@ -4,6 +4,8 @@
 {-# LANGUAGE TemplateHaskell      #-}
 module Properties where
 
+#if !defined(NO_HGEOMETRY)
+
 import qualified Data.Vector            as V
 import           Linear.V2
 import           Linear.Vector
@@ -19,7 +21,7 @@ import           Helpers
 
 import Debug.Trace
 
-#if !defined(NO_HGEOMETRY)
+
 
 prop_pGenerate (PolyParam a) (PolyParam b) (PolyParam c) (PolyParam d) =
   pIsSimple $ pGenerate [a,b,c,d]
@@ -86,8 +88,8 @@ prop_dualCycle p = forAll (choose (0,pSize p-1)) $ \n ->
   let p1 = pSetOffset p n
       p2 = pCopy p1
   in and [ pParent p1 0 i == pParent p2 0 i | i <- [0.. pSize p-1] ]
-#endif
 
 return []
 all_props :: TestTree
 all_props = testProperties "properties" $allProperties
+#endif
