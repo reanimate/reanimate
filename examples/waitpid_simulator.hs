@@ -43,7 +43,7 @@ animateFork (Segment (Point startx starty) (Point endx endy))
 
 -- Helper function to label a proccess with a pid
 labelPids :: Segment -> Int -> SVG
-labelPids (Segment (Point startx starty) (Point _ _) i = mkGroup
+labelPids (Segment (Point startx starty) (Point _ _)) i = mkGroup
            [translate (startx - 0.75) (starty) $ scale 0.25 $ outlineText $T.pack("pid: " ++ (show i))]
 
 -- Helper function to position a line of text
