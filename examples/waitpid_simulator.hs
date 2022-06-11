@@ -70,11 +70,13 @@ mkWaitpidLabel pnt = oFadeIn $ mkTextLabel "waitpid(p, NULL, 0)" pnt
 -- Helper function that creates an SVG of outlined text
 outlineText :: Text -> SVG
 outlineText txt = mkGroup
-        [ center
-        $ withStrokeColorPixel rtfdBackgroundColor
-        $ withStrokeWidth 0
-        $ withFillOpacity 1
-        $ latex txt ]
+      [ center
+      $ withStrokeColorPixel rtfdBackgroundColor
+      $ withStrokeWidth (defaultStrokeWidth * 8)
+      $ withFillOpacity 0
+      $ latex txt
+      , withStrokeWidth 0 $ withFillOpacity 1 $ center $ latex txt
+      ]
 
 main :: IO ()
 main = reanimate 
