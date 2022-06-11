@@ -1,4 +1,4 @@
- origin#!/usr/bin/env stack
+#!/usr/bin/env stack
 -- stack runghc --package reanimate
 module Main (main) where
  
