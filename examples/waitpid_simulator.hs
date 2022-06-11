@@ -8,6 +8,7 @@ import           Reanimate.Scene
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
 import Control.Lens
+import           Graphics.SvgTree 
 
 customDuration :: Duration
 customDuration = 3
@@ -71,11 +72,9 @@ outlineText :: Text -> SVG
 outlineText txt = mkGroup
         [ center
         $ withStrokeColorPixel rtfdBackgroundColor
-        $ withStrokeWidth (defaultStrokeWidth * 4)
-        $ withFillOpacity 0
-        $ latex txt
-        , center $ latex txt
-        ]
+        $ withStrokeWidth 0
+        $ withFillOpacity 1
+        $ latex txt ]
 
 main :: IO ()
 main = reanimate 
