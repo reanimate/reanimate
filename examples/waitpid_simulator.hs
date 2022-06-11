@@ -4,15 +4,12 @@ module Main (main) where
  
 import           Reanimate
 import           Reanimate.Builtin.Documentation
-import           Reanimate.Transition
-import           Reanimate.Svg
 import           Reanimate.Scene
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
-import           Graphics.SvgTree                hiding (Point, Text, height)
-import           Text.Printf
 
 
+customDuration :: Duration
 customDuration = 3
 data Point = Point Double Double
 data Segment = Segment Point Point
@@ -46,18 +43,13 @@ animateFork (Segment (Point startx starty) (Point endx endy))
 
 -- Helper function to label a proccess with a pid
 labelPids :: Segment -> Int -> SVG
-labelPids (Segment (Point startx starty) (Point endx endy)) i = mkGroup
+labelPids (Segment (Point startx starty) _ i = mkGroup
            [translate (startx - 0.75) (starty) $ scale 0.25 $ outlineText $T.pack("pid: " ++ (show i))]
 
 -- Helper function to position a line of text
 mkTextLabel:: [Char] -> Point -> SVG
 mkTextLabel txt (Point startx starty) = mkGroup
            [translate (startx) (starty) $ scale 0.2 $ outlineText $ T.pack(txt)]
-
--- Helper function to label a printf() call
-mkPrintLabels :: [Point] -> [Char] -> [Animation]
-mkPrintLabels pointList txt =
-          map slowAnimation ( map oFadeIn (map (\p -> mkTextLabel ("printf(" ++ (show txt) ++ ")" ) p) pointList))
 
 mkPrintLabelFromPnt :: Point -> [Char] -> Animation
 mkPrintLabelFromPnt pnt txt = 
@@ -66,10 +58,6 @@ mkPrintLabelFromPnt pnt txt =
 speedUpAnimation :: Animation -> Animation
 speedUpAnimation anim = adjustDuration (*0.5) anim 
  
--- Helper function to slow down an animation
-slowAnimation :: Animation -> Animation
-slowAnimation anim = adjustDuration (*1.5) anim
- 
 -- Helper function to label a fork() call and its return value
 mkForkLabel :: Point -> Int -> Animation
 mkForkLabel point val = oFadeIn (mkTextLabel ("fork() = " ++ (show val) ) point)
@@ -77,16 +65,6 @@ mkForkLabel point val = oFadeIn (mkTextLabel ("fork() = " ++ (show val) ) point)
 -- Helper function that creates waitpid() call label
 mkWaitpidLabel :: Point -> Animation
 mkWaitpidLabel pnt = oFadeIn $ mkTextLabel "waitpid(p, NULL, 0)" pnt
-
--- Helper function to create a text label
-createText :: Text -> SVG
-createText txt = mkGroup
-             [ center
-             $ withStrokeColorPixel rtfdBackgroundColor
-             $ withStrokeWidth (0)
-             $ withFillOpacity 0
-             $ latex txt
-             , center $ latex txt ]
 
 -- Helper function that creates an SVG of outlined text
 outlineText :: Text -> SVG
@@ -111,24 +89,40 @@ main = reanimate
         `andThen` (parentPrintfLabelAnim)
 
 --Lists of segments that represent each proccess 
+parentSegments :: [Segment]
 parentSegments = splitSegments (Segment (Point (-6) 0) (Point 6 0)) 2
+
+childSegments :: [Segment]
 childSegments = splitSegments (Segment (Point 0 (-3)) (Point 6 (-3))) 1
+
+forkSegment :: Segment
 forkSegment = Segment (Point 0 0) (Point 0 (-3))
 
---Lists of animations for each line 
+--Lists of animations for each line
+parentAnimations :: [Animation] 
 parentAnimations = map animatePart parentSegments
+
+childAnimations :: [Animation]
 childAnimations = map animatePart childSegments
+
+forkAnimation :: Animation
 forkAnimation = animateFork forkSegment
 
 --List of animations to label each proccess with its PID
+pidLabelAnimations :: [Animation]
 pidLabelAnimations = [speedUpAnimation (oFadeIn (labelPids (parentSegments !! 0) 1000)), speedUpAnimation (oFadeIn (labelPids (childSegments !! 0) 1001))]
 
 --List of animations to label the fork() calls
+forkLabelAnims :: [Animation]
 forkLabelAnims = [mkForkLabel (Point (0) 0.25) 1001, mkForkLabel (Point (0) (-2.75)) 0]
 
 -- Animation to label the waitpid() call
+waitpidLabelAnim :: Animation
 waitpidLabelAnim = mkWaitpidLabel (Point (0.75) (0.5))
 
 -- Animation to label printf() 
+parentPrintfLabelAnim :: Animation
 parentPrintfLabelAnim = mkPrintLabelFromPnt (Point (5) (0.25)) "I'm the parent, and I'm done waiting!"
+
+childPrintfLabelAnim :: Animation
 childPrintfLabelAnim = mkPrintLabelFromPnt (Point (5) (-2.75)) "I'm the child!"
