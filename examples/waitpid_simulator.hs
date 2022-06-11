@@ -7,7 +7,7 @@ import           Reanimate.Builtin.Documentation
 import           Reanimate.Scene
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
-
+import Control.Lens
 
 customDuration :: Duration
 customDuration = 3
