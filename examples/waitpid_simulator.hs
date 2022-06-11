@@ -18,7 +18,7 @@ data Segment = Segment Point Point
 animatePart :: Segment -> Animation
 animatePart (Segment (Point startx starty) (Point endx endy)) = signalA (curveS 2) $ setDuration customDuration $
   animate $ \t ->
-    partialSvg t $ pathify $ mkLine (startx, starty) (endx, endy) 
+    partialSvg t $ pathify (mkLine (startx, starty) (endx, endy) & strokeLineCap .~ (pure CapSquare))
 
 -- Helper function to create coordinates for a specific line
 splitSegments :: Segment -> Int -> [Segment]
