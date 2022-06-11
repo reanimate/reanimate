@@ -16,7 +16,7 @@ data Segment = Segment Point Point
 
 -- Helper functions creating an Animation from two coordinates
 animatePart :: Segment -> Animation
-animatePart (Segment (Point startx starty) (Point endx endy)) = setDuration customDuration $
+animatePart (Segment (Point startx starty) (Point endx endy)) = signalA (curveS2) $ setDuration customDuration $
   animate $ \t ->
     partialSvg t $ pathify $ mkLine (startx, starty) (endx, endy) 
 
@@ -39,16 +39,16 @@ shiftSeg (Segment (Point startx starty) (Point endx endy))
 -- Helper function to animate the line segment that represents a fork
 animateFork :: Segment -> Animation
 animateFork (Segment (Point startx starty) (Point endx endy))
-       = staticFrame 0.1 (mkLine (startx,starty) (endx, endy))
+       = oFadeIn (mkLine (startx,starty) (endx, endy))
 
 -- Helper function to label a proccess with a pid
 labelPids :: Segment -> Int -> SVG
-labelPids (Segment (Point startx starty) (Point _ _)) i = mkGroup
+labelPids (Segment (Point startx starty) (Point _ _)) i = withStrokeWidth (defaultStrokeWidth * 0.5) $ withFillOpacity 1 $ mkGroup
            [translate (startx - 0.75) (starty) $ scale 0.25 $ outlineText $T.pack("pid: " ++ (show i))]
 
 -- Helper function to position a line of text
 mkTextLabel:: [Char] -> Point -> SVG
-mkTextLabel txt (Point startx starty) = mkGroup
+mkTextLabel txt (Point startx starty) = withStrokeWidth (defaultStrokeWidth * 0.5) $ withFillOpacity 1 $ mkGroup
            [translate (startx) (starty) $ scale 0.2 $ outlineText $ T.pack(txt)]
 
 mkPrintLabelFromPnt :: Point -> [Char] -> Animation
@@ -71,7 +71,7 @@ outlineText :: Text -> SVG
 outlineText txt = mkGroup
         [ center
         $ withStrokeColorPixel rtfdBackgroundColor
-        $ withStrokeWidth (defaultStrokeWidth * 8)
+        $ withStrokeWidth (defaultStrokeWidth * 4)
         $ withFillOpacity 0
         $ latex txt
         , center $ latex txt
