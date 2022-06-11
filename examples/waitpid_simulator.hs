@@ -16,7 +16,7 @@ data Segment = Segment Point Point
 
 -- Helper functions creating an Animation from two coordinates
 animatePart :: Segment -> Animation
-animatePart (Segment (Point startx starty) (Point endx endy)) = signalA (curveS2) $ setDuration customDuration $
+animatePart (Segment (Point startx starty) (Point endx endy)) = signalA (curveS 2) $ setDuration customDuration $
   animate $ \t ->
     partialSvg t $ pathify $ mkLine (startx, starty) (endx, endy) 
 
