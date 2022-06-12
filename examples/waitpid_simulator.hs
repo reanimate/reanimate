@@ -8,7 +8,7 @@ import           Reanimate.Scene
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
 import Control.Lens
-import           Graphics.SvgTree 
+import           Graphics.SvgTree                (hiding Text, Point) 
 
 customDuration :: Duration
 customDuration = 3
