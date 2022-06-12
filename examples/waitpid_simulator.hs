@@ -65,7 +65,7 @@ mkForkLabel point val = oFadeIn (mkTextLabel ("fork() = " ++ (show val) ) point)
 
 -- Helper function that creates waitpid() call label
 mkWaitpidLabel :: Point -> Animation
-mkWaitpidLabel pnt = oFadeIn $ mkTextLabel "waitpid(p, NULL, 0)" pnt
+mkWaitpidLabel pnt = oFadeIn $ mkTextLabel "waitpid(1001, NULL, 0)" pnt
 
 -- Helper function that creates an SVG of outlined text
 outlineText :: Text -> SVG
