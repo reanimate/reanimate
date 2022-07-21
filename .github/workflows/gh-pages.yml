@@ -102,7 +102,7 @@ jobs:
         cp dist/* $CWD/pages/playground/
 
     - name: Deploy 🚀
-      uses: JamesIves/github-pages-deploy-action@v4.3.4
+      uses: JamesIves/github-pages-deploy-action@v4.4.0
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         BRANCH: gh-pages # The branch the action should deploy to.
