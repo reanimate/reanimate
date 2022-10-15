@@ -115,7 +115,7 @@ data APolygon a = Polygon
   , polygonOffset        :: Int
   , polygonTriangulation :: Triangulation
   , polygonSSSP          :: Vector SSSP
-  }
+  } deriving Eq
 type Polygon = APolygon Rational
 type P = V2 Double
 
