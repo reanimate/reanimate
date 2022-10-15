@@ -5,6 +5,11 @@ Notable changes to the project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and the
 project adheres to the [Haskell Package Versioning
 Policy (PVP)](https://pvp.haskell.org)
+
+## 1.1.7.0 -- 2022-10-15
+
+ * Derive `Eq` for APolygon
+
 ## 1.1.6.0 -- 2022-06-02
 
  * Drop hgeometry dependency.
