@@ -15,7 +15,7 @@ jobs:
       with:
         ghc-version: '8.8'
         cabal-version: 'latest'
-    - uses: jorelali/setup-elm@v3
+    - uses: jorelali/setup-elm@v5
       with:
         elm-version: 0.19.1
 
