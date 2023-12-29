@@ -16,9 +16,9 @@ module Reanimate.Svg.LineCommand
 where
 
 import           Control.Lens              ((%~), (&), (.~))
+import           Control.Monad             (forM)
 import           Control.Monad.Fix         (MonadFix (mfix))
-import           Control.Monad.State       (MonadState (get, put), State, evalState, forM, gets,
-                                            modify)
+import           Control.Monad.State       (MonadState (get, put), State, evalState, gets, modify)
 import           Data.Functor              (($>))
 import           Data.Maybe                (mapMaybe)
 import qualified Data.Vector.Unboxed       as V

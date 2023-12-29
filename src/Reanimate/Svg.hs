@@ -15,6 +15,7 @@ module Reanimate.Svg
   ) where
 
 import           Control.Lens               ((%~), (&), (.~), (?~), (^.))
+import           Control.Monad              (liftM3, liftM4)
 import           Control.Monad.State
 import           Graphics.SvgTree
 import           Linear.V2                  (V2 (V2))
