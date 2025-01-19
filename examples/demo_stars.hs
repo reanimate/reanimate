@@ -54,8 +54,8 @@ trails trailDur raw = mkAnimation (duration raw) $ \t ->
   fps = 200
 
   construct :: [Int] -> SVG
-  construct = foldl' go (mkGroup []) where 
-    go acc idx = mkGroup $ [reduceOpacity acc, getFrame idx]
+  construct = foldr go (mkGroup []) where
+    go idx acc = mkGroup $ [reduceOpacity acc, getFrame idx]
     reduceOpacity = withGroupOpacity (fromIntegral trailFrames / fromIntegral (trailFrames + 1))
     getFrame idx = frames V.! (idx `mod` nFrames)
 
