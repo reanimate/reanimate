@@ -147,7 +147,7 @@ library
     unordered-containers >=0.2.0.0,
     vector               >=0.12.0.0,
     vector-space         >=0.13,
-    websockets           >=0.12.7.0,
+    websockets           >=0.12.7.0 && <0.13,
     xml                  >=1.3.14,
     cryptohash-sha256,
     base64-bytestring,

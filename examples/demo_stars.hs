@@ -30,12 +30,12 @@ main = reanimate $ scene $ do
 starAnimation :: Animation
 starAnimation = mkAnimation 10 $ \t ->
   let camZ = t * 4
-  in  withStrokeWidth 0 $ rotate (t * 360) $ mkGroup
-        [ translate (x / newZ) (y / newZ) $ dot (1 - newZ)
-        | (x, y, z) <-
-          reverse $ take nStars $ dropWhile (\(_, _, z) -> z < camZ) allStars
-        , let newZ = z - camZ
-        ]
+      dropInvisible = dropWhile $ \(_, _, z) -> z < camZ
+      placeDot (x, y, z) = 
+        let newZ = z - camZ
+        in  translate (x / newZ) (y / newZ) $ dot (1 - newZ) 
+      starSVGs = map placeDot . reverse . take nStars . dropInvisible $ allStars
+  in  withStrokeWidth 0 $ rotate (t * 360) $ mkGroup starSVGs 
  where
   black = PixelRGB8 0x0 0x0 0x0
   dot o =
@@ -52,15 +52,15 @@ trails trailDur raw = mkAnimation (duration raw) $ \t ->
   in  construct $ reverse [idx - trailFrames .. idx]
  where
   fps = 200
-  construct []       = mkGroup []
-  construct (x : xs) = mkGroup
-    [ withGroupOpacity (fromIntegral trailFrames / fromIntegral (trailFrames + 1))
-      $ construct xs
-    , getFrame x
-    ]
+
+  construct :: [Int] -> SVG
+  construct = foldr go (mkGroup []) where
+    go idx acc = mkGroup $ [reduceOpacity acc, getFrame idx]
+    reduceOpacity = withGroupOpacity (fromIntegral trailFrames / fromIntegral (trailFrames + 1))
+    getFrame idx = frames V.! (idx `mod` nFrames)
+
   trailFrames = round (trailDur * fps)
   nFrames     = round (duration raw * fps)
-  getFrame idx = frames V.! (idx `mod` nFrames)
   frames = V.fromList
     [ frameAt (fromIntegral i / fromIntegral nFrames * duration raw) raw
     | i <- [0 .. nFrames]
