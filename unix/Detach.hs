@@ -8,7 +8,7 @@ import           System.Posix.Process (createSession, forkProcess)
 detach :: IO () -> IO Bool
 detach daemon = do
   void $ forkProcess $ do
-    devnull <- openFd "/dev/null" ReadWrite Nothing defaultFileFlags
+    devnull <- openFd "/dev/null" ReadWrite defaultFileFlags
     void $ dupTo devnull stdInput
     void $ dupTo devnull stdOutput
     void $ dupTo devnull stdError

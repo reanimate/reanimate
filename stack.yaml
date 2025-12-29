@@ -1,8 +1,11 @@
-resolver: lts-18.15
+resolver: lts-24.25
 
 allow-newer: false
 
 packages:
 - .
 
-extra-deps: []
+extra-deps: 
+- geojson-4.1.1@sha256:f450e81d4fe1993f97c7cdb2b9743d54d2621c37b67d8a89536e5e09d33fd737,4233
+- reanimate-svg-0.13.0.1@sha256:260957e61e2e290a6cbca1d129fa0da66d624a224d0016d3bdc76fa210c70cbd,2950
+
