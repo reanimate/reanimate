@@ -58,8 +58,7 @@ daemon = do
   let options = ServerOptions
         { serverHost = "127.0.0.1"
         , serverPort = 9161
-        , serverConnectionOptions = opts
-        , serverRequirePong = Nothing }
+        , serverConnectionOptions = opts }
 
   runServerWithOptions options (\pending -> do
         tid <- myThreadId

@@ -5,9 +5,11 @@ module UnitTests
   ) where
 
 import           Control.Exception
+import           Control.Monad        (filterM)
 import qualified Data.ByteString      as BS
 import qualified Data.ByteString.Lazy as LBS
 import           Data.List            (sort)
+import           Data.Maybe           (maybe)
 import qualified Data.Text            as T
 import qualified Data.Text.IO         as T
 import           System.Directory
@@ -23,22 +25,78 @@ import           Test.Tasty.HUnit
 data BuildSystem
   = Cabal
   | Stack
+  | NixBuild NixBuildSystem
+
+data NixBuildSystem
+  = NixCabal
+  | NixStack
+
+-- required for nix build
+nixGHCOptions :: [String]
+nixGHCOptions =
+  [ "-XPackageImports"
+  , "-XPatternSynonyms"
+  , "-Wall"
+  , "-fno-ignore-asserts"
+  , "-DNO_HGEOMETRY"
+  , "-hide-package"
+  , "matrices"
+  ]
+
+findStackAutogen :: IO (Maybe FilePath)
+findStackAutogen = do
+  let base = ".stack-work" </> "dist"
+  baseExists <- doesDirectoryExist base
+  if not baseExists
+    then return Nothing
+    else do
+      subDirs <- listDirectories base
+      case subDirs of
+        [] -> return Nothing
+        (arch:_) -> do
+          let archPath = base </> arch
+          cabalDirs <- listDirectories archPath
+          case cabalDirs of
+            [] -> return Nothing
+            (ver:_) -> return $ Just (archPath </> ver </> "build" </> "autogen")
+
+includeBuild :: NixBuildSystem -> IO [String]
+includeBuild NixCabal = return ["-idist/build/autogen"]
+includeBuild NixStack = do
+  mbPath <- findStackAutogen
+  case mbPath of
+    Nothing -> return []
+    Just p  -> return ["-i" ++ p]
+
+listDirectories :: FilePath -> IO [FilePath]
+listDirectories path = do
+  contents <- listDirectory path
+  filterM (\f -> doesDirectoryExist (path </> f)) contents
 
 {-# NOINLINE buildSystem #-}
 buildSystem :: BuildSystem
 buildSystem = unsafePerformIO $ do
+  exeCabal <- findExecutable "cabal"
+  exeStack <- findExecutable "stack"
+
   newbuild <- doesDirectoryExist "dist-newstyle"
-  stack <- doesDirectoryExist ".stack-work"
-  if newbuild then pure Cabal
-    else if stack then pure Stack
-    else error "Unknown build system."
+  v1build  <- doesDirectoryExist "dist"
+  stack    <- doesDirectoryExist ".stack-work"
+
+  return $ case (exeCabal, exeStack) of 
+    (Nothing, _) | v1build  -> NixBuild NixCabal
+    (_, Nothing) | stack    -> NixBuild NixStack
+    (Just _, _)  | newbuild -> Cabal
+    (_, Just _)  | stack    -> Stack
+    _                       -> error "Unknown build system."
 
 {-# NOINLINE unitTestsDisabled #-}
 unitTestsDisabled :: Bool
 unitTestsDisabled =
   case buildSystem of
-    Cabal -> False
-    Stack -> unsafePerformIO $ do
+    Cabal      -> False
+    NixBuild _ -> False
+    Stack      -> unsafePerformIO $ do
       (ret, _, _) <- readProcessWithExitCode "stack" ["exec","--","ghc", "-e", "Reanimate.duration Reanimate.Builtin.Documentation.drawCircle"] ""
       case ret of
         ExitFailure{} -> pure True
@@ -64,16 +122,26 @@ unitTestFolder path = do
 genGolden :: FilePath -> IO LBS.ByteString
 genGolden path = do
   (inh, outh, errh, pid) <- case buildSystem of
-    Stack -> runInteractiveProcess "stack" ["runhaskell", path, "test"]
+    Stack    -> runInteractiveProcess "stack" ["runhaskell", path, "test"]
       Nothing Nothing
-    Cabal -> runInteractiveProcess "cabal" ["v2-exec", "runhaskell", path, "test"]
+    Cabal    -> runInteractiveProcess "cabal" ["v2-exec", "runhaskell", path, "test"]
       Nothing Nothing
+    NixBuild nixbuild -> do
+      nixIncludeDir <- includeBuild nixbuild
+      runInteractiveProcess "ghc" 
+        ( ["-isrc", "-iunix"] 
+          ++ nixIncludeDir
+          ++ nixGHCOptions 
+          ++ ["--run", path, "--", "test"]
+        ) Nothing Nothing
   -- hSetBinaryMode outh True
-  -- hSetNewlineMode outh universalNewlineMode
+  -- hSetNewlineMode outh universalNewlineMode 
+
   hClose inh
   out <- BS.hGetContents outh
   err <- T.hGetContents errh
   code <- waitForProcess pid
+
   case code of
     ExitSuccess   -> return $ LBS.fromChunks [out]
     ExitFailure{} -> error $ "Failed to run: " ++ T.unpack err
@@ -87,9 +155,17 @@ compileTestFolder path = do
     [ testCase file $ do
         (ret, _stdout, err) <-
           case buildSystem of
-            Stack -> readProcessWithExitCode "stack" (["ghc","--", fullPath] ++ ghcOpts) ""
-            Cabal -> readProcessWithExitCode "cabal"
+            Stack    -> readProcessWithExitCode "stack" (["ghc","--", fullPath] ++ ghcOpts) ""
+            Cabal    -> readProcessWithExitCode "cabal"
               (["v2-exec","ghc","--", "-package", "reanimate", fullPath] ++ ghcOpts) ""
+            NixBuild nixbuild -> do 
+              nixIncludeDir <- includeBuild nixbuild
+              readProcessWithExitCode "ghc" 
+                ( ["-isrc", "-iunix"] 
+                  ++ nixIncludeDir
+                  ++ nixGHCOptions 
+                  ++ [fullPath] ++ (init ghcOpts)
+                ) ""
         _ <- evaluate (length err)
         case ret of
           ExitFailure{} -> assertFailure $ "Failed to compile:\n" ++ err
@@ -100,7 +176,7 @@ compileTestFolder path = do
     , notElem (replaceExtension file "golden") goldenFiles
     ]
   where
-    ghcOpts = ["-fno-code", "-O0", "-Werror", "-Wall"]
+    ghcOpts = ["-fno-code", "-O0", "-Wall", "-Werror"]
 
 compileVideoFolder :: FilePath -> IO TestTree
 compileVideoFolder _ | unitTestsDisabled = return $ testGroup "videos (disabled)" []
@@ -113,8 +189,16 @@ compileVideoFolder path = do
         [ testCase dir $ do
             (ret, _stdout, err) <-
               case buildSystem of
-                Stack  -> readProcessWithExitCode "stack" (["ghc","--", "-i"++path</>dir, fullPath] ++ ghcOpts) ""
-                Cabal  -> readProcessWithExitCode "cabal" (["v2-exec", "ghc","--", "-package", "reanimate", "-i"++path</>dir, fullPath] ++ ghcOpts) ""
+                Stack    -> readProcessWithExitCode "stack" (["ghc","--", "-i"++path</>dir, fullPath] ++ ghcOpts) ""
+                Cabal    -> readProcessWithExitCode "cabal" (["v2-exec", "ghc","--", "-package", "reanimate", "-i"++path</>dir, fullPath] ++ ghcOpts) ""
+                NixBuild nixbuild -> do
+                  nixIncludeDir <- includeBuild nixbuild
+                  readProcessWithExitCode "ghc" 
+                    ( ["-isrc", "-iunix", "-i"++path</>dir] 
+                      ++ nixIncludeDir
+                      ++ nixGHCOptions 
+                      ++ [fullPath] ++ ghcOpts
+                    ) ""
             _ <- evaluate (length err)
             case ret of
               ExitFailure{} -> assertFailure $ "Failed to compile:\n" ++ err

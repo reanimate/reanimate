@@ -60,6 +60,10 @@ op2LaTeX LeftParen  = "("
 op2LaTeX RightParen = ")"
 
 -- Some supportive types and instances.
+instance Functor (Expr a) where
+  fmap f (Var x)        = Var (f x)
+  fmap f (BinOp x op y) = BinOp (fmap f x) op (fmap f y)
+  fmap f (Paren l x r)  = Paren l (fmap f x) r
 
 instance Bifunctor Expr where
   bimap _ g (Var x)        = Var (g x)
@@ -90,6 +94,9 @@ instance Bitraversable p => Traversable (Both p) where
 
 -- | Make a bifunctor @f (a, -) (b, -)@ (namely @BiAlongside a b f@) out of @f@.
 newtype BiAlongside a b f x y = BiAlongside { runBiAlongside :: f (a, x) (b, y) }
+
+instance Bifunctor p => Functor (BiAlongside a b p c) where
+  fmap f (BiAlongside x) = BiAlongside (bimap id (fmap f) x)
 
 instance Bifunctor p => Bifunctor (BiAlongside a b p) where
   bimap f g = BiAlongside . bimap (second f) (second g) . runBiAlongside

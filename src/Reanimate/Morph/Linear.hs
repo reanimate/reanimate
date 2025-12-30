@@ -91,5 +91,5 @@ closestLinearCorrespondenceA src' dst' =
 linearTrajectory :: Trajectory
 linearTrajectory (src,dst)
   | pSize src == pSize dst = \t -> mkPolygon $
-    V.zipWith (lerp $ realToFrac t) (polygonPoints dst) (polygonPoints src)
+    V.zipWith (lerp $ realToFrac t) (polygonPoints src) (polygonPoints dst)
   | otherwise = error $ "Invalid lengths: " ++ show (pSize src, pSize dst)

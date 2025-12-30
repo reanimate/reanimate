@@ -6,6 +6,7 @@
 module Main (main) where
 
 import           Codec.Picture
+import           Control.Monad               (forM_, when, zipWithM_)
 import           Control.Monad.ST
 import           Control.Monad.State.Strict
 import           Data.Text                   (Text)

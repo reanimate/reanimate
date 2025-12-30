@@ -264,6 +264,7 @@ pathify = mapTree worker
               ,HorizontalTo OriginRelative [w]
               ,VerticalTo OriginRelative [h]
               ,HorizontalTo OriginRelative [-w]
+              ,VerticalTo OriginRelative [-h]
               ,EndPath ]
         LineTree line | Just (x1,y1, x2, y2) <- unpackLine line ->
           PathTree $ defaultSvg
